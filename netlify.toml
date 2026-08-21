@@ -1,7 +1,6 @@
-# AdorWorks is a separate product from Adormedia and is meant to be deployed
-# as its own Netlify site (not merged into the Adormedia site's deploy).
-# Point a new Netlify site at this repo with base directory "adorworks-site"
-# and this file will be picked up from there. See README.md.
+# Plain static site, no build step. This file lives at the repo root, so
+# Netlify picks it up automatically with no base/publish directory needed
+# in the site's UI settings. See README.md.
 
 [build]
   publish = "."

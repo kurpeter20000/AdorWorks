@@ -62,9 +62,11 @@ Not built (deliberately out of scope for a static site):
 ## Deploy
 
 1. Create a **new** Netlify site (don't reuse the Adormedia one) connected
-   to this repo, with **base directory** set to `adorworks-site` and
-   **publish directory** `.` (already set in this folder's `netlify.toml`).
-2. Netlify auto-detects the six forms in this folder's HTML
+   to the `kurpeter20000/AdorWorks` repo. Leave **base directory**, **build
+   command** and **functions directory** all blank, and leave **publish
+   directory** blank too (or `.`) — this repo's root is the site, there's
+   no build step, and `netlify.toml` already declares `publish = "."`.
+2. Netlify auto-detects the six forms in this repo's HTML
    (`data-netlify="true"`) at deploy time — no extra config.
 3. In the Netlify dashboard → **Forms**, turn on email notifications for
    each form so submissions don't sit unseen — especially
