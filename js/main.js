@@ -146,6 +146,51 @@
         .join("&");
     }
 
+    // Netlify form name -> the intake_submissions.form_type this becomes
+    // once a Supabase project is configured (see js/supabase-config.js).
+    var SUPABASE_FORM_TYPE = {
+      "adorworks-talent": "talent_application",
+      "adorworks-employer": "employer_brief",
+      "adorworks-shortlist": "shortlist_request",
+      "adorworks-service": "service_request",
+      "adorworks-contact": "general_contact",
+      "adorworks-insights-subscribe": "insights_subscribe",
+    };
+
+    function supabaseConfigured() {
+      return Boolean(window.ADORWORKS_SUPABASE_URL && window.ADORWORKS_SUPABASE_ANON_KEY);
+    }
+
+    function submitToSupabase(form, data) {
+      var formType = SUPABASE_FORM_TYPE[form.getAttribute("name")];
+      if (!formType) {
+        return Promise.reject(new Error("No Supabase form_type mapped for this form."));
+      }
+      var payload = {};
+      data.forEach(function (value, key) {
+        if (key === "form-name" || key === "bot-field") return;
+        payload[key] = value;
+      });
+      return fetch(window.ADORWORKS_SUPABASE_URL.replace(/\/$/, "") + "/rest/v1/intake_submissions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: window.ADORWORKS_SUPABASE_ANON_KEY,
+          Authorization: "Bearer " + window.ADORWORKS_SUPABASE_ANON_KEY,
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({ form_type: formType, payload: payload }),
+      });
+    }
+
+    function submitToNetlify(data) {
+      return fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: encodeFormData(data),
+      });
+    }
+
     document.querySelectorAll("form.js-form").forEach(function (form) {
       var formId = form.getAttribute("data-form-id") || form.getAttribute("name") || "form";
       var status = form.querySelector(".form-status") || document.getElementById(form.getAttribute("aria-describedby") || "");
@@ -155,11 +200,19 @@
       form.addEventListener("submit", function (e) {
         e.preventDefault();
         var data = new FormData(form);
-        fetch("/", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: encodeFormData(data),
-        })
+
+        // Silent honeypot: a filled hidden field means a bot filled the
+        // form. Netlify checks this server-side on its own path, but a
+        // direct-to-Supabase submission needs the same check done here.
+        if (data.get("bot-field")) {
+          form.reset();
+          showStatus("success", successMessage);
+          return;
+        }
+
+        var submission = supabaseConfigured() ? submitToSupabase(form, data) : submitToNetlify(data);
+
+        submission
           .then(function (res) {
             if (res.ok) {
               track("form_submit", { form_id: formId });
@@ -168,14 +221,14 @@
             } else {
               showStatus(
                 "error",
-                "Something went wrong sending that (form backend not connected yet on this host?). Please try WhatsApp instead."
+                "Something went wrong sending that. Please try WhatsApp instead."
               );
             }
           })
           .catch(function () {
             showStatus(
               "error",
-              "Something went wrong sending that (form backend not connected yet on this host?). Please try WhatsApp instead."
+              "Something went wrong sending that. Please try WhatsApp instead."
             );
           });
       });

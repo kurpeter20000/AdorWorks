@@ -18,7 +18,7 @@
   visitors' installed copies pick up the update instead of serving stale
   content indefinitely.
 */
-const CACHE_VERSION = "adorworks-v1";
+const CACHE_VERSION = "adorworks-v2";
 const SHELL_CACHE = CACHE_VERSION + "-shell";
 const RUNTIME_CACHE = CACHE_VERSION + "-runtime";
 
@@ -42,6 +42,7 @@ const SHELL_URLS = [
   "/css/themes.css",
   "/css/styles.css",
   "/js/main.js",
+  "/js/supabase-config.js",
   "/manifest.webmanifest",
   "/img/adorworks-mark.svg",
   "/img/adorworks-mark-reversed.svg",
