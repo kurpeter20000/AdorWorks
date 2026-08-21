@@ -1,0 +1,27 @@
+/*
+  AdorWorks brand palette — from the AdorWorks Startup & Website Blueprint
+  brand assets (logo files, colour system reference). Single brand direction,
+  wired up as CSS custom properties on :root.
+
+  Midnight       #182230  primary / text / dark surfaces
+  Opportunity Teal #00A88F primary action colour (buttons, links, focus)
+  Talent Violet  #5B4BDB  secondary accent (talent-side moments, CTA band)
+  Energy Coral   #FF6B4A  sparing highlight only (do not use for large areas)
+  Cloud          #F4F7FB  neutral background
+  Slate          #596274  muted text
+*/
+
+:root {
+  --color-primary: #182230;        /* Midnight */
+  --color-primary-ink: #ffffff;
+  --color-accent: #00A88F;         /* Opportunity Teal */
+  --color-accent-ink: #182230;     /* dark text on teal buttons for AA contrast */
+  --color-accent-text: #00786A;    /* darker teal, for text set on light backgrounds */
+  --color-secondary: #5B4BDB;      /* Talent Violet */
+  --color-highlight: #FF6B4A;      /* Energy Coral — sparing use only */
+  --color-muted: #596274;          /* Slate */
+  --color-surface: #ffffff;
+  --color-surface-alt: #F4F7FB;    /* Cloud */
+  --color-ink: #182230;
+  --color-border: #E2E7F0;
+}

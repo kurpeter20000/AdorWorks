@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find Talent — AdorWorks</title>
+<meta name="description" content="Browse AdorWorks' launch categories and request a verified shortlist — creative and media, digital and technology, business and project support.">
+<link rel="icon" href="img/adorworks-mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/themes.css">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="index.html">
+      <img src="img/adorworks-mark.svg" alt="AdorWorks" width="34" height="34">
+      <span>AdorWorks</span>
+    </a>
+    <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="site-nav">
+      <span class="visually-hidden">Menu</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <nav class="site-nav" id="site-nav" aria-label="Primary">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="find-talent.html" aria-current="page">Find Talent</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="for-employers.html">For Employers</a></li>
+        <li><a href="for-talent.html">For Talent</a></li>
+        <li><a href="trust-safety.html">Trust &amp; Safety</a></li>
+        <li><a href="about.html">About</a></li>
+        <li class="nav-cta"><a href="for-employers.html#brief-form" class="btn btn-primary">Post a project</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero">
+    <div class="container">
+      <h1>Find verified talent, matched by a person.</h1>
+      <p class="lede">AdorWorks is in its founding pilot, so search isn't self-service yet — every shortlist is checked by an AdorWorks matcher before it reaches you. Tell us what you need below and we'll come back with qualified people.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <h2>Launch categories</h2>
+        <p>We only recruit and sell into categories Adormedia can properly assess. More categories open as verified supply and repeat demand justify them.</p>
+      </div>
+      <div class="grid grid-3">
+        <div class="card card-accent-top">
+          <h3>Creative &amp; media</h3>
+          <p class="muted text-sm">Graphic design &middot; Photography &middot; Video production &middot; Editing &middot; Animation &middot; Content creation &middot; Copywriting</p>
+        </div>
+        <div class="card card-accent-top">
+          <h3>Digital &amp; technology</h3>
+          <p class="muted text-sm">Web development &middot; Software &middot; Data support &middot; Digital advertising &middot; Analytics &middot; IT support</p>
+        </div>
+        <div class="card card-accent-top">
+          <h3>Business &amp; project support</h3>
+          <p class="muted text-sm">Virtual assistance &middot; Bookkeeping &middot; Research &middot; Enumeration &middot; Transcription &middot; Translation &middot; Project administration</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-alt">
+    <div class="container">
+      <div class="notice">
+        <span class="notice-label">Why you don't see a public directory</span>
+        <p class="mt-0 mb-0">We don't publish talent contact details or full profiles to anonymous visitors — private phone numbers, email addresses and identity documents stay behind AdorWorks' review until a shortlist is formally presented to a verified employer. This protects professionals from scraping and off-platform circumvention, and it's how we keep every introduction accountable. Read more on <a href="trust-safety.html">Trust &amp; Safety</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="shortlist-form">
+    <div class="container">
+      <div class="grid contact-grid">
+        <div>
+          <h2>Request a shortlist</h2>
+          <p class="muted">Tell us the skill, level and timeline you need. An AdorWorks matcher will search verified supply and come back with three to five suitable candidates, or a managed team for larger scopes.</p>
+          <form class="js-form" name="adorworks-shortlist" data-form-id="shortlist-request" method="POST" data-netlify="true" data-netlify-honeypot="bot-field" novalidate>
+            <input type="hidden" name="form-name" value="adorworks-shortlist">
+            <p class="netlify-honeypot" aria-hidden="true">
+              <label>Leave this field blank: <input name="bot-field" tabindex="-1" autocomplete="off"></label>
+            </p>
+            <div class="form-grid">
+              <div class="form-grid form-grid-2">
+                <div>
+                  <label for="st-name">Your name</label>
+                  <input type="text" id="st-name" name="name" autocomplete="name" required>
+                </div>
+                <div>
+                  <label for="st-org">Organisation</label>
+                  <input type="text" id="st-org" name="organisation" autocomplete="organization" required>
+                </div>
+              </div>
+              <div class="form-grid form-grid-2">
+                <div>
+                  <label for="st-email">Email</label>
+                  <input type="email" id="st-email" name="email" autocomplete="email" required>
+                </div>
+                <div>
+                  <label for="st-phone">Phone / WhatsApp</label>
+                  <input type="tel" id="st-phone" name="phone" autocomplete="tel">
+                </div>
+              </div>
+              <div>
+                <label for="st-category">Category needed</label>
+                <select id="st-category" name="category" required>
+                  <option value="">Select one</option>
+                  <option>Creative &amp; media</option>
+                  <option>Digital &amp; technology</option>
+                  <option>Business &amp; project support</option>
+                  <option>Not sure yet</option>
+                </select>
+              </div>
+              <div>
+                <label for="st-skills">Specific skills or role</label>
+                <input type="text" id="st-skills" name="skills" placeholder="e.g. brand designer, WordPress developer, French–English translator">
+              </div>
+              <div class="form-grid form-grid-2">
+                <div>
+                  <label for="st-timing">Timeline</label>
+                  <input type="text" id="st-timing" name="timeline" placeholder="e.g. within 2 weeks">
+                </div>
+                <div>
+                  <label for="st-budget">Budget range</label>
+                  <input type="text" id="st-budget" name="budget">
+                </div>
+              </div>
+              <div>
+                <label for="st-notes">Anything else we should know</label>
+                <textarea id="st-notes" name="notes"></textarea>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top:1.25rem;">Request shortlist</button>
+            <div class="form-status" role="status"></div>
+          </form>
+        </div>
+        <aside>
+          <h2>Prefer a defined package?</h2>
+          <p class="muted">If you already know exactly what you want delivered, browse commissionable service packages instead.</p>
+          <p><a href="services.html" class="btn btn-secondary btn-block">See services</a></p>
+          <h2 class="mt-1">Hiring for a role, not a project?</h2>
+          <p class="muted">Contract, full-time or a whole squad — see all five ways to hire.</p>
+          <p><a href="for-employers.html" class="btn btn-secondary btn-block">For employers</a></p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="index.html">
+          <img src="img/adorworks-mark-reversed.svg" alt="AdorWorks" width="32" height="32">
+          <span>AdorWorks</span>
+        </a>
+        <p class="footer-about">A South Sudan-born talent and work marketplace, built by Adormedia.</p>
+      </div>
+      <div>
+        <h3 class="footer-heading">Explore</h3>
+        <ul class="footer-list">
+          <li><a href="find-talent.html">Find Talent</a></li>
+          <li><a href="services.html">Services</a></li>
+          <li><a href="jobs-projects.html">Jobs &amp; Projects</a></li>
+          <li><a href="how-it-works.html">How It Works</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+          <li><a href="impact-stories.html">Impact &amp; Stories</a></li>
+          <li><a href="insights.html">Insights</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="footer-heading">Company</h3>
+        <ul class="footer-list">
+          <li><a href="for-employers.html">For Employers</a></li>
+          <li><a href="for-talent.html">For Talent</a></li>
+          <li><a href="trust-safety.html">Trust &amp; Safety</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">&copy; 2026 AdorWorks, a venture of Adormedia Ltd. All rights reserved.</div>
+  </div>
+</footer>
+
+<div class="mobile-contact-bar">
+  <a href="services.html">Services</a>
+  <a href="#shortlist-form" class="is-primary">Request shortlist</a>
+</div>
+
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+# AdorWorks is a separate product from Adormedia and is meant to be deployed
+# as its own Netlify site (not merged into the Adormedia site's deploy).
+# Point a new Netlify site at this repo with base directory "adorworks-site"
+# and this file will be picked up from there. See README.md.
+
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404
