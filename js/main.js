@@ -23,6 +23,82 @@
   }
   window.adorworksTrack = track;
 
+  // Service worker: makes the site installable and usable offline. Safe to
+  // skip silently on browsers without support (e.g. some older phones).
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/sw.js").catch(function () {
+        // Offline-capability is a progressive enhancement — a failed
+        // registration should never block the page from working.
+      });
+    });
+  }
+
+  // "Install app" prompt: Chrome/Edge/Android fire beforeinstallprompt
+  // instead of showing install UI automatically everywhere, so we capture
+  // it and inject our own dismissible banner (built here rather than in
+  // each page's markup, so every page gets it for free). iOS Safari has no
+  // such event — install there is manual via the Share sheet — so the
+  // banner simply never appears for those visitors.
+  var deferredInstallPrompt = null;
+  var INSTALL_DISMISSED_KEY = "adorworks_install_dismissed";
+
+  function safeSessionGet(key) {
+    try { return sessionStorage.getItem(key); } catch (err) { return null; }
+  }
+  function safeSessionSet(key, value) {
+    try { sessionStorage.setItem(key, value); } catch (err) { /* ignore */ }
+  }
+
+  function showInstallBanner() {
+    if (document.getElementById("install-banner")) return;
+    if (safeSessionGet(INSTALL_DISMISSED_KEY)) return;
+
+    var banner = document.createElement("div");
+    banner.id = "install-banner";
+    banner.className = "install-banner";
+    banner.setAttribute("role", "region");
+    banner.setAttribute("aria-label", "Install AdorWorks");
+    banner.innerHTML =
+      '<span class="install-banner-text">Install AdorWorks for quicker access, even with a weak connection.</span>' +
+      '<span class="install-banner-actions">' +
+      '<button type="button" class="btn btn-primary" data-install-accept>Install</button>' +
+      '<button type="button" class="install-banner-dismiss" data-install-dismiss aria-label="Dismiss">&times;</button>' +
+      "</span>";
+    document.body.appendChild(banner);
+  }
+
+  function hideInstallBanner() {
+    var banner = document.getElementById("install-banner");
+    if (banner) banner.remove();
+  }
+
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    showInstallBanner();
+  });
+
+  document.addEventListener("click", function (e) {
+    if (e.target.closest("[data-install-accept]") && deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      deferredInstallPrompt.userChoice.then(function (choice) {
+        track("pwa_install_prompt", { outcome: choice.outcome });
+        deferredInstallPrompt = null;
+        hideInstallBanner();
+      });
+    }
+    if (e.target.closest("[data-install-dismiss]")) {
+      safeSessionSet(INSTALL_DISMISSED_KEY, "1");
+      hideInstallBanner();
+    }
+  });
+
+  window.addEventListener("appinstalled", function () {
+    hideInstallBanner();
+    track("pwa_installed", {});
+  });
+
   document.addEventListener("DOMContentLoaded", function () {
     // Mobile nav toggle
     var toggle = document.querySelector(".nav-toggle");

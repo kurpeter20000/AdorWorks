@@ -1,0 +1,41 @@
+{
+  "name": "AdorWorks — Talent found. Work delivered.",
+  "short_name": "AdorWorks",
+  "description": "AdorWorks is a South Sudan-born talent and work marketplace. Find verified talent, or find work — free, always.",
+  "id": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F4F7FB",
+  "theme_color": "#182230",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["business", "productivity"],
+  "icons": [
+    { "src": "img/icons/icon-any-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "img/icons/icon-any-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "img/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "img/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Find talent",
+      "short_name": "Find talent",
+      "url": "/find-talent.html?source=pwa_shortcut",
+      "icons": [{ "src": "img/icons/icon-any-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Post a project",
+      "short_name": "Post a project",
+      "url": "/for-employers.html?source=pwa_shortcut#brief-form",
+      "icons": [{ "src": "img/icons/icon-any-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Build your profile",
+      "short_name": "Build profile",
+      "url": "/for-talent.html?source=pwa_shortcut#talent-form",
+      "icons": [{ "src": "img/icons/icon-any-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
