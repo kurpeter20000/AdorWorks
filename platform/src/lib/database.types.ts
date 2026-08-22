@@ -55,6 +55,17 @@ export type EngagementType =
   | "apprenticeship"
   | "managed_service";
 export type PaymentBasis = "fixed" | "milestone" | "hourly" | "daily" | "monthly" | "negotiable";
+export type ApplicationStage =
+  | "submitted"
+  | "shortlisted"
+  | "interviewing"
+  | "offered"
+  | "accepted"
+  | "rejected"
+  | "withdrawn";
+export type OfferStatus = "draft" | "sent" | "accepted" | "declined" | "withdrawn";
+export type ContractStatus = "active" | "completed" | "cancelled" | "disputed";
+export type MilestoneStatus = "pending" | "submitted" | "approved" | "revision_requested" | "paid";
 
 export type ProfileRow = {
   id: string;
@@ -164,6 +175,64 @@ export type OpportunityRow = {
   updated_at: string;
 }
 
+export type ApplicationRow = {
+  id: string;
+  opportunity_id: string;
+  talent_id: string;
+  source: "applied" | "matched";
+  suitability_score: number | null;
+  notes: string | null;
+  stage: ApplicationStage;
+  decision_reason: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type OfferRow = {
+  id: string;
+  application_id: string;
+  opportunity_id: string;
+  talent_id: string;
+  organisation_id: string;
+  payment_basis: PaymentBasis;
+  compensation_amount: number | null;
+  currency: string;
+  milestone_plan: unknown;
+  message: string | null;
+  status: OfferStatus;
+  created_by: string;
+  created_at: string;
+  responded_at: string | null;
+}
+
+export type ContractRow = {
+  id: string;
+  offer_id: string;
+  opportunity_id: string;
+  talent_id: string;
+  organisation_id: string;
+  status: ContractStatus;
+  started_at: string;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type MilestoneRow = {
+  id: string;
+  contract_id: string;
+  title: string;
+  description: string | null;
+  amount: number;
+  currency: string;
+  sequence: number;
+  status: MilestoneStatus;
+  due_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export type Database = {
   // Recent @supabase/supabase-js versions look for this marker (present
   // in real `supabase gen types` output) to resolve the client's
@@ -214,6 +283,42 @@ export type Database = {
         Row: OpportunityRow;
         Insert: Partial<OpportunityRow> & { organisation_id: string; type: OpportunityType; title: string };
         Update: Partial<OpportunityRow>;
+        Relationships: [];
+      };
+      applications: {
+        Row: ApplicationRow;
+        Insert: Partial<ApplicationRow> & { opportunity_id: string; talent_id: string };
+        Update: Partial<ApplicationRow>;
+        Relationships: [];
+      };
+      offers: {
+        Row: OfferRow;
+        Insert: Partial<OfferRow> & {
+          application_id: string;
+          opportunity_id: string;
+          talent_id: string;
+          organisation_id: string;
+          payment_basis: PaymentBasis;
+          created_by: string;
+        };
+        Update: Partial<OfferRow>;
+        Relationships: [];
+      };
+      contracts: {
+        Row: ContractRow;
+        Insert: Partial<ContractRow> & {
+          offer_id: string;
+          opportunity_id: string;
+          talent_id: string;
+          organisation_id: string;
+        };
+        Update: Partial<ContractRow>;
+        Relationships: [];
+      };
+      milestones: {
+        Row: MilestoneRow;
+        Insert: Partial<MilestoneRow> & { contract_id: string; title: string; amount: number };
+        Update: Partial<MilestoneRow>;
         Relationships: [];
       };
     };

@@ -30,12 +30,26 @@ export default async function DashboardPage() {
           <p className="mt-1 text-sm text-slate">
             Complete your profile and request verification so employers can find and shortlist you.
           </p>
-          <Link
-            href="/onboarding"
-            className="mt-3 inline-block rounded-lg bg-teal px-4 py-2 text-sm font-bold text-midnight"
-          >
-            Continue onboarding
-          </Link>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link
+              href="/onboarding"
+              className="inline-block rounded-lg bg-teal px-4 py-2 text-sm font-bold text-midnight"
+            >
+              Continue onboarding
+            </Link>
+            <Link
+              href="/opportunities"
+              className="inline-block rounded-lg border border-teal/40 px-4 py-2 text-sm font-bold text-teal"
+            >
+              Find work
+            </Link>
+            <Link
+              href="/offers"
+              className="inline-block rounded-lg border border-teal/40 px-4 py-2 text-sm font-bold text-teal"
+            >
+              My offers
+            </Link>
+          </div>
         </div>
       )}
 

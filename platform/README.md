@@ -43,7 +43,7 @@ for the full reasoning.
      Supabase → Project Settings → API. Server-only, never exposed to
      the browser (no `NEXT_PUBLIC_` prefix) — never share this in chat
      or commit it.
-3. Apply `../backend/supabase/migrations/0005` through `0010` (SQL
+3. Apply `../backend/supabase/migrations/0005` through `0011` (SQL
    Editor, in order) if you haven't already — this app's auth/roles
    code depends on them. See `../backend/supabase/README.md`.
 4. `npm run dev` → <http://localhost:3000>
@@ -63,6 +63,10 @@ src/app/                    Routes (App Router)
   dashboard/                 Role-aware landing page (requireSession)
   onboarding/                Talent onboarding wizard: basics/verification/review (requireRole('talent'))
   organisation/               Employer side: org setup, dashboard, opportunity posting (requireRole('individual_client'))
+  organisation/opportunities/[id]/  Applicant review + send-offer, per opportunity
+  opportunities/              Talent-facing browse of open, public opportunities + apply (requireRole('talent'))
+  applications/                Talent's own applications and their stage
+  offers/                      Talent's received offers, accept/decline
 src/lib/
   supabase/server.ts          SSR client — Server Components, Server Actions, Route Handlers
   supabase/client.ts           Browser client — Client Components only
@@ -71,6 +75,8 @@ src/lib/
   actions/auth.ts               signup/login/logout Server Actions (Zod-validated)
   actions/onboarding.ts         Talent onboarding wizard Server Actions
   actions/organisation.ts       Organisation + opportunity Server Actions — opportunities are always created as 'pending_review', never 'open'; staff/opportunities.html's existing "Approve & open" action is the only path to publish
+  actions/applications.ts       Talent applies to an opportunity — the one direct client insert RLS actually allows on this table
+  actions/offers.ts             Employer sends an offer; talent accepts/declines — both go through the admin client with their own ownership + stage checks, per 0007's design (RLS deliberately gives neither side a direct-update path here). Accepting also creates the contract + milestone row(s) — nothing further (deliverable submission, messaging) is built yet
   database.types.ts             Hand-written Supabase types (see the file's own header for how to regenerate properly)
 src/proxy.ts                  Session-refresh proxy (this version's renamed middleware.ts)
 ```
@@ -116,3 +122,13 @@ src/proxy.ts                  Session-refresh proxy (this version's renamed midd
   a table where a non-staff role can INSERT their own row *and* that
   row has a staff-controlled column, it needs a BEFORE INSERT guard
   trigger, not just a BEFORE UPDATE one — 0008 alone wasn't enough.
+- **`0011_tighten_offers_and_contracts.sql` fixed two more, found while
+  building `actions/offers.ts`**: `offers_insert` allowed any `status`
+  at insert, not just `'draft'` (added a BEFORE INSERT guard, same
+  pattern as 0010); and `contracts_insert` had an `is_org_member(...)`
+  branch that let an employer create a contract for their own org with
+  no accepted offer behind it at all — the talent's-consent side of
+  "both parties agreed" was structurally required, the org's side
+  wasn't. That branch is gone; contract creation now requires either
+  staff (i.e. the admin-client Server Action) or the talent's own
+  already-`accepted` offer.

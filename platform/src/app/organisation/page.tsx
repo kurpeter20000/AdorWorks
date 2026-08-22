@@ -91,19 +91,21 @@ export default async function OrganisationPage({
         ) : (
           <ul className="mt-3 space-y-2">
             {opportunities.map((o) => (
-              <li
-                key={o.id}
-                className="flex items-center justify-between rounded-xl border border-slate/15 bg-white p-4"
-              >
-                <div>
-                  <p className="font-semibold text-midnight">{o.title}</p>
-                  <p className="text-xs text-slate">{o.type.replace("_", " ")}</p>
-                </div>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLE[o.status] ?? "bg-slate/10 text-slate"}`}
+              <li key={o.id}>
+                <Link
+                  href={`/organisation/opportunities/${o.id}`}
+                  className="flex items-center justify-between rounded-xl border border-slate/15 bg-white p-4 hover:border-violet/40"
                 >
-                  {STATUS_LABEL[o.status] ?? o.status}
-                </span>
+                  <div>
+                    <p className="font-semibold text-midnight">{o.title}</p>
+                    <p className="text-xs text-slate">{o.type.replace("_", " ")}</p>
+                  </div>
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLE[o.status] ?? "bg-slate/10 text-slate"}`}
+                  >
+                    {STATUS_LABEL[o.status] ?? o.status}
+                  </span>
+                </Link>
               </li>
             ))}
           </ul>
