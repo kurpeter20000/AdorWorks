@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { ProfessionalLinksForm } from "./professional-links-form";
 import { PortfolioManager } from "./portfolio-manager";
+import { EvidenceManager } from "./evidence-manager";
 
 export const metadata: Metadata = { title: "Your Passport" };
 
@@ -19,14 +20,23 @@ export default async function PassportPage() {
   const session = await requireRole("talent");
   const supabase = await createClient();
 
-  const [{ data: profile }, { data: items }] = await Promise.all([
+  const [{ data: profile }, { data: items }, { data: evidence }] = await Promise.all([
     supabase.from("talent_profiles").select("*").eq("id", session.userId).maybeSingle(),
     supabase
       .from("talent_portfolio_items")
       .select("*")
       .eq("talent_id", session.userId)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("talent_evidence")
+      .select("*")
+      .eq("talent_id", session.userId)
+      .in("evidence_type", ["reference", "assessment"])
+      .order("created_at", { ascending: false }),
   ]);
+
+  const references = (evidence ?? []).filter((e) => e.evidence_type === "reference");
+  const credentials = (evidence ?? []).filter((e) => e.evidence_type === "assessment");
 
   if (!profile) {
     return (
@@ -88,6 +98,31 @@ export default async function PassportPage() {
       <div className="mt-6">
         <h2 className="font-bold text-midnight">Portfolio</h2>
         <PortfolioManager items={items ?? []} />
+      </div>
+
+      <div className="mt-6">
+        <h2 className="font-bold text-midnight">References</h2>
+        <p className="mt-1 text-xs text-slate">
+          A previous employer or client who can vouch for your work — their name and how to reach
+          them, or a reference letter.
+        </p>
+        <EvidenceManager
+          evidenceType="reference"
+          notesPlaceholder="e.g. Jane Doe, former manager at XYZ — jane@example.com"
+          items={references}
+        />
+      </div>
+
+      <div className="mt-6">
+        <h2 className="font-bold text-midnight">Credentials</h2>
+        <p className="mt-1 text-xs text-slate">
+          A certificate, diploma or assessment result that backs up your skills.
+        </p>
+        <EvidenceManager
+          evidenceType="assessment"
+          notesPlaceholder="What is this credential?"
+          items={credentials}
+        />
       </div>
     </main>
   );
