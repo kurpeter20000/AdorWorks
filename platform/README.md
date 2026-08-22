@@ -43,7 +43,7 @@ for the full reasoning.
      Supabase → Project Settings → API. Server-only, never exposed to
      the browser (no `NEXT_PUBLIC_` prefix) — never share this in chat
      or commit it.
-3. Apply `../backend/supabase/migrations/0005` through `0013` (SQL
+3. Apply `../backend/supabase/migrations/0005` through `0014` (SQL
    Editor, in order) if you haven't already — this app's auth/roles
    code depends on them. See `../backend/supabase/README.md`.
 4. `npm run dev` → <http://localhost:3000>
@@ -159,3 +159,20 @@ src/proxy.ts                  Session-refresh proxy (this version's renamed midd
   was invented — nothing else in this table or `backend/api`'s
   `reviews.js` has ever had one, so adding one here would be a new
   design decision dressed up as a bug fix).
+- **`0014_talent_visible_once_shortlisted.sql` fixed a real bug found by
+  actually running the flow, not by reading code**: `talent_profiles_
+  select` (0002) only ever allowed the talent themselves, staff, or a
+  profile with `public_visible = true` — a separate, staff-only flag set
+  after full verification. Once a matcher shortlists an application, the
+  employer's opportunity-detail page (and the contract page after that)
+  try to show that talent's `display_name`/`headline`, but the
+  employer's session genuinely could not read the row. Live-testing this
+  showed an applicant literally named "AdorWorks talent" with no
+  headline — being shortlisted didn't actually grant the employer
+  anything to evaluate. Fixed by adding the same curated-shortlist
+  condition `applications_select` already uses (`stage <> 'submitted'`
+  + org membership) to `talent_profiles_select` too. If you add a new
+  page that joins across two tables each with their own RLS, checking
+  that the *combination* actually returns real data — not just that
+  each policy is individually correct — needs a real page load, not a
+  read-through.
