@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Intake — AdorWorks Staff</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="../img/adorworks-mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/themes.css">
+<link rel="stylesheet" href="../css/styles.css">
+<link rel="stylesheet" href="css/staff.css">
+</head>
+<body>
+
+<header class="staff-header">
+  <div class="container">
+    <a class="brand" href="index.html">
+      <img src="../img/adorworks-mark-reversed.svg" alt="AdorWorks" width="30" height="30">
+      <span>AdorWorks Staff</span>
+    </a>
+    <div class="staff-header-right">
+      <span id="staff-who" class="staff-who"></span>
+      <button id="logout-btn" class="staff-logout" type="button">Sign out</button>
+    </div>
+  </div>
+</header>
+<nav class="staff-nav" aria-label="Staff sections">
+  <div class="container">
+    <a href="index.html">Dashboard</a>
+    <a href="intake.html" aria-current="page">Intake</a>
+    <a href="talent.html">Talent</a>
+    <a href="organisations.html">Organisations</a>
+    <a href="opportunities.html">Opportunities</a>
+    <a href="engagements.html">Engagements</a>
+  </div>
+</nav>
+
+<main id="main" class="staff-main">
+  <div class="container">
+    <div class="staff-page-header">
+      <h1>Intake</h1>
+    </div>
+    <p class="muted max-65ch">Every public-form submission lands here first. Review one, then either convert it into a real talent profile / organisation, or archive it if it's not going anywhere.</p>
+
+    <div class="filter-bar">
+      <span class="filter-chip" data-status-filter="new" aria-pressed="true">New</span>
+      <span class="filter-chip" data-status-filter="in_review" aria-pressed="false">In review</span>
+      <span class="filter-chip" data-status-filter="converted" aria-pressed="false">Converted</span>
+      <span class="filter-chip" data-status-filter="archived" aria-pressed="false">Archived</span>
+      <span class="filter-chip" data-status-filter="" aria-pressed="false">All</span>
+      <select id="form-type-select" style="width:auto; margin-left:auto;">
+        <option value="">All form types</option>
+        <option value="talent_application">Talent application</option>
+        <option value="employer_brief">Employer brief</option>
+        <option value="shortlist_request">Shortlist request</option>
+        <option value="service_request">Service request</option>
+        <option value="general_contact">General contact</option>
+        <option value="insights_subscribe">Insights subscribe</option>
+      </select>
+    </div>
+
+    <div class="staff-table-wrap">
+      <table class="staff-table">
+        <thead>
+          <tr><th>Form</th><th>Name</th><th>Status</th><th>Submitted</th><th></th></tr>
+        </thead>
+        <tbody id="intake-body">
+          <tr><td colspan="5" class="staff-empty">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script type="module" src="js/config.js"></script>
+<script type="module" src="js/intake.js"></script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Engagements — AdorWorks Staff</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="../img/adorworks-mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/themes.css">
+<link rel="stylesheet" href="../css/styles.css">
+<link rel="stylesheet" href="css/staff.css">
+</head>
+<body>
+
+<header class="staff-header">
+  <div class="container">
+    <a class="brand" href="index.html">
+      <img src="../img/adorworks-mark-reversed.svg" alt="AdorWorks" width="30" height="30">
+      <span>AdorWorks Staff</span>
+    </a>
+    <div class="staff-header-right">
+      <span id="staff-who" class="staff-who"></span>
+      <button id="logout-btn" class="staff-logout" type="button">Sign out</button>
+    </div>
+  </div>
+</header>
+<nav class="staff-nav" aria-label="Staff sections">
+  <div class="container">
+    <a href="index.html">Dashboard</a>
+    <a href="intake.html">Intake</a>
+    <a href="talent.html">Talent</a>
+    <a href="organisations.html">Organisations</a>
+    <a href="opportunities.html">Opportunities</a>
+    <a href="engagements.html" aria-current="page">Engagements</a>
+  </div>
+</nav>
+
+<main id="main" class="staff-main">
+  <div class="container">
+    <div class="staff-page-header">
+      <h1>Engagements</h1>
+    </div>
+    <p class="muted max-65ch">Delivery tracking, milestones, finance records (manual tracking only), reviews and disputes — everything for one confirmed piece of work in one place.</p>
+
+    <div class="filter-bar">
+      <span class="filter-chip" data-status-filter="" aria-pressed="true">All</span>
+      <span class="filter-chip" data-status-filter="proposed" aria-pressed="false">Proposed</span>
+      <span class="filter-chip" data-status-filter="contracted" aria-pressed="false">Contracted</span>
+      <span class="filter-chip" data-status-filter="active" aria-pressed="false">Active</span>
+      <span class="filter-chip" data-status-filter="completed" aria-pressed="false">Completed</span>
+      <span class="filter-chip" data-status-filter="disputed" aria-pressed="false">Disputed</span>
+      <span class="filter-chip" data-status-filter="cancelled" aria-pressed="false">Cancelled</span>
+    </div>
+
+    <div class="staff-table-wrap">
+      <table class="staff-table">
+        <thead>
+          <tr><th>Organisation</th><th>Talent</th><th>Contract type</th><th>Status</th><th>Created</th></tr>
+        </thead>
+        <tbody id="engagements-body">
+          <tr><td colspan="5" class="staff-empty">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script type="module" src="js/config.js"></script>
+<script type="module" src="js/engagements.js"></script>
+</body>
+</html>

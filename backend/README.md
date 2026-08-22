@@ -55,6 +55,8 @@ it later, if it's ever outgrown, is a real option rather than a trap.
   native app becomes worth its cost once there's a concrete need this
   can't meet (background push notifications are the most likely trigger,
   since PWA push support is inconsistent on iOS) — not before.
-- **No staff-console frontend yet.** The API is real and working; nobody
-  has a web page to click buttons on top of it yet. That's the natural
-  next build once there's real intake volume to justify it.
+- **The staff console (`../staff/`) covers the core workflow, not every
+  edge case.** Triage, verification, shortlisting and engagement
+  tracking all have a working UI now; some finer-grained editing (e.g.
+  reshaping a talent profile's structured fields beyond what its detail
+  panel exposes) still needs a direct API call or SQL. See `../staff/README.md`.

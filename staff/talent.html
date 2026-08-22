@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Talent — AdorWorks Staff</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="../img/adorworks-mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/themes.css">
+<link rel="stylesheet" href="../css/styles.css">
+<link rel="stylesheet" href="css/staff.css">
+</head>
+<body>
+
+<header class="staff-header">
+  <div class="container">
+    <a class="brand" href="index.html">
+      <img src="../img/adorworks-mark-reversed.svg" alt="AdorWorks" width="30" height="30">
+      <span>AdorWorks Staff</span>
+    </a>
+    <div class="staff-header-right">
+      <span id="staff-who" class="staff-who"></span>
+      <button id="logout-btn" class="staff-logout" type="button">Sign out</button>
+    </div>
+  </div>
+</header>
+<nav class="staff-nav" aria-label="Staff sections">
+  <div class="container">
+    <a href="index.html">Dashboard</a>
+    <a href="intake.html">Intake</a>
+    <a href="talent.html" aria-current="page">Talent</a>
+    <a href="organisations.html">Organisations</a>
+    <a href="opportunities.html">Opportunities</a>
+    <a href="engagements.html">Engagements</a>
+  </div>
+</nav>
+
+<main id="main" class="staff-main">
+  <div class="container">
+    <div class="staff-page-header">
+      <h1>Talent</h1>
+    </div>
+    <p class="muted max-65ch">Review evidence, set verification tiers, and decide who's ready to be publicly visible once self-service search exists.</p>
+
+    <div class="filter-bar">
+      <select id="category-select">
+        <option value="">All categories</option>
+        <option value="creative_media">Creative &amp; media</option>
+        <option value="digital_technology">Digital &amp; technology</option>
+        <option value="business_project_support">Business &amp; project support</option>
+      </select>
+      <select id="tier-select">
+        <option value="">All tiers</option>
+        <option value="registered">Registered</option>
+        <option value="identity_verified">Identity verified</option>
+        <option value="adorverified">AdorVerified</option>
+        <option value="adorcertified">AdorCertified</option>
+        <option value="team_lead">Team lead</option>
+      </select>
+    </div>
+
+    <div class="staff-table-wrap">
+      <table class="staff-table">
+        <thead>
+          <tr><th>Headline</th><th>Category</th><th>Tier</th><th>Location</th><th>Visibility</th></tr>
+        </thead>
+        <tbody id="talent-body">
+          <tr><td colspan="5" class="staff-empty">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script type="module" src="js/config.js"></script>
+<script type="module" src="js/talent.js"></script>
+</body>
+</html>

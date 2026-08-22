@@ -45,11 +45,13 @@ Built:
   `impact-stories.html` both say plainly that there's nothing to show yet,
   per the blueprint's evidence standards (§9.4) — no fake listings, no
   fabricated testimonials or stats.
+- A staff console (`staff/`) for everything the API supports: triaging
+  intake submissions and converting them into real accounts, verifying
+  talent and organisations, building each opportunity's shortlist,
+  creating engagements and tracking them through to completion with
+  finance records, reviews and disputes. See `staff/README.md`.
 
 Not built yet:
-- **A staff-console UI.** `backend/api` is a working API, but there's no
-  web interface for staff to actually use it — today that means calling
-  it directly (Postman, curl, a script) until a console frontend exists.
 - **A talent/employer account UI** on the public site (login, dashboard,
   self-service search, in-platform messaging) — the backend supports all
   of this (see `backend/supabase/migrations`), but the public site's
@@ -134,6 +136,8 @@ robots.txt, sitemap.xml
 netlify.toml
 backend/supabase/         Database schema, RLS policies, storage buckets (see backend/README.md)
 backend/api/               Staff-console Node/Express API
+staff/                     Staff console web UI (see staff/README.md) — noindex'd, login-gated
+render.yaml                 Render Blueprint for deploying backend/api
 ```
 
 ## PWA / mobile

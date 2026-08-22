@@ -19,6 +19,7 @@ const searchSchema = z.object({
   category: z.enum(["creative_media", "digital_technology", "business_project_support"]).optional(),
   tier: z.enum(VERIFICATION_TIERS).optional(),
   skill: z.string().optional(), // matches if this skill is in the talent's skills[]
+  q: z.string().optional(), // free-text match against headline (shortlist-builder search box)
   public_visible: z.coerce.boolean().optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),
@@ -38,6 +39,7 @@ talentRouter.get(
     if (query.category) q = q.eq("category", query.category);
     if (query.tier) q = q.eq("verification_tier", query.tier);
     if (query.skill) q = q.contains("skills", [query.skill]);
+    if (query.q) q = q.ilike("headline", `%${query.q}%`);
     if (query.public_visible !== undefined) q = q.eq("public_visible", query.public_visible);
 
     const { data, error, count } = await q;
