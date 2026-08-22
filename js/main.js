@@ -151,7 +151,6 @@
     var SUPABASE_FORM_TYPE = {
       "adorworks-talent": "talent_application",
       "adorworks-employer": "employer_brief",
-      "adorworks-shortlist": "shortlist_request",
       "adorworks-service": "service_request",
       "adorworks-contact": "general_contact",
       "adorworks-insights-subscribe": "insights_subscribe",

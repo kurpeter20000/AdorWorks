@@ -226,6 +226,7 @@ intakeRouter.post(
         type: normalizeOpportunityType(p.hiring_mode),
         title: p.problem_outcome ? String(p.problem_outcome).slice(0, 120) : "Untitled brief",
         brief: p.problem_outcome || null,
+        category: normalizeCategory(p.category),
         skills: splitList(p.skills_category),
         location: p.location_mode || null,
         currency: p.currency || "SSP",

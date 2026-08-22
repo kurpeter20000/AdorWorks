@@ -206,6 +206,41 @@ p { margin: 0 0 1em; }
 .hero p.lede { font-size: 1.1rem; max-width: 60ch; color: rgba(255,255,255,0.9); }
 .hero-ctas { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
 
+/* Jump nav — quick anchor links under a hero, for a page long enough to
+   benefit from an at-a-glance table of contents (e.g. For Employers).
+   top:64px (not 0) because .site-header is ALSO position:sticky top:0
+   and roughly that tall — without this offset the two would overlap
+   instead of stacking. Pages using this must also raise html's
+   scroll-padding-top (see for-employers.html's inline override) so
+   in-page anchors land below BOTH sticky bars, not just the header. */
+.jump-nav {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 64px;
+  z-index: 40;
+}
+.jump-nav-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-block: 0.7rem;
+  overflow-x: auto;
+}
+.jump-nav a {
+  flex: none;
+  padding: 0.4em 0.9em;
+  border-radius: 999px;
+  background: var(--color-surface-alt);
+  color: var(--color-ink);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.jump-nav a:hover { background: var(--color-border); }
+.jump-nav a.jump-nav-cta { background: var(--color-accent); color: var(--color-accent-ink); margin-left: auto; }
+
 /* Sections */
 .section { padding-block: 3rem; }
 .section-alt { background: var(--color-surface-alt); }

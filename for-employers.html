@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>For Employers — AdorWorks</title>
-<meta name="description" content="Hire verified talent without the guesswork. Five hiring modes, employer verification, a qualified shortlist and support from brief to completed work.">
+<meta name="description" content="Hire verified talent without the guesswork. Browse what we cover, five hiring modes, employer verification, and a brief form that gets you a shortlist.">
 <link rel="icon" href="img/adorworks-mark.svg" type="image/svg+xml">
 <link rel="icon" href="img/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="img/icons/apple-touch-icon.png">
@@ -19,6 +19,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/themes.css">
 <link rel="stylesheet" href="css/styles.css">
+<style>
+  /* This page has a second sticky bar (.jump-nav) below the header, so
+     in-page anchors need more top clearance than the sitewide default. */
+  html { scroll-padding-top: 130px; }
+</style>
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -36,7 +41,6 @@
     <nav class="site-nav" id="site-nav" aria-label="Primary">
       <ul>
         <li><a href="index.html">Home</a></li>
-        <li><a href="find-talent.html">Find Talent</a></li>
         <li><a href="services.html">Services</a></li>
         <li><a href="for-employers.html" aria-current="page">For Employers</a></li>
         <li><a href="for-talent.html">For Talent</a></li>
@@ -56,12 +60,53 @@
       <p class="lede">Tell us what you need. We verify, match and support delivery — from a single service, through to a full managed team.</p>
       <div class="hero-ctas">
         <a href="#brief-form" class="btn btn-primary">Submit a brief</a>
-        <a href="#hiring-modes" class="btn btn-outline-light">See hiring modes</a>
+        <a href="#categories" class="btn btn-outline-light">See what we cover</a>
       </div>
     </div>
   </section>
 
-  <section class="section" id="hiring-modes">
+  <nav class="jump-nav" aria-label="On this page">
+    <div class="container jump-nav-inner">
+      <a href="#categories">Categories</a>
+      <a href="#hiring-modes">Hiring modes</a>
+      <a href="#who-we-work-with">Who we work with</a>
+      <a href="#verification">Verification</a>
+      <a href="#faq">FAQ</a>
+      <a href="#brief-form" class="jump-nav-cta">Submit a brief &rarr;</a>
+    </div>
+  </nav>
+
+  <section class="section" id="categories">
+    <div class="container">
+      <div class="section-header">
+        <h2>What we cover</h2>
+        <p>We only recruit and sell into categories Adormedia can properly assess. Pick one to jump straight to the brief form with it pre-filled.</p>
+      </div>
+      <div class="grid grid-3">
+        <div class="card card-accent-top category-card">
+          <h3>Creative &amp; media</h3>
+          <p class="muted text-sm">Graphic design &middot; Photography &middot; Video production &middot; Editing &middot; Animation &middot; Content creation &middot; Copywriting</p>
+          <button type="button" class="btn btn-secondary btn-block" data-request-category="Creative &amp; media">Request this category &rarr;</button>
+        </div>
+        <div class="card card-accent-top category-card">
+          <h3>Digital &amp; technology</h3>
+          <p class="muted text-sm">Web development &middot; Software &middot; Data support &middot; Digital advertising &middot; Analytics &middot; IT support</p>
+          <button type="button" class="btn btn-secondary btn-block" data-request-category="Digital &amp; technology">Request this category &rarr;</button>
+        </div>
+        <div class="card card-accent-top category-card">
+          <h3>Business &amp; project support</h3>
+          <p class="muted text-sm">Virtual assistance &middot; Bookkeeping &middot; Research &middot; Enumeration &middot; Transcription &middot; Translation &middot; Project administration</p>
+          <button type="button" class="btn btn-secondary btn-block" data-request-category="Business &amp; project support">Request this category &rarr;</button>
+        </div>
+      </div>
+      <div class="notice mt-1">
+        <span class="notice-label">Why there's no public directory</span>
+        <p class="mt-0 mb-0">We don't publish talent contact details or full profiles to anonymous visitors — private phone numbers, email addresses and identity documents stay behind AdorWorks' review until a shortlist is formally presented to a verified employer. Submit a brief below and an AdorWorks matcher searches verified supply on your behalf. See how on <a href="trust-safety.html">Trust &amp; Safety</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-alt" id="hiring-modes">
     <div class="container">
       <div class="section-header">
         <h2>Five ways to hire</h2>
@@ -84,7 +129,7 @@
     </div>
   </section>
 
-  <section class="section section-alt">
+  <section class="section" id="who-we-work-with">
     <div class="container">
       <div class="section-header">
         <h2>Who we work with</h2>
@@ -100,7 +145,7 @@
     </div>
   </section>
 
-  <section class="section">
+  <section class="section section-alt" id="verification">
     <div class="container">
       <div class="section-header">
         <h2>How employer verification works</h2>
@@ -118,7 +163,7 @@
     </div>
   </section>
 
-  <section class="section section-alt">
+  <section class="section">
     <div class="container">
       <div class="notice">
         <span class="notice-label">Payments and protection</span>
@@ -127,12 +172,16 @@
     </div>
   </section>
 
-  <section class="section faq">
+  <section class="section section-alt faq" id="faq">
     <div class="container">
       <div class="section-header"><h2>Frequently asked</h2></div>
       <details>
         <summary>How fast can I get a shortlist?</summary>
         <p>We're targeting a shortlist generally within 10 business days once your brief is confirmed, though this depends on how specialised the role is and how deep our verified pool is in that category during the pilot.</p>
+      </details>
+      <details>
+        <summary>What if my need doesn't fit one of the three categories?</summary>
+        <p>Tell us anyway in the brief below — categories describe where we're strongest today, not a hard limit on what we'll consider, especially for larger or ongoing engagements.</p>
       </details>
       <details>
         <summary>What happens if the person or team doesn't work out?</summary>
@@ -192,25 +241,36 @@
           </div>
 
           <h3 class="mt-1 mb-0">The brief</h3>
-          <div>
-            <label for="em-mode">How would you like to hire?</label>
-            <select id="em-mode" name="hiring_mode" required>
-              <option value="">Select one</option>
-              <option>Buy a service</option>
-              <option>Post a project</option>
-              <option>Hire contract talent</option>
-              <option>Recruit full-time</option>
-              <option>Build a talent squad</option>
-              <option>Not sure yet</option>
-            </select>
+          <div class="form-grid form-grid-2">
+            <div>
+              <label for="em-mode">How would you like to hire?</label>
+              <select id="em-mode" name="hiring_mode" required>
+                <option value="">Select one</option>
+                <option>Buy a service</option>
+                <option>Post a project</option>
+                <option>Hire contract talent</option>
+                <option>Recruit full-time</option>
+                <option>Build a talent squad</option>
+                <option>Not sure yet</option>
+              </select>
+            </div>
+            <div>
+              <label for="em-category">Category</label>
+              <select id="em-category" name="category">
+                <option value="">Not sure / other</option>
+                <option>Creative &amp; media</option>
+                <option>Digital &amp; technology</option>
+                <option>Business &amp; project support</option>
+              </select>
+            </div>
           </div>
           <div>
             <label for="em-problem">Business problem and desired outcome</label>
             <textarea id="em-problem" name="problem_outcome" required></textarea>
           </div>
           <div>
-            <label for="em-skills">Required skills / category</label>
-            <input type="text" id="em-skills" name="skills_category">
+            <label for="em-skills">Specific skills or expertise needed</label>
+            <input type="text" id="em-skills" name="skills_category" placeholder="e.g. brand designer, WordPress developer, French–English translator">
           </div>
           <div class="form-grid form-grid-2">
             <div>
@@ -258,7 +318,7 @@
       <div>
         <h3 class="footer-heading">Explore</h3>
         <ul class="footer-list">
-          <li><a href="find-talent.html">Find Talent</a></li>
+          <li><a href="for-employers.html#categories">Browse categories</a></li>
           <li><a href="services.html">Services</a></li>
           <li><a href="jobs-projects.html">Jobs &amp; Projects</a></li>
           <li><a href="how-it-works.html">How It Works</a></li>
@@ -289,5 +349,22 @@
 
 <script src="js/supabase-config.js"></script>
 <script src="js/main.js"></script>
+<script>
+  // Category-card -> brief-form prefill. Page-specific enough (exact
+  // field IDs on this one form) that it doesn't belong in the shared
+  // main.js — everything else on this page uses that file as normal.
+  document.querySelectorAll("[data-request-category]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var label = btn.getAttribute("data-request-category");
+      var select = document.getElementById("em-category");
+      Array.from(select.options).forEach(function (opt) {
+        if (opt.textContent.trim() === label) select.value = opt.value;
+      });
+      document.getElementById("brief-form").scrollIntoView();
+      var firstField = document.getElementById("em-org");
+      if (firstField) firstField.focus({ preventScroll: true });
+    });
+  });
+</script>
 </body>
 </html>

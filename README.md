@@ -111,10 +111,9 @@ python -m http.server 8080
 
 ```
 index.html            Home
-find-talent.html       Find Talent (curated categories + shortlist request)
 services.html          Services (packaged deliverables + service request)
 jobs-projects.html     Jobs & Projects (honest "no listings yet" state)
-for-employers.html     For Employers (hiring modes + employer brief form)
+for-employers.html     For Employers (categories, hiring modes, verification, brief form — the one real employer-intake pipeline)
 for-talent.html         For Talent (verification tiers + application form)
 how-it-works.html      How It Works (both journeys, step by step)
 trust-safety.html      Trust & Safety (verification, payments, disputes)

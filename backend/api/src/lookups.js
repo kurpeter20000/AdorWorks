@@ -1,4 +1,4 @@
-/** Maps the exact <option> label strings used in the site's HTML forms to the Postgres enum values they correspond to. Keep in sync with adorworks-site/for-talent.html, for-employers.html and find-talent.html. */
+/** Maps the exact <option> label strings used in the site's HTML forms to the Postgres enum values they correspond to. Keep in sync with adorworks-site/for-talent.html and for-employers.html. */
 
 export const CATEGORY_LABEL_TO_ENUM = {
   "Creative & media": "creative_media",

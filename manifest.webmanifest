@@ -22,7 +22,7 @@
     {
       "name": "Find talent",
       "short_name": "Find talent",
-      "url": "/find-talent.html?source=pwa_shortcut",
+      "url": "/for-employers.html?source=pwa_shortcut#categories",
       "icons": [{ "src": "img/icons/icon-any-192.png", "sizes": "192x192" }]
     },
     {
