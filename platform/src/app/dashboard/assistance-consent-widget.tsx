@@ -6,7 +6,7 @@ import type { FormState } from "@/lib/actions/auth";
 
 const initialState: FormState = {};
 
-export function AssistanceConsentWidget({ sessionId }: { sessionId: string }) {
+export function AssistanceConsentWidget({ sessionId, freshAccount }: { sessionId: string; freshAccount: boolean }) {
   const boundAction = consentToAssistance.bind(null, sessionId);
   const [state, formAction, pending] = useActionState(boundAction, initialState);
 
@@ -19,13 +19,36 @@ export function AssistanceConsentWidget({ sessionId }: { sessionId: string }) {
         listed here, and every change is recorded. Only agree if you&rsquo;re
         physically together with them right now.
       </p>
-      <form action={formAction} className="mt-3">
+
+      <form action={formAction} className="mt-3 space-y-2">
+        {freshAccount && (
+          <div className="space-y-2 rounded-lg border border-violet/20 bg-white p-3">
+            <p className="text-xs text-slate">
+              You&rsquo;re signed in with a temporary password — choose a real one now so you can sign
+              in yourself next time.
+            </p>
+            <input
+              type="password"
+              name="newPassword"
+              placeholder="New password (at least 8 characters)"
+              required
+              className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
+            />
+            <input
+              type="password"
+              name="confirmPassword"
+              placeholder="Confirm new password"
+              required
+              className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
+            />
+          </div>
+        )}
         <button
           type="submit"
           disabled={pending}
           className="rounded-lg bg-violet px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
         >
-          {pending ? "Confirming…" : "I consent to being helped"}
+          {pending ? "Confirming…" : freshAccount ? "Set password and consent" : "I consent to being helped"}
         </button>
       </form>
       {state.message && <p className="mt-2 text-sm text-coral">{state.message}</p>}

@@ -189,12 +189,21 @@ const startSessionSchema = z.object({
   agent_id: z.string().uuid(),
   fields: z.array(z.enum(ASSISTED_TALENT_FIELDS)).min(1),
   expires_in_minutes: z.coerce.number().int().min(5).max(240).default(60),
+  // Only required when the request has no linked account yet (Stage B) —
+  // validated by hand below rather than z.object's built-in required-ness,
+  // since whether these are required depends on the request being loaded
+  // first.
+  email: z.string().trim().email().optional(),
+  full_name: z.string().trim().min(2).optional(),
 });
 
 // POST /api/assisted-onboarding/assistance-requests/:id/start-session
-// Stage A only: the request must already be linked to a real account
-// (requested_by not null). Brand-new-signup provisioning is Stage B —
-// this deliberately rejects that case for now rather than guessing at it.
+// If the request has no linked account (requested_by is null), this
+// provisions one first — same real-temporary-password pattern as a new
+// onboarding agent (see generateTemporaryPassword above), because this
+// person needs to log in themselves for the consent step. scope.freshAccount
+// tells the platform app's consent widget to also prompt for a real
+// password once they've consented.
 assistedOnboardingRouter.post(
   "/assistance-requests/:id/start-session",
   asyncRoute(async (req, res) => {
@@ -207,12 +216,6 @@ assistedOnboardingRouter.post(
       .maybeSingle();
     if (requestError) throw new HttpError(500, requestError.message);
     if (!request) throw new HttpError(404, "Assistance request not found.");
-    if (!request.requested_by) {
-      throw new HttpError(
-        422,
-        "This request has no linked account yet — assisted signup for brand-new accounts isn't available yet."
-      );
-    }
     if (request.status === "closed" || request.status === "cancelled") {
       throw new HttpError(409, `This request is already ${request.status}.`);
     }
@@ -226,13 +229,34 @@ assistedOnboardingRouter.post(
     if (!agent) throw new HttpError(404, "Onboarding agent not found.");
     if (agent.status !== "active") throw new HttpError(422, "This agent's account is suspended.");
 
+    let userId = request.requested_by;
+    let temporaryPassword;
+    let freshAccount = false;
+
+    if (!userId) {
+      if (!body.email) {
+        throw new HttpError(422, "This request has no linked account — collect an email address before starting the session.");
+      }
+      freshAccount = true;
+      temporaryPassword = generateTemporaryPassword();
+      const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: body.email,
+        password: temporaryPassword,
+        email_confirm: true,
+        user_metadata: { full_name: body.full_name || null },
+      });
+      if (createError) throw new HttpError(409, `Could not create an account: ${createError.message}`);
+      userId = created.user.id;
+      await supabaseAdmin.from("assistance_requests").update({ requested_by: userId }).eq("id", request.id);
+    }
+
     const { data: session, error: sessionError } = await supabaseAdmin
       .from("assistance_sessions")
       .insert({
         assistance_request_id: request.id,
         agent_id: agent.id,
-        user_id: request.requested_by,
-        scope: { fields: body.fields },
+        user_id: userId,
+        scope: { fields: body.fields, freshAccount },
         expires_at: new Date(Date.now() + body.expires_in_minutes * 60 * 1000).toISOString(),
         status: "pending_consent",
       })
@@ -242,6 +266,6 @@ assistedOnboardingRouter.post(
 
     await supabaseAdmin.from("assistance_requests").update({ status: "assigned" }).eq("id", request.id);
 
-    res.json({ data: session });
+    res.json({ data: session, temporary_password: temporaryPassword || null });
   })
 );

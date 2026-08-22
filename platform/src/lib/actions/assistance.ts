@@ -49,16 +49,47 @@ export async function submitAssistanceRequest(_prevState: FormState, formData: F
   return {};
 }
 
+const NewPasswordSchema = z
+  .string()
+  .min(8, "Choose a password with at least 8 characters.")
+  .optional();
+
 /**
  * The assisted person consenting to their own pending_consent session —
  * this is the one write in the whole flow that must come from the
  * assisted person's own SSR-scoped session (assistance_sessions_update's
  * RLS only allows user_id = auth.uid() or staff), not the admin client.
+ *
+ * Stage B: for a freshly-provisioned account (still on the staff-issued
+ * temporary password), the widget also collects a real password here —
+ * set it BEFORE recording consent, so a failure leaves them retrying with
+ * the same temporary password rather than "consented but still on an
+ * insecure one".
  */
-export async function consentToAssistance(sessionId: string): Promise<FormState> {
+export async function consentToAssistance(
+  sessionId: string,
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
   const session = await requireSession();
-
   const supabase = await createClient();
+
+  const newPassword = formData.get("newPassword");
+  if (typeof newPassword === "string" && newPassword.length > 0) {
+    const validated = NewPasswordSchema.safeParse(newPassword);
+    if (!validated.success) {
+      return { message: validated.error.issues[0].message };
+    }
+    const confirmPassword = formData.get("confirmPassword");
+    if (newPassword !== confirmPassword) {
+      return { message: "Passwords don't match." };
+    }
+    const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
+    if (passwordError) {
+      return { message: `Could not set your new password: ${passwordError.message}` };
+    }
+  }
+
   const { error } = await supabase
     .from("assistance_sessions")
     .update({ status: "active", consent_recorded_at: new Date().toISOString() })
@@ -122,10 +153,12 @@ export async function updateAssistedField(_prevState: FormState, formData: FormD
   const oldValue = before ? JSON.stringify((before as Record<string, unknown>)[field] ?? null) : null;
 
   const newValue = field === "skills" || field === "languages" ? splitList(value) : value;
+  // upsert, not update — a brand-new Stage B account has no talent_profiles
+  // row at all yet (only the onboarding wizard's saveBasics creates one); a
+  // plain .update() would silently touch zero rows in that case.
   const { error: updateError } = await admin
     .from("talent_profiles")
-    .update({ [field]: newValue } as Partial<TalentProfileRow>)
-    .eq("id", assistSession.user_id);
+    .upsert({ id: assistSession.user_id, [field]: newValue } as Partial<TalentProfileRow> & { id: string });
   if (updateError) {
     return { message: `Could not save this field: ${updateError.message}` };
   }

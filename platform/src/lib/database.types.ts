@@ -355,7 +355,7 @@ export type AssistanceRequestRow = {
   created_at: string;
 }
 
-export type AssistanceSessionScope = { fields: string[] };
+export type AssistanceSessionScope = { fields: string[]; freshAccount?: boolean };
 
 export type AssistanceSessionRow = {
   id: string;

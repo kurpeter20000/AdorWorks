@@ -167,11 +167,6 @@ function toggleDetail(id) {
 function renderDetail(id, detailRow) {
   var request = requests.find(function (r) { return r.id === id; });
 
-  if (!request.requested_by) {
-    detailRow.querySelector("td").innerHTML =
-      '<p class="muted mt-0">This request has no linked account yet — assisted signup for brand-new accounts isn’t available yet.</p>';
-    return;
-  }
   if (request.status !== "pending") {
     detailRow.querySelector("td").innerHTML = '<p class="muted mt-0">This request is already ' + escapeHtml(request.status) + ".</p>";
     return;
@@ -194,13 +189,22 @@ function renderDetail(id, detailRow) {
     );
   }).join(" ");
 
+  var needsAccount = !request.requested_by;
+
   detailRow.querySelector("td").innerHTML =
     '<dl class="kv-list">' +
     "<dt>Reason</dt><dd>" + escapeHtml(request.reason || "—") + "</dd>" +
     "<dt>Preferred contact</dt><dd>" + escapeHtml(request.preferred_channel || "—") + "</dd>" +
     "</dl>" +
     (activeAgents.length
-      ? '<div class="form-grid form-grid-2 mt-1">' +
+      ? (needsAccount
+          ? '<p class="muted mt-1">No account is linked yet — collect an email address and we\'ll create one with a temporary password for you to relay.</p>' +
+            '<div class="form-grid form-grid-2 mt-1">' +
+            '<input type="email" id="session-email-' + id + '" placeholder="Their email address">' +
+            '<input type="text" id="session-fullname-' + id + '" placeholder="Full name (optional)">' +
+            "</div>"
+          : "") +
+        '<div class="form-grid form-grid-2 mt-1">' +
         '<select id="session-agent-' + id + '">' + agentOptions + "</select>" +
         '<input type="number" id="session-minutes-' + id + '" value="60" min="5" max="240" placeholder="Minutes until expiry">' +
         "</div>" +
@@ -223,12 +227,26 @@ function renderDetail(id, detailRow) {
         statusEl.className = "form-status is-visible error";
         return;
       }
+      var body = { agent_id: agentId, fields: fields, expires_in_minutes: Number(minutes) || 60 };
+      if (needsAccount) {
+        var email = detailRow.querySelector("#session-email-" + id).value.trim();
+        if (!email) {
+          statusEl.textContent = "Enter their email address — an account needs to be created for them.";
+          statusEl.className = "form-status is-visible error";
+          return;
+        }
+        body.email = email;
+        var fullName = detailRow.querySelector("#session-fullname-" + id).value.trim();
+        if (fullName) body.full_name = fullName;
+      }
       try {
-        await apiFetch("/api/assisted-onboarding/assistance-requests/" + id + "/start-session", {
+        var res = await apiFetch("/api/assisted-onboarding/assistance-requests/" + id + "/start-session", {
           method: "POST",
-          body: { agent_id: agentId, fields: fields, expires_in_minutes: Number(minutes) || 60 },
+          body: body,
         });
-        statusEl.textContent = "Session started — the assisted person will see a consent prompt next time they sign in.";
+        statusEl.textContent = res.temporary_password
+          ? "Session started. Account created — temporary password (relay this to them, it won’t be shown again): " + res.temporary_password
+          : "Session started — the assisted person will see a consent prompt next time they sign in.";
         statusEl.className = "form-status is-visible success";
         await loadRequests();
       } catch (err) {

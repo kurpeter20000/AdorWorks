@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: pendingAssistance } = await supabase
     .from("assistance_sessions")
-    .select("id")
+    .select("id, scope")
     .eq("user_id", session.userId)
     .eq("status", "pending_consent")
     .order("created_at", { ascending: false })
@@ -39,7 +39,9 @@ export default async function DashboardPage() {
 
       {!session.phoneVerified && <PhoneVerificationWidget />}
 
-      {pendingAssistance && <AssistanceConsentWidget sessionId={pendingAssistance.id} />}
+      {pendingAssistance && (
+        <AssistanceConsentWidget sessionId={pendingAssistance.id} freshAccount={!!pendingAssistance.scope.freshAccount} />
+      )}
 
       {session.role === "talent" && (
         <div className="mt-8 rounded-xl border border-teal/30 bg-teal/5 p-5">
