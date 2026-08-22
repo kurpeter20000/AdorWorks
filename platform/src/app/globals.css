@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+/*
+  AdorWorks brand palette — same tokens as ../../css/themes.css on the
+  public site, so the two apps feel like one product. Single theme (no
+  dark-mode auto-switch): the public site doesn't have one either, and
+  an unreviewed dark palette would drift from the brand rather than
+  extend it. Revisit deliberately, not as a default.
+*/
+:root {
+  --color-midnight: #182230;
+  --color-teal: #00a88f;
+  --color-violet: #5b4bdb;
+  --color-coral: #ff6b4a;
+  --color-cloud: #f4f7fb;
+  --color-slate: #596274;
+  --color-white: #ffffff;
+
+  --background: var(--color-white);
+  --foreground: var(--color-midnight);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-midnight: var(--color-midnight);
+  --color-teal: var(--color-teal);
+  --color-violet: var(--color-violet);
+  --color-coral: var(--color-coral);
+  --color-cloud: var(--color-cloud);
+  --color-slate: var(--color-slate);
+
+  --font-sans: var(--font-manrope), system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* Visible focus rings everywhere (WCAG 2.2 AA) — Tailwind's default
+   outline-none-on-focus reset needs an explicit replacement, not just
+   removal, or keyboard users lose their place entirely. */
+:focus-visible {
+  outline: 3px solid var(--color-coral);
+  outline-offset: 2px;
+}
