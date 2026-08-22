@@ -10,6 +10,8 @@ export interface VerifiedSession {
   role: UserRole;
   fullName: string | null;
   status: "active" | "suspended" | "deleted";
+  phone: string | null;
+  phoneVerified: boolean;
 }
 
 /**
@@ -31,7 +33,7 @@ export const verifySession = cache(async (): Promise<VerifiedSession | null> => 
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, full_name, status")
+    .select("role, full_name, status, phone, phone_verified")
     .eq("id", user.id)
     .single();
   if (!profile) return null;
@@ -42,6 +44,8 @@ export const verifySession = cache(async (): Promise<VerifiedSession | null> => 
     role: profile.role,
     fullName: profile.full_name,
     status: profile.status,
+    phone: profile.phone,
+    phoneVerified: profile.phone_verified,
   };
 });
 

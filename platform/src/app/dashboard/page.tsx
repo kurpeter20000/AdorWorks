@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireSession } from "@/lib/dal/session";
 import { logout } from "@/lib/actions/auth";
+import { PhoneVerificationWidget } from "./phone-verification-widget";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -23,6 +24,8 @@ export default async function DashboardPage() {
           </button>
         </form>
       </div>
+
+      {!session.phoneVerified && <PhoneVerificationWidget />}
 
       {session.role === "talent" && (
         <div className="mt-8 rounded-xl border border-teal/30 bg-teal/5 p-5">

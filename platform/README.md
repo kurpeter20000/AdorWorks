@@ -60,7 +60,7 @@ Next.js App Router app — zero-config, no `vercel.json` needed. Steps:
    site at the root and this app in a subfolder, so Vercel needs to be
    told where the Next.js app actually is. (Framework Preset should
    auto-detect "Next.js" once the root directory is set correctly.)
-3. **Environment Variables** — add these four (Project Settings →
+3. **Environment Variables** — add these six (Project Settings →
    Environment Variables, or the import screen offers the same form):
 
    | Name | Value |
@@ -69,6 +69,8 @@ Next.js App Router app — zero-config, no `vercel.json` needed. Steps:
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the publishable key (same one in `.env.local`) |
    | `SUPABASE_SECRET_KEY` | the **secret** key — paste it directly into Vercel's dashboard, never into chat |
    | `NEXT_PUBLIC_SITE_URL` | the URL Vercel gives the project once deployed, e.g. `https://adorworks-platform.vercel.app` (you may need to deploy once first to learn this URL, then add/update this variable and redeploy) |
+   | `AFRICAS_TALKING_API_KEY` | phone verification SMS — same rule as the Supabase secret key, paste directly into Vercel, never into chat |
+   | `AFRICAS_TALKING_USERNAME` | your Africa's Talking account username (use `sandbox` for testing, no real SMS sent) |
 
 4. **Deploy.** Vercel builds and gives you a live URL.
 5. **Supabase Auth redirect allowlist** — this step is easy to miss and

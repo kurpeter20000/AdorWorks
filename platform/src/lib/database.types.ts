@@ -83,6 +83,16 @@ export type ProfileRow = {
   updated_at: string;
 }
 
+export type PhoneVerificationCodeRow = {
+  id: string;
+  user_id: string;
+  phone: string;
+  code_hash: string;
+  expires_at: string;
+  attempts: number;
+  created_at: string;
+}
+
 export type TalentProfileRow = {
   id: string;
   headline: string | null;
@@ -101,11 +111,25 @@ export type TalentProfileRow = {
   availability: string | null;
   years_experience: number | null;
   portfolio_url: string | null;
+  linkedin_url: string | null;
+  github_url: string | null;
+  website_url: string | null;
   readiness: Record<string, unknown>;
   verification_tier: VerificationTier;
   public_visible: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export type TalentPortfolioItemRow = {
+  id: string;
+  talent_id: string;
+  title: string;
+  description: string | null;
+  external_url: string | null;
+  file_path: string | null;
+  sort_order: number;
+  created_at: string;
 }
 
 export type OrganisationRow = {
@@ -321,6 +345,18 @@ export type Database = {
         Row: TalentProfileRow;
         Insert: Partial<TalentProfileRow> & { id: string };
         Update: Partial<TalentProfileRow>;
+        Relationships: [];
+      };
+      talent_portfolio_items: {
+        Row: TalentPortfolioItemRow;
+        Insert: Partial<TalentPortfolioItemRow> & { talent_id: string; title: string };
+        Update: Partial<TalentPortfolioItemRow>;
+        Relationships: [];
+      };
+      phone_verification_codes: {
+        Row: PhoneVerificationCodeRow;
+        Insert: Partial<PhoneVerificationCodeRow> & { user_id: string; phone: string; code_hash: string; expires_at: string };
+        Update: Partial<PhoneVerificationCodeRow>;
         Relationships: [];
       };
       organisations: {

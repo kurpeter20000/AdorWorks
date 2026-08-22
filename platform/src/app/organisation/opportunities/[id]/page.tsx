@@ -103,9 +103,16 @@ export default async function OpportunityDetailPage({
                 <li key={a.id} className="rounded-xl border border-slate/15 bg-white p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="font-semibold text-midnight">
-                        {talent?.display_name ?? "AdorWorks talent"}
-                      </p>
+                      {talent ? (
+                        <Link
+                          href={`/passport/${talent.id}`}
+                          className="font-semibold text-midnight underline decoration-slate/30 hover:decoration-teal"
+                        >
+                          {talent.display_name ?? "AdorWorks talent"}
+                        </Link>
+                      ) : (
+                        <p className="font-semibold text-midnight">AdorWorks talent</p>
+                      )}
                       <p className="text-xs text-slate">{talent?.headline}</p>
                     </div>
                     <span className="whitespace-nowrap rounded-full bg-cloud px-3 py-1 text-xs font-semibold text-slate">
