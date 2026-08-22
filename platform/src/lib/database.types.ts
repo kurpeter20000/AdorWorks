@@ -325,6 +325,63 @@ export type ReviewRow = {
   created_at: string;
 }
 
+export type PartnerHubRow = {
+  id: string;
+  name: string;
+  contact_email: string | null;
+  contact_phone: string | null;
+  location: string | null;
+  status: "active" | "suspended";
+  created_at: string;
+}
+
+export type OnboardingAgentRow = {
+  id: string;
+  partner_hub_id: string | null;
+  status: "active" | "suspended";
+  created_by: string | null;
+  created_at: string;
+}
+
+export type AssistanceRequestRow = {
+  id: string;
+  requested_by: string | null;
+  partner_hub_id: string | null;
+  preferred_channel: string | null;
+  preferred_language: string | null;
+  location: string | null;
+  reason: string | null;
+  status: "pending" | "assigned" | "closed" | "cancelled";
+  created_at: string;
+}
+
+export type AssistanceSessionScope = { fields: string[] };
+
+export type AssistanceSessionRow = {
+  id: string;
+  assistance_request_id: string | null;
+  agent_id: string;
+  user_id: string;
+  scope: AssistanceSessionScope;
+  consent_recorded_at: string | null;
+  expires_at: string;
+  revoked_at: string | null;
+  revoked_by: string | null;
+  completed_at: string | null;
+  status: "pending_consent" | "active" | "completed" | "revoked" | "expired";
+  created_at: string;
+}
+
+export type AssistedFieldChangeRow = {
+  id: string;
+  session_id: string;
+  field_table: string;
+  field_name: string;
+  old_value: string | null;
+  new_value: string | null;
+  changed_at: string;
+}
+
 export type Database = {
   // Recent @supabase/supabase-js versions look for this marker (present
   // in real `supabase gen types` output) to resolve the client's
@@ -471,6 +528,40 @@ export type Database = {
         Row: ReviewRow;
         Insert: Partial<ReviewRow> & { reviewer_role: ReviewerRole; reviewer_id: string; rating: number };
         Update: Partial<ReviewRow>;
+        Relationships: [];
+      };
+      partner_hubs: {
+        Row: PartnerHubRow;
+        Insert: Partial<PartnerHubRow> & { name: string };
+        Update: Partial<PartnerHubRow>;
+        Relationships: [];
+      };
+      onboarding_agents: {
+        Row: OnboardingAgentRow;
+        Insert: Partial<OnboardingAgentRow> & { id: string };
+        Update: Partial<OnboardingAgentRow>;
+        Relationships: [];
+      };
+      assistance_requests: {
+        Row: AssistanceRequestRow;
+        Insert: Partial<AssistanceRequestRow>;
+        Update: Partial<AssistanceRequestRow>;
+        Relationships: [];
+      };
+      assistance_sessions: {
+        Row: AssistanceSessionRow;
+        Insert: Partial<AssistanceSessionRow> & { agent_id: string; user_id: string; expires_at: string };
+        Update: Partial<AssistanceSessionRow>;
+        Relationships: [];
+      };
+      assisted_field_changes: {
+        Row: AssistedFieldChangeRow;
+        Insert: Partial<AssistedFieldChangeRow> & {
+          session_id: string;
+          field_table: string;
+          field_name: string;
+        };
+        Update: Partial<AssistedFieldChangeRow>;
         Relationships: [];
       };
     };

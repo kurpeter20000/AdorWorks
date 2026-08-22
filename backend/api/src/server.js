@@ -13,6 +13,7 @@ import { contractsRouter } from "./routes/contracts.js";
 import { financeRouter } from "./routes/finance.js";
 import { reviewsRouter } from "./routes/reviews.js";
 import { disputesRouter } from "./routes/disputes.js";
+import { assistedOnboardingRouter } from "./routes/assistedOnboarding.js";
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.use("/api/contracts", contractsRouter);
 app.use("/api/finance", financeRouter);
 app.use("/api/reviews", reviewsRouter);
 app.use("/api/disputes", disputesRouter);
+app.use("/api/assisted-onboarding", assistedOnboardingRouter);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Not found." });

@@ -1,13 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireSession } from "@/lib/dal/session";
+import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/lib/actions/auth";
 import { PhoneVerificationWidget } from "./phone-verification-widget";
+import { AssistanceConsentWidget } from "./assistance-consent-widget";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
 export default async function DashboardPage() {
   const session = await requireSession();
+
+  const supabase = await createClient();
+  const { data: pendingAssistance } = await supabase
+    .from("assistance_sessions")
+    .select("id")
+    .eq("user_id", session.userId)
+    .eq("status", "pending_consent")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   return (
     <main className="mx-auto max-w-2xl p-8">
@@ -26,6 +38,8 @@ export default async function DashboardPage() {
       </div>
 
       {!session.phoneVerified && <PhoneVerificationWidget />}
+
+      {pendingAssistance && <AssistanceConsentWidget sessionId={pendingAssistance.id} />}
 
       {session.role === "talent" && (
         <div className="mt-8 rounded-xl border border-teal/30 bg-teal/5 p-5">
@@ -59,6 +73,9 @@ export default async function DashboardPage() {
               My contracts
             </Link>
           </div>
+          <Link href="/assistance/request" className="mt-3 inline-block text-xs font-semibold text-teal underline">
+            Need help finishing your profile in person?
+          </Link>
         </div>
       )}
 
