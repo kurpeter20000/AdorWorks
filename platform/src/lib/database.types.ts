@@ -326,6 +326,12 @@ export type ReviewRow = {
   created_at: string;
 }
 
+export type SavedOpportunityRow = {
+  talent_id: string;
+  opportunity_id: string;
+  created_at: string;
+}
+
 export type PartnerHubRow = {
   id: string;
   name: string;
@@ -529,6 +535,12 @@ export type Database = {
         Row: ReviewRow;
         Insert: Partial<ReviewRow> & { reviewer_role: ReviewerRole; reviewer_id: string; rating: number };
         Update: Partial<ReviewRow>;
+        Relationships: [];
+      };
+      saved_opportunities: {
+        Row: SavedOpportunityRow;
+        Insert: Partial<SavedOpportunityRow> & { talent_id: string; opportunity_id: string };
+        Update: Partial<SavedOpportunityRow>;
         Relationships: [];
       };
       partner_hubs: {
