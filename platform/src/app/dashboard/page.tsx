@@ -45,6 +45,12 @@ export default async function DashboardPage() {
           <p className="mt-1 text-sm text-slate">
             Set up an organisation to post paid opportunities and build a shortlist.
           </p>
+          <Link
+            href="/organisation"
+            className="mt-3 inline-block rounded-lg bg-violet px-4 py-2 text-sm font-bold text-white"
+          >
+            Go to your organisation
+          </Link>
         </div>
       )}
     </main>

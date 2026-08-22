@@ -45,6 +45,16 @@ export type Category = "creative_media" | "digital_technology" | "business_proje
 export type WorkMode = "remote" | "on_site" | "hybrid" | "any";
 export type EvidenceType = "portfolio" | "identity" | "reference" | "assessment";
 export type EvidenceStatus = "pending" | "approved" | "rejected";
+export type OpportunityType = "service" | "project" | "contract" | "full_time" | "squad";
+export type OpportunityStatus = "draft" | "pending_review" | "open" | "filled" | "closed" | "cancelled";
+export type EngagementType =
+  | "freelance"
+  | "fixed_term_contract"
+  | "full_time"
+  | "internship"
+  | "apprenticeship"
+  | "managed_service";
+export type PaymentBasis = "fixed" | "milestone" | "hourly" | "daily" | "monthly" | "negotiable";
 
 export type ProfileRow = {
   id: string;
@@ -123,6 +133,37 @@ export type TalentEvidenceRow = {
   created_at: string;
 }
 
+export type OpportunityRow = {
+  id: string;
+  organisation_id: string;
+  type: OpportunityType;
+  title: string;
+  brief: string | null;
+  category: Category | null;
+  skills: string[];
+  location: string | null;
+  work_mode: WorkMode | null;
+  budget_min: number | null;
+  budget_max: number | null;
+  currency: string | null;
+  start_date: string | null;
+  deadline: string | null;
+  visibility: "private" | "public";
+  status: OpportunityStatus;
+  created_by: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  engagement_type: EngagementType | null;
+  payment_basis: PaymentBasis | null;
+  compensation_amount: number | null;
+  compensation_min: number | null;
+  compensation_max: number | null;
+  application_deadline: string | null;
+  number_of_openings: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export type Database = {
   // Recent @supabase/supabase-js versions look for this marker (present
   // in real `supabase gen types` output) to resolve the client's
@@ -167,6 +208,12 @@ export type Database = {
         Row: TalentEvidenceRow;
         Insert: Partial<TalentEvidenceRow> & { talent_id: string; evidence_type: EvidenceType };
         Update: Partial<TalentEvidenceRow>;
+        Relationships: [];
+      };
+      opportunities: {
+        Row: OpportunityRow;
+        Insert: Partial<OpportunityRow> & { organisation_id: string; type: OpportunityType; title: string };
+        Update: Partial<OpportunityRow>;
         Relationships: [];
       };
     };

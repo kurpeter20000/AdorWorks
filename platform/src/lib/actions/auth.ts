@@ -57,13 +57,14 @@ export async function signup(_prevState: FormState, formData: FormData): Promise
   // client-settable, so trusting it blindly would be its own
   // privilege-escalation bug.
   const targetRole = intent === "talent" ? "talent" : "individual_client";
+  const nextPath = intent === "talent" ? "/onboarding" : "/organisation";
 
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { full_name: fullName, intended_role: targetRole },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/onboarding`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=${nextPath}`,
     },
   });
 

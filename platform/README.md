@@ -43,7 +43,7 @@ for the full reasoning.
      Supabase → Project Settings → API. Server-only, never exposed to
      the browser (no `NEXT_PUBLIC_` prefix) — never share this in chat
      or commit it.
-3. Apply `../backend/supabase/migrations/0005` through `0008` (SQL
+3. Apply `../backend/supabase/migrations/0005` through `0010` (SQL
    Editor, in order) if you haven't already — this app's auth/roles
    code depends on them. See `../backend/supabase/README.md`.
 4. `npm run dev` → <http://localhost:3000>
@@ -61,13 +61,16 @@ src/app/                    Routes (App Router)
   (auth)/                    signup, login, check-email — shared card layout, no header/nav
   auth/callback/route.ts     Exchanges Supabase's email-confirmation code for a session
   dashboard/                 Role-aware landing page (requireSession)
-  onboarding/                Talent onboarding wizard entry (requireRole('talent'))
+  onboarding/                Talent onboarding wizard: basics/verification/review (requireRole('talent'))
+  organisation/               Employer side: org setup, dashboard, opportunity posting (requireRole('individual_client'))
 src/lib/
   supabase/server.ts          SSR client — Server Components, Server Actions, Route Handlers
   supabase/client.ts           Browser client — Client Components only
   supabase/admin.ts            service_role client — privileged Server Actions only, never client-side
   dal/session.ts                verifySession/requireSession/requireRole — the auth Data Access Layer
   actions/auth.ts               signup/login/logout Server Actions (Zod-validated)
+  actions/onboarding.ts         Talent onboarding wizard Server Actions
+  actions/organisation.ts       Organisation + opportunity Server Actions — opportunities are always created as 'pending_review', never 'open'; staff/opportunities.html's existing "Approve & open" action is the only path to publish
   database.types.ts             Hand-written Supabase types (see the file's own header for how to regenerate properly)
 src/proxy.ts                  Session-refresh proxy (this version's renamed middleware.ts)
 ```
@@ -99,3 +102,17 @@ src/proxy.ts                  Session-refresh proxy (this version's renamed midd
   owner could change. Keep this pattern in mind for any new table with
   an owner-editable row that also has a sensitive column on it
   (status, verification, anything staff-controlled).
+- **`0010_prevent_self_escalation_on_insert.sql` closed the same gap on
+  INSERT**, found while building the organisation/opportunity UI:
+  `talent_profiles`, `organisations` and `opportunities` are never
+  auto-created by a trigger the way `profiles` is — they're first
+  written by an ordinary client-side insert (`saveBasics`,
+  `createOrganisation`, `createOpportunity`), and the `*_insert` RLS
+  policies for those tables only ever checked row ownership, never
+  column values. Without 0010, a self-service user could have inserted
+  their own `talent_profiles` row already `verification_tier:
+  'adorcertified'`, or an `opportunities` row already `status: 'open'`
+  — skipping staff review entirely on the very first write. If you add
+  a table where a non-staff role can INSERT their own row *and* that
+  row has a staff-controlled column, it needs a BEFORE INSERT guard
+  trigger, not just a BEFORE UPDATE one — 0008 alone wasn't enough.
