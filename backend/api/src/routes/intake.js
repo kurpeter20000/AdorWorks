@@ -79,6 +79,24 @@ intakeRouter.patch(
   })
 );
 
+/**
+ * Creates a Supabase Auth account WITHOUT sending an invite/magic-link
+ * email. There's no talent/employer-facing dashboard yet (deliberately —
+ * see staff/README.md), so an invite email would land someone on a
+ * login page with nowhere to go. This still creates a real account (so
+ * the talent_profiles/organisations foreign key to auth.users works,
+ * and so switching to self-service later needs no data migration), just
+ * silently — nobody is notified. When a real dashboard exists, change
+ * this back to `supabaseAdmin.auth.admin.inviteUserByEmail(email, { data })`.
+ */
+async function provisionAccountSilently(email, metadata) {
+  return supabaseAdmin.auth.admin.createUser({
+    email,
+    email_confirm: true,
+    user_metadata: metadata,
+  });
+}
+
 async function loadSubmission(id, expectedType) {
   const { data, error } = await supabaseAdmin
     .from("intake_submissions")
@@ -96,8 +114,9 @@ async function loadSubmission(id, expectedType) {
 }
 
 // POST /api/intake/:id/convert-talent
-// Provisions a real Supabase Auth account (via invite email) for a
-// talent_application submission, then creates the matching
+// Provisions a real Supabase Auth account (silently — see
+// provisionAccountSilently above) for a talent_application submission,
+// then creates the matching
 // talent_profiles row. Requires the submission to include an email —
 // staff should collect one before converting if it's missing.
 intakeRouter.post(
@@ -113,17 +132,17 @@ intakeRouter.post(
       );
     }
 
-    const { data: invite, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
-      email,
-      { data: { full_name: p.name || null, phone: p.phone || null } }
-    );
-    if (inviteError) {
+    const { data: created, error: createError } = await provisionAccountSilently(email, {
+      full_name: p.name || null,
+      phone: p.phone || null,
+    });
+    if (createError) {
       throw new HttpError(
         409,
-        `Could not create an account for ${email}: ${inviteError.message}. If this person already has an account, link the submission manually instead.`
+        `Could not create an account for ${email}: ${createError.message}. If this person already has an account, link the submission manually instead.`
       );
     }
-    const talentId = invite.user.id;
+    const talentId = created.user.id;
 
     const { data: talentProfile, error: profileError } = await supabaseAdmin
       .from("talent_profiles")
@@ -172,17 +191,17 @@ intakeRouter.post(
       throw new HttpError(422, "This submission has no email address — collect one before converting.");
     }
 
-    const { data: invite, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
-      email,
-      { data: { full_name: p.representative_name || null, phone: p.phone || null } }
-    );
-    if (inviteError) {
+    const { data: created, error: createError } = await provisionAccountSilently(email, {
+      full_name: p.representative_name || null,
+      phone: p.phone || null,
+    });
+    if (createError) {
       throw new HttpError(
         409,
-        `Could not create an account for ${email}: ${inviteError.message}. If this person already has an account, link the submission manually instead.`
+        `Could not create an account for ${email}: ${createError.message}. If this person already has an account, link the submission manually instead.`
       );
     }
-    const representativeId = invite.user.id;
+    const representativeId = created.user.id;
 
     // The signup trigger defaults everyone to 'talent' — this person is
     // signing up as an employer representative, so correct that here.
