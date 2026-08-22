@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireRole } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
@@ -61,9 +62,16 @@ export default async function OpportunityDetailPage({
 
   const { data: offers } = await supabase
     .from("offers")
-    .select("application_id, status")
+    .select("id, application_id, status")
     .eq("opportunity_id", opportunity.id);
-  const offerByApplication = new Map((offers ?? []).map((o) => [o.application_id, o.status]));
+  const offerByApplication = new Map((offers ?? []).map((o) => [o.application_id, o]));
+
+  const offerIds = (offers ?? []).map((o) => o.id);
+  const { data: contracts } =
+    offerIds.length > 0
+      ? await supabase.from("contracts").select("id, offer_id").in("offer_id", offerIds)
+      : { data: [] };
+  const contractIdByOffer = new Map((contracts ?? []).map((c) => [c.offer_id, c.id]));
 
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
@@ -89,7 +97,8 @@ export default async function OpportunityDetailPage({
           <ul className="mt-4 space-y-3">
             {applications.map((a) => {
               const talent = talentById.get(a.talent_id);
-              const offerStatus = offerByApplication.get(a.id);
+              const offer = offerByApplication.get(a.id);
+              const contractId = offer ? contractIdByOffer.get(offer.id) : undefined;
               return (
                 <li key={a.id} className="rounded-xl border border-slate/15 bg-white p-4">
                   <div className="flex items-start justify-between gap-4">
@@ -104,8 +113,15 @@ export default async function OpportunityDetailPage({
                     </span>
                   </div>
 
-                  {offerStatus ? (
-                    <p className="mt-3 text-xs font-semibold text-violet">Offer {offerStatus}</p>
+                  {contractId ? (
+                    <Link
+                      href={`/contracts/${contractId}`}
+                      className="mt-3 inline-block text-xs font-semibold text-teal underline"
+                    >
+                      View contract
+                    </Link>
+                  ) : offer ? (
+                    <p className="mt-3 text-xs font-semibold text-violet">Offer {offer.status}</p>
                   ) : ["shortlisted", "interviewing"].includes(a.stage) ? (
                     <SendOfferForm applicationId={a.id} />
                   ) : null}

@@ -66,6 +66,8 @@ export type ApplicationStage =
 export type OfferStatus = "draft" | "sent" | "accepted" | "declined" | "withdrawn";
 export type ContractStatus = "active" | "completed" | "cancelled" | "disputed";
 export type MilestoneStatus = "pending" | "submitted" | "approved" | "revision_requested" | "paid";
+export type DeliverableStatus = "submitted" | "approved" | "revision_requested";
+export type PaymentEventStatus = "pending" | "succeeded" | "failed" | "refunded";
 
 export type ProfileRow = {
   id: string;
@@ -233,6 +235,60 @@ export type MilestoneRow = {
   updated_at: string;
 }
 
+export type DeliverableRow = {
+  id: string;
+  milestone_id: string;
+  submitted_by: string;
+  file_path: string | null;
+  note: string | null;
+  status: DeliverableStatus;
+  created_at: string;
+}
+
+export type PaymentEventRow = {
+  id: string;
+  milestone_id: string | null;
+  contract_id: string;
+  provider_name: string;
+  external_reference: string;
+  amount: number;
+  currency: string;
+  status: PaymentEventStatus;
+  is_simulated: boolean;
+  created_at: string;
+}
+
+export type WorkHistoryRow = {
+  id: string;
+  talent_id: string;
+  contract_id: string;
+  organisation_id: string;
+  title: string;
+  summary: string | null;
+  completed_at: string;
+  created_at: string;
+}
+
+export type ConversationRow = {
+  id: string;
+  contract_id: string | null;
+  application_id: string | null;
+  created_at: string;
+}
+
+export type ConversationMemberRow = {
+  conversation_id: string;
+  user_id: string;
+}
+
+export type MessageRow = {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+}
+
 export type Database = {
   // Recent @supabase/supabase-js versions look for this marker (present
   // in real `supabase gen types` output) to resolve the client's
@@ -319,6 +375,48 @@ export type Database = {
         Row: MilestoneRow;
         Insert: Partial<MilestoneRow> & { contract_id: string; title: string; amount: number };
         Update: Partial<MilestoneRow>;
+        Relationships: [];
+      };
+      deliverables: {
+        Row: DeliverableRow;
+        Insert: Partial<DeliverableRow> & { milestone_id: string; submitted_by: string };
+        Update: Partial<DeliverableRow>;
+        Relationships: [];
+      };
+      payment_events: {
+        Row: PaymentEventRow;
+        Insert: Partial<PaymentEventRow> & { contract_id: string; external_reference: string; amount: number };
+        Update: Partial<PaymentEventRow>;
+        Relationships: [];
+      };
+      work_history: {
+        Row: WorkHistoryRow;
+        Insert: Partial<WorkHistoryRow> & {
+          talent_id: string;
+          contract_id: string;
+          organisation_id: string;
+          title: string;
+          completed_at: string;
+        };
+        Update: Partial<WorkHistoryRow>;
+        Relationships: [];
+      };
+      conversations: {
+        Row: ConversationRow;
+        Insert: Partial<ConversationRow>;
+        Update: Partial<ConversationRow>;
+        Relationships: [];
+      };
+      conversation_members: {
+        Row: ConversationMemberRow;
+        Insert: ConversationMemberRow;
+        Update: Partial<ConversationMemberRow>;
+        Relationships: [];
+      };
+      messages: {
+        Row: MessageRow;
+        Insert: Partial<MessageRow> & { conversation_id: string; sender_id: string; body: string };
+        Update: Partial<MessageRow>;
         Relationships: [];
       };
     };

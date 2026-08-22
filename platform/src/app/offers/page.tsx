@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { requireRole } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { OfferActions } from "./offer-actions";
@@ -35,6 +36,13 @@ export default async function OffersPage() {
   const opportunityById = new Map((opportunities ?? []).map((o) => [o.id, o]));
   const orgNameById = new Map((orgs ?? []).map((o) => [o.id, o.name]));
 
+  const offerIds = (offers ?? []).map((o) => o.id);
+  const { data: contracts } =
+    offerIds.length > 0
+      ? await supabase.from("contracts").select("id, offer_id").in("offer_id", offerIds)
+      : { data: [] };
+  const contractIdByOffer = new Map((contracts ?? []).map((c) => [c.offer_id, c.id]));
+
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <h1 className="text-2xl font-extrabold text-midnight">My offers</h1>
@@ -64,6 +72,14 @@ export default async function OffersPage() {
                     {STATUS_LABEL[o.status] ?? o.status}
                   </span>
                   {o.status === "sent" && <OfferActions offerId={o.id} />}
+                  {o.status === "accepted" && contractIdByOffer.has(o.id) && (
+                    <Link
+                      href={`/contracts/${contractIdByOffer.get(o.id)}`}
+                      className="text-sm font-semibold text-teal underline"
+                    >
+                      View contract
+                    </Link>
+                  )}
                 </div>
               </li>
             );

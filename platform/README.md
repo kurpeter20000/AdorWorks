@@ -43,7 +43,7 @@ for the full reasoning.
      Supabase → Project Settings → API. Server-only, never exposed to
      the browser (no `NEXT_PUBLIC_` prefix) — never share this in chat
      or commit it.
-3. Apply `../backend/supabase/migrations/0005` through `0011` (SQL
+3. Apply `../backend/supabase/migrations/0005` through `0012` (SQL
    Editor, in order) if you haven't already — this app's auth/roles
    code depends on them. See `../backend/supabase/README.md`.
 4. `npm run dev` → <http://localhost:3000>
@@ -67,6 +67,7 @@ src/app/                    Routes (App Router)
   opportunities/              Talent-facing browse of open, public opportunities + apply (requireRole('talent'))
   applications/                Talent's own applications and their stage
   offers/                      Talent's received offers, accept/decline
+  contracts/                   List + detail (requireSession — either the talent or the org rep). Milestones, deliverable submit/approve/revision, mocked payment release, per-contract messaging
 src/lib/
   supabase/server.ts          SSR client — Server Components, Server Actions, Route Handlers
   supabase/client.ts           Browser client — Client Components only
@@ -76,7 +77,8 @@ src/lib/
   actions/onboarding.ts         Talent onboarding wizard Server Actions
   actions/organisation.ts       Organisation + opportunity Server Actions — opportunities are always created as 'pending_review', never 'open'; staff/opportunities.html's existing "Approve & open" action is the only path to publish
   actions/applications.ts       Talent applies to an opportunity — the one direct client insert RLS actually allows on this table
-  actions/offers.ts             Employer sends an offer; talent accepts/declines — both go through the admin client with their own ownership + stage checks, per 0007's design (RLS deliberately gives neither side a direct-update path here). Accepting also creates the contract + milestone row(s) — nothing further (deliverable submission, messaging) is built yet
+  actions/offers.ts             Employer sends an offer; talent accepts/declines — both go through the admin client with their own ownership + stage checks, per 0007's design (RLS deliberately gives neither side a direct-update path here). Accepting also creates the contract + milestone row(s)
+  actions/contracts.ts          Deliverable submit-side-effect, approve/request-revision, mocked payment release, and per-contract messaging. Every state transition here (milestone status, contract completion, work_history creation, payment_events insert) is admin-client + explicit ownership check, matching 0007's stated design — deliverable *insertion* itself is the one direct client write RLS actually allows (see the verification-form.tsx client-upload pattern this mirrors)
   database.types.ts             Hand-written Supabase types (see the file's own header for how to regenerate properly)
 src/proxy.ts                  Session-refresh proxy (this version's renamed middleware.ts)
 ```
@@ -132,3 +134,11 @@ src/proxy.ts                  Session-refresh proxy (this version's renamed midd
   wasn't. That branch is gone; contract creation now requires either
   staff (i.e. the admin-client Server Action) or the talent's own
   already-`accepted` offer.
+- **`0012_deliverables_storage.sql` fixed a functionality gap, not a
+  security one**: 0006 created the `deliverables` storage bucket but
+  never gave it a `storage.objects` policy the way `talent-evidence`
+  and `org-documents` got in 0004 — so it defaulted to deny-everyone
+  and deliverable file upload silently couldn't work at all until this
+  was added. Same "read the actual policy, don't assume it's there"
+  habit that found the others, just pointed at a missing grant instead
+  of an excess one this time.
