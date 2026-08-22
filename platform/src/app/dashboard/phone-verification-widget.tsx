@@ -36,6 +36,7 @@ export function PhoneVerificationWidget() {
 
       {stage === "phone" ? (
         <form
+          key="phone-form"
           action={sendAction}
           onSubmit={() => {
             setWentBack(false);
@@ -63,7 +64,7 @@ export function PhoneVerificationWidget() {
           </button>
         </form>
       ) : (
-        <form action={verifyAction} className="mt-3 space-y-2">
+        <form key="code-form" action={verifyAction} className="mt-3 space-y-2">
           <p className="text-sm text-slate">Enter the 6-digit code we sent you.</p>
           <input
             name="code"
