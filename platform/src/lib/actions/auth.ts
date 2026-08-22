@@ -46,11 +46,23 @@ export async function signup(_prevState: FormState, formData: FormData): Promise
   const { fullName, email, password, intent } = validated.data;
   const supabase = await createClient();
 
+  // The intended role travels in signUp's user_metadata, not a
+  // follow-up `profiles.update()` — this project requires email
+  // confirmation, so signUp() does NOT establish a session immediately
+  // (verified by testing against the live project, not assumed), and a
+  // follow-up update as an unauthenticated request would silently
+  // affect zero rows under RLS. The DB trigger (migration 0009) reads
+  // this metadata at INSERT time instead, and whitelists it against
+  // only the two non-privileged roles — the metadata itself is
+  // client-settable, so trusting it blindly would be its own
+  // privilege-escalation bug.
+  const targetRole = intent === "talent" ? "talent" : "individual_client";
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { full_name: fullName },
+      data: { full_name: fullName, intended_role: targetRole },
       emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/onboarding`,
     },
   });
@@ -61,16 +73,6 @@ export async function signup(_prevState: FormState, formData: FormData): Promise
   if (!data.user) {
     return { message: "Something went wrong creating your account. Please try again." };
   }
-
-  // Promote from the trigger's default role to what they actually asked
-  // for. Runs as the now-authenticated user (Supabase signUp establishes
-  // a session immediately even before email confirmation completes), so
-  // this still goes through the profiles_update RLS policy + the
-  // guard_profiles_update trigger from migration 0008 — which is exactly
-  // why this only ever sets 'talent' or 'individual_client', never
-  // anything staff-adjacent. A user cannot self-escalate past this.
-  const targetRole = intent === "talent" ? "talent" : "individual_client";
-  await supabase.from("profiles").update({ role: targetRole }).eq("id", data.user.id);
 
   redirect("/check-email");
 }
