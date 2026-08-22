@@ -43,7 +43,7 @@ for the full reasoning.
      Supabase → Project Settings → API. Server-only, never exposed to
      the browser (no `NEXT_PUBLIC_` prefix) — never share this in chat
      or commit it.
-3. Apply `../backend/supabase/migrations/0005` through `0014` (SQL
+3. Apply `../backend/supabase/migrations/0005` through `0016` (SQL
    Editor, in order) if you haven't already — this app's auth/roles
    code depends on them. See `../backend/supabase/README.md`.
 4. `npm run dev` → <http://localhost:3000>
@@ -219,3 +219,33 @@ src/proxy.ts                  Session-refresh proxy (this version's renamed midd
   that the *combination* actually returns real data — not just that
   each policy is individually correct — needs a real page load, not a
   read-through.
+- **`0015_fix_talent_visibility_helper.sql` corrects a bug in 0014
+  itself**, found by re-running the same walkthrough after 0014 and
+  watching it fail at the identical assertion. 0014 used
+  `is_org_member(organisation_id)`, but `applications_select` — the
+  policy it was supposedly mirroring — actually uses
+  `is_org_representative(organisation_id)`. Those aren't
+  interchangeable: `is_org_member` checks `organisation_members`, which
+  `createOrganisation` (`actions/organisation.ts`) never populates —
+  only `organisations.representative_id` gets set. So 0014's new branch
+  was always false for exactly the self-service orgs it was meant to
+  fix. 0015 switches it to the function 0014's own description said it
+  was using.
+- **`0016_auto_membership_for_new_orgs.sql` fixes the actual root
+  cause** behind both of the above: `is_org_member()` isn't only used by
+  `talent_profiles_select` — `offers_select`/`insert`/`update`,
+  `contracts_select`, and the `screening_questions`/`screening_answers`
+  policies (0007) all depend on it too, and every one of them has been
+  broken for self-service organisations the same way, not just the one
+  this walkthrough happened to exercise first. `organisation_members`
+  was only ever populated by 0005's one-time backfill ("the
+  representative is also a member") for organisations that existed at
+  that moment — nothing has kept that invariant true for organisations
+  created since. Fixed with an `AFTER INSERT` trigger on `organisations`
+  that adds the representative to `organisation_members` automatically,
+  plus a one-time backfill for any organisations created between 0005
+  and this migration. This is the more durable fix compared to patching
+  each affected policy to also check `is_org_representative` — one
+  trigger keeps the invariant true everywhere `is_org_member` is
+  checked, present and future, instead of every policy author having to
+  remember which of two functions is the "real" one to use.
