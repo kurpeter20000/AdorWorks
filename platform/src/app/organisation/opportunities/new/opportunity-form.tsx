@@ -1,14 +1,27 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { createOpportunity } from "@/lib/actions/organisation";
 import type { FormState } from "@/lib/actions/auth";
 
 const initialState: FormState = {};
 
+let nextQuestionKey = 0;
+
 export function OpportunityForm({ organisationId }: { organisationId: string }) {
   const boundAction = createOpportunity.bind(null, organisationId);
   const [state, formAction, pending] = useActionState(boundAction, initialState);
+  const [questions, setQuestions] = useState<{ key: number; text: string; required: boolean }[]>([]);
+
+  function addQuestion() {
+    setQuestions((qs) => [...qs, { key: nextQuestionKey++, text: "", required: false }]);
+  }
+  function updateQuestion(key: number, patch: Partial<{ text: string; required: boolean }>) {
+    setQuestions((qs) => qs.map((q) => (q.key === key ? { ...q, ...patch } : q)));
+  }
+  function removeQuestion(key: number) {
+    setQuestions((qs) => qs.filter((q) => q.key !== key));
+  }
 
   return (
     <form action={formAction} className="mt-6 space-y-4">
@@ -247,6 +260,53 @@ export function OpportunityForm({ organisationId }: { organisationId: string }) 
             className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
           />
         </div>
+      </div>
+
+      <div className="rounded-xl border border-slate/15 bg-cloud p-4">
+        <p className="text-sm font-semibold text-midnight">
+          Screening questions <span className="font-normal text-slate">(optional)</span>
+        </p>
+        <p className="mt-1 text-xs text-slate">
+          Ask applicants to answer these when they apply — useful for filtering fit before you review pitches.
+        </p>
+
+        <div className="mt-3 space-y-3">
+          {questions.map((q) => (
+            <div key={q.key} className="flex items-start gap-2">
+              <input
+                value={q.text}
+                onChange={(e) => updateQuestion(q.key, { text: e.target.value })}
+                placeholder="e.g. Have you managed a brand refresh before?"
+                className="flex-1 rounded-lg border border-slate/25 px-3 py-2 text-sm"
+              />
+              <label className="mt-2 flex items-center gap-1 whitespace-nowrap text-xs text-midnight">
+                <input
+                  type="checkbox"
+                  checked={q.required}
+                  onChange={(e) => updateQuestion(q.key, { required: e.target.checked })}
+                />
+                Required
+              </label>
+              <button
+                type="button"
+                onClick={() => removeQuestion(q.key)}
+                className="mt-1 text-xs font-semibold text-coral"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <button type="button" onClick={addQuestion} className="mt-3 text-xs font-semibold text-teal underline">
+          + Add a screening question
+        </button>
+
+        <input
+          type="hidden"
+          name="screeningQuestions"
+          value={JSON.stringify(questions.filter((q) => q.text.trim()).map((q) => ({ text: q.text.trim(), required: q.required })))}
+        />
       </div>
 
       {state.message && <p className="text-sm text-coral">{state.message}</p>}

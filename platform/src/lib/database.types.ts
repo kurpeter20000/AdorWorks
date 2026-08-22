@@ -208,6 +208,7 @@ export type ApplicationRow = {
   opportunity_id: string;
   talent_id: string;
   source: "applied" | "matched";
+  pitch: string | null;
   suitability_score: number | null;
   notes: string | null;
   stage: ApplicationStage;
@@ -215,6 +216,23 @@ export type ApplicationRow = {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export type ScreeningQuestionRow = {
+  id: string;
+  opportunity_id: string;
+  question: string;
+  required: boolean;
+  sequence: number;
+  created_at: string;
+}
+
+export type ScreeningAnswerRow = {
+  id: string;
+  application_id: string;
+  screening_question_id: string;
+  answer: string;
+  created_at: string;
 }
 
 export type OfferRow = {
@@ -457,6 +475,22 @@ export type Database = {
         Row: ApplicationRow;
         Insert: Partial<ApplicationRow> & { opportunity_id: string; talent_id: string };
         Update: Partial<ApplicationRow>;
+        Relationships: [];
+      };
+      screening_questions: {
+        Row: ScreeningQuestionRow;
+        Insert: Partial<ScreeningQuestionRow> & { opportunity_id: string; question: string };
+        Update: Partial<ScreeningQuestionRow>;
+        Relationships: [];
+      };
+      screening_answers: {
+        Row: ScreeningAnswerRow;
+        Insert: Partial<ScreeningAnswerRow> & {
+          application_id: string;
+          screening_question_id: string;
+          answer: string;
+        };
+        Update: Partial<ScreeningAnswerRow>;
         Relationships: [];
       };
       offers: {

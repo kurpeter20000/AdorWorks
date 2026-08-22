@@ -40,7 +40,7 @@ export default async function OpportunityDetailPage({
 
   const { data: applications } = await supabase
     .from("applications")
-    .select("id, talent_id, stage, created_at")
+    .select("id, talent_id, stage, pitch, created_at")
     .eq("opportunity_id", opportunity.id)
     .order("created_at", { ascending: false });
 
@@ -50,6 +50,26 @@ export default async function OpportunityDetailPage({
       ? await supabase.from("talent_profiles").select("id, display_name, headline").in("id", talentIds)
       : { data: [] };
   const talentById = new Map((talents ?? []).map((t) => [t.id, t]));
+
+  const applicationIds = (applications ?? []).map((a) => a.id);
+  const { data: screeningAnswers } =
+    applicationIds.length > 0
+      ? await supabase
+          .from("screening_answers")
+          .select("application_id, answer, screening_question_id")
+          .in("application_id", applicationIds)
+      : { data: [] };
+  const { data: screeningQuestions } = await supabase
+    .from("screening_questions")
+    .select("id, question")
+    .eq("opportunity_id", opportunity.id);
+  const questionById = new Map((screeningQuestions ?? []).map((q) => [q.id, q.question]));
+  const answersByApplication = new Map<string, { question: string; answer: string }[]>();
+  for (const a of screeningAnswers ?? []) {
+    const list = answersByApplication.get(a.application_id) ?? [];
+    list.push({ question: questionById.get(a.screening_question_id) ?? "Question", answer: a.answer });
+    answersByApplication.set(a.application_id, list);
+  }
 
   const { data: offers } = await supabase
     .from("offers")
@@ -116,6 +136,19 @@ export default async function OpportunityDetailPage({
                       {STAGE_LABEL[a.stage] ?? a.stage}
                     </span>
                   </div>
+
+                  {a.pitch && <p className="mt-3 text-sm text-slate">{a.pitch}</p>}
+
+                  {(answersByApplication.get(a.id) ?? []).length > 0 && (
+                    <div className="mt-3 space-y-2 rounded-lg bg-cloud p-3">
+                      {(answersByApplication.get(a.id) ?? []).map((qa, i) => (
+                        <div key={i}>
+                          <p className="text-xs font-semibold text-midnight">{qa.question}</p>
+                          <p className="text-xs text-slate">{qa.answer}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {contractId ? (
                     <Link

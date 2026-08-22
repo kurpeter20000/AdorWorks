@@ -97,6 +97,25 @@ function splitSkills(value: string) {
     .filter(Boolean);
 }
 
+const ScreeningQuestionsSchema = z
+  .array(
+    z.object({
+      text: z.string().trim().min(3),
+      required: z.boolean(),
+    })
+  )
+  .max(10);
+
+function parseScreeningQuestions(raw: FormDataEntryValue | null) {
+  if (!raw || typeof raw !== "string") return [];
+  try {
+    const parsed = ScreeningQuestionsSchema.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : [];
+  } catch {
+    return [];
+  }
+}
+
 function toNullableNumber(value: string | undefined) {
   if (!value) return null;
   const n = Number(value);
@@ -137,31 +156,47 @@ export async function createOpportunity(organisationId: string, _prevState: Form
     return { errors: validated.error.flatten().fieldErrors };
   }
   const v = validated.data;
+  const screeningQuestions = parseScreeningQuestions(formData.get("screeningQuestions"));
 
   const supabase = await createClient();
-  const { error } = await supabase.from("opportunities").insert({
-    organisation_id: organisationId,
-    type: v.type,
-    title: v.title,
-    brief: v.brief || null,
-    category: v.category,
-    skills: splitSkills(v.skills),
-    location: v.location || null,
-    work_mode: v.workMode,
-    engagement_type: v.engagementType,
-    payment_basis: v.paymentBasis,
-    compensation_amount: toNullableNumber(v.compensationAmount),
-    compensation_min: toNullableNumber(v.compensationMin),
-    compensation_max: toNullableNumber(v.compensationMax),
-    currency: v.currency,
-    application_deadline: v.applicationDeadline || null,
-    number_of_openings: v.numberOfOpenings ? Math.max(1, Number(v.numberOfOpenings)) : 1,
-    visibility: "public",
-    status: "pending_review",
-  });
+  const { data: opportunity, error } = await supabase
+    .from("opportunities")
+    .insert({
+      organisation_id: organisationId,
+      type: v.type,
+      title: v.title,
+      brief: v.brief || null,
+      category: v.category,
+      skills: splitSkills(v.skills),
+      location: v.location || null,
+      work_mode: v.workMode,
+      engagement_type: v.engagementType,
+      payment_basis: v.paymentBasis,
+      compensation_amount: toNullableNumber(v.compensationAmount),
+      compensation_min: toNullableNumber(v.compensationMin),
+      compensation_max: toNullableNumber(v.compensationMax),
+      currency: v.currency,
+      application_deadline: v.applicationDeadline || null,
+      number_of_openings: v.numberOfOpenings ? Math.max(1, Number(v.numberOfOpenings)) : 1,
+      visibility: "public",
+      status: "pending_review",
+    })
+    .select("id")
+    .single();
 
   if (error) {
     return { message: `Could not submit this opportunity: ${error.message}` };
+  }
+
+  if (screeningQuestions.length > 0) {
+    await supabase.from("screening_questions").insert(
+      screeningQuestions.map((q, i) => ({
+        opportunity_id: opportunity.id,
+        question: q.text,
+        required: q.required,
+        sequence: i,
+      }))
+    );
   }
 
   redirect("/organisation?posted=1");
