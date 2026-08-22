@@ -1,0 +1,26 @@
+# Render Blueprint for the AdorWorks staff API.
+#
+# Deploy: on render.com, New + -> Blueprint -> connect the AdorWorks repo.
+# Render finds this file automatically and proposes the service below;
+# you'll be prompted to fill in the three env vars marked "sync: false"
+# (Render deliberately never stores blueprint secrets in git) —
+# see backend/api/README.md for where each value comes from.
+
+services:
+  - type: web
+    name: adorworks-api
+    runtime: node
+    plan: free
+    rootDir: backend/api
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false

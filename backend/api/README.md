@@ -66,13 +66,33 @@ alone can't safely express:
 
 ## Deploying
 
-Any Node host works (Render, Fly.io, Railway, a VPS — a free tier is
-enough for the pilot's traffic). Whichever you pick:
+A `render.yaml` blueprint at the repo root (one level up from here, then
+up again) is already set up for [Render](https://render.com) — a Node
+host with a workable free tier for a founding pilot's traffic, and
+GitHub-connected auto-deploy on every push to `main`.
 
-1. Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ALLOWED_ORIGINS` as
-   environment variables in that platform's dashboard — never in code.
-2. Set the start command to `npm start`.
-3. Point `ALLOWED_ORIGINS` at your deployed site's real origin(s) (and
-   `http://localhost:8080` while you're still testing locally).
-4. Once deployed, the staff console frontend (not yet built — this is
-   API-only right now) calls this service's URL instead of `localhost`.
+1. On render.com, sign in with GitHub (the `kurpeter20000` account).
+2. **New +** → **Blueprint** → select the AdorWorks repo.
+3. Render reads `render.yaml` and proposes one service, `adorworks-api`.
+   You'll be prompted to fill in three environment variables it
+   deliberately leaves blank (Render blueprints never store secrets in
+   git):
+   - `SUPABASE_URL` — Project Settings → API in your Supabase dashboard.
+   - `SUPABASE_SERVICE_ROLE_KEY` — same page, the **Secret key**
+     (`sb_secret_...`) — **not** the publishable one. This is the one
+     credential in this whole project that should never appear in chat,
+     a repo, or anywhere public.
+   - `ALLOWED_ORIGINS` — your deployed site's real origin, e.g.
+     `https://adorworks.netlify.app` (check your Netlify site's actual
+     URL) — comma-separate more than one if needed, e.g. add
+     `http://localhost:4321` while you're still testing locally.
+4. **Apply** / **Create**. First deploy takes a few minutes.
+5. Once live, `https://adorworks-api.onrender.com/health` (or whatever
+   subdomain Render assigns) should return `{"ok":true}`. That URL is
+   what the staff console's `staff/js/config.js` needs — not secret,
+   safe to share.
+
+Free-tier note: Render's free web services spin down after periods of
+inactivity and take ~30-50 seconds to wake on the next request — fine
+for a low-traffic pilot, worth upgrading to a paid instance once staff
+are using the console daily and that delay becomes annoying.
