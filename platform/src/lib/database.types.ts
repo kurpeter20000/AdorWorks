@@ -46,7 +46,7 @@ export type WorkMode = "remote" | "on_site" | "hybrid" | "any";
 export type EvidenceType = "portfolio" | "identity" | "reference" | "assessment";
 export type EvidenceStatus = "pending" | "approved" | "rejected";
 export type OpportunityType = "service" | "project" | "contract" | "full_time" | "squad";
-export type OpportunityStatus = "draft" | "pending_review" | "open" | "filled" | "closed" | "cancelled";
+export type OpportunityStatus = "draft" | "pending_review" | "open" | "filled" | "closed" | "cancelled" | "rejected";
 export type EngagementType =
   | "freelance"
   | "fixed_term_contract"
@@ -198,6 +198,7 @@ export type OpportunityRow = {
   compensation_max: number | null;
   application_deadline: string | null;
   number_of_openings: number;
+  rejection_reason: string | null;
   created_at: string;
   updated_at: string;
 }

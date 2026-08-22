@@ -69,6 +69,12 @@ export default async function OpportunityDetailPage({
       <h1 className="text-2xl font-extrabold text-midnight">{opportunity.title}</h1>
       <p className="mt-1 text-sm text-slate">Status: {opportunity.status.replace("_", " ")}</p>
 
+      {opportunity.status === "rejected" && opportunity.rejection_reason && (
+        <p className="mt-4 rounded-lg bg-coral/10 px-4 py-3 text-sm text-coral">
+          Not approved: {opportunity.rejection_reason}
+        </p>
+      )}
+
       {offered && (
         <p className="mt-4 rounded-lg bg-teal/10 px-4 py-3 text-sm font-semibold text-teal">
           Offer sent.

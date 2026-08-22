@@ -13,6 +13,7 @@ const STATUS_LABEL: Record<string, string> = {
   filled: "Filled",
   closed: "Closed",
   cancelled: "Cancelled",
+  rejected: "Not approved",
 };
 
 const STATUS_STYLE: Record<string, string> = {
@@ -22,6 +23,7 @@ const STATUS_STYLE: Record<string, string> = {
   filled: "bg-violet/10 text-violet",
   closed: "bg-slate/10 text-slate",
   cancelled: "bg-slate/10 text-slate",
+  rejected: "bg-coral/10 text-coral",
 };
 
 export default async function OrganisationPage({

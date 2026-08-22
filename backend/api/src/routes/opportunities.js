@@ -8,7 +8,7 @@ export const opportunitiesRouter = Router();
 opportunitiesRouter.use(requireAuth, requireStaff);
 
 const listQuerySchema = z.object({
-  status: z.enum(["draft", "pending_review", "open", "filled", "closed", "cancelled"]).optional(),
+  status: z.enum(["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected"]).optional(),
   organisation_id: z.string().uuid().optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),
@@ -81,7 +81,7 @@ opportunitiesRouter.post(
 );
 
 const updateSchema = createSchema.partial().extend({
-  status: z.enum(["draft", "pending_review", "open", "filled", "closed", "cancelled"]).optional(),
+  status: z.enum(["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected"]).optional(),
 });
 
 // PATCH /api/opportunities/:id
@@ -108,6 +108,28 @@ opportunitiesRouter.post(
     const { data, error } = await supabaseAdmin
       .from("opportunities")
       .update({ status: "open", approved_by: req.user.id, approved_at: new Date().toISOString() })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) throw new HttpError(400, error.message);
+    res.json({ data });
+  })
+);
+
+const rejectSchema = z.object({
+  reason: z.string().trim().min(1, "A reason is required.").max(2000),
+});
+
+// POST /api/opportunities/:id/reject — the moderation counterpart to
+// approve. Records why, same as organisations' verification rejection
+// already does with risk_notes.
+opportunitiesRouter.post(
+  "/:id/reject",
+  asyncRoute(async (req, res) => {
+    const { reason } = rejectSchema.parse(req.body);
+    const { data, error } = await supabaseAdmin
+      .from("opportunities")
+      .update({ status: "rejected", rejection_reason: reason })
       .eq("id", req.params.id)
       .select()
       .single();

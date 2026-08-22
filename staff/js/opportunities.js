@@ -133,7 +133,7 @@ async function refreshDetail(id) {
   await loadApplications(id, row, detailRow);
 }
 
-var OPP_STATUSES = ["draft", "pending_review", "open", "filled", "closed", "cancelled"];
+var OPP_STATUSES = ["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected"];
 
 function renderDetailShell(row) {
   var statusOptions = OPP_STATUSES
@@ -148,12 +148,21 @@ function renderDetailShell(row) {
     "<dt>Skills</dt><dd>" + escapeHtml((row.skills || []).join(", ") || "—") + "</dd>" +
     "<dt>Location</dt><dd>" + escapeHtml(row.location || "—") + "</dd>" +
     "<dt>Budget</dt><dd>" + escapeHtml(row.budget_min || "—") + "–" + escapeHtml(row.budget_max || "—") + " " + escapeHtml(row.currency || "") + "</dd>" +
+    (row.status === "rejected" ? "<dt>Rejection reason</dt><dd>" + escapeHtml(row.rejection_reason || "—") + "</dd>" : "") +
     "</dl>" +
     '<div class="form-grid form-grid-2 mt-1">' +
     '<select id="status-input-' + row.id + '">' + statusOptions + "</select>" +
     '<button type="button" class="btn btn-secondary" data-save-status="' + row.id + '">Update status</button>' +
     "</div>" +
-    (row.status === "pending_review" ? '<div class="action-row"><button type="button" class="btn btn-primary" data-approve="' + row.id + '">Approve &amp; open</button></div>' : "") +
+    (row.status === "pending_review"
+      ? '<div class="action-row">' +
+        '<button type="button" class="btn btn-primary" data-approve="' + row.id + '">Approve &amp; open</button>' +
+        "</div>" +
+        '<div class="form-grid form-grid-2 mt-1">' +
+        '<input type="text" id="reject-reason-' + row.id + '" placeholder="Reason for rejecting (required)">' +
+        '<button type="button" class="btn btn-secondary" data-reject="' + row.id + '">Reject</button>' +
+        "</div>"
+      : "") +
     '<div class="form-status" id="detail-status-' + row.id + '" role="status"></div>' +
     "</div>" +
     "<div>" +
@@ -246,6 +255,24 @@ function wireDetailActions(id, row, detailRow) {
       try {
         await apiFetch("/api/opportunities/" + id + "/approve", { method: "POST", body: {} });
         showStatus("success", "Approved.");
+        await load();
+      } catch (err) {
+        showStatus("error", err.message);
+      }
+    });
+  }
+
+  var rejectBtn = detailRow.querySelector('[data-reject="' + id + '"]');
+  if (rejectBtn) {
+    rejectBtn.addEventListener("click", async function () {
+      var reason = detailRow.querySelector("#reject-reason-" + id).value.trim();
+      if (!reason) {
+        showStatus("error", "Enter a reason before rejecting.");
+        return;
+      }
+      try {
+        await apiFetch("/api/opportunities/" + id + "/reject", { method: "POST", body: { reason: reason } });
+        showStatus("success", "Rejected.");
         await load();
       } catch (err) {
         showStatus("error", err.message);
