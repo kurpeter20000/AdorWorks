@@ -68,6 +68,7 @@ export type ContractStatus = "active" | "completed" | "cancelled" | "disputed";
 export type MilestoneStatus = "pending" | "submitted" | "approved" | "revision_requested" | "paid";
 export type DeliverableStatus = "submitted" | "approved" | "revision_requested";
 export type PaymentEventStatus = "pending" | "succeeded" | "failed" | "refunded";
+export type ReviewerRole = "talent" | "employer";
 
 export type ProfileRow = {
   id: string;
@@ -289,6 +290,17 @@ export type MessageRow = {
   created_at: string;
 }
 
+export type ReviewRow = {
+  id: string;
+  engagement_id: string | null;
+  contract_id: string | null;
+  reviewer_role: ReviewerRole;
+  reviewer_id: string;
+  rating: number;
+  feedback: string | null;
+  created_at: string;
+}
+
 export type Database = {
   // Recent @supabase/supabase-js versions look for this marker (present
   // in real `supabase gen types` output) to resolve the client's
@@ -417,6 +429,12 @@ export type Database = {
         Row: MessageRow;
         Insert: Partial<MessageRow> & { conversation_id: string; sender_id: string; body: string };
         Update: Partial<MessageRow>;
+        Relationships: [];
+      };
+      reviews: {
+        Row: ReviewRow;
+        Insert: Partial<ReviewRow> & { reviewer_role: ReviewerRole; reviewer_id: string; rating: number };
+        Update: Partial<ReviewRow>;
         Relationships: [];
       };
     };

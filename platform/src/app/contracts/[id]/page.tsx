@@ -7,6 +7,7 @@ import { DeliverableForm } from "./deliverable-form";
 import { ReviewActions } from "./review-actions";
 import { ReleasePaymentButton } from "./release-payment-button";
 import { MessageThread } from "./message-thread";
+import { ReviewSection } from "./review-section";
 
 export const metadata: Metadata = { title: "Contract" };
 
@@ -81,6 +82,18 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
         .order("created_at", { ascending: true })
     : { data: [] };
 
+  let myReview: { rating: number; feedback: string | null } | null = null;
+  let theirReview: { rating: number; feedback: string | null } | null = null;
+  if (contract.status === "completed") {
+    const { data: reviews } = await supabase
+      .from("reviews")
+      .select("reviewer_role, rating, feedback")
+      .eq("contract_id", contract.id);
+    const myRole = isTalent ? "talent" : "employer";
+    myReview = (reviews ?? []).find((r) => r.reviewer_role === myRole) ?? null;
+    theirReview = (reviews ?? []).find((r) => r.reviewer_role !== myRole) ?? null;
+  }
+
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <h1 className="text-2xl font-extrabold text-midnight">{opportunity?.title ?? "Contract"}</h1>
@@ -153,6 +166,15 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
           messages={messages ?? []}
         />
       </div>
+
+      {(isTalent || isEmployer) && contract.status === "completed" && (
+        <ReviewSection
+          contractId={contract.id}
+          reviewerRole={isTalent ? "talent" : "employer"}
+          myReview={myReview}
+          theirReview={theirReview}
+        />
+      )}
     </main>
   );
 }

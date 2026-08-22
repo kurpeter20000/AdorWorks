@@ -43,7 +43,7 @@ for the full reasoning.
      Supabase → Project Settings → API. Server-only, never exposed to
      the browser (no `NEXT_PUBLIC_` prefix) — never share this in chat
      or commit it.
-3. Apply `../backend/supabase/migrations/0005` through `0012` (SQL
+3. Apply `../backend/supabase/migrations/0005` through `0013` (SQL
    Editor, in order) if you haven't already — this app's auth/roles
    code depends on them. See `../backend/supabase/README.md`.
 4. `npm run dev` → <http://localhost:3000>
@@ -67,7 +67,7 @@ src/app/                    Routes (App Router)
   opportunities/              Talent-facing browse of open, public opportunities + apply (requireRole('talent'))
   applications/                Talent's own applications and their stage
   offers/                      Talent's received offers, accept/decline
-  contracts/                   List + detail (requireSession — either the talent or the org rep). Milestones, deliverable submit/approve/revision, mocked payment release, per-contract messaging
+  contracts/                   List + detail (requireSession — either the talent or the org rep). Milestones, deliverable submit/approve/revision, mocked payment release, per-contract messaging, two-sided reviews once completed
 src/lib/
   supabase/server.ts          SSR client — Server Components, Server Actions, Route Handlers
   supabase/client.ts           Browser client — Client Components only
@@ -79,6 +79,7 @@ src/lib/
   actions/applications.ts       Talent applies to an opportunity — the one direct client insert RLS actually allows on this table
   actions/offers.ts             Employer sends an offer; talent accepts/declines — both go through the admin client with their own ownership + stage checks, per 0007's design (RLS deliberately gives neither side a direct-update path here). Accepting also creates the contract + milestone row(s)
   actions/contracts.ts          Deliverable submit-side-effect, approve/request-revision, mocked payment release, and per-contract messaging. Every state transition here (milestone status, contract completion, work_history creation, payment_events insert) is admin-client + explicit ownership check, matching 0007's stated design — deliverable *insertion* itself is the one direct client write RLS actually allows (see the verification-form.tsx client-upload pattern this mirrors)
+  actions/reviews.ts            Two-sided review after a contract completes — a direct client insert, not admin-client, because 0013's reviews_insert policy already enforces everything that matters (contract completed, reviewer_id = caller, reviewer_role matches which side of the contract the caller is actually on)
   database.types.ts             Hand-written Supabase types (see the file's own header for how to regenerate properly)
 src/proxy.ts                  Session-refresh proxy (this version's renamed middleware.ts)
 ```
@@ -142,3 +143,19 @@ src/proxy.ts                  Session-refresh proxy (this version's renamed midd
   was added. Same "read the actual policy, don't assume it's there"
   habit that found the others, just pointed at a missing grant instead
   of an excess one this time.
+- **`0013_reviews_for_contracts.sql` is a functionality/architecture
+  fix**: the `reviews` table (0001) only ever referenced `engagement_id`
+  — the old staff-created `engagements` table, not the new `contracts`
+  model this app is built on. The self-service offer → accept → contract
+  flow never creates an `engagements` row, so a review against a
+  contract had nowhere to go. Added a nullable `contract_id` alongside
+  `engagement_id` (same optional-either-scope pattern as
+  `conversations`), plus an INSERT policy that requires the contract be
+  `'completed'` and ties `reviewer_role` to which side of the contract
+  the caller actually is on — otherwise a client could insert
+  `reviewer_role = 'talent'` while actually being the org rep. Reviews
+  stay immediately visible to both participants + staff, same as the
+  original engagement-based model (no separate moderation-queue status
+  was invented — nothing else in this table or `backend/api`'s
+  `reviews.js` has ever had one, so adding one here would be a new
+  design decision dressed up as a bug fix).
