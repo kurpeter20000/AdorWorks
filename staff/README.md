@@ -14,6 +14,7 @@ approach as the public site), deployed alongside it under `/staff/`.
 | `organisations.html` | Employer verification (Blueprint §5.4) |
 | `opportunities.html` | Create/approve briefs; build each one's shortlist; create an engagement once a candidate is accepted |
 | `engagements.html` | Delivery tracking: status, milestones, notes/audit trail, finance records (finance/admin only), reviews, disputes |
+| `contracts.html` | Read-only oversight of the platform/ app's self-service flow — offers accepted into contracts, milestones, deliverables, mocked payment_events, two-sided reviews. Nothing here writes anything; every state change happens in the platform app itself |
 
 ## How it talks to the backend
 

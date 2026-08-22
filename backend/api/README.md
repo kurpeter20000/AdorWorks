@@ -35,6 +35,7 @@ All under `/api`, all staff-only unless noted:
 | `GET/POST/PATCH /opportunities`, `POST /opportunities/:id/approve` | Briefs/roles/services |
 | `GET/POST/PATCH /applications` | The shortlist builder (Blueprint §5.1 step 3) |
 | `GET/POST/PATCH /engagements`, `POST /engagements/:id/notes` | Delivery tracking with a full audit trail |
+| `GET /contracts`, `GET /contracts/:id` | Read-only oversight of the platform/ app's self-service offer → accept → contract → deliver → pay → review flow (milestones, deliverables, mocked payment_events, reviews). Nothing here writes to those tables — every state change happens in `platform/src/lib/actions/`, not this API |
 | `GET/POST/PATCH /finance` (finance/admin only) | Manual deposit/invoice/fee/payout/refund records — no payment gateway is called anywhere in this codebase |
 | `GET /reviews` | Read-only, for the quality dashboard |
 | `GET/PATCH /disputes` | Blueprint §5.7 dispute process |

@@ -143,4 +143,6 @@ var STATUS_TONE = {
   registered: "neutral", identity_verified: "info", adorverified: "success", adorcertified: "success", team_lead: "success",
   investigating: "warning", resolved: "success", escalated: "danger",
   confirmed: "success", reconciled: "success",
+  revision_requested: "warning", paid: "success", sent: "info", declined: "danger",
+  succeeded: "success", failed: "danger", refunded: "warning",
 };

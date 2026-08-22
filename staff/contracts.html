@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Organisations — AdorWorks Staff</title>
+<title>Contracts — AdorWorks Staff</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="../img/adorworks-mark.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,34 +32,37 @@
     <a href="index.html">Dashboard</a>
     <a href="intake.html">Intake</a>
     <a href="talent.html">Talent</a>
-    <a href="organisations.html" aria-current="page">Organisations</a>
+    <a href="organisations.html">Organisations</a>
     <a href="opportunities.html">Opportunities</a>
     <a href="engagements.html">Engagements</a>
-    <a href="contracts.html">Contracts</a>
+    <a href="contracts.html" aria-current="page">Contracts</a>
   </div>
 </nav>
 
 <main id="main" class="staff-main">
   <div class="container">
     <div class="staff-page-header">
-      <h1>Organisations</h1>
+      <h1>Contracts</h1>
     </div>
-    <p class="muted max-65ch">The employer verification checklist (Blueprint §5.4) is followed manually off-platform; record the outcome here.</p>
+    <p class="staff-subhead">
+      Read-only — this is the self-service offer → accept → deliver → pay → review flow from the
+      AdorWorks app. Every state change there happens through that app, not here.
+    </p>
 
     <div class="filter-bar">
-      <span class="filter-chip" data-status-filter="pending" aria-pressed="true">Pending</span>
-      <span class="filter-chip" data-status-filter="verified" aria-pressed="false">Verified</span>
-      <span class="filter-chip" data-status-filter="rejected" aria-pressed="false">Rejected</span>
-      <span class="filter-chip" data-status-filter="suspended" aria-pressed="false">Suspended</span>
-      <span class="filter-chip" data-status-filter="" aria-pressed="false">All</span>
+      <span class="filter-chip" data-status-filter="" aria-pressed="true">All</span>
+      <span class="filter-chip" data-status-filter="active" aria-pressed="false">Active</span>
+      <span class="filter-chip" data-status-filter="completed" aria-pressed="false">Completed</span>
+      <span class="filter-chip" data-status-filter="disputed" aria-pressed="false">Disputed</span>
+      <span class="filter-chip" data-status-filter="cancelled" aria-pressed="false">Cancelled</span>
     </div>
 
     <div class="staff-table-wrap">
       <table class="staff-table">
         <thead>
-          <tr><th>Name</th><th>Sector</th><th>Representative</th><th>Status</th><th>Created</th></tr>
+          <tr><th>Opportunity</th><th>Talent</th><th>Organisation</th><th>Status</th><th>Started</th></tr>
         </thead>
-        <tbody id="orgs-body">
+        <tbody id="contracts-body">
           <tr><td colspan="5" class="staff-empty">Loading…</td></tr>
         </tbody>
       </table>
@@ -68,6 +71,6 @@
 </main>
 
 <script type="module" src="js/config.js"></script>
-<script type="module" src="js/organisations.js"></script>
+<script type="module" src="js/contracts.js"></script>
 </body>
 </html>
