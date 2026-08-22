@@ -48,6 +48,49 @@ for the full reasoning.
    code depends on them. See `../backend/supabase/README.md`.
 4. `npm run dev` → <http://localhost:3000>
 
+## Deploying (Vercel)
+
+Not deployed yet as of this writing. Vercel is the natural host for a
+Next.js App Router app — zero-config, no `vercel.json` needed. Steps:
+
+1. Go to [vercel.com](https://vercel.com), sign in (GitHub login is
+   simplest since the repo's already there), **Add New → Project**,
+   import `kurpeter20000/AdorWorks`.
+2. **Root Directory**: set it to `platform` — this repo has the static
+   site at the root and this app in a subfolder, so Vercel needs to be
+   told where the Next.js app actually is. (Framework Preset should
+   auto-detect "Next.js" once the root directory is set correctly.)
+3. **Environment Variables** — add these four (Project Settings →
+   Environment Variables, or the import screen offers the same form):
+
+   | Name | Value |
+   | --- | --- |
+   | `NEXT_PUBLIC_SUPABASE_URL` | `https://cpiebggzbxshzvlzqdfn.supabase.co` |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the publishable key (same one in `.env.local`) |
+   | `SUPABASE_SECRET_KEY` | the **secret** key — paste it directly into Vercel's dashboard, never into chat |
+   | `NEXT_PUBLIC_SITE_URL` | the URL Vercel gives the project once deployed, e.g. `https://adorworks-platform.vercel.app` (you may need to deploy once first to learn this URL, then add/update this variable and redeploy) |
+
+4. **Deploy.** Vercel builds and gives you a live URL.
+5. **Supabase Auth redirect allowlist** — this step is easy to miss and
+   breaks signup/login silently if skipped: Supabase dashboard →
+   Authentication → URL Configuration → **Redirect URLs**, add
+   `https://<your-vercel-domain>/auth/callback` (and keep the
+   `http://localhost:3000/auth/callback` entry for local dev). Without
+   this, `exchangeCodeForSession` in `src/app/auth/callback/route.ts`
+   still runs, but Supabase will refuse to redirect back to a URL that
+   isn't allowlisted, and the confirmation link will fail instead of
+   completing signup.
+6. Every push to `main` auto-deploys from then on (Vercel's default
+   GitHub integration) — same as Netlify already does for the static
+   site and Render for `backend/api`.
+
+**Custom domain**: not decided yet — this app can stay on its
+`*.vercel.app` subdomain indefinitely, or move to a subdomain of a
+future custom domain (e.g. `app.adorworks.com`) later without code
+changes, just a `NEXT_PUBLIC_SITE_URL` update + a DNS record + adding
+the new URL to the Supabase redirect allowlist alongside the old one
+during the transition.
+
 ## Commands
 
 - `npm run dev` — dev server (Turbopack)
