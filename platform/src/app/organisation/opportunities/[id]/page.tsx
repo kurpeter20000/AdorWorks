@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { requireRole } from "@/lib/dal/session";
+import { notFound } from "next/navigation";
+import { requireOrganisationMembership } from "@/lib/dal/organisation";
 import { createClient } from "@/lib/supabase/server";
 import { SendOfferForm } from "./send-offer-form";
 
@@ -23,19 +23,10 @@ export default async function OpportunityDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ offered?: string }>;
 }) {
-  const session = await requireRole("individual_client");
+  const { org } = await requireOrganisationMembership();
   const { id } = await params;
   const { offered } = await searchParams;
   const supabase = await createClient();
-
-  const { data: org } = await supabase
-    .from("organisations")
-    .select("id")
-    .eq("representative_id", session.userId)
-    .maybeSingle();
-  if (!org) {
-    redirect("/organisation/setup");
-  }
 
   const { data: opportunity } = await supabase
     .from("opportunities")

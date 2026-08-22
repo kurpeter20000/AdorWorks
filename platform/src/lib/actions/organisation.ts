@@ -114,7 +114,7 @@ function toNullableNumber(value: string | undefined) {
  * on purpose, not just because the trigger would catch it.
  */
 export async function createOpportunity(organisationId: string, _prevState: FormState, formData: FormData): Promise<FormState> {
-  await requireRole("individual_client");
+  await requireRole("individual_client", "org_member", "org_admin");
 
   const validated = OpportunitySchema.safeParse({
     type: formData.get("type"),
@@ -165,4 +165,27 @@ export async function createOpportunity(organisationId: string, _prevState: Form
   }
 
   redirect("/organisation?posted=1");
+}
+
+/**
+ * Records the storage path of an uploaded registration document. Only
+ * works for the org's representative — organisations_update RLS (0002)
+ * and the org-documents storage policy (0004) are both keyed to
+ * representative_id specifically, not is_org_admin(), so an invited admin
+ * teammate can't call this successfully yet (left as-is deliberately, see
+ * the Phase 3 team-permissions plan).
+ */
+export async function setOrganisationEvidence(organisationId: string, filePath: string): Promise<FormState> {
+  await requireRole("individual_client", "org_member", "org_admin");
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("organisations")
+    .update({ registration_evidence_path: filePath })
+    .eq("id", organisationId);
+
+  if (error) {
+    return { message: `Could not save this document: ${error.message}` };
+  }
+  return {};
 }

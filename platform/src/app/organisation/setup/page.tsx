@@ -1,22 +1,14 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { requireRole } from "@/lib/dal/session";
-import { createClient } from "@/lib/supabase/server";
+import { getMyOrganisationMembership } from "@/lib/dal/organisation";
 import { SetupForm } from "./setup-form";
 
 export const metadata: Metadata = { title: "Set up your organisation" };
 
 export default async function OrganisationSetupPage() {
-  const session = await requireRole("individual_client");
-  const supabase = await createClient();
+  const membership = await getMyOrganisationMembership();
 
-  const { data: existing } = await supabase
-    .from("organisations")
-    .select("id")
-    .eq("representative_id", session.userId)
-    .maybeSingle();
-
-  if (existing) {
+  if (membership) {
     redirect("/organisation");
   }
 

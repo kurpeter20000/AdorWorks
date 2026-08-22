@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { requireRole } from "@/lib/dal/session";
+import { requireOrganisationMembership } from "@/lib/dal/organisation";
 import { createClient } from "@/lib/supabase/server";
+import { EvidenceUpload } from "./evidence-upload";
 
 export const metadata: Metadata = { title: "Your organisation" };
 
@@ -29,19 +29,9 @@ export default async function OrganisationPage({
 }: {
   searchParams: Promise<{ posted?: string }>;
 }) {
-  const session = await requireRole("individual_client");
+  const { session, org } = await requireOrganisationMembership();
   const { posted } = await searchParams;
   const supabase = await createClient();
-
-  const { data: org } = await supabase
-    .from("organisations")
-    .select("*")
-    .eq("representative_id", session.userId)
-    .maybeSingle();
-
-  if (!org) {
-    redirect("/organisation/setup");
-  }
 
   const { data: opportunities } = await supabase
     .from("opportunities")
@@ -64,18 +54,34 @@ export default async function OrganisationPage({
             )}
           </p>
         </div>
-        <Link
-          href="/organisation/opportunities/new"
-          className="whitespace-nowrap rounded-lg bg-violet px-4 py-2 text-sm font-bold text-white"
-        >
-          Post a new opportunity
-        </Link>
+        <div className="flex flex-col items-end gap-2">
+          <Link
+            href="/organisation/opportunities/new"
+            className="whitespace-nowrap rounded-lg bg-violet px-4 py-2 text-sm font-bold text-white"
+          >
+            Post a new opportunity
+          </Link>
+          <Link href="/organisation/team" className="text-xs font-semibold text-violet underline">
+            Manage team
+          </Link>
+        </div>
       </div>
 
       {posted && (
         <p className="mt-4 rounded-lg bg-teal/10 px-4 py-3 text-sm font-semibold text-teal">
           Submitted for review. AdorWorks staff will publish it once approved.
         </p>
+      )}
+
+      {org.verification_status !== "verified" && org.representative_id === session.userId && (
+        <div className="mt-6 rounded-xl border border-coral/30 bg-coral/5 p-5">
+          <h2 className="font-bold text-midnight">Verification evidence</h2>
+          <p className="mt-1 text-sm text-slate">
+            Upload a registration document (certificate, license, or similar) so AdorWorks staff
+            can verify your organisation.
+          </p>
+          <EvidenceUpload orgId={org.id} existingPath={org.registration_evidence_path} />
+        </div>
       )}
 
       <div className="mt-8">

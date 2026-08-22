@@ -1,4 +1,4 @@
-import { requireStaffSession, initLogout, apiFetch, escapeHtml, formatDate, statusBadge } from "./app.js";
+import { requireStaffSession, initLogout, apiFetch, escapeHtml, formatDate, statusBadge, supabase } from "./app.js";
 
 initLogout();
 
@@ -82,6 +82,11 @@ function renderDetail(id, detailRow) {
     '<dl class="kv-list">' +
     "<dt>Website</dt><dd>" + (row.website ? '<a href="' + escapeHtml(row.website) + '" target="_blank" rel="noopener">' + escapeHtml(row.website) + "</a>" : "—") + "</dd>" +
     "<dt>Billing email</dt><dd>" + escapeHtml(row.billing_email || "—") + "</dd>" +
+    "<dt>Registration evidence</dt><dd>" +
+      (row.registration_evidence_path
+        ? '<button type="button" class="btn btn-secondary" data-view-evidence="' + id + '">View document</button>'
+        : "Not uploaded") +
+    "</dd>" +
     "<dt>Risk notes</dt><dd>" + escapeHtml(row.risk_notes || "—") + "</dd>" +
     "</dl>" +
     '<div class="form-grid form-grid-2 mt-1">' +
@@ -90,6 +95,22 @@ function renderDetail(id, detailRow) {
     "</div>" +
     '<div class="action-row"><button type="button" class="btn btn-primary" data-save="' + id + '">Save verification status</button></div>' +
     '<div class="form-status" id="detail-status-' + id + '" role="status"></div>';
+
+  var viewEvidenceBtn = detailRow.querySelector('[data-view-evidence="' + id + '"]');
+  if (viewEvidenceBtn) {
+    viewEvidenceBtn.addEventListener("click", async function () {
+      var statusEl = detailRow.querySelector("#detail-status-" + id);
+      var { data, error } = await supabase.storage
+        .from("org-documents")
+        .createSignedUrl(row.registration_evidence_path, 300);
+      if (error) {
+        statusEl.textContent = "Could not open the document: " + error.message;
+        statusEl.className = "form-status is-visible error";
+        return;
+      }
+      window.open(data.signedUrl, "_blank", "noopener");
+    });
+  }
 
   detailRow.querySelector('[data-save="' + id + '"]').addEventListener("click", async function () {
     var statusEl = detailRow.querySelector("#detail-status-" + id);
