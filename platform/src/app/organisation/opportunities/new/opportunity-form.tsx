@@ -1,17 +1,58 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { createOpportunity } from "@/lib/actions/organisation";
 import type { FormState } from "@/lib/actions/auth";
+import type { ServicePackageRow } from "@/lib/database.types";
+import { SkillsInput } from "@/components/skills-input";
 
 const initialState: FormState = {};
 
 let nextQuestionKey = 0;
 
-export function OpportunityForm({ organisationId }: { organisationId: string }) {
+const CATEGORY_LABEL: Record<string, string> = {
+  creative_media: "Creative & media",
+  digital_technology: "Digital & technology",
+  business_project_support: "Business & project support",
+};
+
+export function OpportunityForm({
+  organisationId,
+  servicePackages,
+}: {
+  organisationId: string;
+  servicePackages: Pick<ServicePackageRow, "id" | "category" | "title" | "deliverable" | "inputs_needed" | "excludes">[];
+}) {
   const boundAction = createOpportunity.bind(null, organisationId);
   const [state, formAction, pending] = useActionState(boundAction, initialState);
   const [questions, setQuestions] = useState<{ key: number; text: string; required: boolean }[]>([]);
+  const [type, setType] = useState("project");
+  const [servicePackageId, setServicePackageId] = useState("");
+  const titleRef = useRef<HTMLInputElement>(null);
+  const briefRef = useRef<HTMLTextAreaElement>(null);
+  const categoryRef = useRef<HTMLSelectElement>(null);
+
+  function applyServicePackage(id: string) {
+    setServicePackageId(id);
+    const pkg = servicePackages.find((p) => p.id === id);
+    if (!pkg) return;
+    if (titleRef.current) titleRef.current.value = pkg.title;
+    if (categoryRef.current) categoryRef.current.value = pkg.category;
+    if (briefRef.current) {
+      briefRef.current.value = [
+        `Deliverable: ${pkg.deliverable}`,
+        pkg.inputs_needed ? `Inputs needed: ${pkg.inputs_needed}` : null,
+        pkg.excludes ? `Excludes: ${pkg.excludes}` : null,
+      ]
+        .filter(Boolean)
+        .join("\n");
+    }
+  }
+
+  const packagesByCategory = servicePackages.reduce<Record<string, typeof servicePackages>>((acc, p) => {
+    (acc[p.category] ??= []).push(p);
+    return acc;
+  }, {});
 
   function addQuestion() {
     setQuestions((qs) => [...qs, { key: nextQuestionKey++, text: "", required: false }]);
@@ -32,6 +73,7 @@ export function OpportunityForm({ organisationId }: { organisationId: string }) 
         <input
           id="title"
           name="title"
+          ref={titleRef}
           required
           placeholder="e.g. Graphic designer for a 2-month brand refresh"
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
@@ -48,6 +90,8 @@ export function OpportunityForm({ organisationId }: { organisationId: string }) 
             id="type"
             name="type"
             required
+            value={type}
+            onChange={(e) => setType(e.target.value)}
             className="mt-1 w-full rounded-lg border border-slate/25 px-2 py-2 text-sm"
           >
             <option value="project">Project</option>
@@ -64,6 +108,7 @@ export function OpportunityForm({ organisationId }: { organisationId: string }) 
           <select
             id="category"
             name="category"
+            ref={categoryRef}
             required
             className="mt-1 w-full rounded-lg border border-slate/25 px-2 py-2 text-sm"
           >
@@ -75,6 +120,36 @@ export function OpportunityForm({ organisationId }: { organisationId: string }) 
         </div>
       </div>
 
+      {type === "service" && servicePackages.length > 0 && (
+        <div className="rounded-xl border border-slate/15 bg-cloud p-4">
+          <label htmlFor="servicePackage" className="text-sm font-semibold text-midnight">
+            Start from a packaged service <span className="font-normal text-slate">(optional)</span>
+          </label>
+          <p className="mt-1 text-xs text-slate">
+            Picks a defined, quality-controlled deliverable and fills in the title, category and brief below —
+            you can still edit everything before submitting.
+          </p>
+          <select
+            id="servicePackage"
+            value={servicePackageId}
+            onChange={(e) => applyServicePackage(e.target.value)}
+            className="mt-2 w-full rounded-lg border border-slate/25 px-2 py-2 text-sm"
+          >
+            <option value="">Write my own brief</option>
+            {Object.entries(packagesByCategory).map(([category, pkgs]) => (
+              <optgroup key={category} label={CATEGORY_LABEL[category] ?? category}>
+                {pkgs.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.title}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          <input type="hidden" name="servicePackageId" value={servicePackageId} />
+        </div>
+      )}
+
       <div>
         <label htmlFor="brief" className="text-sm font-semibold text-midnight">
           Brief
@@ -82,6 +157,7 @@ export function OpportunityForm({ organisationId }: { organisationId: string }) 
         <textarea
           id="brief"
           name="brief"
+          ref={briefRef}
           rows={4}
           placeholder="What needs doing, the outcome you want, anything a good applicant should know."
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
@@ -92,13 +168,7 @@ export function OpportunityForm({ organisationId }: { organisationId: string }) 
         <label htmlFor="skills" className="text-sm font-semibold text-midnight">
           Required skills <span className="font-normal text-slate">(comma-separated)</span>
         </label>
-        <input
-          id="skills"
-          name="skills"
-          required
-          placeholder="e.g. Figma, brand identity, illustration"
-          className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
-        />
+        <SkillsInput id="skills" name="skills" required placeholder="e.g. Figma, brand identity, illustration" />
         {state.errors?.skills && <p className="mt-1 text-sm text-coral">{state.errors.skills[0]}</p>}
       </div>
 

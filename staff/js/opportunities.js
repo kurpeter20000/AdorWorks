@@ -131,6 +131,90 @@ async function refreshDetail(id) {
   detailRow.querySelector("td").innerHTML = renderDetailShell(row);
   wireDetailActions(id, row, detailRow);
   await loadApplications(id, row, detailRow);
+  await loadSuggestedCandidates(id, row, detailRow);
+}
+
+function wireAddToShortlistButtons(listEl, oppId, detailRow, opportunity) {
+  listEl.querySelectorAll("[data-add-candidate]").forEach(function (btn) {
+    btn.addEventListener("click", async function () {
+      btn.disabled = true;
+      try {
+        await apiFetch("/api/applications", {
+          method: "POST",
+          body: { opportunity_id: oppId, talent_id: btn.getAttribute("data-add-candidate") },
+        });
+        btn.replaceWith(document.createTextNode("Added."));
+        await loadApplications(oppId, opportunity, detailRow);
+        await loadSuggestedCandidates(oppId, opportunity, detailRow);
+      } catch (err) {
+        alert(err.message);
+        btn.disabled = false;
+      }
+    });
+  });
+}
+
+// Structured, skill-based candidate suggestions — the explainable-matching
+// and fair-visibility counterpart to the free-text headline search below.
+// Ranked by how many of the opportunity's required skills a candidate
+// lists, then by recency (not rating or tenure), so a brand-new profile
+// with matching skills surfaces exactly as readily as an established one.
+async function loadSuggestedCandidates(oppId, opportunity, detailRow) {
+  var list = detailRow.querySelector("#suggested-candidates-" + oppId);
+  if (!list) return;
+  if (!opportunity.category) {
+    list.innerHTML = "<li>No category set on this opportunity — use the search below instead.</li>";
+    return;
+  }
+  try {
+    var alreadyShortlisted = {};
+    try {
+      var appsRes = await apiFetch("/api/applications?opportunity_id=" + oppId + "&limit=100");
+      appsRes.data.forEach(function (a) { alreadyShortlisted[a.talent_id] = true; });
+    } catch (e) {
+      // non-fatal — worst case a candidate already shortlisted appears again
+    }
+
+    var res = await apiFetch("/api/talent?category=" + encodeURIComponent(opportunity.category) + "&limit=100");
+    var oppSkills = (opportunity.skills || []).map(function (s) { return s.toLowerCase(); });
+
+    var candidates = res.data
+      .filter(function (t) { return !alreadyShortlisted[t.id]; })
+      .map(function (t) {
+        var talentSkills = t.skills || [];
+        var matches = talentSkills.filter(function (s) { return oppSkills.indexOf(s.toLowerCase()) !== -1; });
+        return { talent: t, matches: matches };
+      })
+      .filter(function (c) { return oppSkills.length === 0 || c.matches.length > 0; })
+      .sort(function (a, b) {
+        if (b.matches.length !== a.matches.length) return b.matches.length - a.matches.length;
+        return new Date(b.talent.created_at) - new Date(a.talent.created_at);
+      })
+      .slice(0, 8);
+
+    if (!candidates.length) {
+      list.innerHTML = "<li>No structured skill matches yet — try a manual search below.</li>";
+      return;
+    }
+
+    list.innerHTML = candidates
+      .map(function (c) {
+        var matchLabel = c.matches.length
+          ? "Matches: " + c.matches.map(escapeHtml).join(", ")
+          : "No listed skills overlap — shown for category fit";
+        return (
+          "<li><strong>" + escapeHtml(c.talent.headline || c.talent.id) + "</strong> — " + statusBadge(c.talent.verification_tier) +
+          '<div class="staff-hint">' + matchLabel + "</div>" +
+          '<div class="action-row">' +
+          '<button type="button" class="btn btn-secondary" data-add-candidate="' + c.talent.id + '">Add to shortlist</button>' +
+          "</div></li>"
+        );
+      })
+      .join("");
+    wireAddToShortlistButtons(list, oppId, detailRow, opportunity);
+  } catch (err) {
+    list.innerHTML = "<li>" + escapeHtml(err.message) + "</li>";
+  }
 }
 
 var OPP_STATUSES = ["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected"];
@@ -145,6 +229,7 @@ function renderDetailShell(row) {
     "<div>" +
     '<dl class="kv-list">' +
     "<dt>Brief</dt><dd>" + escapeHtml(row.brief || "—") + "</dd>" +
+    (row.service_packages ? "<dt>Package</dt><dd>" + escapeHtml(row.service_packages.title) + "</dd>" : "") +
     "<dt>Skills</dt><dd>" + escapeHtml((row.skills || []).join(", ") || "—") + "</dd>" +
     "<dt>Location</dt><dd>" + escapeHtml(row.location || "—") + "</dd>" +
     "<dt>Budget</dt><dd>" + escapeHtml(row.budget_min || "—") + "–" + escapeHtml(row.budget_max || "—") + " " + escapeHtml(row.currency || "") + "</dd>" +
@@ -168,7 +253,10 @@ function renderDetailShell(row) {
     "<div>" +
     "<h3>Shortlist</h3>" +
     '<ul class="staff-events" id="applications-list-' + row.id + '"><li>Loading…</li></ul>' +
-    "<h4 class=\"mt-1\">Add a candidate</h4>" +
+    "<h4 class=\"mt-1\">Suggested candidates</h4>" +
+    '<p class="staff-hint">Ranked by skill overlap with this opportunity, then most recently joined — not by rating or tenure, so new talent surface on equal footing.</p>' +
+    '<ul class="staff-events" id="suggested-candidates-' + row.id + '"><li>Loading…</li></ul>' +
+    "<h4 class=\"mt-1\">Search by headline</h4>" +
     '<div class="form-grid form-grid-2">' +
     '<input type="text" id="candidate-search-' + row.id + '" placeholder="Search by headline…">' +
     '<button type="button" class="btn btn-secondary" data-search-candidates="' + row.id + '">Search</button>' +
@@ -311,20 +399,7 @@ function wireDetailActions(id, row, detailRow) {
           );
         })
         .join("");
-      resultsEl.querySelectorAll("[data-add-candidate]").forEach(function (btn) {
-        btn.addEventListener("click", async function () {
-          try {
-            await apiFetch("/api/applications", {
-              method: "POST",
-              body: { opportunity_id: id, talent_id: btn.getAttribute("data-add-candidate") },
-            });
-            await loadApplications(id, detailRow);
-            resultsEl.innerHTML = "<li>Added.</li>";
-          } catch (err) {
-            resultsEl.innerHTML = "<li>" + escapeHtml(err.message) + "</li>";
-          }
-        });
-      });
+      wireAddToShortlistButtons(resultsEl, id, detailRow, row);
     } catch (err) {
       resultsEl.innerHTML = "<li>" + escapeHtml(err.message) + "</li>";
     }

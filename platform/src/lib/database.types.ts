@@ -199,8 +199,22 @@ export type OpportunityRow = {
   application_deadline: string | null;
   number_of_openings: number;
   rejection_reason: string | null;
+  service_package_id: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export type ServicePackageRow = {
+  id: string;
+  category: Category;
+  title: string;
+  deliverable: string;
+  inputs_needed: string | null;
+  excludes: string | null;
+  typical_timeframe: string | null;
+  active: boolean;
+  sequence: number;
+  created_at: string;
 }
 
 export type ApplicationRow = {
@@ -469,6 +483,12 @@ export type Database = {
         Row: OpportunityRow;
         Insert: Partial<OpportunityRow> & { organisation_id: string; type: OpportunityType; title: string };
         Update: Partial<OpportunityRow>;
+        Relationships: [];
+      };
+      service_packages: {
+        Row: ServicePackageRow;
+        Insert: Partial<ServicePackageRow> & { category: Category; title: string; deliverable: string };
+        Update: Partial<ServicePackageRow>;
         Relationships: [];
       };
       applications: {

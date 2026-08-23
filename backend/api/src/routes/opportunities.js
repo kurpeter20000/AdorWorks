@@ -21,7 +21,7 @@ opportunitiesRouter.get(
     const query = listQuerySchema.parse(req.query);
     let q = supabaseAdmin
       .from("opportunities")
-      .select("*, organisations(name, verification_status)", { count: "exact" })
+      .select("*, organisations(name, verification_status), service_packages(title)", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(query.offset, query.offset + query.limit - 1);
     if (query.status) q = q.eq("status", query.status);

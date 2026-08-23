@@ -157,6 +157,7 @@ export async function createOpportunity(organisationId: string, _prevState: Form
   }
   const v = validated.data;
   const screeningQuestions = parseScreeningQuestions(formData.get("screeningQuestions"));
+  const servicePackageId = (formData.get("servicePackageId") as string | null)?.trim() || null;
 
   const supabase = await createClient();
   const { data: opportunity, error } = await supabase
@@ -178,6 +179,9 @@ export async function createOpportunity(organisationId: string, _prevState: Form
       currency: v.currency,
       application_deadline: v.applicationDeadline || null,
       number_of_openings: v.numberOfOpenings ? Math.max(1, Number(v.numberOfOpenings)) : 1,
+      // FK to service_packages — the DB itself rejects an invalid/stale id,
+      // so no separate existence check is needed here.
+      service_package_id: v.type === "service" ? servicePackageId : null,
       visibility: "public",
       status: "pending_review",
     })

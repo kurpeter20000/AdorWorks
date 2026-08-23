@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { saveBasics } from "@/lib/actions/onboarding";
 import type { FormState } from "@/lib/actions/auth";
 import type { TalentProfileRow } from "@/lib/database.types";
+import { SkillsInput } from "@/components/skills-input";
 
 const initialState: FormState = {};
 
@@ -132,13 +133,12 @@ export function BasicsForm({
         <label htmlFor="skills" className="text-sm font-semibold text-midnight">
           Skills <span className="font-normal text-slate">(comma-separated)</span>
         </label>
-        <input
+        <SkillsInput
           id="skills"
           name="skills"
           defaultValue={initial?.skills?.join(", ") ?? ""}
           required
           placeholder="e.g. Figma, brand identity, illustration"
-          className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
         {state.errors?.skills && <p className="mt-1 text-sm text-coral">{state.errors.skills[0]}</p>}
       </div>
