@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { requireOrganisationMembership } from "@/lib/dal/organisation";
 import { createClient } from "@/lib/supabase/server";
 import { EvidenceUpload } from "./evidence-upload";
+import { LogoUpload } from "./logo-upload";
 
 export const metadata: Metadata = { title: "Your organisation" };
 
@@ -41,20 +43,29 @@ export default async function OrganisationPage({
     .eq("organisation_id", org.id)
     .order("created_at", { ascending: false });
 
+  const logoUrl = org.logo_path ? supabase.storage.from("org-logos").getPublicUrl(org.logo_path).data.publicUrl : null;
+
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-midnight">{org.name}</h1>
-          <p className="mt-1 text-sm text-slate">
-            {org.verification_status === "verified" ? (
-              <span className="font-semibold text-teal-ink">Verified organisation</span>
-            ) : org.verification_status === "pending" ? (
-              "Verification pending — AdorWorks staff review new organisations before opportunities go live."
-            ) : (
-              "Verification status: " + org.verification_status
-            )}
-          </p>
+        <div className="flex items-center gap-4">
+          {logoUrl && (
+            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-slate/15 bg-cloud">
+              <Image src={logoUrl} alt="" fill sizes="48px" className="object-contain" />
+            </div>
+          )}
+          <div>
+            <h1 className="text-2xl font-extrabold text-midnight">{org.name}</h1>
+            <p className="mt-1 text-sm text-slate">
+              {org.verification_status === "verified" ? (
+                <span className="font-semibold text-teal-ink">Verified organisation</span>
+              ) : org.verification_status === "pending" ? (
+                "Verification pending — AdorWorks staff review new organisations before opportunities go live."
+              ) : (
+                "Verification status: " + org.verification_status
+              )}
+            </p>
+          </div>
         </div>
         <div className="flex flex-col items-end gap-2">
           <Link
@@ -68,6 +79,16 @@ export default async function OrganisationPage({
           </Link>
         </div>
       </div>
+
+      {org.representative_id === session.userId && (
+        <div className="mt-6 rounded-xl border border-slate/15 bg-white p-5">
+          <h2 className="font-bold text-midnight">Logo</h2>
+          <p className="mt-1 text-sm text-slate">Shown to talent on your opportunities.</p>
+          <div className="mt-3">
+            <LogoUpload orgId={org.id} existingUrl={logoUrl} />
+          </div>
+        </div>
+      )}
 
       {posted && (
         <p className="mt-4 rounded-lg bg-teal/10 px-4 py-3 text-sm font-semibold text-teal-ink">

@@ -114,6 +114,7 @@ export type TalentProfileRow = {
   linkedin_url: string | null;
   github_url: string | null;
   website_url: string | null;
+  avatar_path: string | null;
   readiness: Record<string, unknown>;
   verification_tier: VerificationTier;
   public_visible: boolean;
@@ -138,6 +139,7 @@ export type OrganisationRow = {
   sector: string | null;
   website: string | null;
   registration_evidence_path: string | null;
+  logo_path: string | null;
   representative_id: string;
   billing_email: string | null;
   verification_status: "pending" | "verified" | "rejected" | "suspended";

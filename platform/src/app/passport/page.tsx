@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ProfessionalLinksForm } from "./professional-links-form";
 import { PortfolioManager } from "./portfolio-manager";
 import { EvidenceManager } from "./evidence-manager";
+import { AvatarUpload } from "./avatar-upload";
 
 export const metadata: Metadata = { title: "Your Passport" };
 
@@ -37,6 +38,9 @@ export default async function PassportPage() {
 
   const references = (evidence ?? []).filter((e) => e.evidence_type === "reference");
   const credentials = (evidence ?? []).filter((e) => e.evidence_type === "assessment");
+  const avatarUrl = profile?.avatar_path
+    ? supabase.storage.from("talent-avatars").getPublicUrl(profile.avatar_path).data.publicUrl
+    : null;
 
   if (!profile) {
     return (
@@ -71,6 +75,9 @@ export default async function PassportPage() {
           <span className="whitespace-nowrap rounded-full bg-violet/10 px-3 py-1 text-xs font-semibold text-violet">
             {TIER_LABEL[profile.verification_tier] ?? profile.verification_tier}
           </span>
+        </div>
+        <div className="mt-4">
+          <AvatarUpload existingUrl={avatarUrl} />
         </div>
         {profile.bio && <p className="mt-3 text-sm text-slate">{profile.bio}</p>}
         <p className="mt-3 text-xs text-slate">

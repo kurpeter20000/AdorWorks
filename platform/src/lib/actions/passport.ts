@@ -47,3 +47,19 @@ export async function updateProfessionalLinks(_prevState: FormState, formData: F
   revalidatePath("/passport");
   return {};
 }
+
+/** Passport page: headshot upload. The file itself is uploaded client-side straight to the talent-avatars bucket (see avatar-upload.tsx) — this just records the resulting path. */
+export async function setTalentAvatar(filePath: string): Promise<FormState> {
+  const session = await requireRole("talent");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("talent_profiles").update({ avatar_path: filePath }).eq("id", session.userId);
+
+  if (error) {
+    return { message: `Could not save your photo: ${error.message}` };
+  }
+
+  revalidatePath("/passport");
+  revalidatePath(`/passport/${session.userId}`);
+  return {};
+}

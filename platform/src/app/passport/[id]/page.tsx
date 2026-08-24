@@ -45,14 +45,24 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
   const { data: orgs } =
     orgIds.length > 0 ? await supabase.from("organisations").select("id, name").in("id", orgIds) : { data: [] };
   const orgNameById = new Map((orgs ?? []).map((o) => [o.id, o.name]));
+  const avatarUrl = profile.avatar_path
+    ? supabase.storage.from("talent-avatars").getPublicUrl(profile.avatar_path).data.publicUrl
+    : null;
 
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <div className="rounded-xl border border-slate/15 bg-white p-5">
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-lg font-bold text-midnight">{profile.display_name}</p>
-            <p className="text-sm text-slate">{profile.headline}</p>
+          <div className="flex items-start gap-4">
+            {avatarUrl && (
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-cloud">
+                <Image src={avatarUrl} alt="" fill sizes="64px" className="object-cover" />
+              </div>
+            )}
+            <div>
+              <p className="text-lg font-bold text-midnight">{profile.display_name}</p>
+              <p className="text-sm text-slate">{profile.headline}</p>
+            </div>
           </div>
           <span className="whitespace-nowrap rounded-full bg-violet/10 px-3 py-1 text-xs font-semibold text-violet">
             {TIER_LABEL[profile.verification_tier] ?? profile.verification_tier}

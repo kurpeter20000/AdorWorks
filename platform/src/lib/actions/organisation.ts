@@ -228,3 +228,16 @@ export async function setOrganisationEvidence(organisationId: string, filePath: 
   }
   return {};
 }
+
+/** Same representative_id-only pattern as setOrganisationEvidence above, for the org's logo instead. */
+export async function setOrganisationLogo(organisationId: string, filePath: string): Promise<FormState> {
+  await requireRole("individual_client", "org_member", "org_admin");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("organisations").update({ logo_path: filePath }).eq("id", organisationId);
+
+  if (error) {
+    return { message: `Could not save your logo: ${error.message}` };
+  }
+  return {};
+}
