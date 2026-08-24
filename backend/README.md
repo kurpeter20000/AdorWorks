@@ -26,6 +26,46 @@ Two parts:
 5. `cd api && npm install && cp .env.example .env`, fill in the project
    URL + **service_role** key, `npm start`.
 
+## Email deliverability (custom SMTP)
+
+Supabase's built-in mailer (what auth emails use until this is
+configured) is meant for occasional testing only — it's tightly
+rate-limited and has poor deliverability to providers like Gmail, which
+often drops or spam-folders mail from it rather than bouncing it. This
+is why signup confirmation links can fail to arrive with no visible
+error in the app: `signUp()` succeeds (Supabase accepted the request),
+the email just never reliably lands.
+
+Fix: Supabase dashboard → **Authentication → Emails → SMTP Settings** →
+turn on **Enable custom SMTP**, then fill it in with a real provider's
+credentials. Recommended: **Brevo** (free tier, 300 emails/day), because
+it verifies a single sender email address rather than a whole domain —
+no purchased domain needed yet, which matches where this project
+currently is (see root `README.md`'s "Working name" / domain note).
+
+1. Sign up at [brevo.com](https://www.brevo.com) (free plan).
+2. **Senders & IP → Senders → Add a sender** — use whatever address
+   should show as the "from" address (your own email is fine for now).
+   Brevo emails you a confirmation link; click it. This is
+   single-sender verification, not domain DNS — no domain required.
+3. **SMTP & API → SMTP tab** — note the host (`smtp-relay.brevo.com`),
+   port `587`, your Brevo login (used as the SMTP username), and click
+   **Generate a new SMTP key** for the password.
+4. Back in Supabase's SMTP form, fill in: Sender email = the address
+   verified in step 2, Sender name = `AdorWorks`, Host =
+   `smtp-relay.brevo.com`, Port = `587`, plus the username/password from
+   step 3. Save.
+5. Test end to end: sign up on the live site with a real address and
+   confirm the email arrives (check spam once — a brand-new sender has
+   no reputation yet, this usually clears up after the first few sends).
+
+Never commit the SMTP username/key anywhere in this repo — it only ever
+goes into Supabase's own encrypted SMTP settings field, same rule as
+every other secret here. Once a real `adorworks.*` domain is secured,
+switching to domain-based sender verification (in Brevo or another
+provider) improves long-term deliverability/reputation, but
+single-sender verification is enough to unblock real signups now.
+
 ## Why Supabase
 
 Chosen over rolling a custom Postgres+Auth+file-storage stack because it
