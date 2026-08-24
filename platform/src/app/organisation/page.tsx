@@ -19,7 +19,7 @@ const STATUS_LABEL: Record<string, string> = {
 const STATUS_STYLE: Record<string, string> = {
   draft: "bg-slate/10 text-slate",
   pending_review: "bg-coral/10 text-coral",
-  open: "bg-teal/10 text-teal",
+  open: "bg-teal/10 text-teal-ink",
   filled: "bg-violet/10 text-violet",
   closed: "bg-slate/10 text-slate",
   cancelled: "bg-slate/10 text-slate",
@@ -48,7 +48,7 @@ export default async function OrganisationPage({
           <h1 className="text-2xl font-extrabold text-midnight">{org.name}</h1>
           <p className="mt-1 text-sm text-slate">
             {org.verification_status === "verified" ? (
-              <span className="font-semibold text-teal">Verified organisation</span>
+              <span className="font-semibold text-teal-ink">Verified organisation</span>
             ) : org.verification_status === "pending" ? (
               "Verification pending — AdorWorks staff review new organisations before opportunities go live."
             ) : (
@@ -70,7 +70,7 @@ export default async function OrganisationPage({
       </div>
 
       {posted && (
-        <p className="mt-4 rounded-lg bg-teal/10 px-4 py-3 text-sm font-semibold text-teal">
+        <p className="mt-4 rounded-lg bg-teal/10 px-4 py-3 text-sm font-semibold text-teal-ink">
           Submitted for review. AdorWorks staff will publish it once approved.
         </p>
       )}

@@ -44,7 +44,7 @@ export default async function PassportPage() {
         <h1 className="text-2xl font-extrabold text-midnight">Your Passport</h1>
         <p className="mt-4 text-sm text-slate">
           Finish{" "}
-          <Link href="/onboarding" className="font-semibold text-teal underline">
+          <Link href="/onboarding" className="font-semibold text-teal-ink underline">
             onboarding
           </Link>{" "}
           first — your Passport is built from your profile basics.

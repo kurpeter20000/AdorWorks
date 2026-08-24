@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: "My contracts" };
 
 const STATUS_STYLE: Record<string, string> = {
-  active: "bg-teal/10 text-teal",
+  active: "bg-teal/10 text-teal-ink",
   completed: "bg-violet/10 text-violet",
   cancelled: "bg-slate/10 text-slate",
   disputed: "bg-coral/10 text-coral",

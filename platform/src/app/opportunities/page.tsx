@@ -93,7 +93,7 @@ export default async function OpportunitiesPage({
           <Link href="/opportunities/saved" className="text-sm font-semibold text-violet underline">
             Saved
           </Link>
-          <Link href="/applications" className="text-sm font-semibold text-teal underline">
+          <Link href="/applications" className="text-sm font-semibold text-teal-ink underline">
             My applications
           </Link>
         </div>
@@ -101,42 +101,72 @@ export default async function OpportunitiesPage({
       <p className="mt-2 text-sm text-slate">Open, paid opportunities on AdorWorks right now.</p>
 
       <form method="get" className="mt-4 space-y-2">
+        <label htmlFor="opportunities-search" className="sr-only">
+          Search opportunities by title or description
+        </label>
         <input
+          id="opportunities-search"
           type="search"
           name="q"
           defaultValue={q}
           placeholder="Search by title or description…"
           className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
-        <div className="grid grid-cols-3 gap-2">
-          <select name="category" defaultValue={category ?? ""} className="rounded-lg border border-slate/25 px-2 py-2 text-xs">
-            <option value="">Any category</option>
-            {Object.entries(CATEGORY_LABEL).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-          <select
-            name="engagementType"
-            defaultValue={engagementType ?? ""}
-            className="rounded-lg border border-slate/25 px-2 py-2 text-xs"
-          >
-            <option value="">Any type</option>
-            {Object.entries(ENGAGEMENT_LABEL).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-          <select name="workMode" defaultValue={workMode ?? ""} className="rounded-lg border border-slate/25 px-2 py-2 text-xs">
-            <option value="">Any work mode</option>
-            {Object.entries(WORK_MODE_LABEL).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div>
+            <label htmlFor="opportunities-category" className="sr-only">
+              Filter by category
+            </label>
+            <select
+              id="opportunities-category"
+              name="category"
+              defaultValue={category ?? ""}
+              className="w-full rounded-lg border border-slate/25 px-2 py-2 text-xs"
+            >
+              <option value="">Any category</option>
+              {Object.entries(CATEGORY_LABEL).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="opportunities-engagement-type" className="sr-only">
+              Filter by engagement type
+            </label>
+            <select
+              id="opportunities-engagement-type"
+              name="engagementType"
+              defaultValue={engagementType ?? ""}
+              className="w-full rounded-lg border border-slate/25 px-2 py-2 text-xs"
+            >
+              <option value="">Any type</option>
+              {Object.entries(ENGAGEMENT_LABEL).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="opportunities-work-mode" className="sr-only">
+              Filter by work mode
+            </label>
+            <select
+              id="opportunities-work-mode"
+              name="workMode"
+              defaultValue={workMode ?? ""}
+              className="w-full rounded-lg border border-slate/25 px-2 py-2 text-xs"
+            >
+              <option value="">Any work mode</option>
+              {Object.entries(WORK_MODE_LABEL).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button type="submit" className="rounded-lg bg-teal px-4 py-2 text-sm font-bold text-midnight">
@@ -163,7 +193,7 @@ export default async function OpportunitiesPage({
                   <p className="font-bold text-midnight">{o.title}</p>
                   <p className="text-xs text-slate">{orgNames.get(o.organisation_id) ?? "AdorWorks employer"}</p>
                 </div>
-                <span className="whitespace-nowrap text-sm font-semibold text-teal">
+                <span className="whitespace-nowrap text-sm font-semibold text-teal-ink">
                   {formatCompensation(o)}
                 </span>
               </div>

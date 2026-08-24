@@ -122,7 +122,7 @@ export function EvidenceManager({
           className="w-full text-sm"
         />
         {status && (
-          <p className={`text-sm ${status.kind === "error" ? "text-coral" : "text-teal"}`}>{status.message}</p>
+          <p className={`text-sm ${status.kind === "error" ? "text-coral" : "text-teal-ink"}`}>{status.message}</p>
         )}
         <button
           type="button"

@@ -6,7 +6,7 @@ import { sendMessage } from "@/lib/actions/contracts";
 
 const MAX_SIZE_BYTES = 20 * 1024 * 1024; // 20MB
 
-function AttachmentLink({ contractId, filePath, fileName }: { contractId: string; filePath: string; fileName: string }) {
+function AttachmentLink({ filePath, fileName }: { filePath: string; fileName: string }) {
   const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -103,7 +103,7 @@ export function MessageThread({
                 >
                   {m.body}
                   {m.file_path && m.file_name && (
-                    <AttachmentLink contractId={contractId} filePath={m.file_path} fileName={m.file_name} />
+                    <AttachmentLink filePath={m.file_path} fileName={m.file_name} />
                   )}
                 </div>
               </li>
@@ -114,7 +114,11 @@ export function MessageThread({
 
       <div className="mt-3 flex flex-col gap-2">
         <div className="flex gap-2">
+          <label htmlFor="message-body" className="sr-only">
+            Write a message
+          </label>
           <input
+            id="message-body"
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder="Write a message…"
@@ -130,7 +134,11 @@ export function MessageThread({
           </button>
         </div>
         <div className="flex items-center gap-2">
+          <label htmlFor="message-attachment" className="sr-only">
+            Attach a file
+          </label>
           <input
+            id="message-attachment"
             type="file"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             className="flex-1 text-xs"

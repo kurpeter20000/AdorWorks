@@ -1,26 +1,32 @@
 # AdorWorks website + backend
 
-The public site is plain static HTML/CSS/JS — no build step, no framework —
-now installable as a PWA (manifest + service worker) and tuned for
-mobile-first use, since ~90% of the target market is on smartphones. The
-backend (`backend/`) is Supabase (Postgres + Auth + Storage + Row Level
-Security) plus a small Node/Express API for staff-only operations —
-together they implement the full P1 self-service-marketplace data model
-from the AdorWorks Startup & Website Blueprint §7.9, not just the P0
-concierge stage the site content itself is still written for.
+Four parts now:
 
-That's a deliberate split: the **content and public flows** (what a
-visitor sees, the forms they fill in) are still concierge-stage — curated
-shortlists, staff-reviewed verification, no self-service search or
-accounts-facing UI yet — because the blueprint is explicit that trust and
-process should be proven with a small pilot before opening up self-service.
-The **data model underneath** is already the full thing, so growing into
-self-service later is a frontend/UI project, not a database migration.
+- **The public site** (this folder's root) — plain static HTML/CSS/JS, no
+  build step, no framework, installable as a PWA (manifest + service
+  worker) and tuned for mobile-first use, since ~90% of the target market
+  is on smartphones. Still concierge-flavoured: curated shortlists,
+  staff-reviewed verification, intake forms rather than self-service
+  search — the front door for people who haven't signed up yet.
+- **`platform/`** — the self-service marketplace app (Next.js): accounts,
+  login, onboarding, opportunity search and applications, offers,
+  contracts, milestones, messaging, disputes, timesheets, and a fully
+  simulated payment flow (invoices, receipts, mobile-money/card checkout).
+  This is where the "prove the model, then open self-service" sequencing
+  from the blueprint actually lands — see `platform/README.md`.
+- **`backend/`** — Supabase (Postgres + Auth + Storage + Row Level
+  Security) plus a small Node/Express API for staff-only operations.
+  Implements the full self-service-marketplace data model from the
+  AdorWorks Startup & Website Blueprint §7.9 and is what both the public
+  site's intake forms and `platform/` write into.
+- **`staff/`** — the internal console staff use to triage, verify,
+  moderate and oversee everything above.
 
 This is a separate product from Adormedia and is meant to be deployed as its
 **own** site — not merged into `../site/`'s Netlify deploy. `netlify.toml`
-in this folder is set up for that (base directory `adorworks-site`, publish
-`.`).
+in this folder is set up for the public site's own deploy (base directory
+`adorworks-site`, publish `.`); `platform/` deploys separately (see its own
+README) since it's a Next.js app, not a static site.
 
 ## What's here vs. what isn't
 
@@ -48,25 +54,43 @@ Built:
 - A staff console (`staff/`) for everything the API supports: triaging
   intake submissions and converting them into real accounts, verifying
   talent and organisations, building each opportunity's shortlist,
-  creating engagements and tracking them through to completion with
-  finance records, reviews and disputes. See `staff/README.md`.
+  overseeing contracts and finance records, and resolving disputes. See
+  `staff/README.md`.
+- **A talent/employer account UI** (`platform/`): login, dashboard,
+  self-service opportunity search and applications, offers and contract
+  lifecycle (milestones, deliverables, revisions), in-platform messaging
+  with attachments, timesheets, disputes, verified work history, and
+  two-sided reviews. See `platform/README.md` for the full feature list
+  and its "Security notes" section for how the authorization model works.
+- A fully simulated payment flow inside `platform/`: invoices raised
+  automatically on milestone approval, a swappable payment-provider
+  interface (mock m-Gurush, MTN MoMo and card implementations), receipts,
+  and staff-side reconciliation — see `backend/README.md`'s "What's
+  deliberately NOT here" section for what this is and isn't.
+- A test suite (`platform/e2e/`, `platform/src/**/*.test.ts`,
+  `backend/api/src/**/*.test.js`) and a CI workflow (`.github/workflows/ci.yml`)
+  that runs lint, unit tests and a production build on every push.
 
 Not built yet:
-- **A talent/employer account UI** on the public site (login, dashboard,
-  self-service search, in-platform messaging) — the backend supports all
-  of this (see `backend/supabase/migrations`), but the public site's
-  pages still only offer the concierge intake forms, per the blueprint's
-  "prove the model before opening self-service" sequencing.
 - A native mobile app — the PWA (installable from the browser, works
   offline for pages already visited) is the mobile-app answer for now;
   see `backend/README.md`'s note on when a native app would earn its cost.
+  `platform/` itself is deliberately online-only (not offline-first) —
+  every core action there has to reach the server to mean anything, so a
+  full offline sync layer isn't the right trade for a marketplace app the
+  way it is for the mostly-static public site.
 - Any real phone/WhatsApp number, privacy policy, terms of use or reporting
   channel — all marked `Content pending` inline (same convention as the
   Adormedia site) rather than filled with placeholder data. Fill these in
   once the actual details exist.
-- Real payments — `finance_records` in the backend is manual bookkeeping
-  only; no payment gateway is integrated anywhere, per the blueprint's
-  compliance-first rule pending a licensed local payment partner.
+- Real payments — the simulated flow above never sets `is_simulated` to
+  false anywhere in the codebase; no payment gateway is integrated, per
+  the blueprint's compliance-first rule pending a licensed local payment
+  partner.
+- **A production deployment of `platform/`.** It builds and runs cleanly
+  locally (see `platform/README.md`) but has not yet been deployed
+  anywhere — there's no live URL for it yet, only for the public site
+  and the staff console's backend API.
 
 ## Before this goes live
 

@@ -10,6 +10,12 @@
 :root {
   --color-midnight: #182230;
   --color-teal: #00a88f;
+  /* Same hue as --color-teal, darkened for text-on-white use. #00a88f as
+     body text is ≈3.0:1 against white — fails WCAG AA's 4.5:1 minimum for
+     normal-size text. #00786a computes to ≈5.4:1. Buttons/badges that use
+     --color-teal as a *background* (paired with dark text on top) are
+     unaffected and keep the brighter brand teal. */
+  --color-teal-ink: #00786a;
   --color-violet: #5b4bdb;
   --color-coral: #ff6b4a;
   --color-cloud: #f4f7fb;
@@ -26,6 +32,7 @@
 
   --color-midnight: var(--color-midnight);
   --color-teal: var(--color-teal);
+  --color-teal-ink: var(--color-teal-ink);
   --color-violet: var(--color-violet);
   --color-coral: var(--color-coral);
   --color-cloud: var(--color-cloud);

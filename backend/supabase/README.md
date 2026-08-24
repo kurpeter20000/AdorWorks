@@ -12,12 +12,22 @@ from seeing the full applicant pool instead of a curated shortlist.
 ## 1. Apply the schema
 
 In the Supabase dashboard → your project → **SQL Editor** → **New query**,
-paste and run each file in this folder **in order**, one at a time:
+paste and run **every file in this folder, in numeric order** (currently
+0001 through 0028 — check the folder for the current count, since this
+list grows as the platform does). The first four lay the foundation:
 
 1. `migrations/0001_schema.sql` — tables, enums, indexes
 2. `migrations/0002_rls.sql` — Row Level Security policies
 3. `migrations/0003_views_and_triggers.sql` — auto-profile-on-signup, the public talent view
 4. `migrations/0004_storage.sql` — private storage buckets for ID docs / portfolios / org registration evidence
+
+Everything from 0005 onward builds out the self-service marketplace app
+(`../../platform/`) on top of that foundation — organisations, offers and
+contracts, milestones and deliverables, messaging, disputes, timesheets,
+and the full simulated payment flow (invoices, receipts, payment
+intentions). Each migration file's own header comment explains what gap
+it closes and why — read those if you want the history, not just the
+current schema.
 
 Every statement is idempotent (`if not exists`, `drop ... if exists` before
 `create`), so if a run fails partway through, fix the error and re-run the
@@ -39,9 +49,12 @@ has someone who can log in:
      (select id from auth.users where email = 'you@example.com');
    ```
 3. From then on, promote reviewer/matcher/finance colleagues the same
-   way (swap `'admin'` for the role you want — see the `user_role` enum
-   in 0001 for the full list: `talent`, `employer`, `reviewer`,
-   `matcher`, `finance`, `admin`).
+   way (swap `'admin'` for the role you want). The `user_role` enum
+   started in 0001 with `talent`, `employer`, `reviewer`, `matcher`,
+   `finance`, `admin`, and later migrations added `individual_client`,
+   `org_member`, `org_admin`, `onboarding_agent` and `partner_hub_admin`
+   as the self-service platform grew — grep `user_role` across
+   `migrations/` for the exact history if you need it.
 
 ## 3. Get your API keys
 

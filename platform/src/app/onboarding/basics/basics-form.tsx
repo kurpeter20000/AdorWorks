@@ -19,7 +19,7 @@ export function BasicsForm({
 
   return (
     <form action={formAction} className="mt-6 space-y-4">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>
           <label htmlFor="honorific" className="text-sm font-semibold text-midnight">
             Honorific
@@ -38,7 +38,7 @@ export function BasicsForm({
             ))}
           </select>
         </div>
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <label htmlFor="legalName" className="text-sm font-semibold text-midnight">
             Legal name
           </label>
@@ -95,7 +95,7 @@ export function BasicsForm({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="location" className="text-sm font-semibold text-midnight">
             Location
@@ -155,7 +155,7 @@ export function BasicsForm({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="workMode" className="text-sm font-semibold text-midnight">
             Work mode

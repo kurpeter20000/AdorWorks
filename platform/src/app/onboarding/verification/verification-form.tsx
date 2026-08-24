@@ -80,14 +80,14 @@ export function VerificationForm({ hasExisting }: { hasExisting: boolean }) {
       </div>
 
       {status && (
-        <p className={`text-sm ${status.kind === "error" ? "text-coral" : "text-teal"}`}>{status.message}</p>
+        <p className={`text-sm ${status.kind === "error" ? "text-coral" : "text-teal-ink"}`}>{status.message}</p>
       )}
 
       <button
         type="button"
         onClick={handleUpload}
         disabled={!file || uploading}
-        className="w-full rounded-lg border border-teal px-4 py-2.5 text-sm font-bold text-teal disabled:opacity-60"
+        className="w-full rounded-lg border border-teal px-4 py-2.5 text-sm font-bold text-teal-ink disabled:opacity-60"
       >
         {uploading ? "Uploading…" : "Upload document"}
       </button>

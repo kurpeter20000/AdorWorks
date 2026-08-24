@@ -58,24 +58,24 @@ export default async function DashboardPage() {
             </Link>
             <Link
               href="/opportunities"
-              className="inline-block rounded-lg border border-teal/40 px-4 py-2 text-sm font-bold text-teal"
+              className="inline-block rounded-lg border border-teal/40 px-4 py-2 text-sm font-bold text-teal-ink"
             >
               Find work
             </Link>
             <Link
               href="/offers"
-              className="inline-block rounded-lg border border-teal/40 px-4 py-2 text-sm font-bold text-teal"
+              className="inline-block rounded-lg border border-teal/40 px-4 py-2 text-sm font-bold text-teal-ink"
             >
               My offers
             </Link>
             <Link
               href="/contracts"
-              className="inline-block rounded-lg border border-teal/40 px-4 py-2 text-sm font-bold text-teal"
+              className="inline-block rounded-lg border border-teal/40 px-4 py-2 text-sm font-bold text-teal-ink"
             >
               My contracts
             </Link>
           </div>
-          <Link href="/assistance/request" className="mt-3 inline-block text-xs font-semibold text-teal underline">
+          <Link href="/assistance/request" className="mt-3 inline-block text-xs font-semibold text-teal-ink underline">
             Need help finishing your profile in person?
           </Link>
         </div>

@@ -25,7 +25,7 @@ export function SendOfferForm({ applicationId }: { applicationId: string }) {
 
   return (
     <form action={formAction} className="mt-3 space-y-3 rounded-lg bg-cloud p-3">
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div>
           <label className="text-xs font-semibold text-midnight">Paid</label>
           <select

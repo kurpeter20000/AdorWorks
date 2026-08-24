@@ -46,7 +46,7 @@ export default async function AssistPage() {
                 </span>
               </div>
               {s.status === "active" && (
-                <Link href={`/assist/${s.id}`} className="mt-3 inline-block text-sm font-semibold text-teal underline">
+                <Link href={`/assist/${s.id}`} className="mt-3 inline-block text-sm font-semibold text-teal-ink underline">
                   Continue helping
                 </Link>
               )}

@@ -33,7 +33,7 @@ export function ReceiptView({
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className="mt-2 text-xs font-semibold text-teal underline">
+      <button type="button" onClick={() => setOpen(true)} className="mt-2 text-xs font-semibold text-teal-ink underline">
         View receipt
       </button>
     );
@@ -89,7 +89,7 @@ export function ReceiptView({
       <button
         type="button"
         onClick={() => window.print()}
-        className="mt-2 text-xs font-semibold text-teal underline print:hidden"
+        className="mt-2 text-xs font-semibold text-teal-ink underline print:hidden"
       >
         Print
       </button>

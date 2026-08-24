@@ -34,7 +34,7 @@ export function InviteForm({ organisationId }: { organisationId: string }) {
           from "never submitted yet", same empty-success-object shape as
           the assistance-request form. */}
       {state !== initialState && !state.message && !state.errors && (
-        <p className="rounded-lg bg-teal/10 px-3 py-2 text-sm text-teal">
+        <p className="rounded-lg bg-teal/10 px-3 py-2 text-sm text-teal-ink">
           {state.temporaryPassword ? (
             <>
               Account created. Temporary password (give this to them, it won&rsquo;t be shown again):{" "}

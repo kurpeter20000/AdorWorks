@@ -11,7 +11,7 @@ export default function LoginPage() {
       <LoginForm />
       <p className="mt-4 text-center text-sm text-slate">
         New to AdorWorks?{" "}
-        <Link href="/signup" className="font-semibold text-teal">
+        <Link href="/signup" className="font-semibold text-teal-ink">
           Create an account
         </Link>
       </p>

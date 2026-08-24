@@ -58,7 +58,7 @@ export default async function SavedOpportunitiesPage() {
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-extrabold text-midnight">Saved opportunities</h1>
-        <Link href="/opportunities" className="text-sm font-semibold text-teal underline">
+        <Link href="/opportunities" className="text-sm font-semibold text-teal-ink underline">
           Find work
         </Link>
       </div>
@@ -66,7 +66,7 @@ export default async function SavedOpportunitiesPage() {
       {ordered.length === 0 ? (
         <p className="mt-8 text-sm text-slate">
           Nothing saved yet.{" "}
-          <Link href="/opportunities" className="font-semibold text-teal underline">
+          <Link href="/opportunities" className="font-semibold text-teal-ink underline">
             Browse open opportunities
           </Link>{" "}
           and save the ones you want to come back to.
@@ -80,7 +80,7 @@ export default async function SavedOpportunitiesPage() {
                   <p className="font-bold text-midnight">{o.title}</p>
                   <p className="text-xs text-slate">{orgNames.get(o.organisation_id) ?? "AdorWorks employer"}</p>
                 </div>
-                <span className="whitespace-nowrap text-sm font-semibold text-teal">{formatCompensation(o)}</span>
+                <span className="whitespace-nowrap text-sm font-semibold text-teal-ink">{formatCompensation(o)}</span>
               </div>
               {o.brief && <p className="mt-2 line-clamp-3 text-sm text-slate">{o.brief}</p>}
               <div className="mt-3 flex items-center justify-between">

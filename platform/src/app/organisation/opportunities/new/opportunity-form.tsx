@@ -81,7 +81,7 @@ export function OpportunityForm({
         {state.errors?.title && <p className="mt-1 text-sm text-coral">{state.errors.title[0]}</p>}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="type" className="text-sm font-semibold text-midnight">
             Type
@@ -172,7 +172,7 @@ export function OpportunityForm({
         {state.errors?.skills && <p className="mt-1 text-sm text-coral">{state.errors.skills[0]}</p>}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="location" className="text-sm font-semibold text-midnight">
             Location <span className="font-normal text-slate">(optional)</span>
@@ -259,7 +259,7 @@ export function OpportunityForm({
             />
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-3">
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div>
             <label htmlFor="compensationAmount" className="text-xs font-semibold text-midnight">
               Amount
@@ -305,7 +305,7 @@ export function OpportunityForm({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="applicationDeadline" className="text-sm font-semibold text-midnight">
             Apply by <span className="font-normal text-slate">(optional)</span>
@@ -368,7 +368,7 @@ export function OpportunityForm({
           ))}
         </div>
 
-        <button type="button" onClick={addQuestion} className="mt-3 text-xs font-semibold text-teal underline">
+        <button type="button" onClick={addQuestion} className="mt-3 text-xs font-semibold text-teal-ink underline">
           + Add a screening question
         </button>
 

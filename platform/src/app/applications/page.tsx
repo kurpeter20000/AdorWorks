@@ -17,10 +17,10 @@ const STAGE_LABEL: Record<string, string> = {
 
 const STAGE_STYLE: Record<string, string> = {
   submitted: "bg-slate/10 text-slate",
-  shortlisted: "bg-teal/10 text-teal",
-  interviewing: "bg-teal/10 text-teal",
+  shortlisted: "bg-teal/10 text-teal-ink",
+  interviewing: "bg-teal/10 text-teal-ink",
   offered: "bg-violet/10 text-violet",
-  accepted: "bg-teal/10 text-teal",
+  accepted: "bg-teal/10 text-teal-ink",
   rejected: "bg-slate/10 text-slate",
   withdrawn: "bg-slate/10 text-slate",
 };
@@ -52,7 +52,7 @@ export default async function ApplicationsPage() {
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-extrabold text-midnight">My applications</h1>
-        <Link href="/opportunities" className="text-sm font-semibold text-teal underline">
+        <Link href="/opportunities" className="text-sm font-semibold text-teal-ink underline">
           Find more work
         </Link>
       </div>
@@ -60,7 +60,7 @@ export default async function ApplicationsPage() {
       {!applications || applications.length === 0 ? (
         <p className="mt-8 text-sm text-slate">
           No applications yet.{" "}
-          <Link href="/opportunities" className="font-semibold text-teal underline">
+          <Link href="/opportunities" className="font-semibold text-teal-ink underline">
             Browse open opportunities
           </Link>
           .

@@ -75,7 +75,7 @@ export default async function OffersPage() {
                   {o.status === "accepted" && contractIdByOffer.has(o.id) && (
                     <Link
                       href={`/contracts/${contractIdByOffer.get(o.id)}`}
-                      className="text-sm font-semibold text-teal underline"
+                      className="text-sm font-semibold text-teal-ink underline"
                     >
                       View contract
                     </Link>

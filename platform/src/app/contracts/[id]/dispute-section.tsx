@@ -56,7 +56,7 @@ export function DisputeSection({
           </label>
           <p className="mt-1 text-xs text-slate">
             This pauses the contract and brings AdorWorks staff in to review it. Use this if something has gone
-            wrong that you and the other side can't resolve through messages.
+            wrong that you and the other side can&rsquo;t resolve through messages.
           </p>
           <textarea
             id="description"

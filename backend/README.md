@@ -17,8 +17,9 @@ Two parts:
 ## Setup order
 
 1. Create a Supabase project (`supabase.com` → New project).
-2. Run the four SQL files in `supabase/migrations/` in order, via the
-   dashboard's SQL Editor.
+2. Run every SQL file in `supabase/migrations/` in order (numbered
+   0001–0028 as of this writing — check the folder for the current count),
+   via the dashboard's SQL Editor.
 3. Promote yourself to `admin` (one SQL statement — see `supabase/README.md`).
 4. Fill in `../js/supabase-config.js` with the project's URL + anon key,
    so the public site's forms start writing into `intake_submissions`.
@@ -37,13 +38,18 @@ it later, if it's ever outgrown, is a real option rather than a trap.
 
 ## What's deliberately NOT here
 
-- **No payment gateway.** `finance_records` is a manual ledger — deposits,
-  invoices, fees, payouts and refunds are recorded as data, but no money
-  moves through this codebase. The blueprint is explicit that AdorWorks
-  can't describe holding client funds as "escrow" or use an informal
-  account, and no licensed local payment partner is confirmed yet
-  (mGURUSH is named as one to evaluate; Stripe doesn't cover South Sudan).
-  Wire up a real gateway only after that's resolved with counsel.
+- **No real payment gateway.** The marketplace app (`../platform/`) has a
+  full simulated payment flow — invoices (`finance_records`), payment
+  intentions, a swappable `PaymentProvider` interface with mock m-Gurush,
+  MTN MoMo and card implementations, and receipts — but `is_simulated`
+  never becomes `false` anywhere in the codebase, and no money moves
+  through any of it. The blueprint is explicit that AdorWorks can't
+  describe holding client funds as "escrow" or use an informal account,
+  and no licensed local payment partner is confirmed yet (mGURUSH is
+  named as one to evaluate; Stripe doesn't cover South Sudan). Wire up a
+  real provider only after that's resolved with counsel — the interface
+  is deliberately shaped so a real implementation slots in without
+  touching any calling code.
 - **No automated identity/KYC verification.** `talent_evidence` stores
   what a person submits (portfolio links, ID document files, references);
   a human reviewer approves or rejects it through the API. The blueprint

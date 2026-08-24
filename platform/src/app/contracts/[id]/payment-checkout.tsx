@@ -33,7 +33,7 @@ export function PaymentCheckout({
         Pay {currency} {amount.toLocaleString()}
       </p>
 
-      <div className="mt-2 grid grid-cols-3 gap-2">
+      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
         {PAYMENT_PROVIDERS.map((p, i) => (
           <label
             key={p.id}

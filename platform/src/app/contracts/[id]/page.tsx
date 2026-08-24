@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import type { DeliverableRow } from "@/lib/database.types";
 import { DeliverableForm } from "./deliverable-form";
 import { ReviewActions } from "./review-actions";
-import { PaymentCheckout } from "./payment-checkout";
 import { ReceiptView } from "./receipt-view";
 import { MessageThread } from "./message-thread";
 import { ReviewSection } from "./review-section";
@@ -14,6 +14,10 @@ import { DisputeSection } from "./dispute-section";
 import { CancelContractSection } from "./cancel-contract-section";
 
 export const metadata: Metadata = { title: "Contract" };
+
+// Split out of the main bundle — only ever rendered for an employer once a
+// milestone is 'approved', so most contract-page visits never need it.
+const PaymentCheckout = dynamic(() => import("./payment-checkout").then((m) => m.PaymentCheckout));
 
 const MILESTONE_LABEL: Record<string, string> = {
   pending: "Not started",
@@ -170,7 +174,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
 
               {payment && (
                 <div className="mt-3">
-                  <p className="text-xs font-semibold text-teal">
+                  <p className="text-xs font-semibold text-teal-ink">
                     Simulated payment recorded ({payment.currency} {payment.amount.toLocaleString()}) — no real money
                     moved.
                   </p>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "AdorWorks Passport" };
@@ -75,7 +76,7 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
         )}
 
         {(profile.linkedin_url || profile.github_url || profile.website_url || profile.portfolio_url) && (
-          <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold text-teal">
+          <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold text-teal-ink">
             {profile.linkedin_url && (
               <a href={profile.linkedin_url} target="_blank" rel="noreferrer" className="underline">
                 LinkedIn
@@ -134,8 +135,9 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
               return (
                 <li key={item.id} className="rounded-xl border border-slate/15 bg-white p-4">
                   {imageUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={imageUrl} alt={item.title} className="mb-3 max-h-64 w-full rounded-lg object-cover" />
+                    <div className="relative mb-3 h-64 w-full overflow-hidden rounded-lg">
+                      <Image src={imageUrl} alt={item.title} fill sizes="(max-width: 640px) 100vw, 640px" className="object-cover" />
+                    </div>
                   )}
                   <p className="text-sm font-semibold text-midnight">{item.title}</p>
                   {item.description && <p className="text-xs text-slate">{item.description}</p>}
@@ -144,7 +146,7 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
                       href={item.external_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-xs font-semibold text-teal underline"
+                      className="text-xs font-semibold text-teal-ink underline"
                     >
                       View link
                     </a>

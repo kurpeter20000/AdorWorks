@@ -96,7 +96,7 @@ export default async function OpportunityDetailPage({
       )}
 
       {offered && (
-        <p className="mt-4 rounded-lg bg-teal/10 px-4 py-3 text-sm font-semibold text-teal">
+        <p className="mt-4 rounded-lg bg-teal/10 px-4 py-3 text-sm font-semibold text-teal-ink">
           Offer sent.
         </p>
       )}
@@ -153,7 +153,7 @@ export default async function OpportunityDetailPage({
                   {contractId ? (
                     <Link
                       href={`/contracts/${contractId}`}
-                      className="mt-3 inline-block text-xs font-semibold text-teal underline"
+                      className="mt-3 inline-block text-xs font-semibold text-teal-ink underline"
                     >
                       View contract
                     </Link>
