@@ -50,48 +50,61 @@ for the full reasoning.
 
 ## Deploying (Vercel)
 
-Not deployed yet as of this writing. Vercel is the natural host for a
-Next.js App Router app — zero-config, no `vercel.json` needed. Steps:
+**Live** at <https://ador-works.vercel.app>, deployed via the Vercel
+project `ador-works`. Vercel is the natural host for a Next.js App
+Router app — zero-config, no `vercel.json` needed. GitHub auto-deploy is
+connected (repo `kurpeter20000/AdorWorks`, production branch `main`), so
+every push to `main` redeploys automatically — same as Netlify already
+does for the static site and Render for `backend/api`.
 
-1. Go to [vercel.com](https://vercel.com), sign in (GitHub login is
-   simplest since the repo's already there), **Add New → Project**,
-   import `kurpeter20000/AdorWorks`.
-2. **Root Directory**: set it to `platform` — this repo has the static
-   site at the root and this app in a subfolder, so Vercel needs to be
-   told where the Next.js app actually is. (Framework Preset should
-   auto-detect "Next.js" once the root directory is set correctly.)
-3. **Environment Variables** — add these six (Project Settings →
-   Environment Variables, or the import screen offers the same form):
+Setup steps, for reference (already done, but useful if this ever needs
+rebuilding from scratch or a second environment is needed):
+
+1. [vercel.com](https://vercel.com) → **Add New → Project** → import
+   `kurpeter20000/AdorWorks`.
+2. **Root Directory**: set to `platform` — this repo has the static site
+   at the root and this app in a subfolder. **Framework Preset**: set
+   explicitly to **Next.js** — it does not always auto-detect correctly
+   when the project was originally created against the repo root, and if
+   it's left on "Other" the Output Directory silently defaults to
+   `public` with an override enabled, which breaks the build (`"Output
+   Directory 'public' is empty"`). Check Settings → General → Build &
+   Output Settings if a deploy ever fails with that error.
+3. **Environment Variables** (Project Settings → Environment Variables):
 
    | Name | Value |
    | --- | --- |
    | `NEXT_PUBLIC_SUPABASE_URL` | `https://cpiebggzbxshzvlzqdfn.supabase.co` |
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the publishable key (same one in `.env.local`) |
    | `SUPABASE_SECRET_KEY` | the **secret** key — paste it directly into Vercel's dashboard, never into chat |
-   | `NEXT_PUBLIC_SITE_URL` | the URL Vercel gives the project once deployed, e.g. `https://adorworks-platform.vercel.app` (you may need to deploy once first to learn this URL, then add/update this variable and redeploy) |
+   | `NEXT_PUBLIC_SITE_URL` | `https://ador-works.vercel.app` (or the current production domain) |
    | `AFRICAS_TALKING_API_KEY` | phone verification SMS — same rule as the Supabase secret key, paste directly into Vercel, never into chat |
    | `AFRICAS_TALKING_USERNAME` | your Africa's Talking account username (use `sandbox` for testing, no real SMS sent) |
 
-4. **Deploy.** Vercel builds and gives you a live URL.
-5. **Supabase Auth redirect allowlist** — this step is easy to miss and
-   breaks signup/login silently if skipped: Supabase dashboard →
-   Authentication → URL Configuration → **Redirect URLs**, add
-   `https://<your-vercel-domain>/auth/callback` (and keep the
-   `http://localhost:3000/auth/callback` entry for local dev). Without
-   this, `exchangeCodeForSession` in `src/app/auth/callback/route.ts`
-   still runs, but Supabase will refuse to redirect back to a URL that
-   isn't allowlisted, and the confirmation link will fail instead of
-   completing signup.
-6. Every push to `main` auto-deploys from then on (Vercel's default
-   GitHub integration) — same as Netlify already does for the static
-   site and Render for `backend/api`.
+   `NEXT_PUBLIC_`-prefixed variables must use Vercel's "Plaintext" (not
+   "Sensitive") visibility on Production/Preview — Vercel rejects secret
+   visibility for public-prefixed names.
+4. **Deploy.**
+5. **Supabase Auth redirect allowlist** — easy to miss, breaks
+   signup/login silently if skipped: Supabase dashboard → Authentication
+   → URL Configuration → **Redirect URLs**, add
+   `https://ador-works.vercel.app/auth/callback` (and keep
+   `http://localhost:3000/auth/callback` for local dev). Without this,
+   `exchangeCodeForSession` in `src/app/auth/callback/route.ts` still
+   runs, but Supabase refuses to redirect back to a non-allowlisted URL
+   and the confirmation link fails instead of completing signup.
 
-**Custom domain**: not decided yet — this app can stay on its
-`*.vercel.app` subdomain indefinitely, or move to a subdomain of a
-future custom domain (e.g. `app.adorworks.com`) later without code
-changes, just a `NEXT_PUBLIC_SITE_URL` update + a DNS record + adding
-the new URL to the Supabase redirect allowlist alongside the old one
-during the transition.
+If deploying via the Vercel CLI instead of the dashboard: run it from
+the **repo root**, not from inside `platform/` — when Root Directory is
+configured on the project, Vercel needs the full repo tree in the
+uploaded bundle to navigate into `platform/` itself.
+
+**Custom domain**: not decided yet — this app can stay on
+`ador-works.vercel.app` indefinitely, or move to a subdomain of a future
+custom domain (e.g. `app.adorworks.com`) later without code changes,
+just a `NEXT_PUBLIC_SITE_URL` update + a DNS record + adding the new URL
+to the Supabase redirect allowlist alongside the old one during the
+transition.
 
 ## Commands
 

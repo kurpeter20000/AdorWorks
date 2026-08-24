@@ -87,10 +87,6 @@ Not built yet:
   false anywhere in the codebase; no payment gateway is integrated, per
   the blueprint's compliance-first rule pending a licensed local payment
   partner.
-- **A production deployment of `platform/`.** It builds and runs cleanly
-  locally (see `platform/README.md`) but has not yet been deployed
-  anywhere — there's no live URL for it yet, only for the public site
-  and the staff console's backend API.
 
 ## Before this goes live
 
