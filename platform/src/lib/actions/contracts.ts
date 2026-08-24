@@ -98,7 +98,7 @@ async function maybeCompleteContract(admin: ReturnType<typeof createAdminClient>
 
   const { data: opportunity } = await admin
     .from("opportunities")
-    .select("title")
+    .select("title, brief")
     .eq("id", contract.opportunity_id)
     .maybeSingle();
 
@@ -107,6 +107,7 @@ async function maybeCompleteContract(admin: ReturnType<typeof createAdminClient>
     contract_id: contract.id,
     organisation_id: contract.organisation_id,
     title: opportunity?.title ?? "AdorWorks engagement",
+    summary: opportunity?.brief ?? null,
     completed_at: new Date().toISOString(),
   });
 }
@@ -205,7 +206,8 @@ async function postSystemMessage(
   admin: ReturnType<typeof createAdminClient>,
   contractId: string,
   senderId: string,
-  body: string
+  body: string,
+  attachment?: { filePath: string; fileName: string }
 ) {
   let { data: conversation } = await admin
     .from("conversations")
@@ -233,19 +235,43 @@ async function postSystemMessage(
     }
   }
   if (!conversation) return;
-  await admin.from("messages").insert({ conversation_id: conversation.id, sender_id: senderId, body });
+  await admin.from("messages").insert({
+    conversation_id: conversation.id,
+    sender_id: senderId,
+    body,
+    file_path: attachment?.filePath ?? null,
+    file_name: attachment?.fileName ?? null,
+  });
 }
 
-const MessageSchema = z.object({ body: z.string().trim().min(1, "Write a message first.").max(4000) });
+const MessageSchema = z.object({
+  body: z.string().trim().max(4000),
+  filePath: z.string().trim().optional(),
+  fileName: z.string().trim().optional(),
+});
 
-/** Either contract participant sending a message — creates the conversation/membership on first use. */
+/**
+ * Either contract participant sending a message — creates the
+ * conversation/membership on first use. If an attachment is included, the
+ * browser has already uploaded it directly to the 'message-attachments'
+ * bucket (RLS allows a contract participant's own upload — see
+ * message-thread.tsx) before this action is called; this just records the
+ * path. A message needs either text or an attachment, not necessarily both.
+ */
 export async function sendMessage(contractId: string, _prevState: FormState, formData: FormData): Promise<FormState> {
   const session = await requireSession();
   const admin = createAdminClient();
 
-  const validated = MessageSchema.safeParse({ body: formData.get("body") });
+  const validated = MessageSchema.safeParse({
+    body: formData.get("body") || "",
+    filePath: formData.get("filePath") || undefined,
+    fileName: formData.get("fileName") || undefined,
+  });
   if (!validated.success) {
     return { errors: validated.error.flatten().fieldErrors };
+  }
+  if (!validated.data.body && !validated.data.filePath) {
+    return { message: "Write a message or attach a file." };
   }
 
   const { data: contract } = await admin
@@ -264,6 +290,64 @@ export async function sendMessage(contractId: string, _prevState: FormState, for
   const isParticipant = session.userId === contract.talent_id || session.userId === org?.representative_id;
   if (!isParticipant) return { message: "You aren't part of this contract." };
 
-  await postSystemMessage(admin, contractId, session.userId, validated.data.body);
+  await postSystemMessage(
+    admin,
+    contractId,
+    session.userId,
+    validated.data.body || (validated.data.fileName ? `Sent a file: ${validated.data.fileName}` : ""),
+    validated.data.filePath && validated.data.fileName
+      ? { filePath: validated.data.filePath, fileName: validated.data.fileName }
+      : undefined
+  );
+  return {};
+}
+
+const DisputeSchema = z.object({
+  description: z.string().trim().min(20, "Describe the issue in at least 20 characters."),
+});
+
+/**
+ * Either contract participant raising a dispute. Unlike messages, this has
+ * to touch contracts.status too (RLS deliberately blocks a direct client
+ * UPDATE on contracts — see contracts_update's policy comment — so this
+ * goes through the admin client like every other contract state change).
+ */
+export async function raiseDispute(contractId: string, _prevState: FormState, formData: FormData): Promise<FormState> {
+  const session = await requireSession();
+  const admin = createAdminClient();
+
+  const validated = DisputeSchema.safeParse({ description: formData.get("description") });
+  if (!validated.success) {
+    return { errors: validated.error.flatten().fieldErrors };
+  }
+
+  const { data: contract } = await admin
+    .from("contracts")
+    .select("talent_id, organisation_id, status")
+    .eq("id", contractId)
+    .maybeSingle();
+  if (!contract) return { message: "Contract not found." };
+
+  const { data: org } = await admin
+    .from("organisations")
+    .select("representative_id")
+    .eq("id", contract.organisation_id)
+    .maybeSingle();
+
+  const isParticipant = session.userId === contract.talent_id || session.userId === org?.representative_id;
+  if (!isParticipant) return { message: "You aren't part of this contract." };
+  if (contract.status === "disputed") return { message: "This contract already has an open dispute." };
+  if (contract.status !== "active") return { message: "Only an active contract can be disputed." };
+
+  const { error } = await admin.from("disputes").insert({
+    contract_id: contractId,
+    raised_by: session.userId,
+    description: validated.data.description,
+  });
+  if (error) return { message: error.message };
+
+  await admin.from("contracts").update({ status: "disputed" }).eq("id", contractId);
+  await postSystemMessage(admin, contractId, session.userId, "A dispute was raised on this contract — AdorWorks staff will review it.");
+
   return {};
 }

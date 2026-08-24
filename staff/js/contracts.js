@@ -2,6 +2,8 @@ import { requireStaffSession, initLogout, apiFetch, escapeHtml, formatDate, stat
 
 initLogout();
 
+var DISPUTE_STATUSES = ["open", "investigating", "resolved", "escalated"];
+
 var rows = [];
 var activeFilter = "";
 
@@ -67,13 +69,40 @@ async function toggleDetail(id) {
   document.querySelectorAll("tr.detail-row.is-open").forEach(function (r) { r.classList.remove("is-open"); });
   if (isOpen) return;
   detailRow.classList.add("is-open");
+  await refreshDetail(id, detailRow);
+}
+
+async function refreshDetail(id, detailRow) {
   detailRow.querySelector("td").innerHTML = "Loading…";
   try {
     var res = await apiFetch("/api/contracts/" + id);
     detailRow.querySelector("td").innerHTML = renderDetail(res.data);
+    wireDetailActions(id, detailRow);
   } catch (err) {
     detailRow.querySelector("td").innerHTML = escapeHtml(err.message);
   }
+}
+
+function wireDetailActions(id, detailRow) {
+  detailRow.querySelectorAll("[data-resolve-dispute]").forEach(function (btn) {
+    btn.addEventListener("click", async function () {
+      var disputeId = btn.getAttribute("data-resolve-dispute");
+      var status = detailRow.querySelector("#dispute-status-" + disputeId).value;
+      var resolution = detailRow.querySelector("#dispute-resolution-" + disputeId).value;
+      btn.disabled = true;
+      try {
+        await apiFetch("/api/disputes/" + disputeId, {
+          method: "PATCH",
+          body: { status: status, resolution: resolution || undefined },
+        });
+        await refreshDetail(id, detailRow);
+        await load();
+      } catch (err) {
+        alert(err.message);
+        btn.disabled = false;
+      }
+    });
+  });
 }
 
 function renderDetail(c) {
@@ -131,6 +160,35 @@ function renderDetail(c) {
         .join("")
     : "<li>No reviews yet.</li>";
 
+  var timesheets = (c.timesheets || []).slice().sort(function (a, b) { return new Date(b.period_start) - new Date(a.period_start); });
+  var timesheetsHtml = timesheets.length
+    ? timesheets
+        .map(function (t) {
+          return (
+            "<li>" + formatDate(t.period_start) + " – " + formatDate(t.period_end) + " · " +
+            escapeHtml(String(t.hours)) + "h " + statusBadge(t.status) + "</li>"
+          );
+        })
+        .join("")
+    : "<li>No timesheets logged.</li>";
+
+  var disputes = (c.disputes || []).slice().sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); });
+  var disputesHtml = disputes.length
+    ? disputes
+        .map(function (disp) {
+          var dOptions = DISPUTE_STATUSES.map(function (s) { return '<option value="' + s + '"' + (s === disp.status ? " selected" : "") + ">" + s + "</option>"; }).join("");
+          return (
+            "<li>" + escapeHtml(disp.description) + " — " + statusBadge(disp.status) +
+            '<div class="form-grid form-grid-2 mt-1">' +
+            '<select id="dispute-status-' + disp.id + '">' + dOptions + "</select>" +
+            '<input type="text" id="dispute-resolution-' + disp.id + '" placeholder="Resolution notes" value="' + escapeHtml(disp.resolution || "") + '">' +
+            "</div>" +
+            '<div class="action-row"><button type="button" class="btn btn-secondary" data-resolve-dispute="' + disp.id + '">Save</button></div></li>'
+          );
+        })
+        .join("")
+    : "<li>No disputes.</li>";
+
   return (
     '<div class="detail-grid detail-grid-2">' +
     "<div>" +
@@ -138,10 +196,14 @@ function renderDetail(c) {
     '<ul class="staff-events">' + milestonesHtml + "</ul>" +
     "<h3 class=\"mt-1\">Payments <span style=\"font-weight:400;font-size:0.8em;\">(simulated — no real payment provider)</span></h3>" +
     '<ul class="staff-events">' + paymentsHtml + "</ul>" +
+    "<h3 class=\"mt-1\">Timesheets</h3>" +
+    '<ul class="staff-events">' + timesheetsHtml + "</ul>" +
     "</div>" +
     "<div>" +
     "<h3>Reviews</h3>" +
     '<ul class="staff-events">' + reviewsHtml + "</ul>" +
+    "<h3 class=\"mt-1\">Disputes</h3>" +
+    '<ul class="staff-events">' + disputesHtml + "</ul>" +
     "<h3 class=\"mt-1\">Details</h3>" +
     '<dl class="kv-list">' +
     "<dt>Started</dt><dd>" + formatDate(c.started_at) + "</dd>" +

@@ -35,6 +35,16 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
     .eq("talent_id", id)
     .order("created_at", { ascending: false });
 
+  const { data: workHistory } = await supabase
+    .from("work_history")
+    .select("id, title, summary, organisation_id, completed_at")
+    .eq("talent_id", id)
+    .order("completed_at", { ascending: false });
+  const orgIds = [...new Set((workHistory ?? []).map((w) => w.organisation_id))];
+  const { data: orgs } =
+    orgIds.length > 0 ? await supabase.from("organisations").select("id, name").in("id", orgIds) : { data: [] };
+  const orgNameById = new Map((orgs ?? []).map((o) => [o.id, o.name]));
+
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <div className="rounded-xl border border-slate/15 bg-white p-5">
@@ -89,6 +99,29 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
           </div>
         )}
       </div>
+
+      {workHistory && workHistory.length > 0 && (
+        <div className="mt-6">
+          <h2 className="font-bold text-midnight">Verified work history</h2>
+          <p className="mt-1 text-xs text-slate">Completed contracts on AdorWorks — recorded automatically, not self-reported.</p>
+          <ul className="mt-3 space-y-3">
+            {workHistory.map((w) => (
+              <li key={w.id} className="rounded-xl border border-slate/15 bg-white p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-midnight">{w.title}</p>
+                    <p className="text-xs text-slate">{orgNameById.get(w.organisation_id) ?? "AdorWorks employer"}</p>
+                  </div>
+                  <span className="whitespace-nowrap text-xs text-slate">
+                    {new Date(w.completed_at).toLocaleDateString(undefined, { year: "numeric", month: "short" })}
+                  </span>
+                </div>
+                {w.summary && <p className="mt-2 text-xs text-slate">{w.summary}</p>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {items && items.length > 0 && (
         <div className="mt-6">

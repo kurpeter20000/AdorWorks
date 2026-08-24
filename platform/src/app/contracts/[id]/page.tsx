@@ -8,6 +8,8 @@ import { ReviewActions } from "./review-actions";
 import { ReleasePaymentButton } from "./release-payment-button";
 import { MessageThread } from "./message-thread";
 import { ReviewSection } from "./review-section";
+import { TimesheetsSection } from "./timesheets-section";
+import { DisputeSection } from "./dispute-section";
 
 export const metadata: Metadata = { title: "Contract" };
 
@@ -77,10 +79,22 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
   const { data: messages } = conversation
     ? await supabase
         .from("messages")
-        .select("id, sender_id, body, created_at")
+        .select("id, sender_id, body, file_path, file_name, created_at")
         .eq("conversation_id", conversation.id)
         .order("created_at", { ascending: true })
     : { data: [] };
+
+  const { data: timesheets } = await supabase
+    .from("timesheets")
+    .select("*")
+    .eq("contract_id", contract.id)
+    .order("period_start", { ascending: false });
+
+  const { data: disputes } = await supabase
+    .from("disputes")
+    .select("*")
+    .eq("contract_id", contract.id)
+    .order("created_at", { ascending: false });
 
   let myReview: { rating: number; feedback: string | null } | null = null;
   let theirReview: { rating: number; feedback: string | null } | null = null;
@@ -105,6 +119,12 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
       {contract.status === "completed" && (
         <p className="mt-4 rounded-lg bg-violet/10 px-4 py-3 text-sm font-semibold text-violet">
           Contract completed — added to {isTalent ? "your" : "their"} work history.
+        </p>
+      )}
+
+      {contract.status === "disputed" && (
+        <p className="mt-4 rounded-lg bg-coral/10 px-4 py-3 text-sm font-semibold text-coral">
+          This contract is paused while AdorWorks staff review an open dispute — see below.
         </p>
       )}
 
@@ -158,6 +178,8 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
         })}
       </div>
 
+      {(isTalent || isEmployer) && <TimesheetsSection contractId={contract.id} isTalent={isTalent} isEmployer={isEmployer} timesheets={timesheets ?? []} />}
+
       <div className="mt-8">
         <h2 className="font-bold text-midnight">Messages</h2>
         <MessageThread
@@ -174,6 +196,10 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
           myReview={myReview}
           theirReview={theirReview}
         />
+      )}
+
+      {(isTalent || isEmployer) && (
+        <DisputeSection contractId={contract.id} contractStatus={contract.status} disputes={disputes ?? []} />
       )}
     </main>
   );

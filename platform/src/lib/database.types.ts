@@ -303,6 +303,34 @@ export type DeliverableRow = {
   created_at: string;
 }
 
+export type TimesheetStatus = "submitted" | "approved" | "rejected";
+
+export type TimesheetRow = {
+  id: string;
+  contract_id: string;
+  period_start: string;
+  period_end: string;
+  hours: number;
+  status: TimesheetStatus;
+  created_at: string;
+}
+
+export type DisputeStatus = "open" | "investigating" | "resolved" | "escalated";
+
+export type DisputeRow = {
+  id: string;
+  engagement_id: string | null;
+  contract_id: string | null;
+  raised_by: string;
+  description: string;
+  status: DisputeStatus;
+  resolution: string | null;
+  resolved_by: string | null;
+  resolved_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export type PaymentEventRow = {
   id: string;
   milestone_id: string | null;
@@ -344,6 +372,8 @@ export type MessageRow = {
   conversation_id: string;
   sender_id: string;
   body: string;
+  file_path: string | null;
+  file_name: string | null;
   created_at: string;
 }
 
@@ -553,6 +583,23 @@ export type Database = {
         Row: PaymentEventRow;
         Insert: Partial<PaymentEventRow> & { contract_id: string; external_reference: string; amount: number };
         Update: Partial<PaymentEventRow>;
+        Relationships: [];
+      };
+      timesheets: {
+        Row: TimesheetRow;
+        Insert: Partial<TimesheetRow> & {
+          contract_id: string;
+          period_start: string;
+          period_end: string;
+          hours: number;
+        };
+        Update: Partial<TimesheetRow>;
+        Relationships: [];
+      };
+      disputes: {
+        Row: DisputeRow;
+        Insert: Partial<DisputeRow> & { raised_by: string; description: string };
+        Update: Partial<DisputeRow>;
         Relationships: [];
       };
       work_history: {
