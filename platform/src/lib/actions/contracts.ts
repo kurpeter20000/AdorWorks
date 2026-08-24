@@ -351,3 +351,56 @@ export async function raiseDispute(contractId: string, _prevState: FormState, fo
 
   return {};
 }
+
+const CancelContractSchema = z.object({
+  reason: z.string().trim().min(10, "Explain why in at least 10 characters."),
+});
+
+/**
+ * Either contract participant cancelling an active contract — unlike a
+ * dispute, this is final (no staff mediation step), so it's only allowed
+ * from 'active', not from 'disputed' (resolve that first). Same
+ * admin-client requirement as raiseDispute/maybeCompleteContract: RLS
+ * blocks a direct client UPDATE on contracts.
+ */
+export async function cancelContract(contractId: string, _prevState: FormState, formData: FormData): Promise<FormState> {
+  const session = await requireSession();
+  const admin = createAdminClient();
+
+  const validated = CancelContractSchema.safeParse({ reason: formData.get("reason") });
+  if (!validated.success) {
+    return { errors: validated.error.flatten().fieldErrors };
+  }
+
+  const { data: contract } = await admin
+    .from("contracts")
+    .select("talent_id, organisation_id, status")
+    .eq("id", contractId)
+    .maybeSingle();
+  if (!contract) return { message: "Contract not found." };
+
+  const { data: org } = await admin
+    .from("organisations")
+    .select("representative_id")
+    .eq("id", contract.organisation_id)
+    .maybeSingle();
+
+  const isParticipant = session.userId === contract.talent_id || session.userId === org?.representative_id;
+  if (!isParticipant) return { message: "You aren't part of this contract." };
+  if (contract.status !== "active") return { message: "Only an active contract can be cancelled." };
+
+  const { error } = await admin
+    .from("contracts")
+    .update({
+      status: "cancelled",
+      cancelled_at: new Date().toISOString(),
+      cancelled_by: session.userId,
+      cancellation_reason: validated.data.reason,
+    })
+    .eq("id", contractId);
+  if (error) return { message: error.message };
+
+  await postSystemMessage(admin, contractId, session.userId, `This contract was cancelled: ${validated.data.reason}`);
+
+  return {};
+}

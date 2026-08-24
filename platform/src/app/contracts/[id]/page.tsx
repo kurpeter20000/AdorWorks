@@ -10,6 +10,7 @@ import { MessageThread } from "./message-thread";
 import { ReviewSection } from "./review-section";
 import { TimesheetsSection } from "./timesheets-section";
 import { DisputeSection } from "./dispute-section";
+import { CancelContractSection } from "./cancel-contract-section";
 
 export const metadata: Metadata = { title: "Contract" };
 
@@ -128,6 +129,13 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
         </p>
       )}
 
+      {contract.status === "cancelled" && (
+        <div className="mt-4 rounded-lg bg-slate/10 px-4 py-3 text-sm text-slate">
+          <p className="font-semibold text-midnight">This contract was cancelled.</p>
+          {contract.cancellation_reason && <p className="mt-1">{contract.cancellation_reason}</p>}
+        </div>
+      )}
+
       <div className="mt-8 space-y-4">
         <h2 className="font-bold text-midnight">Milestones</h2>
         {(milestones ?? []).map((m) => {
@@ -200,6 +208,12 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
 
       {(isTalent || isEmployer) && (
         <DisputeSection contractId={contract.id} contractStatus={contract.status} disputes={disputes ?? []} />
+      )}
+
+      {(isTalent || isEmployer) && contract.status === "active" && (
+        <div className="mt-8">
+          <CancelContractSection contractId={contract.id} />
+        </div>
       )}
     </main>
   );

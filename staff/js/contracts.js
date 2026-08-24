@@ -208,6 +208,10 @@ function renderDetail(c) {
     '<dl class="kv-list">' +
     "<dt>Started</dt><dd>" + formatDate(c.started_at) + "</dd>" +
     "<dt>Completed</dt><dd>" + formatDate(c.completed_at) + "</dd>" +
+    (c.cancelled_at
+      ? "<dt>Cancelled</dt><dd>" + formatDate(c.cancelled_at) + "</dd>" +
+        "<dt>Cancellation reason</dt><dd>" + escapeHtml(c.cancellation_reason || "—") + "</dd>"
+      : "") +
     "</dl>" +
     "</div>" +
     "</div>"
