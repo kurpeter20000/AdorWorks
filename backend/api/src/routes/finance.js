@@ -14,6 +14,7 @@ financeRouter.use(requireAuth, requireFinanceStaff);
 
 const listQuerySchema = z.object({
   engagement_id: z.string().uuid().optional(),
+  contract_id: z.string().uuid().optional(),
   status: z.enum(["pending", "confirmed", "reconciled", "cancelled"]).optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),
@@ -26,12 +27,15 @@ financeRouter.get(
     const query = listQuerySchema.parse(req.query);
     let q = supabaseAdmin
       .from("finance_records")
-      .select("*, engagements(organisation_id, talent_id, organisations(name), talent_profiles(headline))", {
-        count: "exact",
-      })
+      .select(
+        "*, engagements(organisation_id, talent_id, organisations(name), talent_profiles(headline)), " +
+          "contracts(opportunities(title), organisations(name), talent_profiles(headline))",
+        { count: "exact" }
+      )
       .order("created_at", { ascending: false })
       .range(query.offset, query.offset + query.limit - 1);
     if (query.engagement_id) q = q.eq("engagement_id", query.engagement_id);
+    if (query.contract_id) q = q.eq("contract_id", query.contract_id);
     if (query.status) q = q.eq("status", query.status);
 
     const { data, error, count } = await q;

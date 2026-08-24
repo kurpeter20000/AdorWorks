@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import type { DeliverableRow } from "@/lib/database.types";
 import { DeliverableForm } from "./deliverable-form";
 import { ReviewActions } from "./review-actions";
-import { ReleasePaymentButton } from "./release-payment-button";
+import { PaymentCheckout } from "./payment-checkout";
+import { ReceiptView } from "./receipt-view";
 import { MessageThread } from "./message-thread";
 import { ReviewSection } from "./review-section";
 import { TimesheetsSection } from "./timesheets-section";
@@ -68,7 +69,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
 
   const { data: paymentEvents } = await supabase
     .from("payment_events")
-    .select("milestone_id, external_reference, amount, currency, created_at")
+    .select("milestone_id, external_reference, amount, currency, provider_name, payer_phone, receipt_number, created_at")
     .eq("contract_id", contract.id);
   const paymentByMilestone = new Map((paymentEvents ?? []).map((p) => [p.milestone_id, p]));
 
@@ -166,10 +167,21 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
               )}
 
               {payment && (
-                <p className="mt-3 text-xs font-semibold text-teal">
-                  Simulated payment recorded ({payment.currency} {payment.amount.toLocaleString()}) — no real money
-                  moved.
-                </p>
+                <div className="mt-3">
+                  <p className="text-xs font-semibold text-teal">
+                    Simulated payment recorded ({payment.currency} {payment.amount.toLocaleString()}) — no real money
+                    moved.
+                  </p>
+                  <ReceiptView
+                    receiptNumber={payment.receipt_number}
+                    amount={payment.amount}
+                    currency={payment.currency}
+                    providerName={payment.provider_name}
+                    payerPhone={payment.payer_phone}
+                    externalReference={payment.external_reference}
+                    createdAt={payment.created_at}
+                  />
+                </div>
               )}
 
               {isTalent && ["pending", "revision_requested"].includes(m.status) && (
@@ -180,7 +192,9 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                 <ReviewActions deliverableId={deliverable.id} />
               )}
 
-              {isEmployer && m.status === "approved" && <ReleasePaymentButton milestoneId={m.id} />}
+              {isEmployer && m.status === "approved" && (
+                <PaymentCheckout milestoneId={m.id} amount={m.amount} currency={m.currency} />
+              )}
             </div>
           );
         })}

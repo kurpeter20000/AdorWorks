@@ -1,9 +1,9 @@
 "use server";
 
-import { randomUUID } from "crypto";
 import { z } from "zod";
 import { requireSession, requireRole } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getPaymentProvider } from "@/lib/paymentProviders";
 import type { FormState } from "./auth";
 
 /**
@@ -132,6 +132,28 @@ export async function approveDeliverable(deliverableId: string): Promise<{ error
 
   await admin.from("deliverables").update({ status: "approved" }).eq("id", deliverableId);
   await admin.from("milestones").update({ status: "approved" }).eq("id", deliverable.milestone_id);
+
+  // An approved milestone is money now owed — raise the invoice for it.
+  // "Invoice" here means the same thing finance_records has always meant
+  // (see finance.js): a manually-tracked record of what's owed, not a
+  // document sent through a billing system.
+  const { data: milestoneForInvoice } = await admin
+    .from("milestones")
+    .select("amount, currency")
+    .eq("id", deliverable.milestone_id)
+    .maybeSingle();
+  if (milestoneForInvoice) {
+    await admin.from("finance_records").insert({
+      contract_id: check.contract!.id,
+      milestone_id: deliverable.milestone_id,
+      record_type: "invoice",
+      amount: milestoneForInvoice.amount,
+      currency: milestoneForInvoice.currency,
+      status: "pending",
+      recorded_by: session.userId,
+    });
+  }
+
   await maybeCompleteContract(admin, check.contract!.id);
 
   return {};
@@ -165,40 +187,107 @@ export async function requestRevision(deliverableId: string, note: string): Prom
   return {};
 }
 
+const CheckoutSchema = z.object({
+  provider: z.enum(["mgurush", "mtn_momo"], { message: "Choose a payment provider." }),
+  phone: z.string().trim().min(9, "Enter a valid phone number."),
+});
+
 /**
- * Mocked payment release — is_simulated stays true, provider_name stays
- * 'mock', exactly as backend/supabase/migrations/0006 describes: no
- * code path anywhere in this project ever sets is_simulated false,
- * because no real payment provider is integrated. This is the only
- * place a payment_events row is ever created from this app.
+ * Simulated mobile-money checkout. is_simulated on the resulting
+ * payment_events row stays true — no code path anywhere in this project
+ * ever sets it false, because no real payment provider is integrated
+ * (see paymentProviders.ts). This records a payment_intentions row
+ * first (the pre-settlement "I've submitted a phone number and I'm
+ * waiting on the provider" state a real gateway would have), then
+ * "charges" through the swappable PaymentProvider interface, then
+ * writes the settled payment_events row + a receipt number, confirms
+ * the invoice, and marks the milestone paid.
  */
-export async function releasePayment(milestoneId: string): Promise<{ error?: string }> {
+export async function payMilestone(milestoneId: string, _prevState: FormState, formData: FormData): Promise<FormState> {
   const session = await requireRole("individual_client");
   const check = await requireEmployerForMilestone(milestoneId, session.userId);
-  if (check.error) return { error: check.error };
+  if (check.error) return { message: check.error };
   if (check.milestone!.status !== "approved") {
-    return { error: "Only an approved milestone can be paid." };
+    return { message: "Only an approved milestone can be paid." };
   }
   const admin = check.admin;
+
+  const validated = CheckoutSchema.safeParse({
+    provider: formData.get("provider"),
+    phone: formData.get("phone"),
+  });
+  if (!validated.success) {
+    return { errors: validated.error.flatten().fieldErrors };
+  }
 
   const { data: milestone } = await admin
     .from("milestones")
     .select("amount, currency")
     .eq("id", milestoneId)
     .maybeSingle();
-  if (!milestone) return { error: "Milestone not found." };
+  if (!milestone) return { message: "Milestone not found." };
 
-  const { error } = await admin.from("payment_events").insert({
+  const { data: invoice } = await admin
+    .from("finance_records")
+    .select("id")
+    .eq("milestone_id", milestoneId)
+    .eq("record_type", "invoice")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { data: intention, error: intentionError } = await admin
+    .from("payment_intentions")
+    .insert({
+      contract_id: check.contract!.id,
+      milestone_id: milestoneId,
+      invoice_id: invoice?.id ?? null,
+      provider: validated.data.provider,
+      payer_phone: validated.data.phone,
+      amount: milestone.amount,
+      currency: milestone.currency,
+      created_by: session.userId,
+    })
+    .select("id")
+    .single();
+  if (intentionError || !intention) return { message: intentionError?.message ?? "Could not start the payment." };
+
+  const provider = getPaymentProvider(validated.data.provider);
+  const result = provider
+    ? await provider.charge({ phone: validated.data.phone, amount: milestone.amount, currency: milestone.currency })
+    : { success: false as const, reason: "Unknown payment provider." };
+
+  if (!result.success) {
+    await admin
+      .from("payment_intentions")
+      .update({ status: "failed", failure_reason: result.reason, resolved_at: new Date().toISOString() })
+      .eq("id", intention.id);
+    return { message: result.reason };
+  }
+
+  const receiptNumber = `RCPT-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${intention.id.slice(0, 8).toUpperCase()}`;
+
+  const { error: paymentError } = await admin.from("payment_events").insert({
     milestone_id: milestoneId,
     contract_id: check.contract!.id,
-    provider_name: "mock",
-    external_reference: `mock_${randomUUID()}`,
+    intention_id: intention.id,
+    invoice_id: invoice?.id ?? null,
+    provider_name: validated.data.provider,
+    external_reference: result.reference,
+    payer_phone: validated.data.phone,
+    receipt_number: receiptNumber,
     amount: milestone.amount,
     currency: milestone.currency,
   });
-  if (error) return { error: error.message };
+  if (paymentError) return { message: paymentError.message };
 
+  await admin
+    .from("payment_intentions")
+    .update({ status: "succeeded", resolved_at: new Date().toISOString() })
+    .eq("id", intention.id);
+  if (invoice) await admin.from("finance_records").update({ status: "confirmed" }).eq("id", invoice.id);
   await admin.from("milestones").update({ status: "paid" }).eq("id", milestoneId);
+
   return {};
 }
 

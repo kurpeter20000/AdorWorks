@@ -3,6 +3,7 @@ import { requireStaffSession, initLogout, apiFetch, escapeHtml, formatDate, stat
 initLogout();
 
 var DISPUTE_STATUSES = ["open", "investigating", "resolved", "escalated"];
+var FINANCE_STATUSES = ["pending", "confirmed", "reconciled", "cancelled"];
 
 var rows = [];
 var activeFilter = "";
@@ -103,6 +104,21 @@ function wireDetailActions(id, detailRow) {
       }
     });
   });
+
+  detailRow.querySelectorAll("[data-reconcile-invoice]").forEach(function (btn) {
+    btn.addEventListener("click", async function () {
+      var invoiceId = btn.getAttribute("data-reconcile-invoice");
+      var status = detailRow.querySelector("#invoice-status-" + invoiceId).value;
+      btn.disabled = true;
+      try {
+        await apiFetch("/api/finance/" + invoiceId, { method: "PATCH", body: { status: status } });
+        await refreshDetail(id, detailRow);
+      } catch (err) {
+        alert(err.message);
+        btn.disabled = false;
+      }
+    });
+  });
 }
 
 function renderDetail(c) {
@@ -148,6 +164,38 @@ function renderDetail(c) {
         })
         .join("")
     : "<li>No payment events yet.</li>";
+
+  var invoices = (c.finance_records || []).filter(function (f) { return f.record_type === "invoice"; })
+    .slice().sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); });
+  var invoicesHtml = invoices.length
+    ? invoices
+        .map(function (inv) {
+          var fOptions = FINANCE_STATUSES.map(function (s) { return '<option value="' + s + '"' + (s === inv.status ? " selected" : "") + ">" + s + "</option>"; }).join("");
+          return (
+            "<li>" + escapeHtml(inv.currency) + " " + escapeHtml(Number(inv.amount).toLocaleString()) +
+            " " + statusBadge(inv.status) + ' <time>' + formatDate(inv.created_at) + "</time>" +
+            '<div class="form-grid form-grid-2 mt-1">' +
+            '<select id="invoice-status-' + inv.id + '">' + fOptions + "</select>" +
+            '<button type="button" class="btn btn-secondary" data-reconcile-invoice="' + inv.id + '">Save</button>' +
+            "</div></li>"
+          );
+        })
+        .join("")
+    : "<li>No invoices yet.</li>";
+
+  var intentions = (c.payment_intentions || []).slice().sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); });
+  var intentionsHtml = intentions.length
+    ? intentions
+        .map(function (pi) {
+          return (
+            "<li>" + escapeHtml(pi.provider) + " · " + escapeHtml(pi.payer_phone) + " · " +
+            escapeHtml(pi.currency) + " " + escapeHtml(Number(pi.amount).toLocaleString()) + " " +
+            statusBadge(pi.status) + (pi.failure_reason ? " — " + escapeHtml(pi.failure_reason) : "") +
+            ' <time>' + formatDate(pi.created_at) + "</time></li>"
+          );
+        })
+        .join("")
+    : "<li>No payment attempts yet.</li>";
 
   var reviewsHtml = reviews.length
     ? reviews
@@ -200,7 +248,11 @@ function renderDetail(c) {
     '<ul class="staff-events">' + timesheetsHtml + "</ul>" +
     "</div>" +
     "<div>" +
-    "<h3>Reviews</h3>" +
+    "<h3>Invoices <span style=\"font-weight:400;font-size:0.8em;\">(reconcile once confirmed externally)</span></h3>" +
+    '<ul class="staff-events">' + invoicesHtml + "</ul>" +
+    "<h3 class=\"mt-1\">Payment attempts</h3>" +
+    '<ul class="staff-events">' + intentionsHtml + "</ul>" +
+    "<h3 class=\"mt-1\">Reviews</h3>" +
     '<ul class="staff-events">' + reviewsHtml + "</ul>" +
     "<h3 class=\"mt-1\">Disputes</h3>" +
     '<ul class="staff-events">' + disputesHtml + "</ul>" +

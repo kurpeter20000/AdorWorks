@@ -338,13 +338,54 @@ export type PaymentEventRow = {
   id: string;
   milestone_id: string | null;
   contract_id: string;
+  intention_id: string | null;
+  invoice_id: string | null;
   provider_name: string;
   external_reference: string;
+  payer_phone: string | null;
+  receipt_number: string | null;
   amount: number;
   currency: string;
   status: PaymentEventStatus;
   is_simulated: boolean;
   created_at: string;
+}
+
+export type PaymentIntentionStatus = "processing" | "succeeded" | "failed";
+
+export type PaymentIntentionRow = {
+  id: string;
+  contract_id: string;
+  milestone_id: string;
+  invoice_id: string | null;
+  provider: "mgurush" | "mtn_momo";
+  payer_phone: string;
+  amount: number;
+  currency: string;
+  status: PaymentIntentionStatus;
+  failure_reason: string | null;
+  created_by: string;
+  created_at: string;
+  resolved_at: string | null;
+}
+
+export type FinanceRecordType = "deposit" | "invoice" | "fee" | "payout" | "refund";
+export type FinanceRecordStatus = "pending" | "confirmed" | "reconciled" | "cancelled";
+
+export type FinanceRecordRow = {
+  id: string;
+  engagement_id: string | null;
+  contract_id: string | null;
+  milestone_id: string | null;
+  record_type: FinanceRecordType;
+  amount: number;
+  currency: string;
+  status: FinanceRecordStatus;
+  exchange_rate_basis: string | null;
+  notes: string | null;
+  recorded_by: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export type WorkHistoryRow = {
@@ -586,6 +627,25 @@ export type Database = {
         Row: PaymentEventRow;
         Insert: Partial<PaymentEventRow> & { contract_id: string; external_reference: string; amount: number };
         Update: Partial<PaymentEventRow>;
+        Relationships: [];
+      };
+      payment_intentions: {
+        Row: PaymentIntentionRow;
+        Insert: Partial<PaymentIntentionRow> & {
+          contract_id: string;
+          milestone_id: string;
+          provider: "mgurush" | "mtn_momo";
+          payer_phone: string;
+          amount: number;
+          created_by: string;
+        };
+        Update: Partial<PaymentIntentionRow>;
+        Relationships: [];
+      };
+      finance_records: {
+        Row: FinanceRecordRow;
+        Insert: Partial<FinanceRecordRow> & { record_type: FinanceRecordType; amount: number; recorded_by: string };
+        Update: Partial<FinanceRecordRow>;
         Relationships: [];
       };
       timesheets: {

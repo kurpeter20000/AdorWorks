@@ -50,7 +50,8 @@ contractsRouter.get(
       .from("contracts")
       .select(
         "*, opportunities(title), organisations(name), talent_profiles(display_name, headline), " +
-          "milestones(*, deliverables(*)), payment_events(*), reviews(*), timesheets(*), disputes(*)"
+          "milestones(*, deliverables(*)), payment_events(*), reviews(*), timesheets(*), disputes(*), " +
+          "finance_records(*), payment_intentions(*)"
       )
       .eq("id", req.params.id)
       .single();
