@@ -5,6 +5,7 @@ import { useState } from "react";
 const PROVIDER_LABEL: Record<string, string> = {
   mgurush: "m-Gurush",
   mtn_momo: "MTN Mobile Money",
+  visa_mastercard: "Card",
 };
 
 export function ReceiptView({
@@ -13,6 +14,8 @@ export function ReceiptView({
   currency,
   providerName,
   payerPhone,
+  cardLast4,
+  cardBrand,
   externalReference,
   createdAt,
 }: {
@@ -21,6 +24,8 @@ export function ReceiptView({
   currency: string;
   providerName: string;
   payerPhone: string | null;
+  cardLast4: string | null;
+  cardBrand: string | null;
   externalReference: string;
   createdAt: string;
 }) {
@@ -61,6 +66,14 @@ export function ReceiptView({
           <div className="flex justify-between">
             <dt className="text-slate">Payer phone</dt>
             <dd>{payerPhone}</dd>
+          </div>
+        )}
+        {cardLast4 && (
+          <div className="flex justify-between">
+            <dt className="text-slate">Card</dt>
+            <dd>
+              {cardBrand} •••• {cardLast4}
+            </dd>
           </div>
         )}
         <div className="flex justify-between">

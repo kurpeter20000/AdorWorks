@@ -187,8 +187,9 @@ function renderDetail(c) {
   var intentionsHtml = intentions.length
     ? intentions
         .map(function (pi) {
+          var payerLabel = pi.card_last4 ? escapeHtml(pi.card_brand || "Card") + " ····" + escapeHtml(pi.card_last4) : escapeHtml(pi.payer_phone || "—");
           return (
-            "<li>" + escapeHtml(pi.provider) + " · " + escapeHtml(pi.payer_phone) + " · " +
+            "<li>" + escapeHtml(pi.provider) + " · " + payerLabel + " · " +
             escapeHtml(pi.currency) + " " + escapeHtml(Number(pi.amount).toLocaleString()) + " " +
             statusBadge(pi.status) + (pi.failure_reason ? " — " + escapeHtml(pi.failure_reason) : "") +
             ' <time>' + formatDate(pi.created_at) + "</time></li>"

@@ -343,6 +343,8 @@ export type PaymentEventRow = {
   provider_name: string;
   external_reference: string;
   payer_phone: string | null;
+  card_last4: string | null;
+  card_brand: string | null;
   receipt_number: string | null;
   amount: number;
   currency: string;
@@ -358,8 +360,10 @@ export type PaymentIntentionRow = {
   contract_id: string;
   milestone_id: string;
   invoice_id: string | null;
-  provider: "mgurush" | "mtn_momo";
-  payer_phone: string;
+  provider: "mgurush" | "mtn_momo" | "visa_mastercard";
+  payer_phone: string | null;
+  card_last4: string | null;
+  card_brand: string | null;
   amount: number;
   currency: string;
   status: PaymentIntentionStatus;
@@ -634,8 +638,7 @@ export type Database = {
         Insert: Partial<PaymentIntentionRow> & {
           contract_id: string;
           milestone_id: string;
-          provider: "mgurush" | "mtn_momo";
-          payer_phone: string;
+          provider: "mgurush" | "mtn_momo" | "visa_mastercard";
           amount: number;
           created_by: string;
         };

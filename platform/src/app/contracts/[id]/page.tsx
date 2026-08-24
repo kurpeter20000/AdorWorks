@@ -69,7 +69,9 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
 
   const { data: paymentEvents } = await supabase
     .from("payment_events")
-    .select("milestone_id, external_reference, amount, currency, provider_name, payer_phone, receipt_number, created_at")
+    .select(
+      "milestone_id, external_reference, amount, currency, provider_name, payer_phone, card_last4, card_brand, receipt_number, created_at"
+    )
     .eq("contract_id", contract.id);
   const paymentByMilestone = new Map((paymentEvents ?? []).map((p) => [p.milestone_id, p]));
 
@@ -178,6 +180,8 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                     currency={payment.currency}
                     providerName={payment.provider_name}
                     payerPhone={payment.payer_phone}
+                    cardLast4={payment.card_last4}
+                    cardBrand={payment.card_brand}
                     externalReference={payment.external_reference}
                     createdAt={payment.created_at}
                   />

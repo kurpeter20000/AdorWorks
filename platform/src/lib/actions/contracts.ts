@@ -187,21 +187,34 @@ export async function requestRevision(deliverableId: string, note: string): Prom
   return {};
 }
 
-const CheckoutSchema = z.object({
-  provider: z.enum(["mgurush", "mtn_momo"], { message: "Choose a payment provider." }),
-  phone: z.string().trim().min(9, "Enter a valid phone number."),
-});
+const CheckoutSchema = z
+  .object({
+    provider: z.enum(["mgurush", "mtn_momo", "visa_mastercard"], { message: "Choose a payment provider." }),
+    phone: z.string().trim().optional(),
+    cardNumber: z.string().trim().optional(),
+    cardExpiry: z.string().trim().optional(),
+    cardCvv: z.string().trim().optional(),
+  })
+  .superRefine((v, ctx) => {
+    if (v.provider === "visa_mastercard") {
+      if (!v.cardNumber) ctx.addIssue({ code: "custom", path: ["cardNumber"], message: "Enter the card number." });
+      if (!v.cardExpiry) ctx.addIssue({ code: "custom", path: ["cardExpiry"], message: "Enter the expiry date." });
+      if (!v.cardCvv) ctx.addIssue({ code: "custom", path: ["cardCvv"], message: "Enter the CVV." });
+    } else if (!v.phone || v.phone.length < 9) {
+      ctx.addIssue({ code: "custom", path: ["phone"], message: "Enter a valid phone number." });
+    }
+  });
 
 /**
- * Simulated mobile-money checkout. is_simulated on the resulting
+ * Simulated mobile-money / card checkout. is_simulated on the resulting
  * payment_events row stays true — no code path anywhere in this project
  * ever sets it false, because no real payment provider is integrated
  * (see paymentProviders.ts). This records a payment_intentions row
- * first (the pre-settlement "I've submitted a phone number and I'm
- * waiting on the provider" state a real gateway would have), then
- * "charges" through the swappable PaymentProvider interface, then
- * writes the settled payment_events row + a receipt number, confirms
- * the invoice, and marks the milestone paid.
+ * first (the pre-settlement "details submitted, waiting on the
+ * provider" state a real gateway would have), then "charges" through
+ * the swappable PaymentProvider interface, then writes the settled
+ * payment_events row + a receipt number, confirms the invoice, and
+ * marks the milestone paid.
  */
 export async function payMilestone(milestoneId: string, _prevState: FormState, formData: FormData): Promise<FormState> {
   const session = await requireRole("individual_client");
@@ -214,11 +227,15 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
 
   const validated = CheckoutSchema.safeParse({
     provider: formData.get("provider"),
-    phone: formData.get("phone"),
+    phone: formData.get("phone") || undefined,
+    cardNumber: formData.get("cardNumber") || undefined,
+    cardExpiry: formData.get("cardExpiry") || undefined,
+    cardCvv: formData.get("cardCvv") || undefined,
   });
   if (!validated.success) {
     return { errors: validated.error.flatten().fieldErrors };
   }
+  const v = validated.data;
 
   const { data: milestone } = await admin
     .from("milestones")
@@ -242,8 +259,8 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
       contract_id: check.contract!.id,
       milestone_id: milestoneId,
       invoice_id: invoice?.id ?? null,
-      provider: validated.data.provider,
-      payer_phone: validated.data.phone,
+      provider: v.provider,
+      payer_phone: v.phone || null,
       amount: milestone.amount,
       currency: milestone.currency,
       created_by: session.userId,
@@ -252,9 +269,14 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     .single();
   if (intentionError || !intention) return { message: intentionError?.message ?? "Could not start the payment." };
 
-  const provider = getPaymentProvider(validated.data.provider);
+  const provider = getPaymentProvider(v.provider);
   const result = provider
-    ? await provider.charge({ phone: validated.data.phone, amount: milestone.amount, currency: milestone.currency })
+    ? await provider.charge({
+        phone: v.phone ?? "",
+        amount: milestone.amount,
+        currency: milestone.currency,
+        card: v.provider === "visa_mastercard" ? { number: v.cardNumber!, expiry: v.cardExpiry!, cvv: v.cardCvv! } : undefined,
+      })
     : { success: false as const, reason: "Unknown payment provider." };
 
   if (!result.success) {
@@ -265,6 +287,13 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     return { message: result.reason };
   }
 
+  if (result.cardLast4) {
+    await admin
+      .from("payment_intentions")
+      .update({ card_last4: result.cardLast4, card_brand: result.cardBrand })
+      .eq("id", intention.id);
+  }
+
   const receiptNumber = `RCPT-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${intention.id.slice(0, 8).toUpperCase()}`;
 
   const { error: paymentError } = await admin.from("payment_events").insert({
@@ -272,9 +301,11 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     contract_id: check.contract!.id,
     intention_id: intention.id,
     invoice_id: invoice?.id ?? null,
-    provider_name: validated.data.provider,
+    provider_name: v.provider,
     external_reference: result.reference,
-    payer_phone: validated.data.phone,
+    payer_phone: v.phone || null,
+    card_last4: result.cardLast4 ?? null,
+    card_brand: result.cardBrand ?? null,
     receipt_number: receiptNumber,
     amount: milestone.amount,
     currency: milestone.currency,
