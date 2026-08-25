@@ -11,10 +11,11 @@ approach as the public site), deployed alongside it under `/staff/`.
 | `index.html` | Dashboard — queue counts, recent submissions |
 | `intake.html` | Triage public-form submissions; convert into a real talent profile or organisation |
 | `talent.html` | Search talent, review evidence, set verification tiers, toggle public visibility |
-| `organisations.html` | Employer verification (Blueprint §5.4) |
-| `opportunities.html` | Create/approve briefs; build each one's shortlist; create an engagement once a candidate is accepted |
+| `organisations.html` | Employer verification (Blueprint §5.4); tap a row for their full profile plus an engagement summary (opportunities/applications/offers/contracts) |
+| `opportunities.html` | Create/approve briefs; build each one's shortlist (unless the employer chose to do it themselves — see the Shortlisting column); create an engagement once a candidate is accepted |
 | `engagements.html` | Delivery tracking: status, milestones, notes/audit trail, finance records (finance/admin only), reviews, disputes |
 | `contracts.html` | Read-only oversight of the platform/ app's self-service flow — offers accepted into contracts, milestones, deliverables, mocked payment_events, two-sided reviews. Nothing here writes anything; every state change happens in the platform app itself |
+| `people.html` | Admin-only: search every account by role, add/promote staff, change anyone's role |
 
 ## How it talks to the backend
 
@@ -46,14 +47,19 @@ each comes from:
 
 ## Creating a staff account
 
-There's no signup form here on purpose — staff accounts are provisioned
-manually:
+There's no self-service signup here on purpose. An **admin** creates staff
+accounts from `/staff/people.html` → **Add staff**: enter their email,
+name, and role — this creates the Supabase Auth account (or promotes an
+existing one) and sets `profiles.role` in one step. A brand-new account
+gets a one-time temporary password shown once on screen; relay it to them
+directly (no reliable email-delivery channel for this yet). They sign in
+at `/staff/login.html` and should change it via **Forgot password?**.
 
-1. Supabase dashboard → **Authentication → Users → Add user**.
-2. In **SQL Editor**: `update profiles set role = 'reviewer' where id = (select id from auth.users where email = '...');`
-   (swap `'reviewer'` for `matcher`, `finance`, or `admin` as appropriate
-   — see the `user_role` enum in `backend/supabase/migrations/0001_schema.sql`).
-3. That person can now sign in at `/staff/login.html`.
+Fallback, if you ever need to do it by hand: Supabase dashboard →
+**Authentication → Users → Add user**, then in **SQL Editor**:
+`update profiles set role = 'reviewer' where id = (select id from auth.users where email = '...');`
+(swap `'reviewer'` for `matcher`, `finance`, or `admin` — see the
+`user_role` enum in `backend/supabase/migrations/0001_schema.sql`).
 
 Signing in with an account that has no profile row, isn't `active`, or
 isn't one of the four staff roles shows a plain "access denied" message

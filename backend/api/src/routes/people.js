@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { randomInt } from "crypto";
 import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
@@ -59,6 +60,68 @@ peopleRouter.get(
     );
 
     res.json({ data: withEmail, count });
+  })
+);
+
+const STAFF_ROLES = ["reviewer", "matcher", "finance", "admin"];
+
+// Same "easy to read aloud" alphabet as the platform app's org-team invite
+// (organisationTeam.ts) — an admin relays this directly to the new hire,
+// same reasoning: no reliable email-delivery channel for this yet.
+const READABLE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+function generateTemporaryPassword(length = 10) {
+  let out = "";
+  for (let i = 0; i < length; i++) out += READABLE_CHARS[randomInt(READABLE_CHARS.length)];
+  return out;
+}
+
+const addStaffSchema = z.object({
+  email: z.string().trim().toLowerCase().email(),
+  fullName: z.string().trim().min(2).optional(),
+  role: z.enum(STAFF_ROLES),
+});
+
+// POST /api/people/staff — creates (or promotes) a staff account in one
+// step, replacing the Supabase dashboard "Add user" + SQL Editor round
+// trip documented in backend/supabase/README.md. A brand-new account gets
+// a real one-time temporary password returned once, never stored or
+// logged — the admin relays it to the person directly.
+peopleRouter.post(
+  "/staff",
+  asyncRoute(async (req, res) => {
+    const v = addStaffSchema.parse(req.body);
+
+    const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+    if (listError) throw new HttpError(500, listError.message);
+    const existing = existingUsers.users.find((u) => u.email?.toLowerCase() === v.email);
+
+    let userId;
+    let temporaryPassword;
+    if (existing) {
+      userId = existing.id;
+    } else {
+      temporaryPassword = generateTemporaryPassword();
+      const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: v.email,
+        password: temporaryPassword,
+        email_confirm: true,
+        user_metadata: { full_name: v.fullName || null },
+      });
+      if (createError) throw new HttpError(400, `Could not create an account: ${createError.message}`);
+      userId = created.user.id;
+    }
+
+    const updates = { role: v.role };
+    if (v.fullName) updates.full_name = v.fullName;
+    const { data: profile, error: updateError } = await supabaseAdmin
+      .from("profiles")
+      .update(updates)
+      .eq("id", userId)
+      .select("id, role, status, full_name, created_at")
+      .single();
+    if (updateError) throw new HttpError(400, updateError.message);
+
+    res.json({ data: { ...profile, email: v.email }, temporaryPassword });
   })
 );
 

@@ -13,6 +13,7 @@ var searchTimer = null;
 var auth = await requireStaffSession();
 if (auth) {
   wireControls();
+  wireAddStaffForm();
   await load();
 }
 
@@ -21,6 +22,44 @@ function wireControls() {
   document.getElementById("name-search").addEventListener("input", function () {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(load, 300);
+  });
+}
+
+function wireAddStaffForm() {
+  var form = document.getElementById("add-staff-form");
+  var status = document.getElementById("add-staff-status");
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var email = document.getElementById("add-staff-email").value.trim();
+    var fullName = document.getElementById("add-staff-name").value.trim();
+    var role = document.getElementById("add-staff-role").value;
+    var submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Adding…";
+    status.className = "form-status";
+
+    try {
+      var res = await apiFetch("/api/people/staff", {
+        method: "POST",
+        body: { email: email, fullName: fullName || undefined, role: role },
+      });
+      var who = res.data.full_name || res.data.email;
+      if (res.temporaryPassword) {
+        status.textContent =
+          "Added " + who + " as " + role + ". One-time password (shown once — relay it directly): " + res.temporaryPassword;
+      } else {
+        status.textContent = "Promoted " + who + " to " + role + ".";
+      }
+      status.className = "form-status is-visible success";
+      form.reset();
+      await load();
+    } catch (err) {
+      status.textContent = err.message;
+      status.className = "form-status is-visible error";
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Add staff";
+    }
   });
 }
 
