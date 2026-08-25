@@ -120,6 +120,7 @@ const OpportunitySchema = z
     currency: z.string().trim().min(1).default("SSP"),
     applicationDeadline: z.string().trim().optional(),
     numberOfOpenings: z.string().trim().optional(),
+    shortlistingMode: z.enum(["self_service", "staff_assisted"]).default("staff_assisted"),
   })
   .refine(
     (v) => {
@@ -195,6 +196,7 @@ export async function createOpportunity(organisationId: string, _prevState: Form
     currency: formData.get("currency") || "SSP",
     applicationDeadline: formData.get("applicationDeadline") || undefined,
     numberOfOpenings: formData.get("numberOfOpenings") || undefined,
+    shortlistingMode: formData.get("shortlistingMode") || undefined,
   });
   if (!validated.success) {
     return { errors: validated.error.flatten().fieldErrors };
@@ -228,6 +230,7 @@ export async function createOpportunity(organisationId: string, _prevState: Form
       service_package_id: v.type === "service" ? servicePackageId : null,
       visibility: "public",
       status: "pending_review",
+      shortlisting_mode: v.shortlistingMode,
     })
     .select("id")
     .single();
@@ -248,6 +251,30 @@ export async function createOpportunity(organisationId: string, _prevState: Form
   }
 
   redirect("/organisation?posted=1");
+}
+
+/**
+ * Lets an org rep flip who shortlists candidates for one of their own
+ * opportunities, any time after posting. RLS (opportunities_update, 0002)
+ * already allows the representative to update any non-guarded column, so
+ * no trigger change was needed here — only the applications_select/update
+ * policies added in 0030 actually change behaviour based on this value.
+ */
+export async function setShortlistingMode(
+  opportunityId: string,
+  mode: "self_service" | "staff_assisted"
+): Promise<FormState> {
+  await requireRole(...CLIENT_ROLES);
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("opportunities")
+    .update({ shortlisting_mode: mode })
+    .eq("id", opportunityId);
+  if (error) return { message: `Could not update this: ${error.message}` };
+
+  revalidatePath(`/organisation/opportunities/${opportunityId}`);
+  return {};
 }
 
 /**

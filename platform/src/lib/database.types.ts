@@ -202,6 +202,7 @@ export type OpportunityRow = {
   number_of_openings: number;
   rejection_reason: string | null;
   service_package_id: string | null;
+  shortlisting_mode: "self_service" | "staff_assisted";
   created_at: string;
   updated_at: string;
 }

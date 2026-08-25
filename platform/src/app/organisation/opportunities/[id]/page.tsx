@@ -4,10 +4,13 @@ import { notFound } from "next/navigation";
 import { requireOrganisationMembership } from "@/lib/dal/organisation";
 import { createClient } from "@/lib/supabase/server";
 import { SendOfferForm } from "./send-offer-form";
+import { ShortlistingModeForm } from "./shortlisting-mode-form";
+import { ShortlistActions } from "./shortlist-actions";
 
 export const metadata: Metadata = { title: "Opportunity" };
 
 const STAGE_LABEL: Record<string, string> = {
+  submitted: "New applicant",
   shortlisted: "Shortlisted",
   interviewing: "Interviewing",
   offered: "Offer sent",
@@ -89,6 +92,8 @@ export default async function OpportunityDetailPage({
       <h1 className="text-2xl font-extrabold text-midnight">{opportunity.title}</h1>
       <p className="mt-1 text-sm text-slate">Status: {opportunity.status.replace("_", " ")}</p>
 
+      <ShortlistingModeForm opportunityId={opportunity.id} mode={opportunity.shortlisting_mode} />
+
       {opportunity.status === "rejected" && opportunity.rejection_reason && (
         <p className="mt-4 rounded-lg bg-coral/10 px-4 py-3 text-sm text-coral">
           Not approved: {opportunity.rejection_reason}
@@ -104,12 +109,15 @@ export default async function OpportunityDetailPage({
       <div className="mt-8">
         <h2 className="font-bold text-midnight">Applicants</h2>
         <p className="mt-1 text-xs text-slate">
-          Only shows once AdorWorks staff have shortlisted an applicant — this is the same
-          curated-shortlist review every opportunity goes through.
+          {opportunity.shortlisting_mode === "self_service"
+            ? "You're shortlisting this one yourself — every applicant appears below as they apply."
+            : "Only shows once AdorWorks staff have shortlisted an applicant — this is the same curated-shortlist review every opportunity goes through."}
         </p>
 
         {!applications || applications.length === 0 ? (
-          <p className="mt-4 text-sm text-slate">No shortlisted applicants yet.</p>
+          <p className="mt-4 text-sm text-slate">
+            {opportunity.shortlisting_mode === "self_service" ? "No applicants yet." : "No shortlisted applicants yet."}
+          </p>
         ) : (
           <ul className="mt-4 space-y-3">
             {applications.map((a) => {
@@ -161,6 +169,8 @@ export default async function OpportunityDetailPage({
                     <p className="mt-3 text-xs font-semibold text-violet">Offer {offer.status}</p>
                   ) : ["shortlisted", "interviewing"].includes(a.stage) ? (
                     <SendOfferForm applicationId={a.id} />
+                  ) : a.stage === "submitted" && opportunity.shortlisting_mode === "self_service" ? (
+                    <ShortlistActions applicationId={a.id} opportunityId={opportunity.id} />
                   ) : null}
                 </li>
               );

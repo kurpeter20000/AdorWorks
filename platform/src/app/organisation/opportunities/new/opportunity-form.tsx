@@ -379,6 +379,33 @@ export function OpportunityForm({
         />
       </div>
 
+      <div className="rounded-xl border border-slate/15 bg-cloud p-4">
+        <p className="text-sm font-semibold text-midnight">Who shortlists applicants?</p>
+        <p className="mt-1 text-xs text-slate">
+          You can change your mind later from the opportunity&rsquo;s page.
+        </p>
+        <div className="mt-3 space-y-2">
+          <label className="flex items-start gap-2 text-sm text-midnight">
+            <input type="radio" name="shortlistingMode" value="staff_assisted" defaultChecked className="mt-1" />
+            <span>
+              <span className="font-semibold">AdorWorks staff shortlist for me</span>
+              <span className="block text-xs text-slate">
+                You&rsquo;ll only see applicants once staff have reviewed and shortlisted them — same as today.
+              </span>
+            </span>
+          </label>
+          <label className="flex items-start gap-2 text-sm text-midnight">
+            <input type="radio" name="shortlistingMode" value="self_service" className="mt-1" />
+            <span>
+              <span className="font-semibold">I&rsquo;ll shortlist myself</span>
+              <span className="block text-xs text-slate">
+                See every applicant as they apply and shortlist or pass on them yourself.
+              </span>
+            </span>
+          </label>
+        </div>
+      </div>
+
       {state.message && <p className="text-sm text-coral">{state.message}</p>}
 
       <button

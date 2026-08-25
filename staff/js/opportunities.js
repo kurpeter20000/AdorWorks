@@ -79,21 +79,21 @@ function wireCreateForm() {
 
 async function load() {
   var tbody = document.getElementById("opps-body");
-  tbody.innerHTML = '<tr><td colspan="5" class="staff-empty">Loading…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6" class="staff-empty">Loading…</td></tr>';
   try {
     var qs = activeFilter ? "?status=" + activeFilter + "&limit=100" : "?limit=100";
     var res = await apiFetch("/api/opportunities" + qs);
     rows = res.data;
     render();
   } catch (err) {
-    tbody.innerHTML = '<tr><td colspan="5" class="staff-empty">' + escapeHtml(err.message) + "</td></tr>";
+    tbody.innerHTML = '<tr><td colspan="6" class="staff-empty">' + escapeHtml(err.message) + "</td></tr>";
   }
 }
 
 function render() {
   var tbody = document.getElementById("opps-body");
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="staff-empty">No opportunities match this filter.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="staff-empty">No opportunities match this filter.</td></tr>';
     return;
   }
   tbody.innerHTML = rows
@@ -103,10 +103,13 @@ function render() {
         "<td>" + escapeHtml(row.title) + "</td>" +
         "<td>" + escapeHtml(row.organisations?.name || "—") + "</td>" +
         "<td>" + escapeHtml(row.type.replace(/_/g, " ")) + "</td>" +
+        "<td>" + (row.shortlisting_mode === "self_service"
+          ? '<span class="status-badge status-info">Self-service</span>'
+          : '<span class="status-badge status-neutral">Staff</span>') + "</td>" +
         "<td>" + statusBadge(row.status) + "</td>" +
         "<td>" + formatDate(row.created_at) + "</td>" +
         "</tr>" +
-        '<tr class="detail-row" id="detail-' + row.id + '"><td colspan="5"></td></tr>'
+        '<tr class="detail-row" id="detail-' + row.id + '"><td colspan="6"></td></tr>'
       );
     })
     .join("");
@@ -252,6 +255,9 @@ function renderDetailShell(row) {
     "</div>" +
     "<div>" +
     "<h3>Shortlist</h3>" +
+    (row.shortlisting_mode === "self_service"
+      ? '<p class="staff-hint">This employer chose to shortlist candidates themselves — you can still help below if asked.</p>'
+      : "") +
     '<ul class="staff-events" id="applications-list-' + row.id + '"><li>Loading…</li></ul>' +
     "<h4 class=\"mt-1\">Suggested candidates</h4>" +
     '<p class="staff-hint">Ranked by skill overlap with this opportunity, then most recently joined — not by rating or tenure, so new talent surface on equal footing.</p>' +

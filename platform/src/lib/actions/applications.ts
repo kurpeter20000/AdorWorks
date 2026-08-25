@@ -2,7 +2,8 @@
 
 import { z } from "zod";
 import { redirect } from "next/navigation";
-import { requireRole } from "@/lib/dal/session";
+import { revalidatePath } from "next/cache";
+import { requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import type { FormState } from "./auth";
 
@@ -78,4 +79,28 @@ export async function applyToOpportunity(
   }
 
   redirect("/applications?applied=1");
+}
+
+/**
+ * Employer moves their own application between submitted/shortlisted/
+ * rejected on a self-service opportunity. RLS (0030's
+ * applications_update_employer_self_service) is the real gate — this only
+ * exists so the UI can call a typed action instead of a raw client update,
+ * and to revalidate the page afterward. Staff-assisted opportunities and
+ * every later stage (interviewing/offered/accepted/withdrawn) are
+ * untouched by this policy, so this can't be used past the shortlist step.
+ */
+export async function setApplicationStage(
+  applicationId: string,
+  opportunityId: string,
+  stage: "shortlisted" | "rejected"
+): Promise<{ error?: string }> {
+  await requireRole(...CLIENT_ROLES);
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("applications").update({ stage }).eq("id", applicationId);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/organisation/opportunities/${opportunityId}`);
+  return {};
 }
