@@ -5,6 +5,7 @@ import { requireOrganisationMembership } from "@/lib/dal/organisation";
 import { createClient } from "@/lib/supabase/server";
 import { EvidenceUpload } from "./evidence-upload";
 import { LogoUpload } from "./logo-upload";
+import { OrgInfoForm } from "./org-info-form";
 
 export const metadata: Metadata = { title: "Your organisation" };
 
@@ -79,6 +80,14 @@ export default async function OrganisationPage({
           </Link>
         </div>
       </div>
+
+      {org.representative_id === session.userId && (
+        <div className="mt-6 rounded-xl border border-slate/15 bg-white p-5">
+          <h2 className="font-bold text-midnight">Organisation details</h2>
+          <p className="mt-1 text-sm text-slate">Shown to talent on your opportunities.</p>
+          <OrgInfoForm organisationId={org.id} initial={org} />
+        </div>
+      )}
 
       {org.representative_id === session.userId && (
         <div className="mt-6 rounded-xl border border-slate/15 bg-white p-5">

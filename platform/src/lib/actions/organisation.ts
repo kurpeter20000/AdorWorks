@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import type { FormState } from "./auth";
@@ -50,6 +51,49 @@ export async function createOrganisation(_prevState: FormState, formData: FormDa
   }
 
   redirect("/organisation");
+}
+
+/**
+ * Edit counterpart to createOrganisation, for after setup. Only works for
+ * the org's representative — organisations_update RLS (0002) is keyed to
+ * representative_id, same limitation noted on setOrganisationEvidence/Logo
+ * below (an invited org_admin teammate can't call this yet).
+ */
+export async function updateOrganisation(
+  organisationId: string,
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  await requireRole("individual_client", "org_member", "org_admin");
+
+  const validated = OrganisationSchema.safeParse({
+    name: formData.get("name"),
+    sector: formData.get("sector") || undefined,
+    website: formData.get("website") || undefined,
+    billingEmail: formData.get("billingEmail") || undefined,
+  });
+  if (!validated.success) {
+    return { errors: validated.error.flatten().fieldErrors };
+  }
+  const v = validated.data;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("organisations")
+    .update({
+      name: v.name,
+      sector: v.sector || null,
+      website: v.website || null,
+      billing_email: v.billingEmail || null,
+    })
+    .eq("id", organisationId);
+
+  if (error) {
+    return { message: `Could not save your organisation details: ${error.message}` };
+  }
+
+  revalidatePath("/organisation");
+  return {};
 }
 
 const OpportunitySchema = z

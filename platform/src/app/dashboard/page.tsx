@@ -51,8 +51,14 @@ export default async function DashboardPage() {
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <Link
-              href="/onboarding"
+              href="/passport"
               className="inline-block rounded-lg bg-teal px-4 py-2 text-sm font-bold text-midnight"
+            >
+              Your Passport (photo, links, portfolio)
+            </Link>
+            <Link
+              href="/onboarding"
+              className="inline-block rounded-lg border border-teal/40 px-4 py-2 text-sm font-bold text-teal-ink"
             >
               Continue onboarding
             </Link>

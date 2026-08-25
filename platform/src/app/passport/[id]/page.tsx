@@ -139,28 +139,41 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
           <h2 className="font-bold text-midnight">Portfolio</h2>
           <ul className="mt-3 space-y-3">
             {items.map((item) => {
-              const imageUrl = item.file_path
+              const fileUrl = item.file_path
                 ? supabase.storage.from("talent-portfolio").getPublicUrl(item.file_path).data.publicUrl
                 : null;
+              const isPdf = item.file_path?.toLowerCase().endsWith(".pdf") ?? false;
               return (
                 <li key={item.id} className="rounded-xl border border-slate/15 bg-white p-4">
-                  {imageUrl && (
+                  {fileUrl && !isPdf && (
                     <div className="relative mb-3 h-64 w-full overflow-hidden rounded-lg">
-                      <Image src={imageUrl} alt={item.title} fill sizes="(max-width: 640px) 100vw, 640px" className="object-cover" />
+                      <Image src={fileUrl} alt={item.title} fill sizes="(max-width: 640px) 100vw, 640px" className="object-cover" />
                     </div>
                   )}
                   <p className="text-sm font-semibold text-midnight">{item.title}</p>
                   {item.description && <p className="text-xs text-slate">{item.description}</p>}
-                  {item.external_url && (
-                    <a
-                      href={item.external_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs font-semibold text-teal-ink underline"
-                    >
-                      View link
-                    </a>
-                  )}
+                  <div className="mt-1 flex flex-wrap gap-3">
+                    {item.external_url && (
+                      <a
+                        href={item.external_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs font-semibold text-teal-ink underline"
+                      >
+                        View link
+                      </a>
+                    )}
+                    {fileUrl && isPdf && (
+                      <a
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs font-semibold text-teal-ink underline"
+                      >
+                        View document
+                      </a>
+                    )}
+                  </div>
                 </li>
               );
             })}

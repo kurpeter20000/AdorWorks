@@ -6,7 +6,11 @@ import { createClient } from "@/lib/supabase/client";
 import type { TalentPortfolioItemRow } from "@/lib/database.types";
 
 const MAX_SIZE_BYTES = 8 * 1024 * 1024; // 8MB
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+
+function getPortfolioFileUrl(path: string) {
+  return createClient().storage.from("talent-portfolio").getPublicUrl(path).data.publicUrl;
+}
 
 export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] }) {
   const router = useRouter();
@@ -24,15 +28,15 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
       return;
     }
     if (!externalUrl.trim() && !file) {
-      setStatus({ kind: "error", message: "Add a link or upload an image." });
+      setStatus({ kind: "error", message: "Add a link or upload a file." });
       return;
     }
     if (file && !ALLOWED_TYPES.includes(file.type)) {
-      setStatus({ kind: "error", message: "Please upload a JPG, PNG or WebP image." });
+      setStatus({ kind: "error", message: "Please upload a JPG, PNG, WebP image, or a PDF (e.g. your CV)." });
       return;
     }
     if (file && file.size > MAX_SIZE_BYTES) {
-      setStatus({ kind: "error", message: "Image is too large — 8MB maximum." });
+      setStatus({ kind: "error", message: "File is too large — 8MB maximum." });
       return;
     }
 
@@ -117,6 +121,16 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
                     View link
                   </a>
                 )}
+                {item.file_path && (
+                  <a
+                    href={getPortfolioFileUrl(item.file_path)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-semibold text-teal-ink underline"
+                  >
+                    View file
+                  </a>
+                )}
               </div>
               <button
                 type="button"
@@ -153,7 +167,7 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
         />
         <input
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/jpeg,image/png,image/webp,application/pdf"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           className="w-full text-sm"
         />
