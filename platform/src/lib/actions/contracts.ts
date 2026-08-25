@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { requireSession, requireRole } from "@/lib/dal/session";
+import { requireSession, requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPaymentProvider } from "@/lib/paymentProviders";
 import type { FormState } from "./auth";
@@ -114,7 +114,7 @@ async function maybeCompleteContract(admin: ReturnType<typeof createAdminClient>
 
 /** Employer approves a submitted deliverable — moves the deliverable and its milestone forward, and completes the contract if that was the last open milestone. */
 export async function approveDeliverable(deliverableId: string): Promise<{ error?: string }> {
-  const session = await requireRole("individual_client");
+  const session = await requireRole(...CLIENT_ROLES);
   const admin = createAdminClient();
 
   const { data: deliverable } = await admin
@@ -161,7 +161,7 @@ export async function approveDeliverable(deliverableId: string): Promise<{ error
 
 /** Employer sends a submitted deliverable back for changes. */
 export async function requestRevision(deliverableId: string, note: string): Promise<{ error?: string }> {
-  const session = await requireRole("individual_client");
+  const session = await requireRole(...CLIENT_ROLES);
   const admin = createAdminClient();
 
   const { data: deliverable } = await admin
@@ -217,7 +217,7 @@ const CheckoutSchema = z
  * marks the milestone paid.
  */
 export async function payMilestone(milestoneId: string, _prevState: FormState, formData: FormData): Promise<FormState> {
-  const session = await requireRole("individual_client");
+  const session = await requireRole(...CLIENT_ROLES);
   const check = await requireEmployerForMilestone(milestoneId, session.userId);
   if (check.error) return { message: check.error };
   if (check.milestone!.status !== "approved") {

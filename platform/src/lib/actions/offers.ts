@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { redirect } from "next/navigation";
-import { requireRole } from "@/lib/dal/session";
+import { requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { FormState } from "./auth";
 
@@ -33,7 +33,7 @@ export async function sendOffer(
   _prevState: FormState,
   formData: FormData
 ): Promise<FormState> {
-  const session = await requireRole("individual_client");
+  const session = await requireRole(...CLIENT_ROLES);
 
   const validated = OfferSchema.safeParse({
     paymentBasis: formData.get("paymentBasis"),

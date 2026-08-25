@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/dal/session";
+import { requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import type { FormState } from "./auth";
 
@@ -64,7 +64,7 @@ export async function updateOrganisation(
   _prevState: FormState,
   formData: FormData
 ): Promise<FormState> {
-  await requireRole("individual_client", "org_member", "org_admin");
+  await requireRole(...CLIENT_ROLES);
 
   const validated = OrganisationSchema.safeParse({
     name: formData.get("name"),
@@ -177,7 +177,7 @@ function toNullableNumber(value: string | undefined) {
  * on purpose, not just because the trigger would catch it.
  */
 export async function createOpportunity(organisationId: string, _prevState: FormState, formData: FormData): Promise<FormState> {
-  await requireRole("individual_client", "org_member", "org_admin");
+  await requireRole(...CLIENT_ROLES);
 
   const validated = OpportunitySchema.safeParse({
     type: formData.get("type"),
@@ -259,7 +259,7 @@ export async function createOpportunity(organisationId: string, _prevState: Form
  * the Phase 3 team-permissions plan).
  */
 export async function setOrganisationEvidence(organisationId: string, filePath: string): Promise<FormState> {
-  await requireRole("individual_client", "org_member", "org_admin");
+  await requireRole(...CLIENT_ROLES);
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -275,7 +275,7 @@ export async function setOrganisationEvidence(organisationId: string, filePath: 
 
 /** Same representative_id-only pattern as setOrganisationEvidence above, for the org's logo instead. */
 export async function setOrganisationLogo(organisationId: string, filePath: string): Promise<FormState> {
-  await requireRole("individual_client", "org_member", "org_admin");
+  await requireRole(...CLIENT_ROLES);
 
   const supabase = await createClient();
   const { error } = await supabase.from("organisations").update({ logo_path: filePath }).eq("id", organisationId);

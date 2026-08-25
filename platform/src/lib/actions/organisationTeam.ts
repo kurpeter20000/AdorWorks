@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { randomInt } from "crypto";
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/dal/session";
+import { requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { FormState } from "./auth";
@@ -20,7 +20,7 @@ function generateTemporaryPassword(length = 10) {
 }
 
 async function requireOrgAdmin(organisationId: string) {
-  const session = await requireRole("individual_client", "org_member", "org_admin");
+  const session = await requireRole(...CLIENT_ROLES);
   const supabase = await createClient();
   const { data: membership } = await supabase
     .from("organisation_members")

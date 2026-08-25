@@ -68,3 +68,11 @@ export async function requireRole(...roles: UserRole[]): Promise<VerifiedSession
 }
 
 export const STAFF_ROLES: UserRole[] = ["reviewer", "matcher", "finance", "admin"];
+
+// The organisation/employer side, across both onboarding paths: the
+// self-service signup flow assigns 'individual_client' (auth.ts), but the
+// staff-assisted intake conversion flow (backend/api's
+// POST /intake/:id/convert-employer) still assigns the older 'employer'
+// role to the representative it provisions — both are the same real-world
+// party and need the same access everywhere an org rep can act.
+export const CLIENT_ROLES: UserRole[] = ["individual_client", "employer", "org_member", "org_admin"];

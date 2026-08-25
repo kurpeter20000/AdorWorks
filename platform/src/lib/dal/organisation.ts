@@ -1,15 +1,8 @@
 import "server-only";
 import { redirect } from "next/navigation";
-import { requireRole, type VerifiedSession } from "./session";
+import { requireRole, CLIENT_ROLES, type VerifiedSession } from "./session";
 import { createClient } from "@/lib/supabase/server";
 import type { OrganisationRow } from "@/lib/database.types";
-
-// Any role that can be part of an org team — the original self-service
-// creator (individual_client) or someone invited afterward
-// (org_member/org_admin). requireRole(...) bounces anything else straight
-// to /dashboard, same as every org page already did for individual_client
-// alone before team permissions existed.
-const ORG_ROLES = ["individual_client", "org_member", "org_admin"] as const;
 
 export interface OrganisationMembership {
   session: VerifiedSession;
@@ -26,7 +19,7 @@ export interface OrganisationMembership {
  * org yet" without being redirected to itself.
  */
 export async function getMyOrganisationMembership(): Promise<OrganisationMembership | null> {
-  const session = await requireRole(...ORG_ROLES);
+  const session = await requireRole(...CLIENT_ROLES);
   const supabase = await createClient();
 
   const { data: membership } = await supabase

@@ -87,7 +87,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {session.role === "individual_client" && (
+      {(session.role === "individual_client" || session.role === "employer") && (
         <div className="mt-8 rounded-xl border border-violet/30 bg-violet/5 p-5">
           <h2 className="font-bold text-midnight">Hiring on AdorWorks</h2>
           <p className="mt-1 text-sm text-slate">
