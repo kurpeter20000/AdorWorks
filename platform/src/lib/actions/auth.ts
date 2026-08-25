@@ -106,3 +106,49 @@ export async function logout() {
   await supabase.auth.signOut();
   redirect("/login");
 }
+
+const ForgotPasswordSchema = z.object({
+  email: z.string().trim().email("Enter a valid email address."),
+});
+
+// Always redirects to the same "check your email" state on success or
+// failure — confirming/denying an email exists here would let someone
+// enumerate registered accounts.
+export async function requestPasswordReset(_prevState: FormState, formData: FormData): Promise<FormState> {
+  const validated = ForgotPasswordSchema.safeParse({ email: formData.get("email") });
+  if (!validated.success) {
+    return { errors: validated.error.flatten().fieldErrors };
+  }
+
+  const supabase = await createClient();
+  await supabase.auth.resetPasswordForEmail(validated.data.email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/reset-password`,
+  });
+
+  redirect("/forgot-password?sent=1");
+}
+
+const ResetPasswordSchema = z.object({
+  password: z
+    .string()
+    .min(8, "Use at least 8 characters.")
+    .regex(/[a-zA-Z]/, "Include at least one letter.")
+    .regex(/[0-9]/, "Include at least one number."),
+});
+
+// Only reachable with a session — either a normal one, or the short-lived
+// recovery session /auth/callback establishes from the emailed reset link.
+export async function resetPassword(_prevState: FormState, formData: FormData): Promise<FormState> {
+  const validated = ResetPasswordSchema.safeParse({ password: formData.get("password") });
+  if (!validated.success) {
+    return { errors: validated.error.flatten().fieldErrors };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password: validated.data.password });
+  if (error) {
+    return { message: error.message };
+  }
+
+  redirect("/dashboard");
+}

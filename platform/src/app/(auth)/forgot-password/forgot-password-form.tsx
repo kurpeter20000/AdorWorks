@@ -1,13 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState } from "react";
-import { login, type FormState } from "@/lib/actions/auth";
+import { requestPasswordReset, type FormState } from "@/lib/actions/auth";
 
 const initialState: FormState = {};
 
-export function LoginForm() {
-  const [state, formAction, pending] = useActionState(login, initialState);
+export function ForgotPasswordForm() {
+  const [state, formAction, pending] = useActionState(requestPasswordReset, initialState);
 
   return (
     <form action={formAction} className="mt-6 space-y-4">
@@ -26,25 +25,6 @@ export function LoginForm() {
         {state.errors?.email && <p className="mt-1 text-sm text-coral">{state.errors.email[0]}</p>}
       </div>
 
-      <div>
-        <div className="flex items-center justify-between">
-          <label htmlFor="password" className="text-sm font-semibold text-midnight">
-            Password
-          </label>
-          <Link href="/forgot-password" className="text-xs font-semibold text-teal-ink">
-            Forgot password?
-          </Link>
-        </div>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
-        />
-      </div>
-
       {state.message && <p className="text-sm text-coral">{state.message}</p>}
 
       <button
@@ -52,7 +32,7 @@ export function LoginForm() {
         disabled={pending}
         className="w-full rounded-lg bg-teal px-4 py-2.5 text-sm font-bold text-midnight disabled:opacity-60"
       >
-        {pending ? "Signing in…" : "Sign in"}
+        {pending ? "Sending…" : "Send reset link"}
       </button>
     </form>
   );
