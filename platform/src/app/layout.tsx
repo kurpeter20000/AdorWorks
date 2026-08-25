@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 import { ConnectivityBanner } from "@/components/connectivity-banner";
+import { InstallAppBanner } from "@/components/install-app-banner";
 import { PwaRegister } from "@/components/pwa-register";
 import "./globals.css";
 
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           Skip to content
         </a>
         <ConnectivityBanner />
+        <InstallAppBanner />
         <PwaRegister />
         <div id="main-content">{children}</div>
       </body>
