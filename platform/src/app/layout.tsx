@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 import { ConnectivityBanner } from "@/components/connectivity-banner";
+import { PwaRegister } from "@/components/pwa-register";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -15,6 +16,19 @@ export const metadata: Metadata = {
     template: "%s — AdorWorks",
   },
   description: "Talent found. Work delivered.",
+  icons: {
+    icon: "/icons/icon-any-192.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "AdorWorks",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#182230",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -28,6 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           Skip to content
         </a>
         <ConnectivityBanner />
+        <PwaRegister />
         <div id="main-content">{children}</div>
       </body>
     </html>
