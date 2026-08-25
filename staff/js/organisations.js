@@ -77,9 +77,13 @@ function renderDetail(id, detailRow) {
   var options = statuses
     .map(function (s) { return '<option value="' + s + '"' + (s === row.verification_status ? " selected" : "") + ">" + s + "</option>"; })
     .join("");
+  var rep = row.profiles;
 
   detailRow.querySelector("td").innerHTML =
     '<dl class="kv-list">' +
+    "<dt>Representative</dt><dd>" + escapeHtml((rep && rep.full_name) || "—") +
+      (rep && rep.phone ? " · " + escapeHtml(rep.phone) : "") +
+      ' · <span id="rep-email-' + id + '">Loading…</span>' + "</dd>" +
     "<dt>Website</dt><dd>" + (row.website ? '<a href="' + escapeHtml(row.website) + '" target="_blank" rel="noopener">' + escapeHtml(row.website) + "</a>" : "—") + "</dd>" +
     "<dt>Billing email</dt><dd>" + escapeHtml(row.billing_email || "—") + "</dd>" +
     "<dt>Registration evidence</dt><dd>" +
@@ -89,6 +93,7 @@ function renderDetail(id, detailRow) {
     "</dd>" +
     "<dt>Risk notes</dt><dd>" + escapeHtml(row.risk_notes || "—") + "</dd>" +
     "</dl>" +
+    '<div class="staff-section" id="engagement-' + id + '"><h3>Engagement</h3><p class="muted">Loading…</p></div>' +
     '<div class="form-grid form-grid-2 mt-1">' +
     '<select id="status-input-' + id + '">' + options + "</select>" +
     '<input type="text" id="notes-input-' + id + '" placeholder="Risk notes (optional)" value="' + escapeHtml(row.risk_notes || "") + '">' +
@@ -129,4 +134,46 @@ function renderDetail(id, detailRow) {
       statusEl.className = "form-status is-visible error";
     }
   });
+
+  loadRepresentativeEmail(id, detailRow);
+  loadEngagement(id, detailRow);
+}
+
+async function loadRepresentativeEmail(id, detailRow) {
+  var emailEl = detailRow.querySelector("#rep-email-" + id);
+  if (!emailEl) return;
+  try {
+    var res = await apiFetch("/api/organisations/" + id);
+    emailEl.textContent = (res.data.profiles && res.data.profiles.email) || "no email on file";
+  } catch (err) {
+    emailEl.textContent = "—";
+  }
+}
+
+async function loadEngagement(id, detailRow) {
+  var el = detailRow.querySelector("#engagement-" + id);
+  if (!el) return;
+  try {
+    var res = await apiFetch("/api/organisations/" + id + "/engagement");
+    var e = res.data;
+    var oppLine = e.opportunities.total + " posted" + statusBreakdown(e.opportunities.by_status);
+    var offerLine = e.offers.total + " sent" + statusBreakdown(e.offers.by_status);
+    var contractLine = e.contracts.total + " total" + statusBreakdown(e.contracts.by_status);
+    el.innerHTML =
+      "<h3>Engagement</h3>" +
+      '<dl class="kv-list">' +
+      "<dt>Opportunities</dt><dd>" + oppLine + "</dd>" +
+      "<dt>Applications received</dt><dd>" + e.applications_total + "</dd>" +
+      "<dt>Offers</dt><dd>" + offerLine + "</dd>" +
+      "<dt>Contracts</dt><dd>" + contractLine + "</dd>" +
+      "<dt>Last activity</dt><dd>" + formatDate(e.last_activity_at) + "</dd>" +
+      "</dl>";
+  } catch (err) {
+    el.innerHTML = "<h3>Engagement</h3><p class=\"muted\">" + escapeHtml(err.message) + "</p>";
+  }
+}
+
+function statusBreakdown(byStatus) {
+  var parts = Object.keys(byStatus).map(function (k) { return k.replace(/_/g, " ") + ": " + byStatus[k]; });
+  return parts.length ? " (" + parts.join(", ") + ")" : "";
 }
