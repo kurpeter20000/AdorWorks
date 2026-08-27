@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { reviewTimesheet } from "@/lib/actions/timesheets";
 import type { TimesheetRow } from "@/lib/database.types";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -60,10 +61,10 @@ export function TimesheetsSection({
   }
 
   function setStatus(id: string, status: "approved" | "rejected") {
+    setError(null);
     startTransition(async () => {
-      const supabase = createClient();
-      const { error: updateError } = await supabase.from("timesheets").update({ status }).eq("id", id);
-      if (updateError) setError(updateError.message);
+      const result = await reviewTimesheet(id, status);
+      if (result.error) setError(result.error);
       else router.refresh();
     });
   }
