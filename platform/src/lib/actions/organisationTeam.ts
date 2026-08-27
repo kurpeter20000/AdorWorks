@@ -6,6 +6,8 @@ import { revalidatePath } from "next/cache";
 import { requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAuditEvent } from "@/lib/domain/audit";
+import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import type { FormState } from "./auth";
 
 // Same "easy to read aloud" alphabet as backend/api's onboarding-agent
@@ -48,16 +50,23 @@ const InviteSchema = z.object({
  * Admin-only. Finds or creates the invited email's account (a brand-new
  * one gets a real, one-time temporary password — same pattern as staff
  * inviting an onboarding agent, for the same reason: nothing in this
- * project can reliably deliver a password by email yet), sets their
- * profiles.role to the chosen org role (replacing whatever role they had
- * — same precedent as onboarding_agents), and adds them to the team.
+ * project can reliably deliver a password by email yet).
+ *
+ * Only a brand-new account gets profiles.role set to the chosen org role.
+ * An EXISTING account's role is never overwritten — Stage 0's audit
+ * flagged the old "replace whatever role they had" behaviour as a
+ * highest-priority violation, since inviting an existing talent (or any
+ * other account) to a team silently destroyed their real role. Team
+ * membership (organisation_members) is what actually grants org access
+ * now (see getMyOrganisationMembership) — it no longer depends on
+ * profiles.role being overwritten to work.
  */
 export async function inviteTeamMember(
   organisationId: string,
   _prevState: InviteState,
   formData: FormData
 ): Promise<InviteState> {
-  await requireOrgAdmin(organisationId);
+  const session = await requireOrgAdmin(organisationId);
 
   const validated = InviteSchema.safeParse({
     email: formData.get("email"),
@@ -88,9 +97,20 @@ export async function inviteTeamMember(
     });
     if (createError) return { message: `Could not create an account: ${createError.message}` };
     userId = created.user.id;
-  }
 
-  await admin.from("profiles").update({ role: v.role === "admin" ? "org_admin" : "org_member" }).eq("id", userId);
+    const newRole = v.role === "admin" ? "org_admin" : "org_member";
+    await admin.from("profiles").update({ role: newRole }).eq("id", userId);
+    await logAuditEvent(admin, {
+      name: DOMAIN_EVENTS.ACCOUNT_ROLE_ASSIGNED,
+      actorId: session.userId,
+      subjectId: userId,
+      entityType: "profiles",
+      entityId: userId,
+      source: "platform",
+      after: { role: newRole },
+      metadata: { reason: "organisation_invite", organisationId },
+    });
+  }
 
   const { error: memberError } = await admin
     .from("organisation_members")
