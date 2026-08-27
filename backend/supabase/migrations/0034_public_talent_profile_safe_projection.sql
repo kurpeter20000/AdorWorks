@@ -9,17 +9,19 @@
 -- consent_terms_at, which stay off this view) so the page can be pointed
 -- at it instead of the unfiltered base table.
 --
--- CREATE OR REPLACE VIEW only appends columns here — nothing is removed or
--- reordered, so this is safe for any existing consumer of the view.
+-- Postgres binds CREATE OR REPLACE VIEW columns positionally: existing
+-- columns must keep their exact name AND position, or it errors with
+-- "cannot change name of view column" (42P16) instead of silently
+-- reordering. The original 0003 column list is reproduced here verbatim,
+-- in its original order, with every new column appended after it —
+-- nothing removed, renamed, or reordered.
 --
 -- Run this AFTER 0033_organisation_role_scopes.sql.
 
 create or replace view public_talent_profiles as
 select
   id,
-  display_name,
   headline,
-  bio,
   category,
   skills,
   languages,
@@ -28,15 +30,19 @@ select
   availability,
   years_experience,
   portfolio_url,
+  verification_tier,
+  display_name,
+  bio,
   linkedin_url,
   github_url,
   website_url,
-  avatar_path,
-  verification_tier
+  avatar_path
 from talent_profiles
 where public_visible = true;
 
 grant select on public_talent_profiles to anon, authenticated;
 
--- Rollback: recreate the view with only the original 0003 column list.
+-- Rollback: recreate the view with only the original 0003 column list
+-- (id, headline, category, skills, languages, location, work_mode,
+-- availability, years_experience, portfolio_url, verification_tier).
 -- Safe only if no new consumer has started depending on the added columns.
