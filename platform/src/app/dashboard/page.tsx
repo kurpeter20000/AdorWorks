@@ -22,9 +22,11 @@ export default async function DashboardPage({
   const supabase = await createClient();
   const { data: pendingAssistance } = await supabase
     .from("assistance_sessions")
-    .select("id, scope")
+    .select("id, scope, status")
     .eq("user_id", session.userId)
-    .eq("status", "pending_consent")
+    .in("status", ["pending_consent", "active"])
+    .is("revoked_at", null)
+    .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -63,9 +65,14 @@ export default async function DashboardPage({
 
       {!session.phoneVerified && <PhoneVerificationWidget />}
 
-      {pendingAssistance && (
-        <AssistanceConsentWidget sessionId={pendingAssistance.id} freshAccount={!!pendingAssistance.scope.freshAccount} />
-      )}
+      {pendingAssistance &&
+        (pendingAssistance.status === "pending_consent" || pendingAssistance.status === "active") && (
+          <AssistanceConsentWidget
+            sessionId={pendingAssistance.id}
+            freshAccount={!!pendingAssistance.scope.freshAccount}
+            status={pendingAssistance.status}
+          />
+        )}
 
       <section className="mt-8">
         <h2 className="text-xl font-extrabold text-midnight">{experience.title}</h2>

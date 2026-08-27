@@ -20,6 +20,7 @@ export default async function AssistPage() {
     .select("id, status, expires_at, user_id")
     .eq("agent_id", session.userId)
     .in("status", ["active", "pending_consent"])
+    .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false });
 
   const userIds = [...new Set((sessions ?? []).map((s) => s.user_id))];

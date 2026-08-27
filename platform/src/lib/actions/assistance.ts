@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { FormState } from "./auth";
 import type { TalentProfileRow } from "@/lib/database.types";
 import { ASSISTED_TALENT_FIELDS } from "@/lib/assistedFields";
+import { isAssistanceSessionActive, isAssistanceSessionExpired } from "@/lib/domain/assistancePermissions";
 
 const RequestSchema = z.object({
   reason: z.string().trim().min(5, "Tell us briefly what you need help with."),
@@ -74,6 +75,19 @@ export async function consentToAssistance(
   const session = await requireSession();
   const supabase = await createClient();
 
+  const { data: assistanceSession } = await supabase
+    .from("assistance_sessions")
+    .select("id, status, expires_at, revoked_at")
+    .eq("id", sessionId)
+    .eq("user_id", session.userId)
+    .maybeSingle();
+  if (!assistanceSession || assistanceSession.status !== "pending_consent" || assistanceSession.revoked_at) {
+    return { message: "This assistance request is no longer awaiting your consent." };
+  }
+  if (isAssistanceSessionExpired(assistanceSession)) {
+    return { message: "This assistance request has expired. Ask AdorWorks to create a new session." };
+  }
+
   const newPassword = formData.get("newPassword");
   if (typeof newPassword === "string" && newPassword.length > 0) {
     const validated = NewPasswordSchema.safeParse(newPassword);
@@ -90,15 +104,21 @@ export async function consentToAssistance(
     }
   }
 
-  const { error } = await supabase
+  const now = new Date().toISOString();
+  const { data: consented, error } = await supabase
     .from("assistance_sessions")
-    .update({ status: "active", consent_recorded_at: new Date().toISOString() })
+    .update({ status: "active", consent_recorded_at: now })
     .eq("id", sessionId)
     .eq("user_id", session.userId)
-    .eq("status", "pending_consent");
+    .eq("status", "pending_consent")
+    .is("revoked_at", null)
+    .gt("expires_at", now)
+    .select("id")
+    .maybeSingle();
   if (error) {
     return { message: `Could not record your consent: ${error.message}` };
   }
+  if (!consented) return { message: "This assistance request expired or changed. Refresh and try again." };
 
   revalidatePath("/dashboard");
   return {};
@@ -135,10 +155,14 @@ export async function updateAssistedField(_prevState: FormState, formData: FormD
 
   const { data: assistSession } = await admin
     .from("assistance_sessions")
-    .select("id, agent_id, user_id, status, scope")
+    .select("id, agent_id, user_id, status, scope, consent_recorded_at, expires_at, revoked_at, completed_at")
     .eq("id", sessionId)
     .maybeSingle();
-  if (!assistSession || assistSession.status !== "active" || assistSession.agent_id !== agentSession.userId) {
+  if (
+    !assistSession ||
+    assistSession.agent_id !== agentSession.userId ||
+    !isAssistanceSessionActive(assistSession)
+  ) {
     return { message: "This session is no longer active." };
   }
   if (!assistSession.scope.fields.includes(field)) {
@@ -187,15 +211,48 @@ function splitList(value: string): string[] {
     .filter(Boolean);
 }
 
-export async function finishAssistanceSession(sessionId: string): Promise<void> {
+export async function finishAssistanceSession(sessionId: string): Promise<{ error?: string }> {
   const agentSession = await requireRole("onboarding_agent");
 
   const admin = createAdminClient();
-  await admin
+  const now = new Date().toISOString();
+  const { data: completed, error } = await admin
     .from("assistance_sessions")
-    .update({ status: "completed", completed_at: new Date().toISOString() })
+    .update({ status: "completed", completed_at: now })
     .eq("id", sessionId)
-    .eq("agent_id", agentSession.userId);
+    .eq("agent_id", agentSession.userId)
+    .eq("status", "active")
+    .is("revoked_at", null)
+    .gt("expires_at", now)
+    .select("id")
+    .maybeSingle();
+  if (error) return { error: error.message };
+  if (!completed) return { error: "This session has expired, was revoked, or is no longer active." };
 
   revalidatePath("/assist");
+  return {};
+}
+
+export async function revokeAssistanceSession(
+  sessionId: string,
+  _prevState: FormState
+): Promise<FormState> {
+  const session = await requireSession();
+  const supabase = await createClient();
+  const now = new Date().toISOString();
+
+  const { data: revoked, error } = await supabase
+    .from("assistance_sessions")
+    .update({ status: "revoked", revoked_at: now, revoked_by: session.userId })
+    .eq("id", sessionId)
+    .eq("user_id", session.userId)
+    .in("status", ["pending_consent", "active"])
+    .is("revoked_at", null)
+    .select("id")
+    .maybeSingle();
+  if (error) return { message: `Could not revoke access: ${error.message}` };
+  if (!revoked) return { message: "This assistance session is already closed." };
+
+  revalidatePath("/dashboard");
+  return {};
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isAssistanceSessionActive, isAssistanceSessionExpired } from "@/lib/domain/assistancePermissions";
 import { AssistedFieldForm } from "./assisted-field-form";
 import { FinishSessionButton } from "./finish-session-button";
 
@@ -14,17 +15,18 @@ export default async function AssistSessionPage({ params }: { params: Promise<{ 
 
   const { data: assistSession } = await admin
     .from("assistance_sessions")
-    .select("id, status, user_id, scope, expires_at")
+    .select("id, status, user_id, scope, consent_recorded_at, expires_at, revoked_at, completed_at")
     .eq("id", sessionId)
     .eq("agent_id", session.userId)
     .maybeSingle();
   if (!assistSession) notFound();
 
-  if (assistSession.status !== "active") {
+  if (!isAssistanceSessionActive(assistSession)) {
+    const status = isAssistanceSessionExpired(assistSession) ? "expired" : assistSession.status.replace("_", " ");
     return (
       <main className="mx-auto max-w-2xl p-6 sm:p-8">
         <p className="text-sm text-slate">
-          This session isn&rsquo;t active ({assistSession.status.replace("_", " ")}) — nothing to edit.
+          This session isn&rsquo;t active ({status}) — nothing to edit.
         </p>
       </main>
     );

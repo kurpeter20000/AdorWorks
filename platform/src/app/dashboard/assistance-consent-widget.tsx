@@ -1,14 +1,46 @@
 "use client";
 
 import { useActionState } from "react";
-import { consentToAssistance } from "@/lib/actions/assistance";
+import { consentToAssistance, revokeAssistanceSession } from "@/lib/actions/assistance";
 import type { FormState } from "@/lib/actions/auth";
 
 const initialState: FormState = {};
 
-export function AssistanceConsentWidget({ sessionId, freshAccount }: { sessionId: string; freshAccount: boolean }) {
+export function AssistanceConsentWidget({
+  sessionId,
+  freshAccount,
+  status,
+}: {
+  sessionId: string;
+  freshAccount: boolean;
+  status: "pending_consent" | "active";
+}) {
   const boundAction = consentToAssistance.bind(null, sessionId);
   const [state, formAction, pending] = useActionState(boundAction, initialState);
+  const boundRevokeAction = revokeAssistanceSession.bind(null, sessionId);
+  const [revokeState, revokeAction, revokePending] = useActionState(boundRevokeAction, initialState);
+
+  if (status === "active") {
+    return (
+      <div className="mt-8 rounded-xl border border-teal/30 bg-teal/5 p-5">
+        <h2 className="font-bold text-midnight">Assisted access is active</h2>
+        <p className="mt-1 text-sm text-slate">
+          Your assigned onboarding agent can edit only the fields you approved. Every change is recorded, and you can
+          revoke access immediately.
+        </p>
+        <form action={revokeAction} className="mt-3">
+          <button
+            type="submit"
+            disabled={revokePending}
+            className="rounded-lg border border-coral/40 px-4 py-2 text-sm font-bold text-coral disabled:opacity-60"
+          >
+            {revokePending ? "Revoking…" : "Revoke assisted access"}
+          </button>
+        </form>
+        {revokeState.message && <p className="mt-2 text-sm text-coral">{revokeState.message}</p>}
+      </div>
+    );
+  }
 
   return (
     <div className="mt-8 rounded-xl border border-violet/30 bg-violet/5 p-5">
