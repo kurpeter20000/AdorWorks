@@ -15,6 +15,7 @@ if (auth) {
   wireControls();
   wireAddStaffForm();
   await load();
+  await loadAuditEvents();
 }
 
 function wireControls() {
@@ -115,9 +116,39 @@ function render() {
         await apiFetch("/api/people/" + row.id + "/role", { method: "PATCH", body: { role: newRole } });
         setPageStatus("success", "Updated " + (row.full_name || row.email || row.id) + " to " + newRole + ".");
         await load();
+        await loadAuditEvents();
       } catch (err) {
         setPageStatus("error", err.message);
       }
     });
   });
+}
+
+async function loadAuditEvents() {
+  var tbody = document.getElementById("audit-events-body");
+  tbody.innerHTML = '<tr><td colspan="5" class="staff-empty">Loading…</td></tr>';
+  try {
+    var res = await apiFetch("/api/people/audit-events?limit=50");
+    if (!res.data.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="staff-empty">No audited events yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = res.data
+      .map(function (e) {
+        var before = e.before && e.before.role ? e.before.role : "—";
+        var after = e.after && e.after.role ? e.after.role : "—";
+        return (
+          "<tr>" +
+          "<td>" + formatDate(e.occurred_at) + "</td>" +
+          "<td>" + escapeHtml(e.name) + "</td>" +
+          "<td>" + escapeHtml(e.actor_name || e.actor_id || "—") + "</td>" +
+          "<td>" + escapeHtml(e.subject_name || e.subject_id || "—") + "</td>" +
+          "<td>" + escapeHtml(before) + " → " + escapeHtml(after) + "</td>" +
+          "</tr>"
+        );
+      })
+      .join("");
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="5" class="staff-empty">' + escapeHtml(err.message) + "</td></tr>";
+  }
 }

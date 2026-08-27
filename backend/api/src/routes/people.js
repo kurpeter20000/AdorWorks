@@ -4,6 +4,7 @@ import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
+import { logAuditEvent } from "../audit.js";
 
 export const peopleRouter = Router();
 // Admin-only: this is a directory across every role (including other
@@ -97,8 +98,11 @@ peopleRouter.post(
 
     let userId;
     let temporaryPassword;
+    let previousRole = null;
     if (existing) {
       userId = existing.id;
+      const { data: existingProfile } = await supabaseAdmin.from("profiles").select("role").eq("id", userId).maybeSingle();
+      previousRole = existingProfile?.role ?? null;
     } else {
       temporaryPassword = generateTemporaryPassword();
       const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -121,6 +125,17 @@ peopleRouter.post(
       .single();
     if (updateError) throw new HttpError(400, updateError.message);
 
+    await logAuditEvent(supabaseAdmin, {
+      name: "identity.account.role_assigned",
+      actorId: req.user.id,
+      subjectId: userId,
+      entityType: "profiles",
+      entityId: userId,
+      before: previousRole !== null ? { role: previousRole } : null,
+      after: { role: v.role },
+      metadata: { via: "staff_people_add_staff" },
+    });
+
     res.json({ data: { ...profile, email: v.email }, temporaryPassword });
   })
 );
@@ -135,6 +150,7 @@ peopleRouter.patch(
   "/:id/role",
   asyncRoute(async (req, res) => {
     const { role } = roleUpdateSchema.parse(req.body);
+    const { data: before } = await supabaseAdmin.from("profiles").select("role").eq("id", req.params.id).maybeSingle();
     const { data, error } = await supabaseAdmin
       .from("profiles")
       .update({ role })
@@ -142,6 +158,54 @@ peopleRouter.patch(
       .select("id, role, status, full_name, created_at")
       .single();
     if (error) throw new HttpError(400, error.message);
+
+    await logAuditEvent(supabaseAdmin, {
+      name: "identity.account.role_assigned",
+      actorId: req.user.id,
+      subjectId: req.params.id,
+      entityType: "profiles",
+      entityId: req.params.id,
+      before: before ? { role: before.role } : null,
+      after: { role },
+      metadata: { via: "staff_people_role_patch" },
+    });
+
+    res.json({ data });
+  })
+);
+
+const auditQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+});
+
+// GET /api/people/audit-events — read-only foundation for an operations
+// audit view (0035). Only what's written so far (staff role changes and
+// organisation-invite role assignments) shows up here; this is a starting
+// point, not a complete activity log.
+peopleRouter.get(
+  "/audit-events",
+  asyncRoute(async (req, res) => {
+    const { limit } = auditQuerySchema.parse(req.query);
+    const { data: events, error } = await supabaseAdmin
+      .from("audit_events")
+      .select("id, name, occurred_at, actor_id, subject_id, entity_type, entity_id, reason, before, after, metadata")
+      .order("occurred_at", { ascending: false })
+      .limit(limit);
+    if (error) throw new HttpError(500, error.message);
+
+    const profileIds = [...new Set(events.flatMap((e) => [e.actor_id, e.subject_id]).filter(Boolean))];
+    const { data: profiles } =
+      profileIds.length > 0
+        ? await supabaseAdmin.from("profiles").select("id, full_name").in("id", profileIds)
+        : { data: [] };
+    const nameById = new Map((profiles || []).map((p) => [p.id, p.full_name]));
+
+    const data = events.map((e) => ({
+      ...e,
+      actor_name: e.actor_id ? nameById.get(e.actor_id) || null : null,
+      subject_name: e.subject_id ? nameById.get(e.subject_id) || null : null,
+    }));
+
     res.json({ data });
   })
 );
