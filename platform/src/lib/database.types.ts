@@ -502,6 +502,42 @@ export type AssistedFieldChangeRow = {
   changed_at: string;
 }
 
+export type PublicTalentProfileRow = {
+  id: string;
+  display_name: string | null;
+  headline: string | null;
+  bio: string | null;
+  category: Category | null;
+  skills: string[];
+  languages: string[];
+  location: string | null;
+  work_mode: WorkMode | null;
+  availability: string | null;
+  years_experience: number | null;
+  portfolio_url: string | null;
+  linkedin_url: string | null;
+  github_url: string | null;
+  website_url: string | null;
+  avatar_path: string | null;
+  verification_tier: VerificationTier;
+}
+
+export type AuditEventRow = {
+  id: string;
+  name: string;
+  occurred_at: string;
+  actor_id: string | null;
+  subject_id: string | null;
+  entity_type: string;
+  entity_id: string;
+  reason: string | null;
+  source: "platform" | "staff_api" | "database" | "public_site";
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
 export type Database = {
   // Recent @supabase/supabase-js versions look for this marker (present
   // in real `supabase gen types` output) to resolve the client's
@@ -747,8 +783,19 @@ export type Database = {
         Update: Partial<AssistedFieldChangeRow>;
         Relationships: [];
       };
+      audit_events: {
+        Row: AuditEventRow;
+        Insert: Partial<AuditEventRow> & { name: string; entity_type: string; entity_id: string; source: AuditEventRow["source"] };
+        Update: Partial<AuditEventRow>;
+        Relationships: [];
+      };
     };
-    Views: Record<string, never>;
+    Views: {
+      public_talent_profiles: {
+        Row: PublicTalentProfileRow;
+        Relationships: [];
+      };
+    };
     Functions: Record<string, never>;
   };
 }

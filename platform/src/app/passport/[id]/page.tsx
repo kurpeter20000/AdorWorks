@@ -17,10 +17,14 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
   const supabase = await createClient();
 
   // No requireSession/requireRole here on purpose — this page must be
-  // readable by a signed-out visitor. RLS's public_visible = true branch
-  // (talent_profiles_select, 0015) is what actually gates the read: an
-  // unpublished or nonexistent profile just comes back as no row.
-  const { data: profile } = await supabase.from("talent_profiles").select("*").eq("id", id).maybeSingle();
+  // readable by a signed-out visitor. Reads the column-limited
+  // public_talent_profiles view (0034), not the base table with
+  // select("*") — the view can never expose a column this page doesn't
+  // already render, regardless of what gets added to talent_profiles
+  // later. RLS's public_visible = true branch is still what actually
+  // gates the read: an unpublished or nonexistent profile just comes
+  // back as no row.
+  const { data: profile } = await supabase.from("public_talent_profiles").select("*").eq("id", id).maybeSingle();
 
   if (!profile) {
     return (
