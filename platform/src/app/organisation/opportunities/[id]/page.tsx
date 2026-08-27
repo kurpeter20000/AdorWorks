@@ -1,23 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { StatusBadge } from "@/components/status-badge";
 import { requireOrganisationMembership } from "@/lib/dal/organisation";
+import { APPLICATION_STATES, OPPORTUNITY_STATES } from "@/lib/domain/states";
 import { createClient } from "@/lib/supabase/server";
 import { SendOfferForm } from "./send-offer-form";
 import { ShortlistingModeForm } from "./shortlisting-mode-form";
 import { ShortlistActions } from "./shortlist-actions";
 
 export const metadata: Metadata = { title: "Opportunity" };
-
-const STAGE_LABEL: Record<string, string> = {
-  submitted: "New applicant",
-  shortlisted: "Shortlisted",
-  interviewing: "Interviewing",
-  offered: "Offer sent",
-  accepted: "Accepted",
-  rejected: "Not selected",
-  withdrawn: "Withdrawn",
-};
 
 export default async function OpportunityDetailPage({
   params,
@@ -90,7 +82,9 @@ export default async function OpportunityDetailPage({
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <h1 className="text-2xl font-extrabold text-midnight">{opportunity.title}</h1>
-      <p className="mt-1 text-sm text-slate">Status: {opportunity.status.replace("_", " ")}</p>
+      <div className="mt-2">
+        <StatusBadge state={OPPORTUNITY_STATES[opportunity.status]} />
+      </div>
 
       <ShortlistingModeForm opportunityId={opportunity.id} mode={opportunity.shortlisting_mode} />
 
@@ -140,9 +134,7 @@ export default async function OpportunityDetailPage({
                       )}
                       <p className="text-xs text-slate">{talent?.headline}</p>
                     </div>
-                    <span className="whitespace-nowrap rounded-full bg-cloud px-3 py-1 text-xs font-semibold text-slate">
-                      {STAGE_LABEL[a.stage] ?? a.stage}
-                    </span>
+                    <StatusBadge state={APPLICATION_STATES[a.stage]} className="whitespace-nowrap" />
                   </div>
 
                   {a.pitch && <p className="mt-3 text-sm text-slate">{a.pitch}</p>}

@@ -1,18 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { StatusBadge } from "@/components/status-badge";
 import { requireRole } from "@/lib/dal/session";
+import { OFFER_STATES } from "@/lib/domain/states";
 import { createClient } from "@/lib/supabase/server";
 import { OfferActions } from "./offer-actions";
 
 export const metadata: Metadata = { title: "My offers" };
-
-const STATUS_LABEL: Record<string, string> = {
-  draft: "Draft",
-  sent: "Awaiting your response",
-  accepted: "Accepted",
-  declined: "Declined",
-  withdrawn: "Withdrawn by employer",
-};
 
 export default async function OffersPage() {
   const session = await requireRole("talent");
@@ -68,9 +62,7 @@ export default async function OffersPage() {
                 </div>
                 {o.message && <p className="mt-2 text-sm text-slate">&ldquo;{o.message}&rdquo;</p>}
                 <div className="mt-3 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate">
-                    {STATUS_LABEL[o.status] ?? o.status}
-                  </span>
+                  <StatusBadge state={OFFER_STATES[o.status]} />
                   {o.status === "sent" && <OfferActions offerId={o.id} />}
                   {o.status === "accepted" && contractIdByOffer.has(o.id) && (
                     <Link

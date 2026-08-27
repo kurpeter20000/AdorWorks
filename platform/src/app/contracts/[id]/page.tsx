@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
+import { StatusBadge } from "@/components/status-badge";
 import { requireSession } from "@/lib/dal/session";
+import { CONTRACT_STATES, MILESTONE_STATES } from "@/lib/domain/states";
 import { createClient } from "@/lib/supabase/server";
 import type { DeliverableRow } from "@/lib/database.types";
 import { DeliverableForm } from "./deliverable-form";
@@ -18,14 +20,6 @@ export const metadata: Metadata = { title: "Contract" };
 // Split out of the main bundle — only ever rendered for an employer once a
 // milestone is 'approved', so most contract-page visits never need it.
 const PaymentCheckout = dynamic(() => import("./payment-checkout").then((m) => m.PaymentCheckout));
-
-const MILESTONE_LABEL: Record<string, string> = {
-  pending: "Not started",
-  submitted: "Submitted — awaiting review",
-  approved: "Approved — ready for payment",
-  revision_requested: "Revision requested",
-  paid: "Paid",
-};
 
 export default async function ContractDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await requireSession();
@@ -121,7 +115,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
       <h1 className="text-2xl font-extrabold text-midnight">{opportunity?.title ?? "Contract"}</h1>
       <p className="mt-1 text-sm text-slate">
         {isTalent ? `With ${org?.name ?? "your employer"}` : `With ${talent?.display_name ?? "your talent"}`} ·{" "}
-        <span className="font-semibold">{contract.status}</span>
+        <StatusBadge state={CONTRACT_STATES[contract.status]} className="ml-1" />
       </p>
 
       {contract.status === "completed" && (
@@ -157,9 +151,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                     {m.currency} {m.amount.toLocaleString()}
                   </p>
                 </div>
-                <span className="whitespace-nowrap rounded-full bg-cloud px-3 py-1 text-xs font-semibold text-slate">
-                  {MILESTONE_LABEL[m.status] ?? m.status}
-                </span>
+                <StatusBadge state={MILESTONE_STATES[m.status]} className="whitespace-nowrap" />
               </div>
 
               {deliverable && (

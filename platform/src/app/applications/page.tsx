@@ -1,29 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { StatusBadge } from "@/components/status-badge";
 import { requireRole } from "@/lib/dal/session";
+import { APPLICATION_STATES } from "@/lib/domain/states";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "My applications" };
-
-const STAGE_LABEL: Record<string, string> = {
-  submitted: "Submitted — awaiting review",
-  shortlisted: "Shortlisted",
-  interviewing: "Interviewing",
-  offered: "Offer sent — check your offers",
-  accepted: "Accepted",
-  rejected: "Not selected",
-  withdrawn: "Withdrawn",
-};
-
-const STAGE_STYLE: Record<string, string> = {
-  submitted: "bg-slate/10 text-slate",
-  shortlisted: "bg-teal/10 text-teal-ink",
-  interviewing: "bg-teal/10 text-teal-ink",
-  offered: "bg-violet/10 text-violet",
-  accepted: "bg-teal/10 text-teal-ink",
-  rejected: "bg-slate/10 text-slate",
-  withdrawn: "bg-slate/10 text-slate",
-};
 
 export default async function ApplicationsPage() {
   const session = await requireRole("talent");
@@ -80,11 +62,7 @@ export default async function ApplicationsPage() {
                     {opp ? (orgNameById.get(opp.organisation_id) ?? "AdorWorks employer") : ""}
                   </p>
                 </div>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${STAGE_STYLE[a.stage] ?? "bg-slate/10 text-slate"}`}
-                >
-                  {STAGE_LABEL[a.stage] ?? a.stage}
-                </span>
+                <StatusBadge state={APPLICATION_STATES[a.stage]} />
               </li>
             );
           })}

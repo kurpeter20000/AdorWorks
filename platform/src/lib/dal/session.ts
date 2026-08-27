@@ -3,6 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { UserRole } from "@/lib/database.types";
+import { EMPLOYER_ACCOUNT_ROLES, STAFF_ACCOUNT_ROLES } from "@/lib/domain/roles";
 
 export interface VerifiedSession {
   userId: string;
@@ -67,7 +68,7 @@ export async function requireRole(...roles: UserRole[]): Promise<VerifiedSession
   return session;
 }
 
-export const STAFF_ROLES: UserRole[] = ["reviewer", "matcher", "finance", "admin"];
+export const STAFF_ROLES: UserRole[] = [...STAFF_ACCOUNT_ROLES];
 
 // The organisation/employer side, across both onboarding paths: the
 // self-service signup flow assigns 'individual_client' (auth.ts), but the
@@ -75,4 +76,4 @@ export const STAFF_ROLES: UserRole[] = ["reviewer", "matcher", "finance", "admin
 // POST /intake/:id/convert-employer) still assigns the older 'employer'
 // role to the representative it provisions — both are the same real-world
 // party and need the same access everywhere an org rep can act.
-export const CLIENT_ROLES: UserRole[] = ["individual_client", "employer", "org_member", "org_admin"];
+export const CLIENT_ROLES: UserRole[] = [...EMPLOYER_ACCOUNT_ROLES];

@@ -1,16 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { StatusBadge } from "@/components/status-badge";
 import { requireSession } from "@/lib/dal/session";
+import { CONTRACT_STATES } from "@/lib/domain/states";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "My contracts" };
-
-const STATUS_STYLE: Record<string, string> = {
-  active: "bg-teal/10 text-teal-ink",
-  completed: "bg-violet/10 text-violet",
-  cancelled: "bg-slate/10 text-slate",
-  disputed: "bg-coral/10 text-coral",
-};
 
 export default async function ContractsPage() {
   const session = await requireSession();
@@ -62,11 +57,7 @@ export default async function ContractsPage() {
                 className="flex items-center justify-between rounded-xl border border-slate/15 bg-white p-4 hover:border-violet/40"
               >
                 <p className="font-semibold text-midnight">{titleById.get(c.opportunity_id) ?? "Contract"}</p>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLE[c.status] ?? "bg-slate/10 text-slate"}`}
-                >
-                  {c.status}
-                </span>
+                <StatusBadge state={CONTRACT_STATES[c.status]} />
               </Link>
             </li>
           ))}

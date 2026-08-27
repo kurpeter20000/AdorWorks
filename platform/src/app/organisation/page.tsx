@@ -1,33 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { StatusBadge } from "@/components/status-badge";
 import { requireOrganisationMembership } from "@/lib/dal/organisation";
+import { OPPORTUNITY_STATES } from "@/lib/domain/states";
 import { createClient } from "@/lib/supabase/server";
 import { EvidenceUpload } from "./evidence-upload";
 import { LogoUpload } from "./logo-upload";
 import { OrgInfoForm } from "./org-info-form";
 
 export const metadata: Metadata = { title: "Your organisation" };
-
-const STATUS_LABEL: Record<string, string> = {
-  draft: "Draft",
-  pending_review: "Submitted — awaiting review",
-  open: "Live",
-  filled: "Filled",
-  closed: "Closed",
-  cancelled: "Cancelled",
-  rejected: "Not approved",
-};
-
-const STATUS_STYLE: Record<string, string> = {
-  draft: "bg-slate/10 text-slate",
-  pending_review: "bg-coral/10 text-coral",
-  open: "bg-teal/10 text-teal-ink",
-  filled: "bg-violet/10 text-violet",
-  closed: "bg-slate/10 text-slate",
-  cancelled: "bg-slate/10 text-slate",
-  rejected: "bg-coral/10 text-coral",
-};
 
 export default async function OrganisationPage({
   searchParams,
@@ -138,11 +120,7 @@ export default async function OrganisationPage({
                     <p className="font-semibold text-midnight">{o.title}</p>
                     <p className="text-xs text-slate">{o.type.replace("_", " ")}</p>
                   </div>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLE[o.status] ?? "bg-slate/10 text-slate"}`}
-                  >
-                    {STATUS_LABEL[o.status] ?? o.status}
-                  </span>
+                  <StatusBadge state={OPPORTUNITY_STATES[o.status]} />
                 </Link>
               </li>
             ))}
