@@ -2,19 +2,33 @@ import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
 import fs from "fs";
 import path from "path";
+import { validateE2EEnvironment, type E2EEnvironment } from "../src/lib/testing/e2e-environment";
 
 function loadEnv() {
-  const envPath = path.resolve(__dirname, "../.env.local");
-  const raw = fs.readFileSync(envPath, "utf8");
-  return Object.fromEntries(
-    raw
-      .split("\n")
-      .filter((l) => l.includes("="))
-      .map((l) => {
-        const i = l.indexOf("=");
-        return [l.slice(0, i).trim(), l.slice(i + 1).trim()];
-      })
-  );
+  const envPath = path.resolve(__dirname, "../.env.e2e.local");
+  const fileEnvironment: E2EEnvironment = fs.existsSync(envPath)
+    ? Object.fromEntries(
+        fs
+          .readFileSync(envPath, "utf8")
+          .split("\n")
+          .filter((line) => line.includes("=") && !line.trimStart().startsWith("#"))
+          .map((line) => {
+            const separator = line.indexOf("=");
+            return [line.slice(0, separator).trim(), line.slice(separator + 1).trim()];
+          })
+      )
+    : {};
+
+  return validateE2EEnvironment({
+    ...fileEnvironment,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? fileEnvironment.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY:
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? fileEnvironment.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY ?? fileEnvironment.SUPABASE_SECRET_KEY,
+    E2E_ALLOW_MUTATIONS: process.env.E2E_ALLOW_MUTATIONS ?? fileEnvironment.E2E_ALLOW_MUTATIONS,
+    E2E_EXPECTED_SUPABASE_PROJECT_REF:
+      process.env.E2E_EXPECTED_SUPABASE_PROJECT_REF ?? fileEnvironment.E2E_EXPECTED_SUPABASE_PROJECT_REF,
+  });
 }
 
 export const env = loadEnv();
@@ -29,16 +43,26 @@ export async function createTestUser(rolePrefix: string, role: string) {
   const email = `e2e-${rolePrefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
   const { data, error } = await admin.auth.admin.createUser({ email, password: TEST_PASSWORD, email_confirm: true });
   if (error || !data.user) throw new Error(`Failed to create test user: ${error?.message}`);
-  await admin.from("profiles").update({ role }).eq("id", data.user.id);
+  const { error: roleError } = await admin.from("profiles").update({ role }).eq("id", data.user.id);
+  if (roleError) {
+    await admin.auth.admin.deleteUser(data.user.id).catch(() => {});
+    throw new Error(`Failed to assign test role: ${roleError.message}`);
+  }
   if (role === "talent") {
-    await admin.from("talent_profiles").insert({ id: data.user.id, display_name: `E2E ${rolePrefix}` });
+    const { error: profileError } = await admin
+      .from("talent_profiles")
+      .insert({ id: data.user.id, display_name: `E2E ${rolePrefix}` });
+    if (profileError) {
+      await admin.auth.admin.deleteUser(data.user.id).catch(() => {});
+      throw new Error(`Failed to create test talent profile: ${profileError.message}`);
+    }
   }
   return { id: data.user.id, email };
 }
 
 export async function deleteTestUser(userId: string) {
-  await admin.from("talent_profiles").delete().eq("id", userId);
-  await admin.auth.admin.deleteUser(userId).catch(() => {});
+  const { error } = await admin.auth.admin.deleteUser(userId);
+  if (error) throw new Error(`Failed to delete test user: ${error.message}`);
 }
 
 async function mustInsert<T extends { id: string }>(

@@ -48,6 +48,26 @@ for the full reasoning.
    code depends on them. See `../backend/supabase/README.md`.
 4. `npm run dev` → <http://localhost:3000>
 
+### Safe end-to-end tests
+
+The Playwright suite creates and deletes Auth users and marketplace records
+with a secret/service-role key. It must never read the normal `.env.local` or
+run against production.
+
+1. Create a disposable Supabase project and apply every migration in
+   `../backend/supabase/migrations/` in order, or start a local Supabase stack.
+2. Copy `.env.e2e.example` to `.env.e2e.local` and fill in only that disposable
+   project's URL and keys.
+3. Set `E2E_EXPECTED_SUPABASE_PROJECT_REF` to the first hostname segment of the
+   test URL (or `local` for localhost) and explicitly set
+   `E2E_ALLOW_MUTATIONS=true`.
+4. Start the platform against the same test project, then run
+   `npm run test:e2e`.
+
+The suite fails before creating its admin client if the opt-in is missing, the
+project reference does not match, or the URL points at the known production
+project.
+
 ## Deploying (Vercel)
 
 **Live** at <https://ador-works.vercel.app>, deployed via the Vercel
