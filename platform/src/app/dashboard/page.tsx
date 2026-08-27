@@ -3,13 +3,21 @@ import Link from "next/link";
 import { requireSession } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/lib/actions/auth";
+import { getDashboardExperience } from "@/lib/domain/navigation";
+import { StatePanel } from "@/components/state-panel";
 import { PhoneVerificationWidget } from "./phone-verification-widget";
 import { AssistanceConsentWidget } from "./assistance-consent-widget";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; onboarding?: string }>;
+}) {
   const session = await requireSession();
+  const query = await searchParams;
+  const experience = getDashboardExperience(session.role);
 
   const supabase = await createClient();
   const { data: pendingAssistance } = await supabase
@@ -37,78 +45,58 @@ export default async function DashboardPage() {
         </form>
       </div>
 
+      {query.error === "forbidden" && (
+        <div className="mt-6">
+          <StatePanel title="You do not have access to that workspace" tone="danger" role="alert">
+            Your account has been returned to the workspace available for its current role.
+          </StatePanel>
+        </div>
+      )}
+
+      {query.onboarding === "submitted" && (
+        <div className="mt-6">
+          <StatePanel title="Onboarding submitted" tone="success">
+            Your details were received and can now move through the existing review workflow.
+          </StatePanel>
+        </div>
+      )}
+
       {!session.phoneVerified && <PhoneVerificationWidget />}
 
       {pendingAssistance && (
         <AssistanceConsentWidget sessionId={pendingAssistance.id} freshAccount={!!pendingAssistance.scope.freshAccount} />
       )}
 
-      {session.role === "talent" && (
-        <div className="mt-8 rounded-xl border border-teal/30 bg-teal/5 p-5">
-          <h2 className="font-bold text-midnight">Finish your profile</h2>
-          <p className="mt-1 text-sm text-slate">
-            Complete your profile and request verification so employers can find and shortlist you.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Link
-              href="/passport"
-              className="inline-block rounded-lg bg-teal px-4 py-2 text-sm font-bold text-midnight"
-            >
-              Your Passport (photo, links, portfolio)
-            </Link>
-            <Link
-              href="/onboarding"
-              className="inline-block rounded-lg border border-teal/40 px-4 py-2 text-sm font-bold text-teal-ink"
-            >
-              Continue onboarding
-            </Link>
-            <Link
-              href="/opportunities"
-              className="inline-block rounded-lg border border-teal/40 px-4 py-2 text-sm font-bold text-teal-ink"
-            >
-              Find work
-            </Link>
-            <Link
-              href="/offers"
-              className="inline-block rounded-lg border border-teal/40 px-4 py-2 text-sm font-bold text-teal-ink"
-            >
-              My offers
-            </Link>
-            <Link
-              href="/contracts"
-              className="inline-block rounded-lg border border-teal/40 px-4 py-2 text-sm font-bold text-teal-ink"
-            >
-              My contracts
-            </Link>
-          </div>
-          <Link href="/assistance/request" className="mt-3 inline-block text-xs font-semibold text-teal-ink underline">
-            Need help finishing your profile in person?
-          </Link>
-        </div>
-      )}
+      <section className="mt-8">
+        <h2 className="text-xl font-extrabold text-midnight">{experience.title}</h2>
+        <p className="mt-1 text-sm text-slate">{experience.description}</p>
 
-      {(session.role === "individual_client" || session.role === "employer") && (
-        <div className="mt-8 rounded-xl border border-violet/30 bg-violet/5 p-5">
-          <h2 className="font-bold text-midnight">Hiring on AdorWorks</h2>
-          <p className="mt-1 text-sm text-slate">
-            Set up an organisation to post paid opportunities and build a shortlist.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Link
-              href="/organisation"
-              className="inline-block rounded-lg bg-violet px-4 py-2 text-sm font-bold text-white"
-            >
-              Go to your organisation
-            </Link>
-            <Link
-              href="/contracts"
-              className="inline-block rounded-lg border border-violet/40 px-4 py-2 text-sm font-bold text-violet"
-            >
-              My contracts
-            </Link>
+        {experience.actions.length > 0 ? (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {experience.actions.map((action) => (
+              <Link
+                key={action.href}
+                href={action.href}
+                className={`rounded-xl border p-4 transition-colors ${
+                  action.primary
+                    ? "border-teal bg-teal text-midnight hover:bg-teal/80"
+                    : "border-slate/20 bg-white hover:border-teal/50"
+                }`}
+              >
+                <span className="block font-bold">{action.label}</span>
+                <span className="mt-1 block text-xs text-slate">{action.description}</span>
+              </Link>
+            ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="mt-4">
+            <StatePanel title="Workspace unchanged" tone="info">
+              This role continues in its existing operational workspace while the integrated experience is built behind
+              feature flags.
+            </StatePanel>
+          </div>
+        )}
+      </section>
     </main>
   );
 }
