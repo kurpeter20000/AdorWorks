@@ -1,4 +1,4 @@
-import { requireStaffSession, initLogout, apiFetch, escapeHtml, formatDate, statusBadge } from "./app.js";
+import { requireStaffSession, initLogout, apiFetch, escapeHtml, formatDate, statusBadge, supabase } from "./app.js";
 
 initLogout();
 
@@ -101,11 +101,13 @@ function renderDetail(d) {
             ? '<button type="button" class="btn btn-secondary" data-evidence-approve="' + e.id + '">Approve</button>' +
               '<button type="button" class="btn btn-secondary" data-evidence-reject="' + e.id + '">Reject</button>'
             : "";
+          var viewButton = e.file_path
+            ? '<button type="button" class="btn btn-secondary" data-view-evidence="' + e.id + '" data-evidence-path="' + escapeHtml(e.file_path) + '">View document</button>'
+            : "";
           return (
             '<li><strong>' + escapeHtml(e.evidence_type) + "</strong> — " + statusBadge(e.status) +
-            (e.file_path ? " · <code>" + escapeHtml(e.file_path) + "</code>" : "") +
             (e.notes ? "<br>" + escapeHtml(e.notes) : "") +
-            '<div class="action-row">' + actions + "</div></li>"
+            '<div class="action-row">' + viewButton + actions + "</div></li>"
           );
         })
         .join("")
@@ -189,6 +191,18 @@ function wireDetailActions(id, d, detailRow) {
       run(apiFetch("/api/talent/" + id, { method: "PATCH", body: { public_visible: visibilityCheckbox.checked } }));
     });
   }
+
+  detailRow.querySelectorAll("[data-view-evidence]").forEach(function (btn) {
+    btn.addEventListener("click", async function () {
+      var path = btn.getAttribute("data-evidence-path");
+      var { data, error } = await supabase.storage.from("talent-evidence").createSignedUrl(path, 300);
+      if (error) {
+        showStatus("error", "Could not open the document: " + error.message);
+        return;
+      }
+      window.open(data.signedUrl, "_blank", "noopener");
+    });
+  });
 
   detailRow.querySelectorAll("[data-evidence-approve]").forEach(function (btn) {
     btn.addEventListener("click", function () {
