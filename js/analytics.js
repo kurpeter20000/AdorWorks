@@ -46,6 +46,13 @@
     script.id = "ga4-script";
     script.async = true;
     script.src = "https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(window.ADORWORKS_GA_MEASUREMENT_ID);
+    // Google's real gtag.js reinstalls its own dataLayer.push once it
+    // loads (that's how it processes the queue) -- which would silently
+    // clobber installBridge()'s wrapper below, so any adorworks_event
+    // fired after this point would stop reaching GA4 with no visible
+    // error. Re-installing on top after load keeps the bridge active
+    // regardless of what gtag.js did to the array in between.
+    script.addEventListener("load", installBridge);
     document.head.appendChild(script);
   }
 
@@ -75,6 +82,7 @@
     banner.className = "cookie-consent-banner";
     banner.setAttribute("role", "region");
     banner.setAttribute("aria-label", "Cookie consent");
+    banner.setAttribute("tabindex", "-1");
 
     var text = document.createElement("p");
     text.className = "cookie-consent-banner__text";
@@ -113,7 +121,10 @@
     banner.appendChild(actions);
 
     document.body.appendChild(banner);
-    acceptBtn.focus();
+    // Focus the region, not either button -- accepting and declining
+    // should be equally easy to reach, not nudged one way by default
+    // focus (AdorWorks' whole trust positioning cuts against that).
+    banner.focus();
   }
 
   function init() {
@@ -138,15 +149,21 @@
   // pushes directly -- this wraps the array's push method so every entry
   // (regardless of which script authored it) gets a matching gtag('event')
   // call for free, without main.js needing to know gtag exists at all.
-  var originalPush = window.dataLayer.push.bind(window.dataLayer);
-  window.dataLayer.push = function (entry) {
-    if (entry && typeof entry === "object" && entry.event === "adorworks_event" && hasMeasurementId()) {
-      var params = {};
-      for (var key in entry) {
-        if (key !== "event" && key !== "action") params[key] = entry[key];
+  // Re-installable (see loadGtagScript's onload above) rather than a
+  // one-shot wrap, since it would otherwise get silently overwritten
+  // once gtag.js takes over dataLayer.push for its own processing.
+  function installBridge() {
+    var currentPush = window.dataLayer.push.bind(window.dataLayer);
+    window.dataLayer.push = function (entry) {
+      if (entry && typeof entry === "object" && entry.event === "adorworks_event" && hasMeasurementId()) {
+        var params = {};
+        for (var key in entry) {
+          if (key !== "event" && key !== "action") params[key] = entry[key];
+        }
+        window.gtag("event", entry.action, params);
       }
-      window.gtag("event", entry.action, params);
-    }
-    return originalPush.apply(window.dataLayer, arguments);
-  };
+      return currentPush.apply(window.dataLayer, arguments);
+    };
+  }
+  installBridge();
 })();
