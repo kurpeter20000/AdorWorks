@@ -82,8 +82,11 @@ begin
     computed := 'pending';
   end if;
 
-  update organisations set verification_status = computed
-  where id = v_org_id and verification_status is distinct from computed;
+  -- organisations.verification_status is the org_verification_status
+  -- enum, not text — cast explicitly, since Postgres won't compare or
+  -- assign text to an enum column implicitly.
+  update organisations set verification_status = computed::org_verification_status
+  where id = v_org_id and verification_status is distinct from computed::org_verification_status;
 
   return new;
 end;
