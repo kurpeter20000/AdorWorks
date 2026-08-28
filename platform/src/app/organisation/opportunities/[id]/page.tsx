@@ -6,6 +6,7 @@ import { requireOrganisationMembership } from "@/lib/dal/organisation";
 import { APPLICATION_STATES, OPPORTUNITY_STATES } from "@/lib/domain/states";
 import { createClient } from "@/lib/supabase/server";
 import { AppealRejectionForm } from "./appeal-rejection-form";
+import { ApplicantEvaluationPanel } from "./applicant-evaluation-panel";
 import { CloseOpportunityActions } from "./close-opportunity-actions";
 import { SendOfferForm } from "./send-offer-form";
 import { ShortlistingModeForm } from "./shortlisting-mode-form";
@@ -20,7 +21,7 @@ export default async function OpportunityDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ offered?: string; resubmitted?: string }>;
 }) {
-  const { org } = await requireOrganisationMembership();
+  const { org, session } = await requireOrganisationMembership();
   const { id } = await params;
   const { offered, resubmitted } = await searchParams;
   const supabase = await createClient();
@@ -80,6 +81,34 @@ export default async function OpportunityDetailPage({
       ? await supabase.from("contracts").select("id, offer_id").in("offer_id", offerIds)
       : { data: [] };
   const contractIdByOffer = new Map((contracts ?? []).map((c) => [c.offer_id, c.id]));
+
+  const [{ data: scores }, { data: notes }, { data: interviewDetails }] = await Promise.all([
+    supabase.from("application_scorecards").select("application_id, criterion, score, note, scored_by").in("application_id", applicationIds),
+    supabase
+      .from("application_notes")
+      .select("id, application_id, author_id, body, created_at")
+      .in("application_id", applicationIds)
+      .order("created_at", { ascending: false }),
+    supabase.from("applications").select("id, interview_scheduled_at, interview_notes").in("id", applicationIds),
+  ]);
+  const scoresByApplication = new Map<string, NonNullable<typeof scores>>();
+  for (const s of scores ?? []) {
+    const list = scoresByApplication.get(s.application_id) ?? [];
+    list.push(s);
+    scoresByApplication.set(s.application_id, list);
+  }
+  const notesByApplication = new Map<string, NonNullable<typeof notes>>();
+  for (const n of notes ?? []) {
+    const list = notesByApplication.get(n.application_id) ?? [];
+    list.push(n);
+    notesByApplication.set(n.application_id, list);
+  }
+  const interviewByApplication = new Map((interviewDetails ?? []).map((i) => [i.id, i]));
+
+  const noteAuthorIds = [...new Set((notes ?? []).map((n) => n.author_id))];
+  const { data: noteAuthors } =
+    noteAuthorIds.length > 0 ? await supabase.from("profiles").select("id, full_name").in("id", noteAuthorIds) : { data: [] };
+  const noteAuthorNameById = new Map((noteAuthors ?? []).map((p) => [p.id, p.full_name]));
 
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
@@ -154,11 +183,21 @@ export default async function OpportunityDetailPage({
       <div className="mt-8">
         <div className="flex items-center justify-between">
           <h2 className="font-bold text-midnight">Applicants</h2>
-          {opportunity.shortlisting_mode === "self_service" && (
-            <Link href={`/organisation/opportunities/${opportunity.id}/find-talent`} className="text-xs font-semibold text-violet underline">
-              Find talent
+          <div className="flex items-center gap-3">
+            {applications && applications.length > 1 && (
+              <Link href={`/organisation/opportunities/${opportunity.id}/compare`} className="text-xs font-semibold text-teal-ink underline">
+                Compare
+              </Link>
+            )}
+            <Link href={`/organisation/opportunities/${opportunity.id}/invite`} className="text-xs font-semibold text-violet underline">
+              Invite talent
             </Link>
-          )}
+            {opportunity.shortlisting_mode === "self_service" && (
+              <Link href={`/organisation/opportunities/${opportunity.id}/find-talent`} className="text-xs font-semibold text-violet underline">
+                Find talent
+              </Link>
+            )}
+          </div>
         </div>
         <p className="mt-1 text-xs text-slate">
           {opportunity.shortlisting_mode === "self_service"
@@ -222,6 +261,19 @@ export default async function OpportunityDetailPage({
                   ) : a.stage === "submitted" && opportunity.shortlisting_mode === "self_service" ? (
                     <ShortlistActions applicationId={a.id} opportunityId={opportunity.id} />
                   ) : null}
+
+                  <ApplicantEvaluationPanel
+                    applicationId={a.id}
+                    opportunityId={opportunity.id}
+                    myUserId={session.userId}
+                    scores={scoresByApplication.get(a.id) ?? []}
+                    notes={(notesByApplication.get(a.id) ?? []).map((n) => ({
+                      ...n,
+                      authorName: noteAuthorNameById.get(n.author_id) ?? "Teammate",
+                    }))}
+                    interviewScheduledAt={interviewByApplication.get(a.id)?.interview_scheduled_at ?? null}
+                    interviewNotes={interviewByApplication.get(a.id)?.interview_notes ?? null}
+                  />
                 </li>
               );
             })}

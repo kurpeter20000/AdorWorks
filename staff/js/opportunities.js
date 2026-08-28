@@ -310,10 +310,14 @@ async function loadApplications(oppId, opportunity, detailRow) {
         var engagementBtn = a.stage === "accepted"
           ? '<button type="button" class="btn btn-primary" data-create-engagement="' + a.id + '" data-talent-id="' + a.talent_id + '">Create engagement</button>'
           : "";
+        var interviewLine = a.interview_scheduled_at
+          ? '<p class="staff-hint">Interview: ' + escapeHtml(formatDate(a.interview_scheduled_at)) + "</p>"
+          : "";
         return (
           "<li><strong>" + escapeHtml(a.talent_profiles?.headline || a.talent_id) + "</strong> — " +
           escapeHtml((a.talent_profiles?.category || "").replace(/_/g, " ")) + " · " +
           statusBadge(a.talent_profiles?.verification_tier || "—") +
+          interviewLine +
           '<div class="action-row">' +
           '<select data-application-stage="' + a.id + '">' + stageOptions + "</select>" +
           engagementBtn +

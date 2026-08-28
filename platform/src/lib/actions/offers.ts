@@ -4,6 +4,8 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAuditEvent } from "@/lib/domain/audit";
+import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import type { FormState } from "./auth";
 
 const OfferSchema = z.object({
@@ -78,24 +80,38 @@ export async function sendOffer(
     return { message: "You don't have permission to send an offer for this opportunity." };
   }
 
-  const { error: offerError } = await admin.from("offers").insert({
-    application_id: application.id,
-    opportunity_id: opportunity.id,
-    talent_id: application.talent_id,
-    organisation_id: org.id,
-    payment_basis: v.paymentBasis,
-    compensation_amount: Number(v.compensationAmount),
-    currency: v.currency,
-    message: v.message || null,
-    status: "sent",
-    created_by: session.userId,
-    responded_at: null,
-  });
-  if (offerError) {
-    return { message: `Could not send the offer: ${offerError.message}` };
+  const { data: offer, error: offerError } = await admin
+    .from("offers")
+    .insert({
+      application_id: application.id,
+      opportunity_id: opportunity.id,
+      talent_id: application.talent_id,
+      organisation_id: org.id,
+      payment_basis: v.paymentBasis,
+      compensation_amount: Number(v.compensationAmount),
+      currency: v.currency,
+      message: v.message || null,
+      status: "sent",
+      created_by: session.userId,
+      responded_at: null,
+    })
+    .select("id")
+    .single();
+  if (offerError || !offer) {
+    return { message: `Could not send the offer: ${offerError?.message}` };
   }
 
   await admin.from("applications").update({ stage: "offered" }).eq("id", application.id);
+
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.OFFER_SENT,
+    actorId: session.userId,
+    subjectId: application.talent_id,
+    entityType: "offers",
+    entityId: offer.id,
+    source: "platform",
+    metadata: { opportunityId: opportunity.id, applicationId: application.id },
+  });
 
   redirect(`/organisation/opportunities/${opportunity.id}?offered=1`);
 }
@@ -170,15 +186,39 @@ export async function acceptOffer(offerId: string): Promise<{ error?: string }> 
     });
   }
 
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.OFFER_RESPONDED,
+    actorId: session.userId,
+    entityType: "offers",
+    entityId: offer.id,
+    source: "platform",
+    after: { status: "accepted" },
+  });
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.CONTRACT_CREATED,
+    actorId: session.userId,
+    entityType: "contracts",
+    entityId: contract.id,
+    source: "platform",
+    metadata: { offerId: offer.id, opportunityId: offer.opportunity_id },
+  });
+
   return {};
 }
 
-/** Talent declining an offer — same admin-client rationale as accept. */
+/**
+ * Talent declining an offer — same admin-client rationale as accept.
+ * Stage 5 fix: this used to only touch the offer, leaving the linked
+ * application stuck at 'offered' forever — a misleading state the
+ * employer's own opportunity page kept showing indefinitely (Stage 5
+ * gap-check finding). 'withdrawn' rather than 'rejected' — the talent is
+ * the one opting out here, not the employer rejecting them.
+ */
 export async function declineOffer(offerId: string): Promise<{ error?: string }> {
   const session = await requireRole("talent");
   const admin = createAdminClient();
 
-  const { data: offer } = await admin.from("offers").select("id, talent_id, status").eq("id", offerId).maybeSingle();
+  const { data: offer } = await admin.from("offers").select("id, application_id, talent_id, status").eq("id", offerId).maybeSingle();
   if (!offer || offer.talent_id !== session.userId) {
     return { error: "Offer not found." };
   }
@@ -193,6 +233,17 @@ export async function declineOffer(offerId: string): Promise<{ error?: string }>
   if (error) {
     return { error: error.message };
   }
+
+  await admin.from("applications").update({ stage: "withdrawn" }).eq("id", offer.application_id);
+
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.OFFER_RESPONDED,
+    actorId: session.userId,
+    entityType: "offers",
+    entityId: offer.id,
+    source: "platform",
+    after: { status: "declined" },
+  });
 
   return {};
 }

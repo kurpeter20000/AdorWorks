@@ -78,7 +78,12 @@ const updateSchema = z.object({
   decision_reason: z.string().max(2000).optional(),
 });
 
-// PATCH /api/applications/:id
+// PATCH /api/applications/:id — staff's stage-correction path (Stage 5:
+// this is what lets Operations support the pipeline without a database
+// edit). Logs to audit_events directly (same table platform's
+// logAuditEvent helper writes to, just without that TS-only helper,
+// since this is the JS backend) so a staff-made stage change is
+// traceable the same way a platform-made one is.
 applicationsRouter.patch(
   "/:id",
   asyncRoute(async (req, res) => {
@@ -90,6 +95,19 @@ applicationsRouter.patch(
       .select()
       .single();
     if (error) throw new HttpError(400, error.message);
+
+    if (body.stage) {
+      await supabaseAdmin.from("audit_events").insert({
+        name: "application.stage_changed",
+        actor_id: req.user.id,
+        entity_type: "applications",
+        entity_id: req.params.id,
+        source: "staff_api",
+        after: { stage: body.stage },
+        metadata: { reason: body.decision_reason || null },
+      });
+    }
+
     res.json({ data });
   })
 );

@@ -253,15 +253,49 @@ export type ApplicationRow = {
   id: string;
   opportunity_id: string;
   talent_id: string;
-  source: "applied" | "matched";
+  source: "applied" | "matched" | "invited";
   pitch: string | null;
   suitability_score: number | null;
   notes: string | null;
   stage: ApplicationStage;
   decision_reason: string | null;
+  interview_scheduled_at: string | null;
+  interview_notes: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export type InvitationStatus = "pending" | "accepted" | "declined" | "expired";
+
+export type InvitationRow = {
+  id: string;
+  opportunity_id: string;
+  talent_id: string;
+  invited_by: string;
+  message: string | null;
+  status: InvitationStatus;
+  responded_at: string | null;
+  created_at: string;
+}
+
+export type ApplicationScorecardRow = {
+  id: string;
+  application_id: string;
+  criterion: "skill_fit" | "communication" | "portfolio_quality" | "reliability";
+  score: number;
+  note: string | null;
+  scored_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ApplicationNoteRow = {
+  id: string;
+  application_id: string;
+  author_id: string;
+  body: string;
+  created_at: string;
 }
 
 export type ScreeningQuestionRow = {
@@ -698,6 +732,24 @@ export type Database = {
         Row: ApplicationRow;
         Insert: Partial<ApplicationRow> & { opportunity_id: string; talent_id: string };
         Update: Partial<ApplicationRow>;
+        Relationships: [];
+      };
+      invitations: {
+        Row: InvitationRow;
+        Insert: Partial<InvitationRow> & { opportunity_id: string; talent_id: string; invited_by: string };
+        Update: Partial<InvitationRow>;
+        Relationships: [];
+      };
+      application_scorecards: {
+        Row: ApplicationScorecardRow;
+        Insert: Partial<ApplicationScorecardRow> & { application_id: string; criterion: ApplicationScorecardRow["criterion"]; score: number; scored_by: string };
+        Update: Partial<ApplicationScorecardRow>;
+        Relationships: [];
+      };
+      application_notes: {
+        Row: ApplicationNoteRow;
+        Insert: Partial<ApplicationNoteRow> & { application_id: string; author_id: string; body: string };
+        Update: Partial<ApplicationNoteRow>;
         Relationships: [];
       };
       screening_questions: {

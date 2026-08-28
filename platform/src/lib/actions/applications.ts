@@ -5,11 +5,20 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { logAuditEvent } from "@/lib/domain/audit";
+import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import type { FormState } from "./auth";
 
 const PitchSchema = z.object({
   pitch: z.string().trim().min(30, "Tell them a bit more about why you're a fit — at least 30 characters."),
 });
+
+// Anti-spam without a pay-to-apply model (Stage 5): a soft daily cap
+// rather than a hard block on any single opportunity — a genuinely
+// active job-seeker can still apply to several roles a day, but a script
+// mass-applying to everything can't.
+const MAX_APPLICATIONS_PER_DAY = 15;
 
 /**
  * Handles both the pitch and any screening-question answers in one submit.
@@ -30,6 +39,16 @@ export async function applyToOpportunity(
   }
 
   const supabase = await createClient();
+
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count: recentCount } = await supabase
+    .from("applications")
+    .select("id", { count: "exact", head: true })
+    .eq("talent_id", session.userId)
+    .gte("created_at", since);
+  if ((recentCount ?? 0) >= MAX_APPLICATIONS_PER_DAY) {
+    return { message: `You've reached the daily limit of ${MAX_APPLICATIONS_PER_DAY} applications — try again tomorrow.` };
+  }
 
   const { data: questions } = await supabase
     .from("screening_questions")
@@ -78,6 +97,16 @@ export async function applyToOpportunity(
     );
   }
 
+  const admin = createAdminClient();
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.APPLICATION_SUBMITTED,
+    actorId: session.userId,
+    entityType: "applications",
+    entityId: application.id,
+    source: "platform",
+    metadata: { opportunityId },
+  });
+
   redirect("/applications?applied=1");
 }
 
@@ -95,11 +124,21 @@ export async function setApplicationStage(
   opportunityId: string,
   stage: "shortlisted" | "rejected"
 ): Promise<{ error?: string }> {
-  await requireRole(...CLIENT_ROLES);
+  const session = await requireRole(...CLIENT_ROLES);
 
   const supabase = await createClient();
   const { error } = await supabase.from("applications").update({ stage }).eq("id", applicationId);
   if (error) return { error: error.message };
+
+  const admin = createAdminClient();
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.APPLICATION_STAGE_CHANGED,
+    actorId: session.userId,
+    entityType: "applications",
+    entityId: applicationId,
+    source: "platform",
+    after: { stage },
+  });
 
   revalidatePath(`/organisation/opportunities/${opportunityId}`);
   return {};
@@ -131,5 +170,103 @@ export async function addCandidateToShortlist(opportunityId: string, talentId: s
 
   revalidatePath(`/organisation/opportunities/${opportunityId}`);
   revalidatePath(`/organisation/opportunities/${opportunityId}/find-talent`);
+  return {};
+}
+
+/**
+ * Stage 5: withdraw/reapply (0049). Plain client — applications_update_
+ * talent_self (RLS) plus guard_applications_update_trigger are what
+ * actually restrict this to the exact two self-service transitions
+ * (submitted/shortlisted/interviewing -> withdrawn, withdrawn ->
+ * submitted); this is just the typed entry point.
+ */
+export async function withdrawApplication(applicationId: string): Promise<{ error?: string }> {
+  const session = await requireRole("talent");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("applications").update({ stage: "withdrawn" }).eq("id", applicationId);
+  if (error) return { error: error.message };
+
+  const admin = createAdminClient();
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.APPLICATION_STAGE_CHANGED,
+    actorId: session.userId,
+    entityType: "applications",
+    entityId: applicationId,
+    source: "platform",
+    after: { stage: "withdrawn" },
+    metadata: { reason: "talent_withdrew" },
+  });
+
+  revalidatePath("/applications");
+  return {};
+}
+
+export async function reapplyToOpportunity(applicationId: string): Promise<{ error?: string }> {
+  await requireRole("talent");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("applications").update({ stage: "submitted" }).eq("id", applicationId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/applications");
+  return {};
+}
+
+/**
+ * Stage 5: shared per-candidate notes for employer team collaboration
+ * (0052) — append-only, visible to any org write-member of the
+ * opportunity plus staff. Plain client; application_notes_insert's RLS
+ * is the real gate.
+ */
+export async function addApplicationNote(
+  applicationId: string,
+  opportunityId: string,
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const session = await requireRole(...CLIENT_ROLES);
+
+  const body = String(formData.get("body") || "").trim();
+  if (!body) {
+    return { errors: { body: ["Write something before adding a note."] } };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("application_notes").insert({
+    application_id: applicationId,
+    author_id: session.userId,
+    body,
+  });
+  if (error) return { message: `Could not add this note: ${error.message}` };
+
+  revalidatePath(`/organisation/opportunities/${opportunityId}`);
+  return {};
+}
+
+/**
+ * Stage 5: interview scheduling/notes (0051). Plain client;
+ * applications_update_employer_interview's RLS scopes this to the
+ * opportunity's own org, and guard_applications_update_trigger doesn't
+ * restrict it further since `stage` itself is never touched here.
+ */
+export async function setInterviewDetails(
+  applicationId: string,
+  opportunityId: string,
+  formData: FormData
+): Promise<{ error?: string }> {
+  await requireRole(...CLIENT_ROLES);
+
+  const scheduledAt = (formData.get("interviewScheduledAt") as string | null) || null;
+  const notes = (formData.get("interviewNotes") as string | null)?.trim() || null;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("applications")
+    .update({ interview_scheduled_at: scheduledAt, interview_notes: notes })
+    .eq("id", applicationId);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/organisation/opportunities/${opportunityId}`);
   return {};
 }
