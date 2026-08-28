@@ -21,9 +21,10 @@ export default async function EditOpportunityPage({ params }: { params: Promise<
   if (!opportunity) {
     notFound();
   }
-  if (opportunity.status !== "changes_required") {
+  if (opportunity.status !== "changes_required" && opportunity.status !== "draft") {
     redirect(`/organisation/opportunities/${id}`);
   }
+  const isBrief = opportunity.status === "draft";
 
   const { data: servicePackages } = await supabase
     .from("service_packages")
@@ -40,7 +41,9 @@ export default async function EditOpportunityPage({ params }: { params: Promise<
 
   return (
     <main className="mx-auto max-w-xl p-6 sm:p-8">
-      <h1 className="text-2xl font-extrabold text-midnight">Edit opportunity</h1>
+      <h1 className="text-2xl font-extrabold text-midnight">
+        {isBrief ? "Finish your project brief" : "Edit opportunity"}
+      </h1>
       {opportunity.status_note && (
         <div className="mt-4">
           <StatePanel title="Staff requested changes" tone="info">
@@ -49,7 +52,9 @@ export default async function EditOpportunityPage({ params }: { params: Promise<
         </div>
       )}
       <p className="mt-2 text-sm text-slate">
-        Update the details below and resubmit — staff will review it again before it goes live.
+        {isBrief
+          ? "Fill in the rest using the Role Canvas below, then submit for staff review."
+          : "Update the details below and resubmit — staff will review it again before it goes live."}
       </p>
       <OpportunityForm
         organisationId={org.id}

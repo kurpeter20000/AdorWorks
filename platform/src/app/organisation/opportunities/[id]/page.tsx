@@ -106,6 +106,18 @@ export default async function OpportunityDetailPage({
         </div>
       )}
 
+      {opportunity.status === "draft" && (
+        <div className="mt-4 rounded-lg bg-violet/10 px-4 py-3 text-sm text-midnight">
+          <p>This is a saved project brief — it hasn&rsquo;t been submitted for review yet.</p>
+          <Link
+            href={`/organisation/opportunities/${opportunity.id}/edit`}
+            className="mt-2 inline-block font-semibold text-teal-ink underline"
+          >
+            Finish and submit
+          </Link>
+        </div>
+      )}
+
       {opportunity.status === "paused" && opportunity.status_note && (
         <p className="mt-4 rounded-lg bg-slate/10 px-4 py-3 text-sm text-slate">
           Paused: {opportunity.status_note}
@@ -120,7 +132,7 @@ export default async function OpportunityDetailPage({
 
       {resubmitted && (
         <p className="mt-4 rounded-lg bg-teal/10 px-4 py-3 text-sm font-semibold text-teal-ink">
-          Resubmitted for review.
+          Submitted for review.
         </p>
       )}
 

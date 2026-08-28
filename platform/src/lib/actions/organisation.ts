@@ -254,17 +254,83 @@ export async function createOpportunity(organisationId: string, _prevState: Form
   redirect("/organisation?posted=1");
 }
 
+const ProjectBriefSchema = z.object({
+  outcome: z.string().trim().min(10, "Describe the outcome you want in a bit more detail."),
+  type: z.enum(["service", "project", "contract", "full_time", "squad"], { message: "Choose a type." }),
+  category: z.enum(["creative_media", "digital_technology", "business_project_support"], {
+    message: "Choose a category.",
+  }),
+  roughBudget: z.string().trim().optional(),
+});
+
 /**
- * The employer's fix-and-resubmit action for an opportunity staff sent
- * back with 'changes_required' (0041) — reuses OpportunitySchema so the
- * same validation applies as at creation. Restricted to opportunities
- * currently in 'changes_required': 'rejected' stays terminal, by the same
- * design intent recorded in 0041_opportunity_changes_required.sql ("Reject
- * remains available for genuinely non-fixable submissions"). Uses the
- * plain (RLS-gated) client, not the admin client — is_org_write_member()
- * (0039) already scopes writes to non-viewer org members, and moving OUT
- * of changes_required is the one status transition guard_opportunities_
- * update() leaves ungated for exactly this purpose.
+ * Project Brief — the shorter, outcome-first counterpart to the Role
+ * Canvas wizard (createOpportunity above). Deliberately asks for almost
+ * nothing up front; the rest gets filled in later via resubmitOpportunity,
+ * reusing the exact same OpportunityForm wizard (passed its `opportunity`
+ * prop) rather than a second, differently-shaped form — a brief is still
+ * just an `opportunities` row, parked at 'draft' (createOpportunity always
+ * goes straight to 'pending_review') until someone finishes it. This is
+ * deliberate: a separate table or pipeline here would mean the same kind
+ * of duplicate, unequally-complete record problem the static site's old
+ * "shortlist request" vs. "full brief" forms had.
+ */
+export async function createProjectBrief(
+  organisationId: string,
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  await requireRole(...CLIENT_ROLES);
+
+  const validated = ProjectBriefSchema.safeParse({
+    outcome: formData.get("outcome"),
+    type: formData.get("type"),
+    category: formData.get("category"),
+    roughBudget: formData.get("roughBudget") || undefined,
+  });
+  if (!validated.success) {
+    return { errors: validated.error.flatten().fieldErrors };
+  }
+  const v = validated.data;
+
+  const supabase = await createClient();
+  const { data: opportunity, error } = await supabase
+    .from("opportunities")
+    .insert({
+      organisation_id: organisationId,
+      type: v.type,
+      title: v.outcome.slice(0, 120),
+      brief: v.outcome,
+      category: v.category,
+      skills: [],
+      compensation_amount: toNullableNumber(v.roughBudget),
+      currency: "SSP",
+      visibility: "public",
+      status: "draft",
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    return { message: `Could not save this brief: ${error.message}` };
+  }
+
+  redirect(`/organisation/opportunities/${opportunity.id}/edit`);
+}
+
+/**
+ * Completes and submits an opportunity for review — either staff sent it
+ * back with 'changes_required' (0041), or it's a 'draft' Project Brief
+ * (see createProjectBrief below) being finished off for the first time.
+ * Reuses OpportunitySchema so the same validation applies as at creation.
+ * 'rejected' stays terminal, by the same design intent recorded in
+ * 0041_opportunity_changes_required.sql ("Reject remains available for
+ * genuinely non-fixable submissions"). Uses the plain (RLS-gated) client,
+ * not the admin client — is_org_write_member() (0039) already scopes
+ * writes to non-viewer org members, and moving OUT of changes_required or
+ * draft is unrestricted at the guard-trigger level for exactly this
+ * purpose (guard_opportunities_update only gates transitions INTO
+ * open/rejected/changes_required/paused).
  */
 export async function resubmitOpportunity(
   opportunityId: string,
@@ -308,7 +374,7 @@ export async function resubmitOpportunity(
   if (!existing) {
     return { message: "Opportunity not found." };
   }
-  if (existing.status !== "changes_required") {
+  if (existing.status !== "changes_required" && existing.status !== "draft") {
     return { message: "This opportunity isn't awaiting changes right now." };
   }
 
