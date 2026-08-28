@@ -5,6 +5,9 @@ initLogout();
 var rows = [];
 var activeFilter = "pending";
 
+var CHECK_STATUSES = ["not_started", "information_required", "submitted", "under_review", "verified", "rejected", "suspended", "expired"];
+var CHECK_METHODS = ["formal_registration", "alternative_referral", "physical_review", "representative_attestation"];
+
 var auth = await requireStaffSession();
 if (auth) {
   wireFilters();
@@ -93,12 +96,17 @@ function renderDetail(id, detailRow) {
     "</dd>" +
     "<dt>Risk notes</dt><dd>" + escapeHtml(row.risk_notes || "—") + "</dd>" +
     "</dl>" +
+    '<div class="staff-section" id="verification-checks-' + id + '"><h3>Verification</h3><p class="muted">Loading…</p></div>' +
     '<div class="staff-section" id="engagement-' + id + '"><h3>Engagement</h3><p class="muted">Loading…</p></div>' +
+    '<div class="staff-section">' +
+    "<h3>Overall status override</h3>" +
+    '<p class="muted">Normally set automatically from the two checks above — use this only to force an outcome.</p>' +
     '<div class="form-grid form-grid-2 mt-1">' +
     '<select id="status-input-' + id + '">' + options + "</select>" +
     '<input type="text" id="notes-input-' + id + '" placeholder="Risk notes (optional)" value="' + escapeHtml(row.risk_notes || "") + '">' +
     "</div>" +
-    '<div class="action-row"><button type="button" class="btn btn-primary" data-save="' + id + '">Save verification status</button></div>' +
+    '<div class="action-row"><button type="button" class="btn btn-secondary" data-save="' + id + '">Save override</button></div>' +
+    "</div>" +
     '<div class="form-status" id="detail-status-' + id + '" role="status"></div>';
 
   var viewEvidenceBtn = detailRow.querySelector('[data-view-evidence="' + id + '"]');
@@ -141,13 +149,71 @@ function renderDetail(id, detailRow) {
 
 async function loadRepresentativeEmail(id, detailRow) {
   var emailEl = detailRow.querySelector("#rep-email-" + id);
-  if (!emailEl) return;
+  var checksEl = detailRow.querySelector("#verification-checks-" + id);
   try {
     var res = await apiFetch("/api/organisations/" + id);
-    emailEl.textContent = (res.data.profiles && res.data.profiles.email) || "no email on file";
+    if (emailEl) emailEl.textContent = (res.data.profiles && res.data.profiles.email) || "no email on file";
+    if (checksEl) renderVerificationChecks(id, detailRow, res.data.verification_checks || []);
   } catch (err) {
-    emailEl.textContent = "—";
+    if (emailEl) emailEl.textContent = "—";
+    if (checksEl) checksEl.innerHTML = "<h3>Verification</h3><p class=\"muted\">" + escapeHtml(err.message) + "</p>";
   }
+}
+
+function renderVerificationChecks(id, detailRow, checks) {
+  var el = detailRow.querySelector("#verification-checks-" + id);
+  var byType = {};
+  checks.forEach(function (c) { byType[c.check_type] = c; });
+
+  function checkBlock(type, label, hint) {
+    var check = byType[type] || { status: "not_started", method: null, reason: null, applicant_note: null };
+    var statusOptions = CHECK_STATUSES.map(function (s) {
+      return '<option value="' + s + '"' + (s === check.status ? " selected" : "") + ">" + s.replace(/_/g, " ") + "</option>";
+    }).join("");
+    var methodOptions = '<option value="">— how verified —</option>' + CHECK_METHODS.map(function (m) {
+      return '<option value="' + m + '"' + (m === check.method ? " selected" : "") + ">" + m.replace(/_/g, " ") + "</option>";
+    }).join("");
+    return (
+      "<div class=\"kv-list\" style=\"margin-top:0.75em;\">" +
+      "<p class=\"mb-0\"><strong>" + label + "</strong> — " + statusBadge(check.status) + "</p>" +
+      "<p class=\"muted mt-0\">" + hint + "</p>" +
+      (check.applicant_note ? "<p class=\"mt-0\"><em>Org's note:</em> " + escapeHtml(check.applicant_note) + "</p>" : "") +
+      '<div class="form-grid form-grid-2 mt-1">' +
+      '<select id="check-status-' + type + "-" + id + '">' + statusOptions + "</select>" +
+      '<select id="check-method-' + type + "-" + id + '">' + methodOptions + "</select>" +
+      "</div>" +
+      '<input type="text" id="check-reason-' + type + "-" + id + '" placeholder="Reason (shown to the org)" value="' + escapeHtml(check.reason || "") + '" class="mt-1">' +
+      '<div class="action-row"><button type="button" class="btn btn-primary" data-save-check="' + type + '">Save ' + label.toLowerCase() + '</button></div>' +
+      "</div>"
+    );
+  }
+
+  el.innerHTML =
+    "<h3>Verification</h3>" +
+    checkBlock("registration", "Registration", "Business registration documents, or an alternative verification method for SMEs/NGOs without formal registration.") +
+    checkBlock("representative", "Representative", "Confirms the signed-up person actually represents this organisation.");
+
+  ["registration", "representative"].forEach(function (type) {
+    var btn = el.querySelector('[data-save-check="' + type + '"]');
+    btn.addEventListener("click", async function () {
+      var statusEl = detailRow.querySelector("#detail-status-" + id);
+      var status = document.getElementById("check-status-" + type + "-" + id).value;
+      var method = document.getElementById("check-method-" + type + "-" + id).value;
+      var reason = document.getElementById("check-reason-" + type + "-" + id).value;
+      try {
+        await apiFetch("/api/organisations/" + id + "/verification-checks/" + type, {
+          method: "PATCH",
+          body: { status: status, method: method || undefined, reason: reason || undefined },
+        });
+        statusEl.textContent = "Saved. Reopen this row to see the updated status.";
+        statusEl.className = "form-status is-visible success";
+        await load();
+      } catch (err) {
+        statusEl.textContent = err.message;
+        statusEl.className = "form-status is-visible error";
+      }
+    });
+  });
 }
 
 async function loadEngagement(id, detailRow) {

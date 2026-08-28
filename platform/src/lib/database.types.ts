@@ -541,6 +541,21 @@ export type PublicTalentProfileRow = {
   verification_tier: VerificationTier;
 }
 
+export type VerificationCheckRow = {
+  id: string;
+  organisation_id: string;
+  check_type: "registration" | "representative";
+  status: "not_started" | "information_required" | "submitted" | "under_review" | "verified" | "rejected" | "suspended" | "expired";
+  method: "formal_registration" | "alternative_referral" | "physical_review" | "representative_attestation" | null;
+  evidence_path: string | null;
+  reason: string | null;
+  applicant_note: string | null;
+  decided_by: string | null;
+  decided_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export type AuditEventRow = {
   id: string;
   name: string;
@@ -806,6 +821,12 @@ export type Database = {
           field_name: string;
         };
         Update: Partial<AssistedFieldChangeRow>;
+        Relationships: [];
+      };
+      verification_checks: {
+        Row: VerificationCheckRow;
+        Insert: Partial<VerificationCheckRow> & { organisation_id: string; check_type: VerificationCheckRow["check_type"] };
+        Update: Partial<VerificationCheckRow>;
         Relationships: [];
       };
       audit_events: {

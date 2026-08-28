@@ -3,6 +3,7 @@ import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff } from "../middleware/auth.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
+import { logAuditEvent } from "../audit.js";
 
 export const organisationsRouter = Router();
 organisationsRouter.use(requireAuth, requireStaff);
@@ -48,6 +49,15 @@ organisationsRouter.get(
       const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(data.profiles.id);
       data.profiles.email = authUser?.user?.email || null;
     }
+
+    // Multi-dimensional verification (0038) — organisations.verification_status
+    // stays as the computed headline; these are the two tracked dimensions
+    // behind it.
+    const { data: checks } = await supabaseAdmin
+      .from("verification_checks")
+      .select("id, check_type, status, method, evidence_path, reason, applicant_note, decided_by, decided_at")
+      .eq("organisation_id", req.params.id);
+    data.verification_checks = checks || [];
 
     res.json({ data });
   })
@@ -102,6 +112,74 @@ organisationsRouter.get(
         last_activity_at: lastActivityAt || null,
       },
     });
+  })
+);
+
+const decideCheckSchema = z.object({
+  status: z.enum([
+    "not_started",
+    "information_required",
+    "submitted",
+    "under_review",
+    "verified",
+    "rejected",
+    "suspended",
+    "expired",
+  ]),
+  method: z.enum(["formal_registration", "alternative_referral", "physical_review", "representative_attestation"]).optional(),
+  reason: z.string().max(2000).optional(),
+});
+
+// PATCH /api/organisations/:id/verification-checks/:checkType — staff
+// decision on one dimension (0038). organisations.verification_status
+// updates itself via the sync trigger; this endpoint never touches it
+// directly.
+organisationsRouter.patch(
+  "/:id/verification-checks/:checkType",
+  asyncRoute(async (req, res) => {
+    if (!["registration", "representative"].includes(req.params.checkType)) {
+      throw new HttpError(404, "Unknown check type.");
+    }
+    const body = decideCheckSchema.parse(req.body);
+
+    const { data: before } = await supabaseAdmin
+      .from("verification_checks")
+      .select("status")
+      .eq("organisation_id", req.params.id)
+      .eq("check_type", req.params.checkType)
+      .maybeSingle();
+
+    const { data, error } = await supabaseAdmin
+      .from("verification_checks")
+      .upsert(
+        {
+          organisation_id: req.params.id,
+          check_type: req.params.checkType,
+          status: body.status,
+          method: body.method ?? null,
+          reason: body.reason ?? null,
+          decided_by: req.user.id,
+          decided_at: new Date().toISOString(),
+        },
+        { onConflict: "organisation_id,check_type" }
+      )
+      .select()
+      .single();
+    if (error) throw new HttpError(400, error.message);
+
+    await logAuditEvent(supabaseAdmin, {
+      name: "trust.verification.decided",
+      actorId: req.user.id,
+      subjectId: null,
+      entityType: "verification_checks",
+      entityId: data.id,
+      reason: body.reason ?? null,
+      before: before ? { status: before.status } : null,
+      after: { status: body.status, method: body.method ?? null },
+      metadata: { organisation_id: req.params.id, check_type: req.params.checkType },
+    });
+
+    res.json({ data });
   })
 );
 

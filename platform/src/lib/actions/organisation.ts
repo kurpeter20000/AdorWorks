@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { FormState } from "./auth";
 
 const OrganisationSchema = z.object({
@@ -310,5 +311,56 @@ export async function setOrganisationLogo(organisationId: string, filePath: stri
   if (error) {
     return { message: `Could not save your logo: ${error.message}` };
   }
+  return {};
+}
+
+/**
+ * The org's response to a verification check staff marked
+ * 'information_required', or an appeal after 'rejected' — both handled
+ * the same way, moving the check back to 'submitted' for staff to look at
+ * again. Uses the admin client deliberately: verification_checks (0038)
+ * has no write policy for org reps at all, only staff — this is the one
+ * sanctioned path for an org to affect their own check, gated by an
+ * explicit ownership check here instead of RLS.
+ */
+export async function submitVerificationInfo(
+  organisationId: string,
+  checkId: string,
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const session = await requireRole(...CLIENT_ROLES);
+
+  const note = String(formData.get("note") || "").trim();
+  if (note.length < 5) {
+    return { errors: { note: ["Add a little more detail."] } };
+  }
+
+  const supabase = await createClient();
+  const { data: org } = await supabase.from("organisations").select("representative_id").eq("id", organisationId).maybeSingle();
+  if (!org || org.representative_id !== session.userId) {
+    return { message: "Only the organisation's representative can do this." };
+  }
+
+  const admin = createAdminClient();
+  const { data: check } = await admin
+    .from("verification_checks")
+    .select("id, organisation_id, status")
+    .eq("id", checkId)
+    .single();
+  if (!check || check.organisation_id !== organisationId) {
+    return { message: "That verification check could not be found." };
+  }
+  if (check.status !== "information_required" && check.status !== "rejected") {
+    return { message: "This check isn't awaiting a response right now." };
+  }
+
+  const { error } = await admin
+    .from("verification_checks")
+    .update({ status: "submitted", applicant_note: note })
+    .eq("id", checkId);
+  if (error) return { message: `Could not submit this: ${error.message}` };
+
+  revalidatePath("/organisation");
   return {};
 }

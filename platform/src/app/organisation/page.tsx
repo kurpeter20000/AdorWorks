@@ -3,11 +3,17 @@ import Link from "next/link";
 import Image from "next/image";
 import { StatusBadge } from "@/components/status-badge";
 import { requireOrganisationMembership } from "@/lib/dal/organisation";
-import { OPPORTUNITY_STATES } from "@/lib/domain/states";
+import { OPPORTUNITY_STATES, VERIFICATION_CHECK_STATES } from "@/lib/domain/states";
 import { createClient } from "@/lib/supabase/server";
 import { EvidenceUpload } from "./evidence-upload";
 import { LogoUpload } from "./logo-upload";
 import { OrgInfoForm } from "./org-info-form";
+import { VerificationCheckResponseForm } from "./verification-check-response-form";
+
+const CHECK_LABEL: Record<string, string> = {
+  registration: "Registration",
+  representative: "Representative",
+};
 
 export const metadata: Metadata = { title: "Your organisation" };
 
@@ -25,6 +31,11 @@ export default async function OrganisationPage({
     .select("id, title, status, type, created_at")
     .eq("organisation_id", org.id)
     .order("created_at", { ascending: false });
+
+  const { data: verificationChecks } = await supabase
+    .from("verification_checks")
+    .select("*")
+    .eq("organisation_id", org.id);
 
   const logoUrl = org.logo_path ? supabase.storage.from("org-logos").getPublicUrl(org.logo_path).data.publicUrl : null;
 
@@ -77,6 +88,34 @@ export default async function OrganisationPage({
           <p className="mt-1 text-sm text-slate">Shown to talent on your opportunities.</p>
           <div className="mt-3">
             <LogoUpload orgId={org.id} existingUrl={logoUrl} />
+          </div>
+        </div>
+      )}
+
+      {verificationChecks && verificationChecks.length > 0 && org.representative_id === session.userId && (
+        <div className="mt-6 rounded-xl border border-slate/15 bg-white p-5">
+          <h2 className="font-bold text-midnight">Verification</h2>
+          <p className="mt-1 text-xs text-slate">
+            AdorWorks tracks two things separately: your registration, and confirming you represent this
+            organisation.
+          </p>
+          <div className="mt-3 space-y-4">
+            {verificationChecks.map((check) => (
+              <div key={check.id} className="rounded-lg border border-slate/15 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-midnight">{CHECK_LABEL[check.check_type] ?? check.check_type}</p>
+                  <StatusBadge state={VERIFICATION_CHECK_STATES[check.status]} />
+                </div>
+                {check.reason && <p className="mt-1 text-xs text-slate">{check.reason}</p>}
+                {(check.status === "information_required" || check.status === "rejected") && (
+                  <VerificationCheckResponseForm
+                    organisationId={org.id}
+                    checkId={check.id}
+                    isAppeal={check.status === "rejected"}
+                  />
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}

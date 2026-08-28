@@ -66,3 +66,27 @@ export const ORGANISATION_VERIFICATION_STATES = {
   rejected: { label: "Not verified", tone: "danger", terminal: true },
   suspended: { label: "Suspended", tone: "danger" },
 } as const satisfies Record<OrganisationVerificationStatus, StateDefinition>;
+
+// The two tracked dimensions behind ORGANISATION_VERIFICATION_STATES
+// (0038/verification_checks) — a separate, finer-grained set of states
+// than the computed headline summary above.
+export type VerificationCheckStatus =
+  | "not_started"
+  | "information_required"
+  | "submitted"
+  | "under_review"
+  | "verified"
+  | "rejected"
+  | "suspended"
+  | "expired";
+
+export const VERIFICATION_CHECK_STATES = {
+  not_started: { label: "Not started", tone: "neutral" },
+  information_required: { label: "Information required", tone: "warning" },
+  submitted: { label: "Submitted", tone: "info" },
+  under_review: { label: "Under review", tone: "info" },
+  verified: { label: "Verified", tone: "success", terminal: true },
+  rejected: { label: "Not verified", tone: "danger" },
+  suspended: { label: "Suspended", tone: "danger" },
+  expired: { label: "Expired", tone: "warning" },
+} as const satisfies Record<VerificationCheckStatus, StateDefinition>;
