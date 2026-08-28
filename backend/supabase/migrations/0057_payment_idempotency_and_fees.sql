@@ -31,5 +31,14 @@ update payment_events set net_amount = amount where net_amount is null;
 
 alter table payment_events alter column net_amount set not null;
 
--- Rollback: drop index payment_intentions_one_processing_per_milestone;
--- drop columns fee_percent, fee_amount, net_amount from payment_events.
+-- Rollback (Stage 10: literal, executable, not prose):
+--   drop index if exists payment_intentions_one_processing_per_milestone;
+--   alter table payment_events drop column if exists fee_percent;
+--   alter table payment_events drop column if exists fee_amount;
+--   alter table payment_events drop column if exists net_amount;
+-- Warning: dropping the partial unique index removes payMilestone()'s
+-- only defense against a double-charge from two concurrent requests --
+-- the app code's 23505 catch (contracts.ts) simply stops firing, with
+-- no error to signal the protection is gone. Do not roll this back while
+-- REAL_PAYMENTS could be enabled or while any milestone payment might be
+-- in flight.

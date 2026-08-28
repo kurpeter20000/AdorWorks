@@ -42,4 +42,12 @@ create policy notifications_staff_all on notifications for all
   using (is_staff())
   with check (is_staff());
 
--- Rollback: drop table notifications.
+-- Rollback (Stage 10: literal, executable, not prose):
+--   drop table if exists notifications;
+-- Warning: this deletes every notification ever recorded, including
+-- unread ones a user has never seen. Not recoverable. If the goal is
+-- only to disable the FEATURE (stop writing new ones) rather than erase
+-- history, don't run this -- notifyUser() already fails open/silently
+-- on any write error, so leaving the table in place and simply not
+-- calling notifyUser() from a reverted call site is the safer partial
+-- rollback.

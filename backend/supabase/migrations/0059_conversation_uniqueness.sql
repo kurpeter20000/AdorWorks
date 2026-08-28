@@ -60,5 +60,18 @@ end $$;
 create unique index if not exists conversations_one_per_contract on conversations(contract_id) where contract_id is not null;
 create unique index if not exists conversations_one_per_application on conversations(application_id) where application_id is not null;
 
--- Rollback: drop index conversations_one_per_contract;
--- drop index conversations_one_per_application.
+-- Rollback (Stage 10: literal, executable, not prose):
+--   drop index if exists conversations_one_per_contract;
+--   drop index if exists conversations_one_per_application;
+-- Warning, not a routine undo: the app code (postSystemMessage in
+-- contracts.ts, sendApplicationMessage in messages.ts) now relies on
+-- these indexes existing -- it catches the 23505 they cause on a
+-- concurrent first-message race and recovers by re-reading the winning
+-- row. Dropping them doesn't error or lose data, but it silently
+-- re-opens that exact race: the check-then-insert gap returns, and
+-- duplicate-conversation forking (the bug this migration fixed) can
+-- start recurring with no application-level error to signal it. Also
+-- note the dedup pass above (merging any pre-existing forked
+-- conversations onto the oldest row) is irreversible by construction --
+-- there is no record afterward of which messages originally belonged to
+-- which forked conversation, rollback or not.
