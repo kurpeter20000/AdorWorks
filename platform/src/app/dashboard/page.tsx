@@ -4,9 +4,13 @@ import { requireSession } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/lib/actions/auth";
 import { getDashboardExperience } from "@/lib/domain/navigation";
+import { getDashboardKind } from "@/lib/domain/roles";
+import { getTalentReadiness, getEmployerReadiness } from "@/lib/domain/readiness";
+import { getMyOrganisationMembership } from "@/lib/dal/organisation";
 import { StatePanel } from "@/components/state-panel";
 import { PhoneVerificationWidget } from "./phone-verification-widget";
 import { AssistanceConsentWidget } from "./assistance-consent-widget";
+import { ReadinessPanel } from "./readiness-panel";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -18,6 +22,7 @@ export default async function DashboardPage({
   const session = await requireSession();
   const query = await searchParams;
   const experience = getDashboardExperience(session.role);
+  const dashboardKind = getDashboardKind(session.role);
 
   const supabase = await createClient();
   const { data: pendingAssistance } = await supabase
@@ -30,6 +35,29 @@ export default async function DashboardPage({
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  // Readiness/Trust/Visibility (master doc §19A) — only computed once the
+  // underlying profile exists, so a fresh signup who hasn't started
+  // onboarding yet just sees the existing "Onboarding" action card
+  // instead of a panel listing every field as missing.
+  let readinessState = null;
+  if (dashboardKind === "talent") {
+    const { data: talentProfile } = await supabase
+      .from("talent_profiles")
+      .select("headline, bio, skills, category, location, avatar_path, verification_tier, public_visible")
+      .eq("id", session.userId)
+      .maybeSingle();
+    if (talentProfile) readinessState = getTalentReadiness(talentProfile);
+  } else if (dashboardKind === "employer") {
+    const membership = await getMyOrganisationMembership();
+    if (membership) {
+      const { count: opportunityCount } = await supabase
+        .from("opportunities")
+        .select("id", { count: "exact", head: true })
+        .eq("organisation_id", membership.org.id);
+      readinessState = getEmployerReadiness(membership.org, (opportunityCount ?? 0) > 0);
+    }
+  }
 
   return (
     <main className="mx-auto max-w-2xl p-8">
@@ -73,6 +101,8 @@ export default async function DashboardPage({
             status={pendingAssistance.status}
           />
         )}
+
+      {readinessState && <ReadinessPanel state={readinessState} />}
 
       <section className="mt-8">
         <h2 className="text-xl font-extrabold text-midnight">{experience.title}</h2>
