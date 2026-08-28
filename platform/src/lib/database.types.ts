@@ -148,11 +148,13 @@ export type OrganisationRow = {
   updated_at: string;
 }
 
+export type OrganisationMemberRole = "member" | "admin" | "recruiter" | "hiring_manager" | "finance" | "viewer";
+
 export type OrganisationMemberRow = {
   id: string;
   organisation_id: string;
   user_id: string;
-  role: "member" | "admin";
+  role: OrganisationMemberRole;
   created_at: string;
 }
 

@@ -43,7 +43,7 @@ export interface InviteState extends FormState {
 const InviteSchema = z.object({
   email: z.string().trim().email("Enter a valid email address."),
   fullName: z.string().trim().min(2).optional(),
-  role: z.enum(["member", "admin"]),
+  role: z.enum(["member", "admin", "recruiter", "hiring_manager", "finance", "viewer"]),
 });
 
 /**
@@ -98,6 +98,9 @@ export async function inviteTeamMember(
     if (createError) return { message: `Could not create an account: ${createError.message}` };
     userId = created.user.id;
 
+    // profiles.role only distinguishes org_admin vs org_member — the finer
+    // recruiter/hiring_manager/finance/viewer scopes (0033) live entirely
+    // in organisation_members.role, not here.
     const newRole = v.role === "admin" ? "org_admin" : "org_member";
     await admin.from("profiles").update({ role: newRole }).eq("id", userId);
     await logAuditEvent(admin, {
@@ -121,7 +124,11 @@ export async function inviteTeamMember(
   return { temporaryPassword };
 }
 
-export async function changeTeamMemberRole(organisationId: string, memberId: string, role: "member" | "admin"): Promise<void> {
+export async function changeTeamMemberRole(
+  organisationId: string,
+  memberId: string,
+  role: "member" | "admin" | "recruiter" | "hiring_manager" | "finance" | "viewer"
+): Promise<void> {
   await requireOrgAdmin(organisationId);
   const supabase = await createClient();
   await supabase

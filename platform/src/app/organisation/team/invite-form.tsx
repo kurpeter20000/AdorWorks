@@ -27,7 +27,14 @@ export function InviteForm({ organisationId }: { organisationId: string }) {
       <select name="role" defaultValue="member" className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm">
         <option value="member">Member — can view and manage opportunities</option>
         <option value="admin">Admin — can also manage the team</option>
+        <option value="recruiter">Recruiter</option>
+        <option value="hiring_manager">Hiring manager</option>
+        <option value="finance">Finance</option>
+        <option value="viewer">Viewer — read-only, can&rsquo;t post or edit opportunities</option>
       </select>
+      <p className="text-xs text-slate">
+        Recruiter, hiring manager, and finance behave like Member today — labels only, for now.
+      </p>
       {state.message && <p className="text-sm text-coral">{state.message}</p>}
       {/* inviteTeamMember returns {} (or {temporaryPassword}) on success —
           state !== initialState is what distinguishes "just succeeded"

@@ -2,12 +2,12 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { requireSession, CLIENT_ROLES, type VerifiedSession } from "./session";
 import { createClient } from "@/lib/supabase/server";
-import type { OrganisationRow } from "@/lib/database.types";
+import type { OrganisationRow, OrganisationMemberRole } from "@/lib/database.types";
 
 export interface OrganisationMembership {
   session: VerifiedSession;
   org: OrganisationRow;
-  myRole: "member" | "admin";
+  myRole: OrganisationMemberRole;
 }
 
 /**

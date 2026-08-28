@@ -2,6 +2,16 @@
 
 import { useState, useTransition } from "react";
 import { changeTeamMemberRole, removeTeamMember } from "@/lib/actions/organisationTeam";
+import type { OrganisationMemberRole } from "@/lib/database.types";
+
+const ROLE_LABEL: Record<OrganisationMemberRole, string> = {
+  member: "Member",
+  admin: "Admin",
+  recruiter: "Recruiter",
+  hiring_manager: "Hiring manager",
+  finance: "Finance",
+  viewer: "Viewer",
+};
 
 export function MemberRow({
   organisationId,
@@ -14,7 +24,7 @@ export function MemberRow({
   organisationId: string;
   userId: string;
   name: string;
-  role: "member" | "admin";
+  role: OrganisationMemberRole;
   isRepresentative: boolean;
   canManage: boolean;
 }) {
@@ -36,7 +46,7 @@ export function MemberRow({
             defaultValue={role}
             disabled={pending}
             onChange={(e) => {
-              const newRole = e.target.value as "member" | "admin";
+              const newRole = e.target.value as OrganisationMemberRole;
               setError(null);
               startTransition(async () => {
                 try {
@@ -50,6 +60,10 @@ export function MemberRow({
           >
             <option value="member">Member</option>
             <option value="admin">Admin</option>
+            <option value="recruiter">Recruiter</option>
+            <option value="hiring_manager">Hiring manager</option>
+            <option value="finance">Finance</option>
+            <option value="viewer">Viewer</option>
           </select>
           {!isRepresentative && (
             <button
@@ -73,7 +87,7 @@ export function MemberRow({
         </div>
       ) : (
         <span className="rounded-full bg-cloud px-3 py-1 text-xs font-semibold text-slate">
-          {role === "admin" ? "Admin" : "Member"}
+          {ROLE_LABEL[role] ?? role}
         </span>
       )}
     </li>
