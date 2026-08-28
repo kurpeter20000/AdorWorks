@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { submitScorecardScore } from "@/lib/actions/scorecards";
 import { setInterviewDetails, addApplicationNote } from "@/lib/actions/applications";
 import { SCORECARD_CRITERIA } from "@/lib/domain/scorecard";
+import { ApplicationMessageThread } from "@/components/application-message-thread";
 import type { FormState } from "@/lib/actions/auth";
 
 const CRITERION_LABEL: Record<string, string> = {
@@ -28,6 +29,13 @@ interface NoteRow {
   authorName: string;
 }
 
+interface MessageRow {
+  id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+}
+
 export function ApplicantEvaluationPanel({
   applicationId,
   opportunityId,
@@ -36,6 +44,7 @@ export function ApplicantEvaluationPanel({
   notes,
   interviewScheduledAt,
   interviewNotes,
+  messages,
 }: {
   applicationId: string;
   opportunityId: string;
@@ -44,6 +53,7 @@ export function ApplicantEvaluationPanel({
   notes: NoteRow[];
   interviewScheduledAt: string | null;
   interviewNotes: string | null;
+  messages: MessageRow[];
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -181,6 +191,12 @@ export function ApplicantEvaluationPanel({
             Add note
           </button>
         </form>
+      </div>
+
+      <div>
+        <p className="text-xs font-semibold text-midnight">Message candidate</p>
+        <p className="mb-2 text-[11px] text-slate">Visible to the candidate — not the same as team notes above.</p>
+        <ApplicationMessageThread applicationId={applicationId} currentUserId={myUserId} messages={messages} />
       </div>
 
       {error && <p className="text-xs text-coral">{error}</p>}

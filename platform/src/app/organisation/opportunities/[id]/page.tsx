@@ -110,6 +110,30 @@ export default async function OpportunityDetailPage({
     noteAuthorIds.length > 0 ? await supabase.from("profiles").select("id, full_name").in("id", noteAuthorIds) : { data: [] };
   const noteAuthorNameById = new Map((noteAuthors ?? []).map((p) => [p.id, p.full_name]));
 
+  const { data: conversations } =
+    applicationIds.length > 0
+      ? await supabase.from("conversations").select("id, application_id").in("application_id", applicationIds)
+      : { data: [] };
+  const conversationIdByApplication = new Map(
+    (conversations ?? []).filter((c): c is typeof c & { application_id: string } => c.application_id !== null).map((c) => [c.application_id, c.id])
+  );
+  const conversationIds = (conversations ?? []).map((c) => c.id);
+  const { data: applicationMessages } =
+    conversationIds.length > 0
+      ? await supabase
+          .from("messages")
+          .select("id, conversation_id, sender_id, body, created_at")
+          .in("conversation_id", conversationIds)
+          .order("created_at", { ascending: true })
+      : { data: [] };
+  const messagesByApplication = new Map<string, NonNullable<typeof applicationMessages>>();
+  for (const [applicationId, conversationId] of conversationIdByApplication) {
+    messagesByApplication.set(
+      applicationId,
+      (applicationMessages ?? []).filter((m) => m.conversation_id === conversationId)
+    );
+  }
+
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <h1 className="text-2xl font-extrabold text-midnight">{opportunity.title}</h1>
@@ -273,6 +297,7 @@ export default async function OpportunityDetailPage({
                     }))}
                     interviewScheduledAt={interviewByApplication.get(a.id)?.interview_scheduled_at ?? null}
                     interviewNotes={interviewByApplication.get(a.id)?.interview_notes ?? null}
+                    messages={messagesByApplication.get(a.id) ?? []}
                   />
                 </li>
               );

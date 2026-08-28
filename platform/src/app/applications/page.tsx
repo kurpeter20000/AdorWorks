@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/dal/session";
 import { APPLICATION_STATES } from "@/lib/domain/states";
 import { createClient } from "@/lib/supabase/server";
 import { WithdrawActions } from "./withdraw-actions";
+import { ApplicationThreadPanel } from "./application-thread-panel";
 
 export const metadata: Metadata = { title: "My applications" };
 
@@ -32,6 +33,31 @@ export default async function ApplicationsPage() {
 
   const opportunityById = new Map((opportunities ?? []).map((o) => [o.id, o]));
   const orgNameById = new Map((orgs ?? []).map((o) => [o.id, o.name]));
+
+  const applicationIds = (applications ?? []).map((a) => a.id);
+  const { data: conversations } =
+    applicationIds.length > 0
+      ? await supabase.from("conversations").select("id, application_id").in("application_id", applicationIds)
+      : { data: [] };
+  const conversationIdByApplication = new Map(
+    (conversations ?? []).filter((c): c is typeof c & { application_id: string } => c.application_id !== null).map((c) => [c.application_id, c.id])
+  );
+  const conversationIds = (conversations ?? []).map((c) => c.id);
+  const { data: applicationMessages } =
+    conversationIds.length > 0
+      ? await supabase
+          .from("messages")
+          .select("id, conversation_id, sender_id, body, created_at")
+          .in("conversation_id", conversationIds)
+          .order("created_at", { ascending: true })
+      : { data: [] };
+  const messagesByApplication = new Map<string, NonNullable<typeof applicationMessages>>();
+  for (const [applicationId, conversationId] of conversationIdByApplication) {
+    messagesByApplication.set(
+      applicationId,
+      (applicationMessages ?? []).filter((m) => m.conversation_id === conversationId)
+    );
+  }
 
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
@@ -77,6 +103,11 @@ export default async function ApplicationsPage() {
                 {opportunityEnded && a.stage === "rejected" && a.decision_reason && (
                   <p className="mt-2 text-xs text-slate">{a.decision_reason}</p>
                 )}
+                <ApplicationThreadPanel
+                  applicationId={a.id}
+                  currentUserId={session.userId}
+                  messages={messagesByApplication.get(a.id) ?? []}
+                />
               </li>
             );
           })}
