@@ -217,7 +217,12 @@ export async function reapplyToOpportunity(applicationId: string): Promise<{ err
  * Stage 5: shared per-candidate notes for employer team collaboration
  * (0052) — append-only, visible to any org write-member of the
  * opportunity plus staff. Plain client; application_notes_insert's RLS
- * is the real gate.
+ * is the real gate. The 'viewer' pre-check here is a UX nicety, not the
+ * security boundary — gap-check found requireRole(...CLIENT_ROLES) alone
+ * lets a 'viewer' org member reach this action and get a raw wrapped
+ * Postgres RLS error instead of a clean message, since 'viewer' is a
+ * per-organisation_members role, a completely different axis from the
+ * account-level roles CLIENT_ROLES checks.
  */
 export async function addApplicationNote(
   applicationId: string,
@@ -233,6 +238,15 @@ export async function addApplicationNote(
   }
 
   const supabase = await createClient();
+  const { data: membership } = await supabase
+    .from("organisation_members")
+    .select("role")
+    .eq("user_id", session.userId)
+    .maybeSingle();
+  if (membership?.role === "viewer") {
+    return { message: "Viewers can't add notes." };
+  }
+
   const { error } = await supabase.from("application_notes").insert({
     application_id: applicationId,
     author_id: session.userId,

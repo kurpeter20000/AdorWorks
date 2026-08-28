@@ -56,6 +56,16 @@ export async function inviteTalent(
  * explicit ownership + status check — same pattern as offers.ts's
  * acceptOffer/declineOffer, and for the same reason: this is a
  * privileged, multi-table action, not a plain client PATCH.
+ *
+ * Gap-check fix: this used to blindly insert and swallow a 23505 (the
+ * talent already had a row for this opportunity) as if nothing needed to
+ * happen — which left a withdrawn/rejected application exactly as it
+ * was, so the invitation showed "Accepted" while /applications kept
+ * showing the stale stage. Now checks for an existing row first and
+ * reactivates it (withdrawn/rejected -> submitted) instead of silently
+ * doing nothing; an application already in an active or positive stage
+ * is left alone, since the talent is already further along than a fresh
+ * invitation acceptance would put them.
  */
 export async function acceptInvitation(invitationId: string): Promise<{ error?: string }> {
   const session = await requireRole("talent");
@@ -75,15 +85,29 @@ export async function acceptInvitation(invitationId: string): Promise<{ error?: 
     .eq("id", invitationId);
   if (inviteError) return { error: inviteError.message };
 
-  const { error: appError } = await admin.from("applications").insert({
-    opportunity_id: invitation.opportunity_id,
-    talent_id: invitation.talent_id,
-    source: "invited",
-    stage: "submitted",
-  });
-  if (appError && appError.code !== "23505") {
-    return { error: appError.message };
+  const { data: existingApplication } = await admin
+    .from("applications")
+    .select("id, stage")
+    .eq("opportunity_id", invitation.opportunity_id)
+    .eq("talent_id", invitation.talent_id)
+    .maybeSingle();
+
+  if (!existingApplication) {
+    const { error: appError } = await admin.from("applications").insert({
+      opportunity_id: invitation.opportunity_id,
+      talent_id: invitation.talent_id,
+      source: "invited",
+      stage: "submitted",
+    });
+    if (appError) return { error: appError.message };
+  } else if (["withdrawn", "rejected"].includes(existingApplication.stage)) {
+    const { error: reactivateError } = await admin
+      .from("applications")
+      .update({ stage: "submitted", source: "invited", decision_reason: null })
+      .eq("id", existingApplication.id);
+    if (reactivateError) return { error: reactivateError.message };
   }
+  // Already submitted/shortlisted/interviewing/offered/accepted: leave as-is — further along than accepting fresh would put them.
 
   await logAuditEvent(admin, {
     name: DOMAIN_EVENTS.APPLICATION_SUBMITTED,

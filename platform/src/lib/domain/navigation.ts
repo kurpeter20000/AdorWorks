@@ -23,6 +23,7 @@ const experiences: Record<DashboardKind, Omit<DashboardExperience, "kind">> = {
       { href: "/opportunities", label: "Find work", description: "Browse open, paid opportunities.", primary: true },
       { href: "/passport", label: "Your Passport", description: "Manage your photo, links, evidence, and portfolio." },
       { href: "/applications", label: "Applications", description: "Track the applications you have submitted." },
+      { href: "/opportunities/invited", label: "Invitations", description: "Employers who've asked you specifically to apply." },
       { href: "/offers", label: "Offers", description: "Review and respond to offers." },
       { href: "/contracts", label: "Contracts", description: "Deliver work, message clients, and view payments." },
       { href: "/opportunities/saved", label: "Saved", description: "Return to opportunities saved for later." },
