@@ -12,10 +12,67 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
 
+# Stage 9: robots.txt's "Disallow: /staff/" only asks well-behaved
+# crawlers not to index what they find there -- it doesn't stop a page
+# already discovered some other way (a shared link, a stray backlink)
+# from being indexed. staff/*.html itself checks a real Supabase session
+# client-side and redirects if there isn't one, so no private DATA is
+# ever exposed here -- but the page shells and their URLs shouldn't be
+# indexable either. X-Robots-Tag is the header-level version of a noindex
+# meta tag, and applies even if a page is reached directly.
+[[headers]]
+  for = "/staff/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
 [[redirects]]
   from = "/find-talent.html"
   to = "/for-employers.html#categories"
   status = 301
+
+# Stage 9: "publish = '.'" above means this repo's ENTIRE git-tracked
+# tree is otherwise servable as static files, not just the marketing
+# pages -- backend/ (Express source), platform/ (the Next.js app's own
+# source, already deployed separately by Vercel), docs/ (internal stage
+# write-ups, including known-gap notes) and .github/ were all directly
+# fetchable at e.g. adorworks.netlify.app/docs/stage-7-....md before this.
+# force = true is required on each: a normal (non-forced) redirect never
+# fires for a URL that matches a real file, which every path below does.
+[[redirects]]
+  from = "/backend/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/platform/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/docs/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.github/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.git/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/render.yaml"
+  to = "/404.html"
+  status = 404
+  force = true
 
 [[redirects]]
   from = "/*"
