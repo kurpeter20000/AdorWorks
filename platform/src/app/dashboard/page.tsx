@@ -225,7 +225,14 @@ export default async function DashboardPage({
         employerPipeline.push({ href: "/organisation", label: "Applicants awaiting review", count: applicationsAwaiting, tone: "info" });
       }
       if (offersAwaitingCount > 0) {
-        employerPipeline.push({ href: "/offers", label: "Offers awaiting a response", count: offersAwaitingCount, tone: "warning" });
+        // /offers is requireRole("talent")-only (see offers/page.tsx) --
+        // there's no employer-facing cross-opportunity offers list, so this
+        // used to be a dead link that bounced every employer straight back
+        // to /dashboard?error=forbidden. /organisation is where an offer's
+        // status is actually visible, per-opportunity (organisation/
+        // opportunities/[id]/page.tsx), same destination as the applicants
+        // item above.
+        employerPipeline.push({ href: "/organisation", label: "Offers awaiting a response", count: offersAwaitingCount, tone: "warning" });
       }
       if (milestonesToPay > 0) {
         employerPipeline.push({ href: "/contracts", label: "Milestones ready to pay", count: milestonesToPay, tone: "danger" });

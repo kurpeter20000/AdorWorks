@@ -36,7 +36,30 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
     supabase.from("organisations").select("id, name, representative_id").eq("id", contract.organisation_id).maybeSingle(),
   ]);
   const isEmployer = org?.representative_id === session.userId;
-  if (!isTalent && !isEmployer && !["reviewer", "matcher", "finance", "admin"].includes(session.role)) {
+
+  // Gap-check fix: milestones/payment_events/disputes/deliverables RLS all
+  // key off is_contract_participant(), which already treats any org member
+  // (not just the representative) as a participant for READ access -- see
+  // is_contract_participant() (0007). This page's own gate didn't match
+  // that: an invited (non-representative) team member who could now see
+  // this contract in /contracts' list (see that page's own gap-check fix)
+  // got a hard 404 the moment they clicked in. Widening the *visibility*
+  // gate to match what RLS already grants -- not the action gates below,
+  // which stay isEmployer/representative-only exactly as before, since
+  // paying a milestone or raising a dispute is a deliberately narrower
+  // permission (same rep-only convention as sendOffer in offers.ts).
+  let isOtherOrgMember = false;
+  if (!isTalent && !isEmployer && org) {
+    const { data: membership } = await supabase
+      .from("organisation_members")
+      .select("organisation_id")
+      .eq("user_id", session.userId)
+      .eq("organisation_id", org.id)
+      .maybeSingle();
+    isOtherOrgMember = !!membership;
+  }
+  const canView = isTalent || isEmployer || isOtherOrgMember;
+  if (!canView && !["reviewer", "matcher", "finance", "admin"].includes(session.role)) {
     notFound();
   }
 
