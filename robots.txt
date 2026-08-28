@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /staff/
 
-Sitemap: https://adorworks.com/sitemap.xml
+Sitemap: https://adorworks.netlify.app/sitemap.xml

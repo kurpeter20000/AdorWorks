@@ -591,3 +591,28 @@ input[type="checkbox"], input[type="radio"] {
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
 }
+
+/* Cookie consent banner (js/analytics.js) */
+.cookie-consent-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 200;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.12);
+}
+.cookie-consent-banner__text { margin: 0; font-size: 0.9rem; color: var(--color-ink); max-width: 60ch; }
+.cookie-consent-banner__actions { display: flex; gap: 0.6rem; flex-shrink: 0; }
+.cookie-consent-banner__actions .btn { min-height: 40px; padding: 0.55em 1.1em; font-size: 0.9rem; }
+@media (max-width: 640px) {
+  .cookie-consent-banner { flex-direction: column; align-items: stretch; }
+  .cookie-consent-banner__actions { justify-content: flex-end; }
+}

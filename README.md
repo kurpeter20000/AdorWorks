@@ -95,8 +95,10 @@ Not built yet:
   (see its "Document status and how to use it" section). That's noted in
   an HTML comment in `about.html` and in the footer copyright line on every
   page — remove both once clearance is confirmed.
-- **Domain.** `robots.txt`, `sitemap.xml` and the JSON-LD on `index.html`
-  assume `adorworks.com`. Update if the cleared domain differs.
+- **Domain.** `robots.txt`, `sitemap.xml`, canonical/OG/Twitter tags and the
+  JSON-LD on `index.html` now point at the real live domain,
+  `adorworks.netlify.app` (Stage 9) — update all of these again once a
+  custom domain is cleared and live.
 - **Compliance.** Do not accept real client funds or run full-time/
   cross-border placements through this site before the recruitment-agency
   licensing, contracts, tax and payment-partner questions in Blueprint
@@ -205,7 +207,17 @@ Google Fonts), matching the delivered logo files in `img/`.
 
 ## Analytics
 
-`js/main.js` pushes events to `window.dataLayer` for: WhatsApp/phone clicks,
-downloads, and every form submission (event name `adorworks_event`, action
-`form_submit` with a `form_id`). Wire up GTM/GA4 the same way as the
-Adormedia site — see `../site/README.md`.
+`js/main.js` pushes events to `window.dataLayer` for every form submission
+(event name `adorworks_event`, action `form_submit` with a `form_id`).
+`js/analytics.js` (Stage 9) turns these into real Google Analytics 4 events,
+consent-gated: every page defaults Google's Consent Mode to fully denied,
+shows a cookie banner on first visit, and only loads `gtag.js` — and only
+after a visitor actively accepts — if a Measurement ID is configured.
+
+**To turn analytics on:** create a GA4 property (analytics.google.com ->
+Admin -> Data Streams -> your web stream), copy its Measurement ID
+(`G-XXXXXXXXXX`), and set `window.ADORWORKS_GA_MEASUREMENT_ID` in
+`js/analytics-config.js`. Leaving it blank (the default) keeps analytics
+fully inert regardless of what anyone clicks in the cookie banner — same
+"no ID, no live calls" pattern as the payment-provider scaffolding in
+`platform/`.

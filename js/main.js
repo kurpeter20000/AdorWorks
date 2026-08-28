@@ -2,9 +2,10 @@
   AdorWorks site behaviour: nav toggle, analytics event hooks, form submission.
 
   Analytics: pushes to window.dataLayer (Google Tag Manager convention).
-  Wire up GTM/GA4 by dropping the container snippet in each page's <head>
-  and creating a trigger on event name "adorworks_event" — no code changes
-  needed here. See /README.md.
+  js/analytics.js (loaded after this file on every page) is what actually
+  turns these into real GA4 events, gated behind cookie consent and a
+  configured Measurement ID (js/analytics-config.js) — see that file for
+  how. This file doesn't need to know analytics exists at all.
 
   Forms: every form built for Netlify Forms (data-netlify="true"). Netlify
   detects each one from the static HTML at deploy time; this script just
