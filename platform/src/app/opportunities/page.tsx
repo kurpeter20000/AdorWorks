@@ -36,7 +36,11 @@ const PAGE_SIZE = 10;
 // How many recent, filter-matching rows we pull before ranking/paginating
 // in JS — bounded rather than unbounded, but generous enough that
 // "Relevant" sort (which re-ranks this whole set by skill overlap) sees
-// the real recent pool, not just one page of it.
+// the real recent pool, not just one page of it. KNOWN LIMITATION: once
+// open+public opportunities exceed this cap, anything past the 200 most
+// recent can never surface on any page, under either sort — fine at
+// current scale, but revisit with real SQL-level pagination (a
+// materialized ranking, most likely) before that's a realistic count.
 const FETCH_CAP = 200;
 
 function formatCompensation(o: {

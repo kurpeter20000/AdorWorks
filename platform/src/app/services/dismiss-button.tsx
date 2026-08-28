@@ -8,9 +8,11 @@ import { createClient } from "@/lib/supabase/client";
 export function DismissServiceButton({ serviceId }: { serviceId: string }) {
   const router = useRouter();
   const [dismissed, setDismissed] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   function dismiss() {
+    setError(null);
     startTransition(async () => {
       const supabase = createClient();
       const {
@@ -18,7 +20,13 @@ export function DismissServiceButton({ serviceId }: { serviceId: string }) {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      await supabase.from("dismissed_services").insert({ saver_id: user.id, service_id: serviceId });
+      const { error: insertError } = await supabase
+        .from("dismissed_services")
+        .insert({ saver_id: user.id, service_id: serviceId });
+      if (insertError) {
+        setError("Could not update — try again.");
+        return;
+      }
       setDismissed(true);
       router.refresh();
     });
@@ -27,13 +35,16 @@ export function DismissServiceButton({ serviceId }: { serviceId: string }) {
   if (dismissed) return null;
 
   return (
-    <button
-      type="button"
-      disabled={pending}
-      onClick={dismiss}
-      className="text-xs font-semibold text-slate underline disabled:opacity-60"
-    >
-      Not interested
-    </button>
+    <span>
+      <button
+        type="button"
+        disabled={pending}
+        onClick={dismiss}
+        className="text-xs font-semibold text-slate underline disabled:opacity-60"
+      >
+        Not interested
+      </button>
+      {error && <span className="ml-2 text-xs text-coral">{error}</span>}
+    </span>
   );
 }
