@@ -76,6 +76,19 @@
       <div class="form-status" id="add-staff-status" role="status"></div>
     </div>
 
+    <div class="staff-section" id="role-requests-section" hidden>
+      <h2>Pending role approvals</h2>
+      <p class="muted max-65ch">Promoting to admin or finance needs a second admin's approval — you can't approve your own request.</p>
+      <div class="staff-table-wrap">
+        <table class="staff-table">
+          <thead>
+            <tr><th>Requested</th><th>Account</th><th>Role</th><th>Requested by</th><th>Decision</th></tr>
+          </thead>
+          <tbody id="role-requests-body"></tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="filter-bar">
       <select id="role-select">
         <option value="">All roles</option>

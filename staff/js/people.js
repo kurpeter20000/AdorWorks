@@ -16,6 +16,7 @@ if (auth) {
   wireAddStaffForm();
   await load();
   await loadAuditEvents();
+  await loadRoleRequests();
 }
 
 function wireControls() {
@@ -45,7 +46,10 @@ function wireAddStaffForm() {
         body: { email: email, fullName: fullName || undefined, role: role },
       });
       var who = res.data.full_name || res.data.email;
-      if (res.temporaryPassword) {
+      if (res.pendingApproval) {
+        status.textContent =
+          res.message + (res.temporaryPassword ? " One-time password (shown once — relay it directly): " + res.temporaryPassword : "");
+      } else if (res.temporaryPassword) {
         status.textContent =
           "Added " + who + " as " + role + ". One-time password (shown once — relay it directly): " + res.temporaryPassword;
       } else {
@@ -54,6 +58,7 @@ function wireAddStaffForm() {
       status.className = "form-status is-visible success";
       form.reset();
       await load();
+      await loadRoleRequests();
     } catch (err) {
       status.textContent = err.message;
       status.className = "form-status is-visible error";
@@ -113,15 +118,73 @@ function render() {
     tbody.querySelector('[data-save="' + row.id + '"]').addEventListener("click", async function () {
       var newRole = document.getElementById("role-input-" + row.id).value;
       try {
-        await apiFetch("/api/people/" + row.id + "/role", { method: "PATCH", body: { role: newRole } });
-        setPageStatus("success", "Updated " + (row.full_name || row.email || row.id) + " to " + newRole + ".");
+        var res = await apiFetch("/api/people/" + row.id + "/role", { method: "PATCH", body: { role: newRole } });
+        if (res.pendingApproval) {
+          setPageStatus("success", res.message);
+        } else {
+          setPageStatus("success", "Updated " + (row.full_name || row.email || row.id) + " to " + newRole + ".");
+        }
         await load();
         await loadAuditEvents();
+        await loadRoleRequests();
       } catch (err) {
         setPageStatus("error", err.message);
       }
     });
   });
+}
+
+async function loadRoleRequests() {
+  var section = document.getElementById("role-requests-section");
+  var tbody = document.getElementById("role-requests-body");
+  try {
+    var res = await apiFetch("/api/people/role-requests");
+    if (!res.data.length) {
+      section.hidden = true;
+      return;
+    }
+    section.hidden = false;
+    tbody.innerHTML = res.data
+      .map(function (r) {
+        return (
+          "<tr>" +
+          "<td>" + formatDate(r.created_at) + "</td>" +
+          "<td>" + escapeHtml(r.target_name) + "</td>" +
+          "<td>" + statusBadge(r.requested_role) + "</td>" +
+          "<td>" + escapeHtml(r.requested_by_name) + "</td>" +
+          "<td>" +
+          '<div class="action-row">' +
+          '<button type="button" class="btn btn-primary" data-approve-request="' + r.id + '">Approve</button>' +
+          '<button type="button" class="btn btn-secondary" data-reject-request="' + r.id + '">Reject</button>' +
+          "</div>" +
+          "</td>" +
+          "</tr>"
+        );
+      })
+      .join("");
+
+    tbody.querySelectorAll("[data-approve-request]").forEach(function (btn) {
+      btn.addEventListener("click", function () { decideRoleRequest(btn.getAttribute("data-approve-request"), "approve"); });
+    });
+    tbody.querySelectorAll("[data-reject-request]").forEach(function (btn) {
+      btn.addEventListener("click", function () { decideRoleRequest(btn.getAttribute("data-reject-request"), "reject"); });
+    });
+  } catch (err) {
+    section.hidden = false;
+    tbody.innerHTML = '<tr><td colspan="5" class="staff-empty">' + escapeHtml(err.message) + "</td></tr>";
+  }
+}
+
+async function decideRoleRequest(id, decision) {
+  try {
+    await apiFetch("/api/people/role-requests/" + id + "/" + decision, { method: "POST", body: {} });
+    setPageStatus("success", decision === "approve" ? "Approved — role updated." : "Rejected.");
+    await load();
+    await loadAuditEvents();
+    await loadRoleRequests();
+  } catch (err) {
+    setPageStatus("error", err.message);
+  }
 }
 
 async function loadAuditEvents() {

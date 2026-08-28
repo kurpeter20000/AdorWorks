@@ -6,6 +6,8 @@
 export const DOMAIN_EVENTS = {
   ACCOUNT_CREATED: "identity.account.created",
   ACCOUNT_ROLE_ASSIGNED: "identity.account.role_assigned",
+  ACCOUNT_ROLE_CHANGE_REQUESTED: "identity.account.role_change_requested",
+  ACCOUNT_ROLE_CHANGE_DECIDED: "identity.account.role_change_decided",
   ROLE_CONTEXT_SWITCHED: "identity.role_context.switched",
   TALENT_PROFILE_UPDATED: "talent.profile.updated",
   VERIFICATION_SUBMITTED: "trust.verification.submitted",

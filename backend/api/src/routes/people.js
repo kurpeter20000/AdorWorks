@@ -66,6 +66,14 @@ peopleRouter.get(
 
 const STAFF_ROLES = ["reviewer", "matcher", "finance", "admin"];
 
+// Stage 2 maker-checker: promoting anyone TO one of these two roles needs
+// a second, different admin's approval (0036/role_change_requests).
+// Demoting away from them, or any other role change, stays single-step —
+// scoped narrowly since only admin/finance carry real financial or
+// account-security power, and the team is small enough that a blanket
+// requirement would just stall routine work.
+const MONITORED_ROLES = ["admin", "finance"];
+
 // Same "easy to read aloud" alphabet as the platform app's org-team invite
 // (organisationTeam.ts) — an admin relays this directly to the new hire,
 // same reasoning: no reliable email-delivery channel for this yet.
@@ -115,11 +123,29 @@ peopleRouter.post(
       userId = created.user.id;
     }
 
-    const updates = { role: v.role };
-    if (v.fullName) updates.full_name = v.fullName;
+    if (v.fullName) {
+      await supabaseAdmin.from("profiles").update({ full_name: v.fullName }).eq("id", userId);
+    }
+
+    if (MONITORED_ROLES.includes(v.role)) {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("id, role, status, full_name, created_at")
+        .eq("id", userId)
+        .single();
+      const requestRow = await createRoleChangeRequest(req, userId, v.role, previousRole);
+      return res.json({
+        data: { ...profile, email: v.email },
+        temporaryPassword,
+        pendingApproval: true,
+        roleRequestId: requestRow.id,
+        message: `Account ready. Promoting to ${v.role} needs a second admin's approval — see Pending role approvals below.`,
+      });
+    }
+
     const { data: profile, error: updateError } = await supabaseAdmin
       .from("profiles")
-      .update(updates)
+      .update({ role: v.role })
       .eq("id", userId)
       .select("id, role, status, full_name, created_at")
       .single();
@@ -140,6 +166,28 @@ peopleRouter.post(
   })
 );
 
+/** Shared by both role-assignment routes for the two monitored roles. */
+async function createRoleChangeRequest(req, targetUserId, requestedRole, previousRole) {
+  const { data: requestRow, error: requestError } = await supabaseAdmin
+    .from("role_change_requests")
+    .insert({ target_user_id: targetUserId, requested_role: requestedRole, requested_by: req.user.id })
+    .select("id")
+    .single();
+  if (requestError) throw new HttpError(400, requestError.message);
+
+  await logAuditEvent(supabaseAdmin, {
+    name: "identity.account.role_change_requested",
+    actorId: req.user.id,
+    subjectId: targetUserId,
+    entityType: "role_change_requests",
+    entityId: requestRow.id,
+    before: previousRole !== null ? { role: previousRole } : null,
+    after: { requested_role: requestedRole },
+  });
+
+  return requestRow;
+}
+
 const roleUpdateSchema = z.object({ role: z.enum(ROLES) });
 
 // PATCH /api/people/:id/role — the sanctioned way to promote/demote an
@@ -151,6 +199,17 @@ peopleRouter.patch(
   asyncRoute(async (req, res) => {
     const { role } = roleUpdateSchema.parse(req.body);
     const { data: before } = await supabaseAdmin.from("profiles").select("role").eq("id", req.params.id).maybeSingle();
+
+    if (MONITORED_ROLES.includes(role)) {
+      const requestRow = await createRoleChangeRequest(req, req.params.id, role, before?.role ?? null);
+      return res.json({
+        data: before ? { id: req.params.id, role: before.role } : null,
+        pendingApproval: true,
+        roleRequestId: requestRow.id,
+        message: `Promoting to ${role} needs a second admin's approval — see Pending role approvals below.`,
+      });
+    }
+
     const { data, error } = await supabaseAdmin
       .from("profiles")
       .update({ role })
@@ -171,6 +230,124 @@ peopleRouter.patch(
     });
 
     res.json({ data });
+  })
+);
+
+// GET /api/people/role-requests — pending admin/finance promotions
+// awaiting a second admin's decision (0036).
+peopleRouter.get(
+  "/role-requests",
+  asyncRoute(async (req, res) => {
+    const { data: requests, error } = await supabaseAdmin
+      .from("role_change_requests")
+      .select("id, target_user_id, requested_role, requested_by, status, decided_by, decided_at, reason, created_at")
+      .eq("status", "pending")
+      .order("created_at", { ascending: true });
+    if (error) throw new HttpError(500, error.message);
+
+    const profileIds = [...new Set(requests.flatMap((r) => [r.target_user_id, r.requested_by]))];
+    const { data: profiles } =
+      profileIds.length > 0
+        ? await supabaseAdmin.from("profiles").select("id, full_name").in("id", profileIds)
+        : { data: [] };
+    const nameById = new Map((profiles || []).map((p) => [p.id, p.full_name]));
+
+    const data = requests.map((r) => ({
+      ...r,
+      target_name: nameById.get(r.target_user_id) || r.target_user_id,
+      requested_by_name: nameById.get(r.requested_by) || r.requested_by,
+    }));
+
+    res.json({ data });
+  })
+);
+
+const decisionSchema = z.object({ reason: z.string().max(2000).optional() });
+
+// POST /api/people/role-requests/:id/approve — must be a different admin
+// than whoever proposed it. The actual role change only ever happens
+// here, never at request time.
+peopleRouter.post(
+  "/role-requests/:id/approve",
+  asyncRoute(async (req, res) => {
+    const { reason } = decisionSchema.parse(req.body);
+    const { data: request, error: fetchError } = await supabaseAdmin
+      .from("role_change_requests")
+      .select("*")
+      .eq("id", req.params.id)
+      .single();
+    if (fetchError) throw new HttpError(404, "Request not found.");
+    if (request.status !== "pending") throw new HttpError(409, "This request has already been decided.");
+    if (request.requested_by === req.user.id) {
+      throw new HttpError(403, "A different admin must approve this — you can't approve your own request.");
+    }
+
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .update({ role: request.requested_role })
+      .eq("id", request.target_user_id);
+    if (profileError) throw new HttpError(400, profileError.message);
+
+    const { data: updatedRequest, error: updateError } = await supabaseAdmin
+      .from("role_change_requests")
+      .update({ status: "approved", decided_by: req.user.id, decided_at: new Date().toISOString(), reason: reason || null })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (updateError) throw new HttpError(400, updateError.message);
+
+    await logAuditEvent(supabaseAdmin, {
+      name: "identity.account.role_change_decided",
+      actorId: req.user.id,
+      subjectId: request.target_user_id,
+      entityType: "role_change_requests",
+      entityId: req.params.id,
+      reason: reason || null,
+      before: { status: "pending" },
+      after: { status: "approved", role: request.requested_role },
+      metadata: { requested_by: request.requested_by },
+    });
+
+    res.json({ data: updatedRequest });
+  })
+);
+
+// POST /api/people/role-requests/:id/reject — any admin, including the
+// original requester (this is also how they'd cancel their own proposal;
+// self-cancelling isn't a privilege-escalation risk, only self-approving is).
+peopleRouter.post(
+  "/role-requests/:id/reject",
+  asyncRoute(async (req, res) => {
+    const { reason } = decisionSchema.parse(req.body);
+    const { data: request, error: fetchError } = await supabaseAdmin
+      .from("role_change_requests")
+      .select("*")
+      .eq("id", req.params.id)
+      .single();
+    if (fetchError) throw new HttpError(404, "Request not found.");
+    if (request.status !== "pending") throw new HttpError(409, "This request has already been decided.");
+
+    const { data: updatedRequest, error: updateError } = await supabaseAdmin
+      .from("role_change_requests")
+      .update({ status: "rejected", decided_by: req.user.id, decided_at: new Date().toISOString(), reason: reason || null })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (updateError) throw new HttpError(400, updateError.message);
+
+    await logAuditEvent(supabaseAdmin, {
+      name: "identity.account.role_change_decided",
+      actorId: req.user.id,
+      subjectId: request.target_user_id,
+      entityType: "role_change_requests",
+      entityId: req.params.id,
+      reason: reason || null,
+      before: { status: "pending" },
+      after: { status: "rejected" },
+      metadata: { requested_by: request.requested_by },
+    });
+
+    res.json({ data: updatedRequest });
   })
 );
 
