@@ -8,7 +8,9 @@ export const opportunitiesRouter = Router();
 opportunitiesRouter.use(requireAuth, requireStaff);
 
 const listQuerySchema = z.object({
-  status: z.enum(["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected"]).optional(),
+  status: z
+    .enum(["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected", "changes_required", "paused"])
+    .optional(),
   organisation_id: z.string().uuid().optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),
@@ -81,7 +83,9 @@ opportunitiesRouter.post(
 );
 
 const updateSchema = createSchema.partial().extend({
-  status: z.enum(["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected"]).optional(),
+  status: z
+    .enum(["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected", "changes_required", "paused"])
+    .optional(),
 });
 
 // PATCH /api/opportunities/:id
@@ -122,7 +126,8 @@ const rejectSchema = z.object({
 
 // POST /api/opportunities/:id/reject — the moderation counterpart to
 // approve. Records why, same as organisations' verification rejection
-// already does with risk_notes.
+// already does with risk_notes. For genuinely non-fixable submissions
+// (policy violations, scams) — see /request-changes for fixable ones.
 opportunitiesRouter.post(
   "/:id/reject",
   asyncRoute(async (req, res) => {
@@ -130,6 +135,50 @@ opportunitiesRouter.post(
     const { data, error } = await supabaseAdmin
       .from("opportunities")
       .update({ status: "rejected", rejection_reason: reason })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) throw new HttpError(400, error.message);
+    res.json({ data });
+  })
+);
+
+const requestChangesSchema = z.object({
+  note: z.string().trim().min(1, "Say what needs to change.").max(2000),
+});
+
+// POST /api/opportunities/:id/request-changes — the fixable counterpart
+// to reject (0041). The employer edits and resubmits themselves (moves
+// status back to pending_review) — no staff action needed for that
+// direction, see guard_opportunities_update().
+opportunitiesRouter.post(
+  "/:id/request-changes",
+  asyncRoute(async (req, res) => {
+    const { note } = requestChangesSchema.parse(req.body);
+    const { data, error } = await supabaseAdmin
+      .from("opportunities")
+      .update({ status: "changes_required", status_note: note })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) throw new HttpError(400, error.message);
+    res.json({ data });
+  })
+);
+
+const pauseSchema = z.object({
+  note: z.string().trim().max(2000).optional(),
+});
+
+// POST /api/opportunities/:id/pause — temporarily stop matching without
+// closing the opportunity outright (0041).
+opportunitiesRouter.post(
+  "/:id/pause",
+  asyncRoute(async (req, res) => {
+    const { note } = pauseSchema.parse(req.body);
+    const { data, error } = await supabaseAdmin
+      .from("opportunities")
+      .update({ status: "paused", status_note: note || null })
       .eq("id", req.params.id)
       .select()
       .single();

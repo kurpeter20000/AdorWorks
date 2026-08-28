@@ -255,6 +255,110 @@ export async function createOpportunity(organisationId: string, _prevState: Form
 }
 
 /**
+ * The employer's fix-and-resubmit action for an opportunity staff sent
+ * back with 'changes_required' (0041) — reuses OpportunitySchema so the
+ * same validation applies as at creation. Restricted to opportunities
+ * currently in 'changes_required': 'rejected' stays terminal, by the same
+ * design intent recorded in 0041_opportunity_changes_required.sql ("Reject
+ * remains available for genuinely non-fixable submissions"). Uses the
+ * plain (RLS-gated) client, not the admin client — is_org_write_member()
+ * (0039) already scopes writes to non-viewer org members, and moving OUT
+ * of changes_required is the one status transition guard_opportunities_
+ * update() leaves ungated for exactly this purpose.
+ */
+export async function resubmitOpportunity(
+  opportunityId: string,
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  await requireRole(...CLIENT_ROLES);
+
+  const validated = OpportunitySchema.safeParse({
+    type: formData.get("type"),
+    title: formData.get("title"),
+    brief: formData.get("brief") || undefined,
+    category: formData.get("category"),
+    skills: formData.get("skills"),
+    location: formData.get("location") || undefined,
+    workMode: formData.get("workMode"),
+    engagementType: formData.get("engagementType"),
+    paymentBasis: formData.get("paymentBasis"),
+    compensationAmount: formData.get("compensationAmount") || undefined,
+    compensationMin: formData.get("compensationMin") || undefined,
+    compensationMax: formData.get("compensationMax") || undefined,
+    currency: formData.get("currency") || "SSP",
+    applicationDeadline: formData.get("applicationDeadline") || undefined,
+    numberOfOpenings: formData.get("numberOfOpenings") || undefined,
+    shortlistingMode: formData.get("shortlistingMode") || undefined,
+  });
+  if (!validated.success) {
+    return { errors: validated.error.flatten().fieldErrors };
+  }
+  const v = validated.data;
+  const screeningQuestions = parseScreeningQuestions(formData.get("screeningQuestions"));
+  const servicePackageId = (formData.get("servicePackageId") as string | null)?.trim() || null;
+
+  const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from("opportunities")
+    .select("id, status")
+    .eq("id", opportunityId)
+    .maybeSingle();
+  if (!existing) {
+    return { message: "Opportunity not found." };
+  }
+  if (existing.status !== "changes_required") {
+    return { message: "This opportunity isn't awaiting changes right now." };
+  }
+
+  const { error } = await supabase
+    .from("opportunities")
+    .update({
+      type: v.type,
+      title: v.title,
+      brief: v.brief || null,
+      category: v.category,
+      skills: splitSkills(v.skills),
+      location: v.location || null,
+      work_mode: v.workMode,
+      engagement_type: v.engagementType,
+      payment_basis: v.paymentBasis,
+      compensation_amount: toNullableNumber(v.compensationAmount),
+      compensation_min: toNullableNumber(v.compensationMin),
+      compensation_max: toNullableNumber(v.compensationMax),
+      currency: v.currency,
+      application_deadline: v.applicationDeadline || null,
+      number_of_openings: v.numberOfOpenings ? Math.max(1, Number(v.numberOfOpenings)) : 1,
+      service_package_id: v.type === "service" ? servicePackageId : null,
+      shortlisting_mode: v.shortlistingMode,
+      status: "pending_review",
+      status_note: null,
+    })
+    .eq("id", opportunityId);
+
+  if (error) {
+    return { message: `Could not resubmit this opportunity: ${error.message}` };
+  }
+
+  // Replace screening questions wholesale to match the edited set, same as
+  // there being no partial-update path for them at creation time.
+  await supabase.from("screening_questions").delete().eq("opportunity_id", opportunityId);
+  if (screeningQuestions.length > 0) {
+    await supabase.from("screening_questions").insert(
+      screeningQuestions.map((q, i) => ({
+        opportunity_id: opportunityId,
+        question: q.text,
+        required: q.required,
+        sequence: i,
+      }))
+    );
+  }
+
+  redirect(`/organisation/opportunities/${opportunityId}?resubmitted=1`);
+}
+
+/**
  * Lets an org rep flip who shortlists candidates for one of their own
  * opportunities, any time after posting. RLS (opportunities_update, 0002)
  * already allows the representative to update any non-guarded column, so

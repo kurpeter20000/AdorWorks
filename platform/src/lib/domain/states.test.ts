@@ -27,6 +27,8 @@ describe("state contracts", () => {
       "closed",
       "cancelled",
       "rejected",
+      "changes_required",
+      "paused",
     ]);
     expect(Object.keys(OFFER_STATES)).toEqual(["draft", "sent", "accepted", "declined", "withdrawn"]);
     expect(Object.keys(CONTRACT_STATES)).toEqual(["active", "completed", "cancelled", "disputed"]);

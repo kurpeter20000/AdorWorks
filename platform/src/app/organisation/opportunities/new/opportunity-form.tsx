@@ -1,9 +1,9 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
-import { createOpportunity } from "@/lib/actions/organisation";
+import { createOpportunity, resubmitOpportunity } from "@/lib/actions/organisation";
 import type { FormState } from "@/lib/actions/auth";
-import type { ServicePackageRow } from "@/lib/database.types";
+import type { OpportunityRow, ServicePackageRow } from "@/lib/database.types";
 import { SkillsInput } from "@/components/skills-input";
 
 const initialState: FormState = {};
@@ -19,15 +19,24 @@ const CATEGORY_LABEL: Record<string, string> = {
 export function OpportunityForm({
   organisationId,
   servicePackages,
+  opportunity,
+  existingScreeningQuestions,
 }: {
   organisationId: string;
   servicePackages: Pick<ServicePackageRow, "id" | "category" | "title" | "deliverable" | "inputs_needed" | "excludes">[];
+  /** When set, the form edits and resubmits this opportunity instead of creating a new one. */
+  opportunity?: OpportunityRow;
+  existingScreeningQuestions?: { text: string; required: boolean }[];
 }) {
-  const boundAction = createOpportunity.bind(null, organisationId);
+  const boundAction = opportunity
+    ? resubmitOpportunity.bind(null, opportunity.id)
+    : createOpportunity.bind(null, organisationId);
   const [state, formAction, pending] = useActionState(boundAction, initialState);
-  const [questions, setQuestions] = useState<{ key: number; text: string; required: boolean }[]>([]);
-  const [type, setType] = useState("project");
-  const [servicePackageId, setServicePackageId] = useState("");
+  const [questions, setQuestions] = useState<{ key: number; text: string; required: boolean }[]>(
+    () => (existingScreeningQuestions ?? []).map((q) => ({ key: nextQuestionKey++, ...q }))
+  );
+  const [type, setType] = useState<string>(opportunity?.type ?? "project");
+  const [servicePackageId, setServicePackageId] = useState(opportunity?.service_package_id ?? "");
   const titleRef = useRef<HTMLInputElement>(null);
   const briefRef = useRef<HTMLTextAreaElement>(null);
   const categoryRef = useRef<HTMLSelectElement>(null);
@@ -75,6 +84,7 @@ export function OpportunityForm({
           name="title"
           ref={titleRef}
           required
+          defaultValue={opportunity?.title}
           placeholder="e.g. Graphic designer for a 2-month brand refresh"
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
@@ -110,6 +120,7 @@ export function OpportunityForm({
             name="category"
             ref={categoryRef}
             required
+            defaultValue={opportunity?.category ?? undefined}
             className="mt-1 w-full rounded-lg border border-slate/25 px-2 py-2 text-sm"
           >
             <option value="creative_media">Creative &amp; media</option>
@@ -159,6 +170,7 @@ export function OpportunityForm({
           name="brief"
           ref={briefRef}
           rows={4}
+          defaultValue={opportunity?.brief ?? undefined}
           placeholder="What needs doing, the outcome you want, anything a good applicant should know."
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
@@ -168,7 +180,13 @@ export function OpportunityForm({
         <label htmlFor="skills" className="text-sm font-semibold text-midnight">
           Required skills <span className="font-normal text-slate">(comma-separated)</span>
         </label>
-        <SkillsInput id="skills" name="skills" required placeholder="e.g. Figma, brand identity, illustration" />
+        <SkillsInput
+          id="skills"
+          name="skills"
+          required
+          defaultValue={opportunity?.skills?.join(", ")}
+          placeholder="e.g. Figma, brand identity, illustration"
+        />
         {state.errors?.skills && <p className="mt-1 text-sm text-coral">{state.errors.skills[0]}</p>}
       </div>
 
@@ -180,6 +198,7 @@ export function OpportunityForm({
           <input
             id="location"
             name="location"
+            defaultValue={opportunity?.location ?? undefined}
             className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
           />
         </div>
@@ -191,7 +210,7 @@ export function OpportunityForm({
             id="workMode"
             name="workMode"
             className="mt-1 w-full rounded-lg border border-slate/25 px-2 py-2 text-sm"
-            defaultValue="any"
+            defaultValue={opportunity?.work_mode ?? "any"}
           >
             <option value="remote">Remote</option>
             <option value="on_site">On-site</option>
@@ -209,6 +228,7 @@ export function OpportunityForm({
           id="engagementType"
           name="engagementType"
           required
+          defaultValue={opportunity?.engagement_type ?? undefined}
           className="mt-1 w-full rounded-lg border border-slate/25 px-2 py-2 text-sm"
         >
           <option value="freelance">Freelance</option>
@@ -237,6 +257,7 @@ export function OpportunityForm({
               id="paymentBasis"
               name="paymentBasis"
               required
+              defaultValue={opportunity?.payment_basis ?? undefined}
               className="mt-1 w-full rounded-lg border border-slate/25 px-2 py-2 text-sm"
             >
               <option value="fixed">Fixed price</option>
@@ -254,7 +275,7 @@ export function OpportunityForm({
             <input
               id="currency"
               name="currency"
-              defaultValue="SSP"
+              defaultValue={opportunity?.currency ?? "SSP"}
               className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
             />
           </div>
@@ -270,6 +291,7 @@ export function OpportunityForm({
               type="number"
               min="0"
               step="0.01"
+              defaultValue={opportunity?.compensation_amount ?? undefined}
               className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
             />
           </div>
@@ -283,6 +305,7 @@ export function OpportunityForm({
               type="number"
               min="0"
               step="0.01"
+              defaultValue={opportunity?.compensation_min ?? undefined}
               className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
             />
           </div>
@@ -296,6 +319,7 @@ export function OpportunityForm({
               type="number"
               min="0"
               step="0.01"
+              defaultValue={opportunity?.compensation_max ?? undefined}
               className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
             />
           </div>
@@ -314,6 +338,7 @@ export function OpportunityForm({
             id="applicationDeadline"
             name="applicationDeadline"
             type="date"
+            defaultValue={opportunity?.application_deadline ?? undefined}
             className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
           />
         </div>
@@ -326,7 +351,7 @@ export function OpportunityForm({
             name="numberOfOpenings"
             type="number"
             min="1"
-            defaultValue={1}
+            defaultValue={opportunity?.number_of_openings ?? 1}
             className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
           />
         </div>
@@ -386,7 +411,13 @@ export function OpportunityForm({
         </p>
         <div className="mt-3 space-y-2">
           <label className="flex items-start gap-2 text-sm text-midnight">
-            <input type="radio" name="shortlistingMode" value="staff_assisted" defaultChecked className="mt-1" />
+            <input
+              type="radio"
+              name="shortlistingMode"
+              value="staff_assisted"
+              defaultChecked={(opportunity?.shortlisting_mode ?? "staff_assisted") === "staff_assisted"}
+              className="mt-1"
+            />
             <span>
               <span className="font-semibold">AdorWorks staff shortlist for me</span>
               <span className="block text-xs text-slate">
@@ -395,7 +426,13 @@ export function OpportunityForm({
             </span>
           </label>
           <label className="flex items-start gap-2 text-sm text-midnight">
-            <input type="radio" name="shortlistingMode" value="self_service" className="mt-1" />
+            <input
+              type="radio"
+              name="shortlistingMode"
+              value="self_service"
+              defaultChecked={opportunity?.shortlisting_mode === "self_service"}
+              className="mt-1"
+            />
             <span>
               <span className="font-semibold">I&rsquo;ll shortlist myself</span>
               <span className="block text-xs text-slate">
@@ -413,7 +450,7 @@ export function OpportunityForm({
         disabled={pending}
         className="w-full rounded-lg bg-violet px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
       >
-        {pending ? "Submitting…" : "Submit for review"}
+        {pending ? "Submitting…" : opportunity ? "Save & resubmit for review" : "Submit for review"}
       </button>
     </form>
   );

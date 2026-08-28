@@ -220,7 +220,7 @@ async function loadSuggestedCandidates(oppId, opportunity, detailRow) {
   }
 }
 
-var OPP_STATUSES = ["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected"];
+var OPP_STATUSES = ["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected", "changes_required", "paused"];
 
 function renderDetailShell(row) {
   var statusOptions = OPP_STATUSES
@@ -237,6 +237,9 @@ function renderDetailShell(row) {
     "<dt>Location</dt><dd>" + escapeHtml(row.location || "—") + "</dd>" +
     "<dt>Budget</dt><dd>" + escapeHtml(row.budget_min || "—") + "–" + escapeHtml(row.budget_max || "—") + " " + escapeHtml(row.currency || "") + "</dd>" +
     (row.status === "rejected" ? "<dt>Rejection reason</dt><dd>" + escapeHtml(row.rejection_reason || "—") + "</dd>" : "") +
+    (row.status === "changes_required" || row.status === "paused"
+      ? "<dt>" + (row.status === "paused" ? "Pause note" : "Requested changes") + "</dt><dd>" + escapeHtml(row.status_note || "—") + "</dd>"
+      : "") +
     "</dl>" +
     '<div class="form-grid form-grid-2 mt-1">' +
     '<select id="status-input-' + row.id + '">' + statusOptions + "</select>" +
@@ -249,6 +252,16 @@ function renderDetailShell(row) {
         '<div class="form-grid form-grid-2 mt-1">' +
         '<input type="text" id="reject-reason-' + row.id + '" placeholder="Reason for rejecting (required)">' +
         '<button type="button" class="btn btn-secondary" data-reject="' + row.id + '">Reject</button>' +
+        "</div>" +
+        '<div class="form-grid form-grid-2 mt-1">' +
+        '<input type="text" id="request-changes-note-' + row.id + '" placeholder="What needs to change (required)">' +
+        '<button type="button" class="btn btn-secondary" data-request-changes="' + row.id + '">Request changes</button>' +
+        "</div>"
+      : "") +
+    (row.status === "open"
+      ? '<div class="form-grid form-grid-2 mt-1">' +
+        '<input type="text" id="pause-note-' + row.id + '" placeholder="Reason for pausing (optional)">' +
+        '<button type="button" class="btn btn-secondary" data-pause="' + row.id + '">Pause</button>' +
         "</div>"
       : "") +
     '<div class="form-status" id="detail-status-' + row.id + '" role="status"></div>' +
@@ -367,6 +380,38 @@ function wireDetailActions(id, row, detailRow) {
       try {
         await apiFetch("/api/opportunities/" + id + "/reject", { method: "POST", body: { reason: reason } });
         showStatus("success", "Rejected.");
+        await load();
+      } catch (err) {
+        showStatus("error", err.message);
+      }
+    });
+  }
+
+  var requestChangesBtn = detailRow.querySelector('[data-request-changes="' + id + '"]');
+  if (requestChangesBtn) {
+    requestChangesBtn.addEventListener("click", async function () {
+      var note = detailRow.querySelector("#request-changes-note-" + id).value.trim();
+      if (!note) {
+        showStatus("error", "Say what needs to change before requesting changes.");
+        return;
+      }
+      try {
+        await apiFetch("/api/opportunities/" + id + "/request-changes", { method: "POST", body: { note: note } });
+        showStatus("success", "Changes requested.");
+        await load();
+      } catch (err) {
+        showStatus("error", err.message);
+      }
+    });
+  }
+
+  var pauseBtn = detailRow.querySelector('[data-pause="' + id + '"]');
+  if (pauseBtn) {
+    pauseBtn.addEventListener("click", async function () {
+      var note = detailRow.querySelector("#pause-note-" + id).value.trim();
+      try {
+        await apiFetch("/api/opportunities/" + id + "/pause", { method: "POST", body: { note: note || undefined } });
+        showStatus("success", "Paused.");
         await load();
       } catch (err) {
         showStatus("error", err.message);

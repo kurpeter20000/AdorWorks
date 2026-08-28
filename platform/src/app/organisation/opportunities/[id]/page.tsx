@@ -16,11 +16,11 @@ export default async function OpportunityDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ offered?: string }>;
+  searchParams: Promise<{ offered?: string; resubmitted?: string }>;
 }) {
   const { org } = await requireOrganisationMembership();
   const { id } = await params;
-  const { offered } = await searchParams;
+  const { offered, resubmitted } = await searchParams;
   const supabase = await createClient();
 
   const { data: opportunity } = await supabase
@@ -94,9 +94,33 @@ export default async function OpportunityDetailPage({
         </p>
       )}
 
+      {opportunity.status === "changes_required" && (
+        <div className="mt-4 rounded-lg bg-violet/10 px-4 py-3 text-sm text-midnight">
+          {opportunity.status_note && <p>Staff requested changes: {opportunity.status_note}</p>}
+          <Link
+            href={`/organisation/opportunities/${opportunity.id}/edit`}
+            className="mt-2 inline-block font-semibold text-teal-ink underline"
+          >
+            Edit &amp; resubmit
+          </Link>
+        </div>
+      )}
+
+      {opportunity.status === "paused" && opportunity.status_note && (
+        <p className="mt-4 rounded-lg bg-slate/10 px-4 py-3 text-sm text-slate">
+          Paused: {opportunity.status_note}
+        </p>
+      )}
+
       {offered && (
         <p className="mt-4 rounded-lg bg-teal/10 px-4 py-3 text-sm font-semibold text-teal-ink">
           Offer sent.
+        </p>
+      )}
+
+      {resubmitted && (
+        <p className="mt-4 rounded-lg bg-teal/10 px-4 py-3 text-sm font-semibold text-teal-ink">
+          Resubmitted for review.
         </p>
       )}
 

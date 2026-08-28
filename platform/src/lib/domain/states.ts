@@ -33,6 +33,8 @@ export const OPPORTUNITY_STATES = {
   closed: { label: "Closed", tone: "neutral", terminal: true },
   cancelled: { label: "Cancelled", tone: "neutral", terminal: true },
   rejected: { label: "Not approved", tone: "danger", terminal: true },
+  changes_required: { label: "Changes requested", tone: "warning" },
+  paused: { label: "Paused", tone: "neutral" },
 } as const satisfies Record<OpportunityStatus, StateDefinition>;
 
 export const OFFER_STATES = {
