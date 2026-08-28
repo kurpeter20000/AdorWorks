@@ -18,7 +18,7 @@ async function countWhere(table, column, value) {
 }
 
 async function loadCounts() {
-  var [newIntake, pendingOrgs, pendingOpps, activeEngagements, openDisputes, openReports, publishedServices, openOpportunities] =
+  var [newIntake, pendingOrgs, pendingOpps, activeEngagements, openDisputes, openReports, publishedServices, openOpportunities, pendingVideos] =
     await Promise.all([
       countWhere("intake_submissions", "status", "new"),
       countWhere("organisations", "verification_status", "pending"),
@@ -28,6 +28,7 @@ async function loadCounts() {
       countWhere("reports", "status", "open"),
       countWhere("talent_services", "status", "published"),
       countWhere("opportunities", "status", "open"),
+      countWhere("talent_introduction_videos", "status", "pending"),
     ]);
   setTile("stat-new-intake", newIntake);
   setTile("stat-pending-orgs", pendingOrgs);
@@ -35,6 +36,7 @@ async function loadCounts() {
   setTile("stat-active-engagements", activeEngagements);
   setTile("stat-open-disputes", openDisputes);
   setTile("stat-open-reports", openReports);
+  setTile("stat-pending-videos", pendingVideos);
   setTile("stat-published-services", publishedServices);
   setTile("stat-open-opportunities", openOpportunities);
 }

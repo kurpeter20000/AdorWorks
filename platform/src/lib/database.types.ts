@@ -134,6 +134,22 @@ export type TalentPortfolioItemRow = {
   created_at: string;
 }
 
+export type TalentVideoStatus = "pending" | "approved" | "rejected";
+
+export type TalentIntroductionVideoRow = {
+  talent_id: string;
+  video_path: string;
+  thumbnail_path: string | null;
+  transcript: string | null;
+  duration_seconds: number | null;
+  status: TalentVideoStatus;
+  rejection_reason: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export type OrganisationRow = {
   id: string;
   name: string;
@@ -526,7 +542,13 @@ export type DismissedServiceRow = {
   created_at: string;
 }
 
-export type ReportTargetType = "opportunity" | "talent_service" | "talent_profile" | "organisation";
+export type ReportTargetType =
+  | "opportunity"
+  | "talent_service"
+  | "talent_profile"
+  | "organisation"
+  | "talent_video"
+  | "portfolio_item";
 export type ReportReason = "spam" | "scam" | "inappropriate" | "misleading" | "other";
 export type ReportStatus = "open" | "reviewed" | "dismissed" | "actioned";
 
@@ -678,6 +700,12 @@ export type Database = {
         Row: TalentPortfolioItemRow;
         Insert: Partial<TalentPortfolioItemRow> & { talent_id: string; title: string };
         Update: Partial<TalentPortfolioItemRow>;
+        Relationships: [];
+      };
+      talent_introduction_videos: {
+        Row: TalentIntroductionVideoRow;
+        Insert: Partial<TalentIntroductionVideoRow> & { talent_id: string; video_path: string };
+        Update: Partial<TalentIntroductionVideoRow>;
         Relationships: [];
       };
       phone_verification_codes: {

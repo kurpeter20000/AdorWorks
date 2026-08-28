@@ -9,6 +9,43 @@ var auth = await requireStaffSession();
 if (auth) {
   wireFilters();
   await load();
+  await loadPendingVideos();
+}
+
+// Stage 6's Operations review queue — see backend/api/src/routes/
+// talent.js's GET /pending-videos comment for why this exists as its own
+// panel rather than requiring staff to already know which talent to open.
+// Reuses toggleDetail/refreshDetail (defined below) by building the same
+// data-row-id / detail-row pair shape the main table uses — those
+// functions look up elements by id globally, not scoped to one table.
+async function loadPendingVideos() {
+  var section = document.getElementById("pending-videos-section");
+  var tbody = document.getElementById("pending-videos-body");
+  try {
+    var res = await apiFetch("/api/talent/pending-videos");
+    if (!res.data.length) {
+      section.hidden = true;
+      return;
+    }
+    section.hidden = false;
+    tbody.innerHTML = res.data
+      .map(function (v) {
+        return (
+          '<tr class="is-clickable" data-row-id="' + v.talent_id + '">' +
+          "<td>" + escapeHtml(v.talent_profiles?.headline || v.talent_id) + "</td>" +
+          "<td>" + escapeHtml((v.talent_profiles?.category || "—").replace(/_/g, " ")) + "</td>" +
+          "<td>" + formatDate(v.created_at) + "</td>" +
+          "</tr>" +
+          '<tr class="detail-row" id="detail-' + v.talent_id + '"><td colspan="3"></td></tr>'
+        );
+      })
+      .join("");
+    tbody.querySelectorAll("tr[data-row-id]").forEach(function (tr) {
+      tr.addEventListener("click", function () { toggleDetail(tr.getAttribute("data-row-id")); });
+    });
+  } catch (err) {
+    section.hidden = true;
+  }
 }
 
 function wireFilters() {
@@ -94,6 +131,25 @@ function renderDetail(d) {
   var p = d.profile;
   var contact = p.profiles ? p.profiles.full_name + " · " + (p.profiles.phone || "no phone on file") : "—";
 
+  var v = d.introduction_video;
+  var videoSection;
+  if (!v) {
+    videoSection = "<p>No introduction video submitted.</p>";
+  } else {
+    var videoActions = v.status === "pending"
+      ? '<button type="button" class="btn btn-secondary" data-video-approve="' + p.id + '">Approve</button>' +
+        '<input type="text" id="video-reject-reason-' + p.id + '" placeholder="Reason for rejecting (required)">' +
+        '<button type="button" class="btn btn-secondary" data-video-reject="' + p.id + '">Reject</button>'
+      : "";
+    videoSection =
+      "<p>" + statusBadge(v.status) + (v.status === "rejected" && v.rejection_reason ? " — " + escapeHtml(v.rejection_reason) : "") + "</p>" +
+      (v.transcript ? '<p class="staff-hint">Transcript: ' + escapeHtml(v.transcript) + "</p>" : "") +
+      '<div class="action-row">' +
+      '<button type="button" class="btn btn-secondary" data-view-video="' + p.id + '" data-video-path="' + escapeHtml(v.video_path) + '">View video</button>' +
+      videoActions +
+      "</div>";
+  }
+
   var evidenceItems = d.evidence.length
     ? d.evidence
         .map(function (e) {
@@ -152,6 +208,7 @@ function renderDetail(d) {
     '<input type="text" id="tier-notes-' + p.id + '" placeholder="Notes (optional)">' +
     "</div>" +
     '<div class="action-row"><button type="button" class="btn btn-primary" data-set-tier="' + p.id + '">Update tier</button></div>' +
+    "<h3 class=\"mt-1\">Introduction video</h3>" + videoSection +
     "<h3 class=\"mt-1\">Evidence</h3><ul class=\"staff-events\">" + evidenceItems + "</ul>" +
     "<h3 class=\"mt-1\">Tier history</h3><ul class=\"staff-events\">" + historyItems + "</ul>" +
     "</div>" +
@@ -172,6 +229,7 @@ function wireDetailActions(id, d, detailRow) {
   function run(promise) {
     return promise
       .then(function () { return refreshDetail(id); })
+      .then(function () { return loadPendingVideos(); }) // keeps the queue count/list honest after any action, not just video ones
       .then(function () { showStatus("success", "Saved."); })
       .catch(function (err) { showStatus("error", err.message); });
   }
@@ -203,6 +261,37 @@ function wireDetailActions(id, d, detailRow) {
       window.open(data.signedUrl, "_blank", "noopener");
     });
   });
+
+  var viewVideoBtn = detailRow.querySelector('[data-view-video="' + id + '"]');
+  if (viewVideoBtn) {
+    viewVideoBtn.addEventListener("click", async function () {
+      var path = viewVideoBtn.getAttribute("data-video-path");
+      var { data, error } = await supabase.storage.from("talent-videos").createSignedUrl(path, 300);
+      if (error) {
+        showStatus("error", "Could not open the video: " + error.message);
+        return;
+      }
+      window.open(data.signedUrl, "_blank", "noopener");
+    });
+  }
+
+  var approveVideoBtn = detailRow.querySelector('[data-video-approve="' + id + '"]');
+  if (approveVideoBtn) {
+    approveVideoBtn.addEventListener("click", function () {
+      run(apiFetch("/api/talent/" + id + "/introduction-video/review", { method: "POST", body: { status: "approved" } }));
+    });
+  }
+  var rejectVideoBtn = detailRow.querySelector('[data-video-reject="' + id + '"]');
+  if (rejectVideoBtn) {
+    rejectVideoBtn.addEventListener("click", function () {
+      var reason = detailRow.querySelector("#video-reject-reason-" + id).value.trim();
+      if (!reason) {
+        showStatus("error", "Enter a reason before rejecting.");
+        return;
+      }
+      run(apiFetch("/api/talent/" + id + "/introduction-video/review", { method: "POST", body: { status: "rejected", rejection_reason: reason } }));
+    });
+  }
 
   detailRow.querySelectorAll("[data-evidence-approve]").forEach(function (btn) {
     btn.addEventListener("click", function () {

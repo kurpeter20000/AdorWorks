@@ -99,16 +99,64 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
     router.refresh();
   }
 
+  /**
+   * Re-sequences every item's sort_order to its new display index, rather
+   * than just swapping the two moved items' existing values — every item
+   * defaults to sort_order 0 today (nothing has ever set it before this
+   * feature), so a plain swap between two same-valued items would be a
+   * silent no-op the first time anyone reorders anything.
+   */
+  async function handleMove(index: number, direction: -1 | 1) {
+    const target = index + direction;
+    if (target < 0 || target >= items.length) return;
+
+    const reordered = [...items];
+    [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+
+    setBusy(true);
+    const supabase = createClient();
+    const results = await Promise.all(
+      reordered.map((item, i) => supabase.from("talent_portfolio_items").update({ sort_order: i }).eq("id", item.id))
+    );
+    setBusy(false);
+    const failed = results.find((r) => r.error);
+    if (failed) {
+      setStatus({ kind: "error", message: `Could not reorder: ${failed.error?.message}` });
+      return;
+    }
+    router.refresh();
+  }
+
   return (
     <div className="mt-4">
       {items.length > 0 && (
         <ul className="space-y-2">
-          {items.map((item) => (
+          {items.map((item, index) => (
             <li
               key={item.id}
               className="flex items-start justify-between gap-3 rounded-lg border border-slate/15 bg-white p-3"
             >
-              <div>
+              <div className="flex flex-col gap-1">
+                <button
+                  type="button"
+                  disabled={busy || index === 0}
+                  onClick={() => handleMove(index, -1)}
+                  aria-label="Move up"
+                  className="text-xs text-slate disabled:opacity-30"
+                >
+                  &uarr;
+                </button>
+                <button
+                  type="button"
+                  disabled={busy || index === items.length - 1}
+                  onClick={() => handleMove(index, 1)}
+                  aria-label="Move down"
+                  className="text-xs text-slate disabled:opacity-30"
+                >
+                  &darr;
+                </button>
+              </div>
+              <div className="flex-1">
                 <p className="text-sm font-semibold text-midnight">{item.title}</p>
                 {item.description && <p className="text-xs text-slate">{item.description}</p>}
                 {item.external_url && (

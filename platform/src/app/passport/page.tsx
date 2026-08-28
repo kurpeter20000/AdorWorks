@@ -6,6 +6,7 @@ import { ProfessionalLinksForm } from "./professional-links-form";
 import { PortfolioManager } from "./portfolio-manager";
 import { EvidenceManager } from "./evidence-manager";
 import { AvatarUpload } from "./avatar-upload";
+import { IntroductionVideoManager } from "./introduction-video-manager";
 
 export const metadata: Metadata = { title: "Your Passport" };
 
@@ -21,19 +22,20 @@ export default async function PassportPage() {
   const session = await requireRole("talent");
   const supabase = await createClient();
 
-  const [{ data: profile }, { data: items }, { data: evidence }] = await Promise.all([
+  const [{ data: profile }, { data: items }, { data: evidence }, { data: introVideo }] = await Promise.all([
     supabase.from("talent_profiles").select("*").eq("id", session.userId).maybeSingle(),
     supabase
       .from("talent_portfolio_items")
       .select("*")
       .eq("talent_id", session.userId)
-      .order("created_at", { ascending: false }),
+      .order("sort_order", { ascending: true }),
     supabase
       .from("talent_evidence")
       .select("*")
       .eq("talent_id", session.userId)
       .in("evidence_type", ["reference", "assessment"])
       .order("created_at", { ascending: false }),
+    supabase.from("talent_introduction_videos").select("*").eq("talent_id", session.userId).maybeSingle(),
   ]);
 
   const references = (evidence ?? []).filter((e) => e.evidence_type === "reference");
@@ -95,6 +97,15 @@ export default async function PassportPage() {
         {profile.languages.length > 0 && (
           <p className="mt-2 text-xs text-slate">Languages: {profile.languages.join(", ")}</p>
         )}
+      </div>
+
+      <div className="mt-6">
+        <h2 className="font-bold text-midnight">Introduction video</h2>
+        <p className="mt-1 text-xs text-slate">
+          A short video of you talking about who you are and what you do — so an employer knows who they&rsquo;re
+          trusting with their work before they hire you.
+        </p>
+        <IntroductionVideoManager existing={introVideo ?? null} />
       </div>
 
       <div className="mt-6">

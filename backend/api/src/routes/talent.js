@@ -48,12 +48,30 @@ talentRouter.get(
   })
 );
 
+// GET /api/talent/pending-videos — Stage 6's Operations review queue:
+// without this, staff would only ever discover a pending introduction
+// video by already knowing to open that specific talent's detail view,
+// which doesn't scale past a handful of talent. Declared before
+// "/:id" so Express doesn't treat "pending-videos" as an :id.
+talentRouter.get(
+  "/pending-videos",
+  asyncRoute(async (req, res) => {
+    const { data, error } = await supabaseAdmin
+      .from("talent_introduction_videos")
+      .select("talent_id, created_at, talent_profiles(headline, category)")
+      .eq("status", "pending")
+      .order("created_at", { ascending: true });
+    if (error) throw new HttpError(500, error.message);
+    res.json({ data });
+  })
+);
+
 // GET /api/talent/:id — full detail including evidence + verification history.
 talentRouter.get(
   "/:id",
   asyncRoute(async (req, res) => {
     const { id } = req.params;
-    const [profile, evidence, verificationHistory] = await Promise.all([
+    const [profile, evidence, verificationHistory, introVideo] = await Promise.all([
       supabaseAdmin
         .from("talent_profiles")
         .select("*, profiles!inner(full_name, phone, phone_verified, email_verified, status)")
@@ -65,6 +83,7 @@ talentRouter.get(
         .select("*")
         .eq("talent_id", id)
         .order("created_at", { ascending: false }),
+      supabaseAdmin.from("talent_introduction_videos").select("*").eq("talent_id", id).maybeSingle(),
     ]);
     if (profile.error) throw new HttpError(404, "Talent profile not found.");
     res.json({
@@ -72,6 +91,7 @@ talentRouter.get(
         profile: profile.data,
         evidence: evidence.data || [],
         verification_history: verificationHistory.data || [],
+        introduction_video: introVideo.data || null,
       },
     });
   })
@@ -169,6 +189,37 @@ talentRouter.post(
       .from("talent_evidence")
       .update({ status, notes, reviewer_id: req.user.id, reviewed_at: new Date().toISOString() })
       .eq("id", req.params.evidenceId)
+      .eq("talent_id", req.params.id)
+      .select()
+      .single();
+    if (error) throw new HttpError(400, error.message);
+    res.json({ data });
+  })
+);
+
+const videoReviewSchema = z.object({
+  status: z.enum(["approved", "rejected"]),
+  rejection_reason: z.string().max(2000).optional(),
+});
+
+// POST /api/talent/:id/introduction-video/review — Stage 6 (0055): the
+// same approve/reject shape as evidence review, for the introduction
+// video's own table (talent_introduction_videos is separate from
+// talent_evidence — see 0055's migration comment on why this got a
+// fresh table rather than reusing evidence_type='portfolio', which was
+// already dead/disconnected before this stage).
+talentRouter.post(
+  "/:id/introduction-video/review",
+  asyncRoute(async (req, res) => {
+    const { status, rejection_reason } = videoReviewSchema.parse(req.body);
+    const { data, error } = await supabaseAdmin
+      .from("talent_introduction_videos")
+      .update({
+        status,
+        rejection_reason: status === "rejected" ? rejection_reason || "Not approved." : null,
+        reviewed_by: req.user.id,
+        reviewed_at: new Date().toISOString(),
+      })
       .eq("talent_id", req.params.id)
       .select()
       .single();

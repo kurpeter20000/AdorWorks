@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { verifySession } from "@/lib/dal/session";
 import { ReportButton } from "@/components/report-button";
 
@@ -41,7 +42,37 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
     .from("talent_portfolio_items")
     .select("*")
     .eq("talent_id", id)
-    .order("created_at", { ascending: false });
+    .order("sort_order", { ascending: true });
+
+  // Signed URL generated server-side with the admin client, not the
+  // viewer's own session — this page is public/anonymous-reachable, and
+  // talent-videos is a private bucket. Explicit application-code checks
+  // here (status/public_visible) mirror exactly what the table's own RLS
+  // would enforce; see 0055's migration comment for why this path was
+  // chosen over teaching storage.objects RLS to reach into two other
+  // RLS-protected tables. Never persisted — recomputed fresh on every
+  // render, so "no private media URL exposed permanently" holds.
+  const { data: introVideo } = await supabase
+    .from("talent_introduction_videos")
+    .select("video_path, thumbnail_path, transcript, status")
+    .eq("talent_id", id)
+    .eq("status", "approved")
+    .maybeSingle();
+  let videoUrl: string | null = null;
+  let videoThumbnailUrl: string | null = null;
+  // profile came back from public_talent_profiles, whose own WHERE clause
+  // already guarantees public_visible = true — no need to re-check it here.
+  if (introVideo) {
+    const admin = createAdminClient();
+    const [videoSigned, thumbSigned] = await Promise.all([
+      admin.storage.from("talent-videos").createSignedUrl(introVideo.video_path, 3600),
+      introVideo.thumbnail_path
+        ? admin.storage.from("talent-videos").createSignedUrl(introVideo.thumbnail_path, 3600)
+        : Promise.resolve({ data: null }),
+    ]);
+    videoUrl = videoSigned.data?.signedUrl ?? null;
+    videoThumbnailUrl = thumbSigned?.data?.signedUrl ?? null;
+  }
 
   const { data: workHistory } = await supabase
     .from("work_history")
@@ -123,6 +154,28 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
         )}
       </div>
 
+      {videoUrl && (
+        <div className="mt-6">
+          <h2 className="font-bold text-midnight">Introduction</h2>
+          <div className="mt-3 overflow-hidden rounded-xl border border-slate/15 bg-white">
+            <video controls preload="metadata" poster={videoThumbnailUrl ?? undefined} className="w-full" style={{ maxHeight: 480 }}>
+              <source src={videoUrl} />
+            </video>
+          </div>
+          {introVideo?.transcript && (
+            <details className="mt-2">
+              <summary className="cursor-pointer text-xs font-semibold text-teal-ink">Read transcript</summary>
+              <p className="mt-2 whitespace-pre-wrap text-xs text-slate">{introVideo.transcript}</p>
+            </details>
+          )}
+          {session && (
+            <div className="mt-2">
+              <ReportButton targetType="talent_video" targetId={id} />
+            </div>
+          )}
+        </div>
+      )}
+
       {workHistory && workHistory.length > 0 && (
         <div className="mt-6">
           <h2 className="font-bold text-midnight">Verified work history</h2>
@@ -186,6 +239,11 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
                       </a>
                     )}
                   </div>
+                  {session && (
+                    <div className="mt-2">
+                      <ReportButton targetType="portfolio_item" targetId={item.id} />
+                    </div>
+                  )}
                 </li>
               );
             })}
