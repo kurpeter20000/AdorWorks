@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Contracts — AdorWorks Staff</title>
+<title>Services — AdorWorks Staff</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="../img/adorworks-mark.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,9 +34,9 @@
     <a href="talent.html">Talent</a>
     <a href="organisations.html">Organisations</a>
     <a href="opportunities.html">Opportunities</a>
-    <a href="services.html">Services</a>
+    <a href="services.html" aria-current="page">Services</a>
     <a href="engagements.html">Engagements</a>
-    <a href="contracts.html" aria-current="page">Contracts</a>
+    <a href="contracts.html">Contracts</a>
     <a href="assisted-onboarding.html">Assisted onboarding</a>
     <a href="people.html">People</a>
   </div>
@@ -45,28 +45,26 @@
 <main id="main" class="staff-main">
   <div class="container">
     <div class="staff-page-header">
-      <h1>Contracts</h1>
+      <h1>Services</h1>
     </div>
-    <p class="staff-subhead">
-      Read-only — this is the self-service offer → accept → deliver → pay → review flow from the
-      AdorWorks app. Every state change there happens through that app, not here.
-    </p>
+    <p class="staff-hint">Talent-authored services from Service Studio. Publish approves a service onto Browse
+      Services; reject sends it back to the talent with a reason so they can revise and resubmit.</p>
 
     <div class="filter-bar">
-      <span class="filter-chip" data-status-filter="" aria-pressed="true">All</span>
-      <span class="filter-chip" data-status-filter="active" aria-pressed="false">Active</span>
-      <span class="filter-chip" data-status-filter="completed" aria-pressed="false">Completed</span>
-      <span class="filter-chip" data-status-filter="disputed" aria-pressed="false">Disputed</span>
-      <span class="filter-chip" data-status-filter="cancelled" aria-pressed="false">Cancelled</span>
+      <span class="filter-chip" data-status-filter="pending_review" aria-pressed="true">Pending review</span>
+      <span class="filter-chip" data-status-filter="published" aria-pressed="false">Published</span>
+      <span class="filter-chip" data-status-filter="paused" aria-pressed="false">Paused</span>
+      <span class="filter-chip" data-status-filter="rejected" aria-pressed="false">Rejected</span>
+      <span class="filter-chip" data-status-filter="" aria-pressed="false">All</span>
     </div>
 
     <div class="staff-table-wrap">
       <table class="staff-table">
         <thead>
-          <tr><th>Opportunity</th><th>Talent</th><th>Organisation</th><th>Status</th><th>Started</th></tr>
+          <tr><th>Title</th><th>Talent</th><th>Category</th><th>Price</th><th>Status</th><th>Submitted</th></tr>
         </thead>
-        <tbody id="contracts-body">
-          <tr><td colspan="5" class="staff-empty">Loading…</td></tr>
+        <tbody id="services-body">
+          <tr><td colspan="6" class="staff-empty">Loading…</td></tr>
         </tbody>
       </table>
     </div>
@@ -74,6 +72,6 @@
 </main>
 
 <script type="module" src="js/config.js"></script>
-<script type="module" src="js/contracts.js"></script>
+<script type="module" src="js/services.js"></script>
 </body>
 </html>

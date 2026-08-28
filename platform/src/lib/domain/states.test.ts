@@ -6,6 +6,7 @@ import {
   OFFER_STATES,
   OPPORTUNITY_STATES,
   ORGANISATION_VERIFICATION_STATES,
+  TALENT_SERVICE_STATES,
 } from "./states";
 
 describe("state contracts", () => {
@@ -44,6 +45,14 @@ describe("state contracts", () => {
       "verified",
       "rejected",
       "suspended",
+    ]);
+    expect(Object.keys(TALENT_SERVICE_STATES)).toEqual([
+      "draft",
+      "pending_review",
+      "published",
+      "paused",
+      "rejected",
+      "removed",
     ]);
   });
 

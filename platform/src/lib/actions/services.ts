@@ -4,6 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
+import type { TalentServiceRow } from "@/lib/database.types";
 import type { FormState } from "./auth";
 
 export interface ServiceFormState extends FormState {
@@ -11,10 +12,11 @@ export interface ServiceFormState extends FormState {
 }
 
 /**
- * Service Studio — Stage 2 draft-only foundation (0037). Every action here
- * only ever touches a 'draft' row, matching the RLS policies exactly:
- * there is no submit-for-review action yet. That, plus staff review and
- * publication, is Stage 3 work per the master document's own staging.
+ * Service Studio. createService/updateService/deleteService are
+ * draft-only, per 0037's original RLS. The lifecycle actions below
+ * (0042) add the rest: submit for review, staff publish/reject (via the
+ * staff console, not here), and talent self-service pause/resume/
+ * withdraw/revise.
  */
 
 const ServiceSchema = z.object({
@@ -129,4 +131,47 @@ export async function deleteService(serviceId: string): Promise<{ error?: string
 
   revalidatePath("/passport/services");
   return {};
+}
+
+/**
+ * Stage 3 lifecycle actions (0042) — each is a single, narrow status
+ * transition the guard_talent_services_update() trigger allows without
+ * staff. Uses the plain RLS-gated client, same as resubmitOpportunity:
+ * the widened update policy plus the trigger are what make this safe, not
+ * an admin-client ownership check.
+ */
+
+async function transitionService(serviceId: string, status: TalentServiceRow["status"]): Promise<{ error?: string }> {
+  await requireRole("talent");
+  const supabase = await createClient();
+  const { error } = await supabase.from("talent_services").update({ status }).eq("id", serviceId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/passport/services");
+  return {};
+}
+
+/** draft -> pending_review: hands a draft to staff for review. */
+export async function submitService(serviceId: string): Promise<{ error?: string }> {
+  return transitionService(serviceId, "pending_review");
+}
+
+/** rejected | published | paused -> draft: reopens a service for editing before resubmitting. */
+export async function reviseService(serviceId: string): Promise<{ error?: string }> {
+  return transitionService(serviceId, "draft");
+}
+
+/** published -> paused: temporarily pulls a live service off Browse Services. */
+export async function pauseService(serviceId: string): Promise<{ error?: string }> {
+  return transitionService(serviceId, "paused");
+}
+
+/** paused -> published: makes a paused service live again without re-review. */
+export async function resumeService(serviceId: string): Promise<{ error?: string }> {
+  return transitionService(serviceId, "published");
+}
+
+/** Any non-removed status -> removed: a soft, permanent withdrawal (keeps history, unlike deleteService's hard delete). */
+export async function withdrawService(serviceId: string): Promise<{ error?: string }> {
+  return transitionService(serviceId, "removed");
 }

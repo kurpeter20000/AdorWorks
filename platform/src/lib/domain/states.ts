@@ -5,6 +5,7 @@ import type {
   OfferStatus,
   OpportunityStatus,
   OrganisationRow,
+  TalentServiceStatus,
 } from "@/lib/database.types";
 
 export type StatusTone = "neutral" | "info" | "warning" | "success" | "danger";
@@ -36,6 +37,15 @@ export const OPPORTUNITY_STATES = {
   changes_required: { label: "Changes requested", tone: "warning" },
   paused: { label: "Paused", tone: "neutral" },
 } as const satisfies Record<OpportunityStatus, StateDefinition>;
+
+export const TALENT_SERVICE_STATES = {
+  draft: { label: "Draft", tone: "neutral" },
+  pending_review: { label: "Submitted for review", tone: "warning" },
+  published: { label: "Published", tone: "success" },
+  paused: { label: "Paused", tone: "neutral" },
+  rejected: { label: "Not approved", tone: "danger" },
+  removed: { label: "Withdrawn", tone: "neutral", terminal: true },
+} as const satisfies Record<TalentServiceStatus, StateDefinition>;
 
 export const OFFER_STATES = {
   draft: { label: "Draft", tone: "neutral" },

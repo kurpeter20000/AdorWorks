@@ -37,6 +37,7 @@ const experiences: Record<DashboardKind, Omit<DashboardExperience, "kind">> = {
     actions: [
       { href: "/organisation", label: "Organisation", description: "Open your organisation workspace.", primary: true },
       { href: "/organisation/opportunities/new", label: "Post an opportunity", description: "Submit a paid role or project for review." },
+      { href: "/services", label: "Browse services", description: "Discover defined, ready-to-book services from AdorWorks talent." },
       { href: "/organisation/team", label: "Team", description: "Review organisation membership and access." },
       { href: "/contracts", label: "Contracts", description: "Manage active and completed work." },
       { href: "/assistance/request", label: "Request help", description: "Ask AdorWorks for support." },
