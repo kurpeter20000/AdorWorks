@@ -11,6 +11,7 @@ import { StatePanel } from "@/components/state-panel";
 import { PhoneVerificationWidget } from "./phone-verification-widget";
 import { AssistanceConsentWidget } from "./assistance-consent-widget";
 import { ReadinessPanel } from "./readiness-panel";
+import { NotificationsPanel } from "./notifications-panel";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -25,6 +26,20 @@ export default async function DashboardPage({
   const dashboardKind = getDashboardKind(session.role);
 
   const supabase = await createClient();
+  const [{ data: notifications }, { count: unreadCount }] = await Promise.all([
+    supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", session.userId)
+      .order("created_at", { ascending: false })
+      .limit(5),
+    supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", session.userId)
+      .is("read_at", null),
+  ]);
+
   const { data: pendingAssistance } = await supabase
     .from("assistance_sessions")
     .select("id, scope, status")
@@ -94,6 +109,8 @@ export default async function DashboardPage({
       )}
 
       {!session.phoneVerified && <PhoneVerificationWidget />}
+
+      <NotificationsPanel notifications={notifications ?? []} unreadCount={unreadCount ?? 0} />
 
       {pendingAssistance &&
         (pendingAssistance.status === "pending_consent" || pendingAssistance.status === "active") && (

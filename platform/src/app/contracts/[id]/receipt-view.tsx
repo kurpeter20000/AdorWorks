@@ -18,6 +18,10 @@ export function ReceiptView({
   cardBrand,
   externalReference,
   createdAt,
+  feePercent,
+  feeAmount,
+  netAmount,
+  isSimulated,
 }: {
   receiptNumber: string | null;
   amount: number;
@@ -28,6 +32,10 @@ export function ReceiptView({
   cardBrand: string | null;
   externalReference: string;
   createdAt: string;
+  feePercent: number;
+  feeAmount: number;
+  netAmount: number;
+  isSimulated: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -53,9 +61,21 @@ export function ReceiptView({
           <dd className="font-semibold text-midnight">{receiptNumber ?? "—"}</dd>
         </div>
         <div className="flex justify-between">
-          <dt className="text-slate">Amount</dt>
+          <dt className="text-slate">Gross amount</dt>
           <dd className="font-semibold text-midnight">
             {currency} {amount.toLocaleString()}
+          </dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-slate">Platform fee ({feePercent}%)</dt>
+          <dd>
+            {currency} {feeAmount.toLocaleString()}
+          </dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="font-semibold text-midnight">Net paid to talent</dt>
+          <dd className="font-semibold text-midnight">
+            {currency} {netAmount.toLocaleString()}
           </dd>
         </div>
         <div className="flex justify-between">
@@ -85,7 +105,7 @@ export function ReceiptView({
           <dd>{new Date(createdAt).toLocaleString()}</dd>
         </div>
       </dl>
-      <p className="mt-2 text-xs text-coral">Simulated payment — no real money moved.</p>
+      {isSimulated && <p className="mt-2 text-xs text-coral">Simulated payment — no real money moved.</p>}
       <button
         type="button"
         onClick={() => window.print()}

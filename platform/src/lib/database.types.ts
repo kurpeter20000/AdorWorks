@@ -432,6 +432,9 @@ export type PaymentEventRow = {
   currency: string;
   status: PaymentEventStatus;
   is_simulated: boolean;
+  fee_percent: number;
+  fee_amount: number;
+  net_amount: number;
   created_at: string;
 }
 
@@ -562,6 +565,17 @@ export type ReportRow = {
   status: ReportStatus;
   reviewed_by: string | null;
   reviewed_at: string | null;
+  created_at: string;
+}
+
+export type NotificationRow = {
+  id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  link: string | null;
+  read_at: string | null;
   created_at: string;
 }
 
@@ -937,6 +951,12 @@ export type Database = {
         Row: ReportRow;
         Insert: Partial<ReportRow> & { reporter_id: string; target_type: ReportTargetType; target_id: string; reason: ReportReason };
         Update: Partial<ReportRow>;
+        Relationships: [];
+      };
+      notifications: {
+        Row: NotificationRow;
+        Insert: Partial<NotificationRow> & { user_id: string; type: string; title: string };
+        Update: Partial<NotificationRow>;
         Relationships: [];
       };
       partner_hubs: {

@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
+import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import type { FormState } from "./auth";
 
 /**
@@ -43,6 +44,14 @@ export async function inviteTalent(
     if (error.code === "23505") return { message: "Already invited to this opportunity." };
     return { message: `Could not send this invitation: ${error.message}` };
   }
+
+  const admin = createAdminClient();
+  await notifyUser(admin, {
+    userId: talentId,
+    type: NOTIFICATION_TYPES.INVITATION_RECEIVED,
+    title: "An employer invited you to apply",
+    link: "/opportunities/invited",
+  });
 
   revalidatePath(`/organisation/opportunities/${opportunityId}`);
   return { success: true };

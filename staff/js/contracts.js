@@ -105,6 +105,33 @@ function wireDetailActions(id, detailRow) {
     });
   });
 
+  detailRow.querySelectorAll("[data-refund-dispute]").forEach(function (btn) {
+    btn.addEventListener("click", async function () {
+      var disputeId = btn.getAttribute("data-refund-dispute");
+      var milestoneId = detailRow.querySelector("#dispute-refund-milestone-" + disputeId).value;
+      var notes = detailRow.querySelector("#dispute-refund-notes-" + disputeId).value;
+      if (!milestoneId) {
+        alert("Choose which milestone's payment to refund.");
+        return;
+      }
+      if (!confirm("Mark this milestone's settled payment as refunded and record a finance entry? This cannot be undone here.")) {
+        return;
+      }
+      btn.disabled = true;
+      try {
+        await apiFetch("/api/disputes/" + disputeId + "/refund", {
+          method: "POST",
+          body: { milestone_id: milestoneId, notes: notes || undefined },
+        });
+        await refreshDetail(id, detailRow);
+        await load();
+      } catch (err) {
+        alert(err.message);
+        btn.disabled = false;
+      }
+    });
+  });
+
   detailRow.querySelectorAll("[data-reconcile-invoice]").forEach(function (btn) {
     btn.addEventListener("click", async function () {
       var invoiceId = btn.getAttribute("data-reconcile-invoice");
@@ -221,18 +248,33 @@ function renderDetail(c) {
         .join("")
     : "<li>No timesheets logged.</li>";
 
+  var milestoneOptions = milestones.length
+    ? milestones
+        .map(function (m) { return '<option value="' + m.id + '">' + escapeHtml(m.title) + " — " + escapeHtml(m.currency) + " " + escapeHtml(Number(m.amount).toLocaleString()) + " (" + m.status + ")</option>"; })
+        .join("")
+    : "";
+
   var disputes = (c.disputes || []).slice().sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); });
   var disputesHtml = disputes.length
     ? disputes
         .map(function (disp) {
           var dOptions = DISPUTE_STATUSES.map(function (s) { return '<option value="' + s + '"' + (s === disp.status ? " selected" : "") + ">" + s + "</option>"; }).join("");
+          var refundBlock = milestones.length
+            ? '<div class="form-grid form-grid-2 mt-1">' +
+              '<select id="dispute-refund-milestone-' + disp.id + '"><option value="">Refund which milestone?</option>' + milestoneOptions + "</select>" +
+              '<input type="text" id="dispute-refund-notes-' + disp.id + '" placeholder="Refund notes (optional)">' +
+              "</div>" +
+              '<div class="action-row"><button type="button" class="btn btn-secondary" data-refund-dispute="' + disp.id + '">Refund settled payment</button></div>'
+            : "";
           return (
             "<li>" + escapeHtml(disp.description) + " — " + statusBadge(disp.status) +
             '<div class="form-grid form-grid-2 mt-1">' +
             '<select id="dispute-status-' + disp.id + '">' + dOptions + "</select>" +
             '<input type="text" id="dispute-resolution-' + disp.id + '" placeholder="Resolution notes" value="' + escapeHtml(disp.resolution || "") + '">' +
             "</div>" +
-            '<div class="action-row"><button type="button" class="btn btn-secondary" data-resolve-dispute="' + disp.id + '">Save</button></div></li>'
+            '<div class="action-row"><button type="button" class="btn btn-secondary" data-resolve-dispute="' + disp.id + '">Save</button></div>' +
+            refundBlock +
+            "</li>"
           );
         })
         .join("")

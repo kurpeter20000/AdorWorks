@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { StatusBadge } from "@/components/status-badge";
 import { requireSession } from "@/lib/dal/session";
 import { CONTRACT_STATES, MILESTONE_STATES } from "@/lib/domain/states";
+import { isFeatureEnabled, FEATURE_FLAGS } from "@/lib/domain/featureFlags";
 import { createClient } from "@/lib/supabase/server";
 import type { DeliverableRow } from "@/lib/database.types";
 import { DeliverableForm } from "./deliverable-form";
@@ -68,7 +69,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
   const { data: paymentEvents } = await supabase
     .from("payment_events")
     .select(
-      "milestone_id, external_reference, amount, currency, provider_name, payer_phone, card_last4, card_brand, receipt_number, created_at"
+      "milestone_id, external_reference, amount, currency, provider_name, payer_phone, card_last4, card_brand, receipt_number, created_at, fee_percent, fee_amount, net_amount, is_simulated"
     )
     .eq("contract_id", contract.id);
   const paymentByMilestone = new Map((paymentEvents ?? []).map((p) => [p.milestone_id, p]));
@@ -167,8 +168,8 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
               {payment && (
                 <div className="mt-3">
                   <p className="text-xs font-semibold text-teal-ink">
-                    Simulated payment recorded ({payment.currency} {payment.amount.toLocaleString()}) — no real money
-                    moved.
+                    {payment.is_simulated ? "Simulated" : "Live"} payment recorded ({payment.currency}{" "}
+                    {payment.amount.toLocaleString()}){payment.is_simulated ? " — no real money moved." : "."}
                   </p>
                   <ReceiptView
                     receiptNumber={payment.receipt_number}
@@ -180,6 +181,10 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                     cardBrand={payment.card_brand}
                     externalReference={payment.external_reference}
                     createdAt={payment.created_at}
+                    feePercent={payment.fee_percent}
+                    feeAmount={payment.fee_amount}
+                    netAmount={payment.net_amount}
+                    isSimulated={payment.is_simulated}
                   />
                 </div>
               )}
@@ -193,7 +198,12 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
               )}
 
               {isEmployer && m.status === "approved" && (
-                <PaymentCheckout milestoneId={m.id} amount={m.amount} currency={m.currency} />
+                <PaymentCheckout
+                  milestoneId={m.id}
+                  amount={m.amount}
+                  currency={m.currency}
+                  realPaymentsEnabled={isFeatureEnabled(FEATURE_FLAGS.REAL_PAYMENTS)}
+                />
               )}
             </div>
           );

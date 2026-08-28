@@ -6,6 +6,7 @@ import { requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
+import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import type { FormState } from "./auth";
 
 const OfferSchema = z.object({
@@ -112,6 +113,12 @@ export async function sendOffer(
     source: "platform",
     metadata: { opportunityId: opportunity.id, applicationId: application.id },
   });
+  await notifyUser(admin, {
+    userId: application.talent_id,
+    type: NOTIFICATION_TYPES.OFFER_SENT,
+    title: "You received an offer",
+    link: "/offers",
+  });
 
   redirect(`/organisation/opportunities/${opportunity.id}?offered=1`);
 }
@@ -202,6 +209,12 @@ export async function acceptOffer(offerId: string): Promise<{ error?: string }> 
     source: "platform",
     metadata: { offerId: offer.id, opportunityId: offer.opportunity_id },
   });
+  await notifyUser(admin, {
+    userId: offer.created_by,
+    type: NOTIFICATION_TYPES.OFFER_RESPONDED,
+    title: "Your offer was accepted",
+    link: `/contracts/${contract.id}`,
+  });
 
   return {};
 }
@@ -218,7 +231,7 @@ export async function declineOffer(offerId: string): Promise<{ error?: string }>
   const session = await requireRole("talent");
   const admin = createAdminClient();
 
-  const { data: offer } = await admin.from("offers").select("id, application_id, talent_id, status").eq("id", offerId).maybeSingle();
+  const { data: offer } = await admin.from("offers").select("id, application_id, talent_id, status, created_by").eq("id", offerId).maybeSingle();
   if (!offer || offer.talent_id !== session.userId) {
     return { error: "Offer not found." };
   }
@@ -243,6 +256,11 @@ export async function declineOffer(offerId: string): Promise<{ error?: string }>
     entityId: offer.id,
     source: "platform",
     after: { status: "declined" },
+  });
+  await notifyUser(admin, {
+    userId: offer.created_by,
+    type: NOTIFICATION_TYPES.OFFER_RESPONDED,
+    title: "Your offer was declined",
   });
 
   return {};

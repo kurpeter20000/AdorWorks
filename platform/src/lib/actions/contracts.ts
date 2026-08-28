@@ -3,8 +3,20 @@
 import { z } from "zod";
 import { requireSession, requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getPaymentProvider } from "@/lib/paymentProviders";
+import { getActivePaymentProvider } from "@/lib/paymentProviders.server";
+import { calculateFee } from "@/lib/domain/fees";
+import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
+import { isFeatureEnabled, FEATURE_FLAGS } from "@/lib/domain/featureFlags";
+import { sendEmailSafely, getUserEmail } from "@/lib/email";
 import type { FormState } from "./auth";
+
+/** Looks up the talent and the org representative for a contract — the two people every contract-scoped notification/message goes between. */
+async function getContractParties(admin: ReturnType<typeof createAdminClient>, contractId: string) {
+  const { data: contract } = await admin.from("contracts").select("talent_id, organisation_id").eq("id", contractId).maybeSingle();
+  if (!contract) return null;
+  const { data: org } = await admin.from("organisations").select("representative_id").eq("id", contract.organisation_id).maybeSingle();
+  return { talentId: contract.talent_id, employerId: org?.representative_id ?? null };
+}
 
 /**
  * Called right after the talent's browser has already uploaded the
@@ -47,6 +59,17 @@ export async function recordDeliverableSubmission(milestoneId: string): Promise<
 
   const { error } = await admin.from("milestones").update({ status: "submitted" }).eq("id", milestoneId);
   if (error) return { error: error.message };
+
+  const parties = await getContractParties(admin, milestone.contract_id);
+  if (parties?.employerId) {
+    await notifyUser(admin, {
+      userId: parties.employerId,
+      type: NOTIFICATION_TYPES.MILESTONE_SUBMITTED,
+      title: "A deliverable is ready for your review",
+      link: `/contracts/${milestone.contract_id}`,
+    });
+  }
+
   return {};
 }
 
@@ -156,6 +179,14 @@ export async function approveDeliverable(deliverableId: string): Promise<{ error
 
   await maybeCompleteContract(admin, check.contract!.id);
 
+  await notifyUser(admin, {
+    userId: check.contract!.talent_id,
+    type: NOTIFICATION_TYPES.MILESTONE_APPROVED,
+    title: "Your milestone was approved",
+    body: "Payment should follow shortly.",
+    link: `/contracts/${check.contract!.id}`,
+  });
+
   return {};
 }
 
@@ -253,6 +284,11 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     .limit(1)
     .maybeSingle();
 
+  // status: 'processing' is the default anyway, but named explicitly here
+  // since it's exactly what 0057's partial unique index keys off of —
+  // this insert is what makes two concurrent payMilestone() calls for
+  // the same milestone impossible: the second one's insert fails outright
+  // (23505) instead of silently charging twice.
   const { data: intention, error: intentionError } = await admin
     .from("payment_intentions")
     .insert({
@@ -263,13 +299,19 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
       payer_phone: v.phone || null,
       amount: milestone.amount,
       currency: milestone.currency,
+      status: "processing",
       created_by: session.userId,
     })
     .select("id")
     .single();
-  if (intentionError || !intention) return { message: intentionError?.message ?? "Could not start the payment." };
+  if (intentionError || !intention) {
+    if (intentionError?.code === "23505") {
+      return { message: "A payment is already being processed for this milestone — check back in a moment." };
+    }
+    return { message: intentionError?.message ?? "Could not start the payment." };
+  }
 
-  const provider = getPaymentProvider(v.provider);
+  const provider = await getActivePaymentProvider(v.provider);
   const result = provider
     ? await provider.charge({
         phone: v.phone ?? "",
@@ -295,6 +337,12 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
   }
 
   const receiptNumber = `RCPT-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${intention.id.slice(0, 8).toUpperCase()}`;
+  const fee = calculateFee(milestone.amount);
+  // is_simulated defaults true (0006) — only a mobile-money charge that
+  // actually went through the real adapter (flag on, real credentials
+  // configured) should ever record false. Cards stay simulated
+  // regardless — no card-processor decision has been made.
+  const isSimulated = v.provider === "visa_mastercard" || !isFeatureEnabled(FEATURE_FLAGS.REAL_PAYMENTS);
 
   const { error: paymentError } = await admin.from("payment_events").insert({
     milestone_id: milestoneId,
@@ -309,6 +357,10 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     receipt_number: receiptNumber,
     amount: milestone.amount,
     currency: milestone.currency,
+    fee_percent: fee.feePercent,
+    fee_amount: fee.feeAmount,
+    net_amount: fee.netAmount,
+    is_simulated: isSimulated,
   });
   if (paymentError) return { message: paymentError.message };
 
@@ -318,6 +370,17 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     .eq("id", intention.id);
   if (invoice) await admin.from("finance_records").update({ status: "confirmed" }).eq("id", invoice.id);
   await admin.from("milestones").update({ status: "paid" }).eq("id", milestoneId);
+
+  const paidNoticeBody = `${milestone.currency} ${fee.netAmount.toLocaleString()} net (${milestone.currency} ${milestone.amount.toLocaleString()} gross${fee.feeAmount > 0 ? `, ${milestone.currency} ${fee.feeAmount.toLocaleString()} platform fee` : ""}). Receipt ${receiptNumber}.`;
+  await notifyUser(admin, {
+    userId: check.contract!.talent_id,
+    type: NOTIFICATION_TYPES.MILESTONE_PAID,
+    title: "You were paid",
+    body: paidNoticeBody,
+    link: `/contracts/${check.contract!.id}`,
+  });
+  const talentEmail = await getUserEmail(admin, check.contract!.talent_id);
+  await sendEmailSafely(talentEmail, "You were paid on AdorWorks", `<p>${paidNoticeBody}</p>`);
 
   return {};
 }
@@ -419,6 +482,17 @@ export async function sendMessage(contractId: string, _prevState: FormState, for
       ? { filePath: validated.data.filePath, fileName: validated.data.fileName }
       : undefined
   );
+
+  const recipientId = session.userId === contract.talent_id ? org?.representative_id : contract.talent_id;
+  if (recipientId) {
+    await notifyUser(admin, {
+      userId: recipientId,
+      type: NOTIFICATION_TYPES.MESSAGE_RECEIVED,
+      title: "New message on your contract",
+      link: `/contracts/${contractId}`,
+    });
+  }
+
   return {};
 }
 
@@ -468,6 +542,17 @@ export async function raiseDispute(contractId: string, _prevState: FormState, fo
 
   await admin.from("contracts").update({ status: "disputed" }).eq("id", contractId);
   await postSystemMessage(admin, contractId, session.userId, "A dispute was raised on this contract — AdorWorks staff will review it.");
+
+  const otherPartyId = session.userId === contract.talent_id ? org?.representative_id : contract.talent_id;
+  if (otherPartyId) {
+    await notifyUser(admin, {
+      userId: otherPartyId,
+      type: NOTIFICATION_TYPES.DISPUTE_RAISED,
+      title: "A dispute was raised on your contract",
+      body: "AdorWorks staff will review it.",
+      link: `/contracts/${contractId}`,
+    });
+  }
 
   return {};
 }

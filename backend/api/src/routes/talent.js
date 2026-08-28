@@ -224,6 +224,15 @@ talentRouter.post(
       .select()
       .single();
     if (error) throw new HttpError(400, error.message);
+
+    await supabaseAdmin.from("notifications").insert({
+      user_id: req.params.id,
+      type: "introduction_video_reviewed",
+      title: status === "approved" ? "Your introduction video was approved" : "Your introduction video wasn't approved",
+      body: status === "rejected" ? data.rejection_reason : null,
+      link: "/passport",
+    });
+
     res.json({ data });
   })
 );

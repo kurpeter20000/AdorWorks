@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
+import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import type { FormState } from "./auth";
 
 const PitchSchema = z.object({
@@ -127,7 +128,12 @@ export async function setApplicationStage(
   const session = await requireRole(...CLIENT_ROLES);
 
   const supabase = await createClient();
-  const { error } = await supabase.from("applications").update({ stage }).eq("id", applicationId);
+  const { data: application, error } = await supabase
+    .from("applications")
+    .update({ stage })
+    .eq("id", applicationId)
+    .select("talent_id")
+    .single();
   if (error) return { error: error.message };
 
   const admin = createAdminClient();
@@ -138,6 +144,12 @@ export async function setApplicationStage(
     entityId: applicationId,
     source: "platform",
     after: { stage },
+  });
+  await notifyUser(admin, {
+    userId: application.talent_id,
+    type: NOTIFICATION_TYPES.APPLICATION_STAGE_CHANGED,
+    title: stage === "shortlisted" ? "You've been shortlisted" : "Application update",
+    link: "/applications",
   });
 
   revalidatePath(`/organisation/opportunities/${opportunityId}`);
