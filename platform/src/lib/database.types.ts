@@ -474,6 +474,41 @@ export type SavedOpportunityRow = {
   created_at: string;
 }
 
+export type DismissedOpportunityRow = {
+  talent_id: string;
+  opportunity_id: string;
+  created_at: string;
+}
+
+export type SavedServiceRow = {
+  saver_id: string;
+  service_id: string;
+  created_at: string;
+}
+
+export type DismissedServiceRow = {
+  saver_id: string;
+  service_id: string;
+  created_at: string;
+}
+
+export type ReportTargetType = "opportunity" | "talent_service" | "talent_profile" | "organisation";
+export type ReportReason = "spam" | "scam" | "inappropriate" | "misleading" | "other";
+export type ReportStatus = "open" | "reviewed" | "dismissed" | "actioned";
+
+export type ReportRow = {
+  id: string;
+  reporter_id: string;
+  target_type: ReportTargetType;
+  target_id: string;
+  reason: ReportReason;
+  note: string | null;
+  status: ReportStatus;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+}
+
 export type PartnerHubRow = {
   id: string;
   name: string;
@@ -549,6 +584,7 @@ export type PublicTalentProfileRow = {
   website_url: string | null;
   avatar_path: string | null;
   verification_tier: VerificationTier;
+  created_at: string;
 }
 
 export type VerificationCheckRow = {
@@ -797,6 +833,30 @@ export type Database = {
         Row: SavedOpportunityRow;
         Insert: Partial<SavedOpportunityRow> & { talent_id: string; opportunity_id: string };
         Update: Partial<SavedOpportunityRow>;
+        Relationships: [];
+      };
+      dismissed_opportunities: {
+        Row: DismissedOpportunityRow;
+        Insert: Partial<DismissedOpportunityRow> & { talent_id: string; opportunity_id: string };
+        Update: Partial<DismissedOpportunityRow>;
+        Relationships: [];
+      };
+      saved_services: {
+        Row: SavedServiceRow;
+        Insert: Partial<SavedServiceRow> & { saver_id: string; service_id: string };
+        Update: Partial<SavedServiceRow>;
+        Relationships: [];
+      };
+      dismissed_services: {
+        Row: DismissedServiceRow;
+        Insert: Partial<DismissedServiceRow> & { saver_id: string; service_id: string };
+        Update: Partial<DismissedServiceRow>;
+        Relationships: [];
+      };
+      reports: {
+        Row: ReportRow;
+        Insert: Partial<ReportRow> & { reporter_id: string; target_type: ReportTargetType; target_id: string; reason: ReportReason };
+        Update: Partial<ReportRow>;
         Relationships: [];
       };
       partner_hubs: {

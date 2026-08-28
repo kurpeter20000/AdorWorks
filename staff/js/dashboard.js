@@ -18,18 +18,25 @@ async function countWhere(table, column, value) {
 }
 
 async function loadCounts() {
-  var [newIntake, pendingOrgs, pendingOpps, activeEngagements, openDisputes] = await Promise.all([
-    countWhere("intake_submissions", "status", "new"),
-    countWhere("organisations", "verification_status", "pending"),
-    countWhere("opportunities", "status", "pending_review"),
-    countWhere("engagements", "status", ["proposed", "contracted", "active"]),
-    countWhere("disputes", "status", ["open", "investigating"]),
-  ]);
+  var [newIntake, pendingOrgs, pendingOpps, activeEngagements, openDisputes, openReports, publishedServices, openOpportunities] =
+    await Promise.all([
+      countWhere("intake_submissions", "status", "new"),
+      countWhere("organisations", "verification_status", "pending"),
+      countWhere("opportunities", "status", "pending_review"),
+      countWhere("engagements", "status", ["proposed", "contracted", "active"]),
+      countWhere("disputes", "status", ["open", "investigating"]),
+      countWhere("reports", "status", "open"),
+      countWhere("talent_services", "status", "published"),
+      countWhere("opportunities", "status", "open"),
+    ]);
   setTile("stat-new-intake", newIntake);
   setTile("stat-pending-orgs", pendingOrgs);
   setTile("stat-pending-opps", pendingOpps);
   setTile("stat-active-engagements", activeEngagements);
   setTile("stat-open-disputes", openDisputes);
+  setTile("stat-open-reports", openReports);
+  setTile("stat-published-services", publishedServices);
+  setTile("stat-open-opportunities", openOpportunities);
 }
 
 function setTile(id, value) {

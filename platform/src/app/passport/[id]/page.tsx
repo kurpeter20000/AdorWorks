@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
+import { verifySession } from "@/lib/dal/session";
+import { ReportButton } from "@/components/report-button";
 
 export const metadata: Metadata = { title: "AdorWorks Passport" };
 
@@ -15,6 +17,7 @@ const TIER_LABEL: Record<string, string> = {
 export default async function PublicPassportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
+  const session = await verifySession();
 
   // No requireSession/requireRole here on purpose — this page must be
   // readable by a signed-out visitor. Reads the column-limited
@@ -111,6 +114,11 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
                 Portfolio
               </a>
             )}
+          </div>
+        )}
+        {session && (
+          <div className="mt-4 border-t border-slate/10 pt-3">
+            <ReportButton targetType="talent_profile" targetId={profile.id} />
           </div>
         )}
       </div>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Engagements — AdorWorks Staff</title>
+<title>Reports — AdorWorks Staff</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="../img/adorworks-mark.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,8 +35,8 @@
     <a href="organisations.html">Organisations</a>
     <a href="opportunities.html">Opportunities</a>
     <a href="services.html">Services</a>
-    <a href="reports.html">Reports</a>
-    <a href="engagements.html" aria-current="page">Engagements</a>
+    <a href="reports.html" aria-current="page">Reports</a>
+    <a href="engagements.html">Engagements</a>
     <a href="contracts.html">Contracts</a>
     <a href="assisted-onboarding.html">Assisted onboarding</a>
     <a href="people.html">People</a>
@@ -46,26 +46,24 @@
 <main id="main" class="staff-main">
   <div class="container">
     <div class="staff-page-header">
-      <h1>Engagements</h1>
+      <h1>Reports</h1>
     </div>
-    <p class="muted max-65ch">Delivery tracking, milestones, finance records (manual tracking only), reviews and disputes — everything for one confirmed piece of work in one place.</p>
+    <p class="staff-hint">Listings and profiles flagged as spam, scams, or otherwise abusive by talent or employers.</p>
 
     <div class="filter-bar">
-      <span class="filter-chip" data-status-filter="" aria-pressed="true">All</span>
-      <span class="filter-chip" data-status-filter="proposed" aria-pressed="false">Proposed</span>
-      <span class="filter-chip" data-status-filter="contracted" aria-pressed="false">Contracted</span>
-      <span class="filter-chip" data-status-filter="active" aria-pressed="false">Active</span>
-      <span class="filter-chip" data-status-filter="completed" aria-pressed="false">Completed</span>
-      <span class="filter-chip" data-status-filter="disputed" aria-pressed="false">Disputed</span>
-      <span class="filter-chip" data-status-filter="cancelled" aria-pressed="false">Cancelled</span>
+      <span class="filter-chip" data-status-filter="open" aria-pressed="true">Open</span>
+      <span class="filter-chip" data-status-filter="reviewed" aria-pressed="false">Reviewed</span>
+      <span class="filter-chip" data-status-filter="dismissed" aria-pressed="false">Dismissed</span>
+      <span class="filter-chip" data-status-filter="actioned" aria-pressed="false">Actioned</span>
+      <span class="filter-chip" data-status-filter="" aria-pressed="false">All</span>
     </div>
 
     <div class="staff-table-wrap">
       <table class="staff-table">
         <thead>
-          <tr><th>Organisation</th><th>Talent</th><th>Contract type</th><th>Status</th><th>Created</th></tr>
+          <tr><th>Target</th><th>Reason</th><th>Reporter</th><th>Status</th><th>Filed</th></tr>
         </thead>
-        <tbody id="engagements-body">
+        <tbody id="reports-body">
           <tr><td colspan="5" class="staff-empty">Loading…</td></tr>
         </tbody>
       </table>
@@ -74,6 +72,6 @@
 </main>
 
 <script type="module" src="js/config.js"></script>
-<script type="module" src="js/engagements.js"></script>
+<script type="module" src="js/reports.js"></script>
 </body>
 </html>

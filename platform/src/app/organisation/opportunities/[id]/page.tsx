@@ -152,10 +152,17 @@ export default async function OpportunityDetailPage({
       )}
 
       <div className="mt-8">
-        <h2 className="font-bold text-midnight">Applicants</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-bold text-midnight">Applicants</h2>
+          {opportunity.shortlisting_mode === "self_service" && (
+            <Link href={`/organisation/opportunities/${opportunity.id}/find-talent`} className="text-xs font-semibold text-violet underline">
+              Find talent
+            </Link>
+          )}
+        </div>
         <p className="mt-1 text-xs text-slate">
           {opportunity.shortlisting_mode === "self_service"
-            ? "You're shortlisting this one yourself — every applicant appears below as they apply."
+            ? "You're shortlisting this one yourself — every applicant appears below as they apply, or search and add candidates directly."
             : "Only shows once AdorWorks staff have shortlisted an applicant — this is the same curated-shortlist review every opportunity goes through."}
         </p>
 

@@ -104,3 +104,32 @@ export async function setApplicationStage(
   revalidatePath(`/organisation/opportunities/${opportunityId}`);
   return {};
 }
+
+/**
+ * Stage 4: employer self-service talent search (0046) — an org member
+ * adding a candidate they found themselves directly to their own
+ * self-service opportunity's shortlist. source = 'matched' (same
+ * provenance value staff already use for a non-self-initiated
+ * application) and stage lands straight at 'shortlisted', not
+ * 'submitted' — unlike the staff path, there's no reveal step to skip
+ * since the employer is choosing this themselves. applications_insert's
+ * RLS (0046) is what actually restricts this to the org's own
+ * self-service opportunities; the unique(opportunity_id, talent_id)
+ * constraint turns an accidental double-add into a friendly no-op error.
+ */
+export async function addCandidateToShortlist(opportunityId: string, talentId: string): Promise<{ error?: string }> {
+  await requireRole(...CLIENT_ROLES);
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("applications")
+    .insert({ opportunity_id: opportunityId, talent_id: talentId, source: "matched", stage: "shortlisted" });
+  if (error) {
+    if (error.code === "23505") return { error: "Already added to this shortlist." };
+    return { error: error.message };
+  }
+
+  revalidatePath(`/organisation/opportunities/${opportunityId}`);
+  revalidatePath(`/organisation/opportunities/${opportunityId}/find-talent`);
+  return {};
+}
