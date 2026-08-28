@@ -1,10 +1,11 @@
 # Stage 8 — Dashboard Frontend, Intelligence and Marketplace Health
 
-Status: **implemented, gap-checked and corrected** (commits `34168a2`,
-`d4bf56f`, `70f50d2`). Nav-shell shape (persistent top navbar vs sidebar
-vs none) was a direct product decision: top navbar, chosen for being
-simpler to keep responsive/low-data than a sidebar, and consistent with
-the app's existing mobile-friendly card layouts.
+Status: **implemented, gap-checked twice and corrected, verified against
+the literal approval gate** (commits `34168a2`, `d4bf56f`, `70f50d2`,
+`2568d9e`). Nav-shell shape (persistent top navbar vs sidebar vs none)
+was a direct product decision: top navbar, chosen for being simpler to
+keep responsive/low-data than a sidebar, and consistent with the app's
+existing mobile-friendly card layouts.
 
 ## What this delivered
 
@@ -69,6 +70,36 @@ actually support:
    "couldn't load your full picture" notice instead of confidently
    asserting an empty state on top of a failed read.
 
+## Second verification pass — two more bugs found and fixed (`2568d9e`)
+
+After the first round of fixes, a second pass re-checked the stage
+against its exact, literal approval gate line by line (rather than a
+general review) and found two further bugs the first pass missed —
+both directly under "Employers can act on hiring priorities":
+
+1. **The employer's "Offers awaiting a response" tile linked to `/offers`,
+   which is `requireRole("talent")`-only.** There is no employer-facing
+   offers list anywhere in the app — every employer who clicked this
+   tile was bounced straight back to `/dashboard?error=forbidden`. Now
+   points to `/organisation`, where an offer's status is actually visible
+   per-opportunity, matching the "Applicants awaiting review" tile beside
+   it.
+2. **`contracts/[id]/page.tsx` still gated visibility on
+   `organisations.representative_id` only**, even after fix #2 above
+   widened the *list* page to any org member. A team member could now see
+   a contract in their list, then hit a hard 404 clicking into it — even
+   though `milestones`/`payment_events`/`disputes` RLS all key off
+   `is_contract_participant()`, which already treats any org member as a
+   participant for read access (0007). Fixed by widening only the page's
+   visibility gate to match what RLS already grants; every action gate
+   below it (payment checkout, deliverable review, dispute raising) stays
+   representative-only, exactly as before — a pure visibility fix, not a
+   new financial permission. Broader team-member authority over contract
+   actions (paying a milestone, raising a dispute) remains a deliberately
+   narrower, representative-only permission, consistent with the same
+   restriction already on `sendOffer` — extending it would be a real
+   product decision for a future stage, not something to fold in here.
+
 ## Deliberate, honest scope choices (not gaps — decisions)
 
 - **Operations' primary workspace stays the static staff console**, not
@@ -109,6 +140,22 @@ existing tables and RLS policies. No schema changes.
 ## Tests
 
 Platform: 52/52. Backend: 24/24. Full production build passes.
+
+## Approval gate — verified
+
+A final pass checked the stage against its exact six-item approval gate
+(not a general review) on the post-fix code:
+
+- all dashboard data is real and permissioned — **pass**
+- Talent can discover and progress toward work — **pass**
+- Employers can act on hiring priorities — **pass** (after `2568d9e`; see
+  above — this criterion is what both second-pass bugs were found under)
+- Operations can manage trust, queues and marketplace health — **pass**
+- responsive, accessible and failure states are complete (new surfaces) — **pass**
+- dashboard polish does not hide unfinished Stage 1-7 workflows — **pass**,
+  with the caveat that the payment flow a "Milestones ready to pay" tile
+  points to is fully reachable and functional for the org representative,
+  narrower (by design, see above) for other team members
 
 ## Known gap
 
