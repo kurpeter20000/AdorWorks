@@ -10,4 +10,4 @@
   for MTN MoMo/m-Gurush in the platform app (see platform/.env.local.example)
   and for Resend email — real scaffolding, not a fabricated integration.
 */
-window.ADORWORKS_GA_MEASUREMENT_ID = "";
+window.ADORWORKS_GA_MEASUREMENT_ID = "G-9QJ10JJFKP";
