@@ -36,6 +36,7 @@ export const OPPORTUNITY_STATES = {
   rejected: { label: "Not approved", tone: "danger", terminal: true },
   changes_required: { label: "Changes requested", tone: "warning" },
   paused: { label: "Paused", tone: "neutral" },
+  expired: { label: "Expired", tone: "neutral", terminal: true },
 } as const satisfies Record<OpportunityStatus, StateDefinition>;
 
 export const TALENT_SERVICE_STATES = {

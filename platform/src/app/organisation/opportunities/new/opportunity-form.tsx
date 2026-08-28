@@ -5,6 +5,7 @@ import { createOpportunity, resubmitOpportunity } from "@/lib/actions/organisati
 import type { FormState } from "@/lib/actions/auth";
 import type { OpportunityRow, ServicePackageRow } from "@/lib/database.types";
 import { SkillsInput } from "@/components/skills-input";
+import { ENGAGEMENT_TYPE_LABEL, PAYMENT_BASIS_LABEL, WORK_MODE_LABEL } from "@/lib/domain/taxonomy";
 
 const initialState: FormState = {};
 
@@ -37,6 +38,50 @@ const FIELD_STEP: Record<string, number> = {
   compensationAmount: 2,
 };
 
+interface PreviewSnapshot {
+  title: string;
+  category: string;
+  brief: string;
+  skills: string;
+  location: string;
+  workMode: string;
+  engagementType: string;
+  paymentBasis: string;
+  compensationAmount: string;
+  compensationMin: string;
+  compensationMax: string;
+  currency: string;
+}
+
+function readSnapshot(form: HTMLFormElement): PreviewSnapshot {
+  const fd = new FormData(form);
+  const get = (name: string) => String(fd.get(name) ?? "");
+  return {
+    title: get("title"),
+    category: get("category"),
+    brief: get("brief"),
+    skills: get("skills"),
+    location: get("location"),
+    workMode: get("workMode"),
+    engagementType: get("engagementType"),
+    paymentBasis: get("paymentBasis"),
+    compensationAmount: get("compensationAmount"),
+    compensationMin: get("compensationMin"),
+    compensationMax: get("compensationMax"),
+    currency: get("currency"),
+  };
+}
+
+function formatPreviewCompensation(p: PreviewSnapshot) {
+  const currency = p.currency || "SSP";
+  if (p.compensationAmount) return `${currency} ${Number(p.compensationAmount).toLocaleString()}`;
+  if (p.compensationMin && p.compensationMax) {
+    return `${currency} ${Number(p.compensationMin).toLocaleString()}–${Number(p.compensationMax).toLocaleString()}`;
+  }
+  if (p.paymentBasis === "negotiable") return "Negotiable";
+  return "Paid — details on application";
+}
+
 export function OpportunityForm({
   organisationId,
   servicePackages,
@@ -59,9 +104,19 @@ export function OpportunityForm({
   const [type, setType] = useState<string>(opportunity?.type ?? "project");
   const [servicePackageId, setServicePackageId] = useState(opportunity?.service_package_id ?? "");
   const [step, setStep] = useState(0);
+  const [preview, setPreview] = useState<PreviewSnapshot | null>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const briefRef = useRef<HTMLTextAreaElement>(null);
   const categoryRef = useRef<HTMLSelectElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function goNext() {
+    const next = step + 1;
+    if (next === STEPS.length - 1 && formRef.current) {
+      setPreview(readSnapshot(formRef.current));
+    }
+    setStep(next);
+  }
 
   // Jump back to whichever step has the error, the moment a new failed
   // submission result arrives — done during render (not an effect) per
@@ -110,7 +165,7 @@ export function OpportunityForm({
   const erroredFields = Object.keys(FIELD_STEP).filter((f) => state.errors?.[f]);
 
   return (
-    <form action={formAction} className="mt-6 space-y-4">
+    <form ref={formRef} action={formAction} className="mt-6 space-y-4">
       <ol className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate">
         {STEPS.map((label, i) => (
           <li key={label} className={i === step ? "text-violet" : undefined}>
@@ -500,6 +555,45 @@ export function OpportunityForm({
           Use Back to review any step. Submitting sends this {opportunity ? "back to" : "to"} AdorWorks staff for
           review.
         </p>
+        {preview && (
+          <div className="rounded-xl border border-slate/15 bg-white p-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate">
+              Preview — roughly how this will look to talent
+            </p>
+            <div className="mt-2 flex items-start justify-between gap-4">
+              <p className="font-bold text-midnight">{preview.title || "(untitled)"}</p>
+              <span className="whitespace-nowrap text-sm font-semibold text-teal-ink">
+                {formatPreviewCompensation(preview)}
+              </span>
+            </div>
+            {preview.brief && <p className="mt-2 line-clamp-3 text-sm text-slate">{preview.brief}</p>}
+            {preview.skills && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {preview.skills
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+                  .slice(0, 6)
+                  .map((s) => (
+                    <span key={s} className="rounded-full bg-cloud px-2.5 py-1 text-xs text-slate">
+                      {s}
+                    </span>
+                  ))}
+              </div>
+            )}
+            <p className="mt-3 text-xs text-slate">
+              {[
+                CATEGORY_LABEL[preview.category] ?? preview.category,
+                preview.location,
+                WORK_MODE_LABEL[preview.workMode as keyof typeof WORK_MODE_LABEL],
+                ENGAGEMENT_TYPE_LABEL[preview.engagementType as keyof typeof ENGAGEMENT_TYPE_LABEL],
+                PAYMENT_BASIS_LABEL[preview.paymentBasis as keyof typeof PAYMENT_BASIS_LABEL],
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          </div>
+        )}
         {erroredFields.length > 0 && (
           <div className="rounded-lg bg-coral/10 px-4 py-3 text-sm text-coral">
             <p className="font-semibold">Fix these before submitting:</p>
@@ -530,11 +624,7 @@ export function OpportunityForm({
           <span />
         )}
         {step < STEPS.length - 1 ? (
-          <button
-            type="button"
-            onClick={() => setStep((s) => s + 1)}
-            className="rounded-lg bg-violet px-4 py-2 text-sm font-bold text-white"
-          >
+          <button type="button" onClick={goNext} className="rounded-lg bg-violet px-4 py-2 text-sm font-bold text-white">
             Next: {STEPS[step + 1]}
           </button>
         ) : (

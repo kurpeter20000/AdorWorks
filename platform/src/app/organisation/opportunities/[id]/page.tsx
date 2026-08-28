@@ -5,6 +5,8 @@ import { StatusBadge } from "@/components/status-badge";
 import { requireOrganisationMembership } from "@/lib/dal/organisation";
 import { APPLICATION_STATES, OPPORTUNITY_STATES } from "@/lib/domain/states";
 import { createClient } from "@/lib/supabase/server";
+import { AppealRejectionForm } from "./appeal-rejection-form";
+import { CloseOpportunityActions } from "./close-opportunity-actions";
 import { SendOfferForm } from "./send-offer-form";
 import { ShortlistingModeForm } from "./shortlisting-mode-form";
 import { ShortlistActions } from "./shortlist-actions";
@@ -89,10 +91,23 @@ export default async function OpportunityDetailPage({
       <ShortlistingModeForm opportunityId={opportunity.id} mode={opportunity.shortlisting_mode} />
 
       {opportunity.status === "rejected" && opportunity.rejection_reason && (
-        <p className="mt-4 rounded-lg bg-coral/10 px-4 py-3 text-sm text-coral">
-          Not approved: {opportunity.rejection_reason}
+        <div className="mt-4 rounded-lg bg-coral/10 px-4 py-3 text-sm text-coral">
+          <p>Not approved: {opportunity.rejection_reason}</p>
+          {opportunity.appeal_note ? (
+            <p className="mt-2 text-midnight">Appeal submitted: {opportunity.appeal_note}</p>
+          ) : (
+            <AppealRejectionForm opportunityId={opportunity.id} />
+          )}
+        </div>
+      )}
+
+      {opportunity.status === "expired" && (
+        <p className="mt-4 rounded-lg bg-slate/10 px-4 py-3 text-sm text-slate">
+          This opportunity expired after its application deadline passed.
         </p>
       )}
+
+      {opportunity.status === "open" && <CloseOpportunityActions opportunityId={opportunity.id} />}
 
       {opportunity.status === "changes_required" && (
         <div className="mt-4 rounded-lg bg-violet/10 px-4 py-3 text-sm text-midnight">

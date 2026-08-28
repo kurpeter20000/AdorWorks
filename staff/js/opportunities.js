@@ -55,6 +55,8 @@ function wireCreateForm() {
       brief: document.getElementById("create-brief").value || undefined,
       category: document.getElementById("create-category").value || undefined,
       skills: skills.length ? skills : undefined,
+      engagement_type: document.getElementById("create-engagement-type").value,
+      payment_basis: document.getElementById("create-payment-basis").value,
       location: document.getElementById("create-location").value || undefined,
       currency: document.getElementById("create-currency").value || undefined,
     };
@@ -220,7 +222,7 @@ async function loadSuggestedCandidates(oppId, opportunity, detailRow) {
   }
 }
 
-var OPP_STATUSES = ["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected", "changes_required", "paused"];
+var OPP_STATUSES = ["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected", "changes_required", "paused", "expired"];
 
 function renderDetailShell(row) {
   var statusOptions = OPP_STATUSES
@@ -237,6 +239,7 @@ function renderDetailShell(row) {
     "<dt>Location</dt><dd>" + escapeHtml(row.location || "—") + "</dd>" +
     "<dt>Budget</dt><dd>" + escapeHtml(row.budget_min || "—") + "–" + escapeHtml(row.budget_max || "—") + " " + escapeHtml(row.currency || "") + "</dd>" +
     (row.status === "rejected" ? "<dt>Rejection reason</dt><dd>" + escapeHtml(row.rejection_reason || "—") + "</dd>" : "") +
+    (row.status === "rejected" && row.appeal_note ? "<dt>Appeal</dt><dd>" + escapeHtml(row.appeal_note) + "</dd>" : "") +
     (row.status === "changes_required" || row.status === "paused"
       ? "<dt>" + (row.status === "paused" ? "Pause note" : "Requested changes") + "</dt><dd>" + escapeHtml(row.status_note || "—") + "</dd>"
       : "") +
@@ -262,6 +265,12 @@ function renderDetailShell(row) {
       ? '<div class="form-grid form-grid-2 mt-1">' +
         '<input type="text" id="pause-note-' + row.id + '" placeholder="Reason for pausing (optional)">' +
         '<button type="button" class="btn btn-secondary" data-pause="' + row.id + '">Pause</button>' +
+        "</div>"
+      : "") +
+    (row.status === "rejected"
+      ? '<div class="form-grid form-grid-2 mt-1">' +
+        '<input type="text" id="request-changes-note-' + row.id + '" placeholder="What needs to change to reopen this (required)">' +
+        '<button type="button" class="btn btn-secondary" data-request-changes="' + row.id + '">Reopen for changes</button>' +
         "</div>"
       : "") +
     '<div class="form-status" id="detail-status-' + row.id + '" role="status"></div>' +

@@ -20,6 +20,7 @@ export function ServicesList({ services }: { services: TalentServiceRow[] }) {
   const router = useRouter();
   const [addingNew, setAddingNew] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [previewId, setPreviewId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,6 +65,13 @@ export function ServicesList({ services }: { services: TalentServiceRow[] }) {
                   )}
                 </div>
                 <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewId(previewId === service.id ? null : service.id)}
+                    className="text-xs font-semibold text-violet underline"
+                  >
+                    {previewId === service.id ? "Hide preview" : "Preview"}
+                  </button>
                   {service.status === "draft" && (
                     <>
                       <button
@@ -133,6 +141,29 @@ export function ServicesList({ services }: { services: TalentServiceRow[] }) {
                   )}
                 </div>
               </div>
+              {previewId === service.id && (
+                <div className="mt-3 rounded-lg border border-slate/15 bg-cloud/40 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate">
+                    Preview — how this looks on Browse Services
+                  </p>
+                  <div className="mt-2 flex items-start justify-between gap-4">
+                    <p className="font-bold text-midnight">{service.title || "(untitled)"}</p>
+                    <span className="whitespace-nowrap text-sm font-semibold text-teal-ink">
+                      {service.price
+                        ? `${service.currency || "SSP"} ${service.price.toLocaleString()}`
+                        : service.payment_basis === "negotiable"
+                          ? "Negotiable"
+                          : "Price on request"}
+                    </span>
+                  </div>
+                  {service.problem_solved && <p className="mt-2 text-sm text-slate">{service.problem_solved}</p>}
+                  <p className="mt-3 text-xs text-slate">
+                    {[service.category ? CATEGORY_LABEL[service.category] : null, service.turnaround]
+                      .filter(Boolean)
+                      .join(" · ") || "Not enough detail yet to preview fully."}
+                  </p>
+                </div>
+              )}
               {editingId === service.id && (
                 <ServiceForm existing={service} onSaved={() => setEditingId(null)} />
               )}

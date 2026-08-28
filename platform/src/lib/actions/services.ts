@@ -151,8 +151,33 @@ async function transitionService(serviceId: string, status: TalentServiceRow["st
   return {};
 }
 
-/** draft -> pending_review: hands a draft to staff for review. */
+/**
+ * draft -> pending_review: hands a draft to staff for review. Checks
+ * completeness here first for a friendly, specific error message —
+ * guard_talent_services_update() (0043) enforces the same requirement at
+ * the database layer regardless, so this is a UX nicety, not the real
+ * security boundary.
+ */
 export async function submitService(serviceId: string): Promise<{ error?: string }> {
+  await requireRole("talent");
+  const supabase = await createClient();
+  const { data: service } = await supabase
+    .from("talent_services")
+    .select("category, deliverables, payment_basis, price")
+    .eq("id", serviceId)
+    .maybeSingle();
+  if (!service) return { error: "Service not found." };
+
+  const missing = [
+    !service.category && "a category",
+    !service.deliverables && "deliverables",
+    !service.payment_basis && "a pricing basis",
+    !service.price && "a price",
+  ].filter(Boolean);
+  if (missing.length > 0) {
+    return { error: `Add ${missing.join(", ")} before submitting for review.` };
+  }
+
   return transitionService(serviceId, "pending_review");
 }
 

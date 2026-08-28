@@ -46,7 +46,7 @@ export type WorkMode = "remote" | "on_site" | "hybrid" | "any";
 export type EvidenceType = "portfolio" | "identity" | "reference" | "assessment";
 export type EvidenceStatus = "pending" | "approved" | "rejected";
 export type OpportunityType = "service" | "project" | "contract" | "full_time" | "squad";
-export type OpportunityStatus = "draft" | "pending_review" | "open" | "filled" | "closed" | "cancelled" | "rejected" | "changes_required" | "paused";
+export type OpportunityStatus = "draft" | "pending_review" | "open" | "filled" | "closed" | "cancelled" | "rejected" | "changes_required" | "paused" | "expired";
 export type EngagementType =
   | "freelance"
   | "fixed_term_contract"
@@ -205,6 +205,8 @@ export type OpportunityRow = {
   number_of_openings: number;
   rejection_reason: string | null;
   status_note: string | null;
+  appeal_note: string | null;
+  appealed_at: string | null;
   service_package_id: string | null;
   shortlisting_mode: "self_service" | "staff_assisted";
   created_at: string;

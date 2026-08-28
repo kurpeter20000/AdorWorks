@@ -137,7 +137,7 @@ var STATUS_TONE = {
   new: "info", in_review: "warning", converted: "success", archived: "neutral",
   pending: "warning", verified: "success", rejected: "danger", suspended: "danger",
   draft: "neutral", pending_review: "warning", open: "success", filled: "info", closed: "neutral", cancelled: "danger",
-  changes_required: "warning", paused: "neutral", published: "success", removed: "neutral",
+  changes_required: "warning", paused: "neutral", published: "success", removed: "neutral", expired: "neutral",
   submitted: "neutral", shortlisted: "info", interviewing: "info", offered: "warning", accepted: "success", withdrawn: "neutral",
   proposed: "neutral", contracted: "info", active: "success", completed: "success", disputed: "danger",
   approved: "success",

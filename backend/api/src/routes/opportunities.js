@@ -9,7 +9,7 @@ opportunitiesRouter.use(requireAuth, requireStaff);
 
 const listQuerySchema = z.object({
   status: z
-    .enum(["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected", "changes_required", "paused"])
+    .enum(["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected", "changes_required", "paused", "expired"])
     .optional(),
   organisation_id: z.string().uuid().optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),
@@ -54,10 +54,24 @@ const createSchema = z.object({
   type: z.enum(["service", "project", "contract", "full_time", "squad"]),
   title: z.string().min(1).max(200),
   brief: z.string().max(8000).optional(),
-  category: z.enum(["creative_media", "digital_technology", "business_project_support"]).optional(),
-  skills: z.array(z.string()).optional(),
+  // category/skills/engagement_type/payment_basis are required, not
+  // optional, because this endpoint always inserts as 'pending_review'
+  // (0043's guard_opportunities_insert now rejects an incomplete row at
+  // that status) — matching the same completeness bar the self-service
+  // employer form has always enforced.
+  category: z.enum(["creative_media", "digital_technology", "business_project_support"]),
+  skills: z.array(z.string()).min(1, "At least one skill is required."),
   location: z.string().max(200).optional(),
   work_mode: z.enum(["remote", "on_site", "hybrid", "any"]).optional(),
+  engagement_type: z.enum([
+    "freelance",
+    "fixed_term_contract",
+    "full_time",
+    "internship",
+    "apprenticeship",
+    "managed_service",
+  ]),
+  payment_basis: z.enum(["fixed", "milestone", "hourly", "daily", "monthly", "negotiable"]),
   budget_min: z.number().nonnegative().optional(),
   budget_max: z.number().nonnegative().optional(),
   currency: z.string().max(10).optional(),
@@ -67,7 +81,9 @@ const createSchema = z.object({
 });
 
 // POST /api/opportunities — staff creating/logging a brief directly
-// (most will instead arrive via POST /api/intake/:id/convert-employer).
+// (most will instead arrive via POST /api/intake/:id/convert-employer,
+// which inserts as 'draft' rather than needing this endpoint's full
+// completeness bar up front).
 opportunitiesRouter.post(
   "/",
   asyncRoute(async (req, res) => {
@@ -84,7 +100,7 @@ opportunitiesRouter.post(
 
 const updateSchema = createSchema.partial().extend({
   status: z
-    .enum(["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected", "changes_required", "paused"])
+    .enum(["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected", "changes_required", "paused", "expired"])
     .optional(),
 });
 

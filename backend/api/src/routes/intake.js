@@ -180,7 +180,12 @@ intakeRouter.post(
 // Provisions an account for the organisation's representative, creates
 // the organisation (verification_status stays 'pending' — this does NOT
 // verify them, see Blueprint §5.4), and drafts an opportunity from the
-// brief for staff to review before it's approved/published.
+// brief. Inserted as 'draft', not 'pending_review' — a raw intake brief
+// rarely has engagement_type/payment_basis/a budget, all of which 0043's
+// guard_opportunities_insert now requires before anything can reach
+// pending_review. The newly-provisioned representative finishes it via
+// the ordinary Project Brief completion flow
+// (/organisation/opportunities/[id]/edit) once they sign in.
 intakeRouter.post(
   "/:id/convert-employer",
   asyncRoute(async (req, res) => {
@@ -230,7 +235,7 @@ intakeRouter.post(
         skills: splitList(p.skills_category),
         location: p.location_mode || null,
         currency: p.currency || "SSP",
-        status: "pending_review",
+        status: "draft",
         created_by: req.user.id,
       })
       .select()

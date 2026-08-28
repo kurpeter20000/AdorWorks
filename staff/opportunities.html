@@ -80,7 +80,7 @@
           <div class="form-grid form-grid-2">
             <div>
               <label for="create-category">Category</label>
-              <select id="create-category">
+              <select id="create-category" required>
                 <option value="">—</option>
                 <option value="creative_media">Creative &amp; media</option>
                 <option value="digital_technology">Digital &amp; technology</option>
@@ -88,8 +88,32 @@
               </select>
             </div>
             <div>
-              <label for="create-skills">Skills (comma-separated)</label>
-              <input type="text" id="create-skills">
+              <label for="create-skills">Skills (comma-separated, at least one)</label>
+              <input type="text" id="create-skills" required>
+            </div>
+          </div>
+          <div class="form-grid form-grid-2">
+            <div>
+              <label for="create-engagement-type">Engagement type</label>
+              <select id="create-engagement-type" required>
+                <option value="freelance">Freelance</option>
+                <option value="fixed_term_contract">Fixed-term contract</option>
+                <option value="full_time">Full-time</option>
+                <option value="internship">Internship</option>
+                <option value="apprenticeship">Apprenticeship</option>
+                <option value="managed_service">Managed service</option>
+              </select>
+            </div>
+            <div>
+              <label for="create-payment-basis">Paid</label>
+              <select id="create-payment-basis" required>
+                <option value="fixed">Fixed price</option>
+                <option value="milestone">Per milestone</option>
+                <option value="hourly">Hourly</option>
+                <option value="daily">Daily</option>
+                <option value="monthly">Monthly</option>
+                <option value="negotiable">Negotiable</option>
+              </select>
             </div>
           </div>
           <div class="form-grid form-grid-2">
@@ -104,7 +128,7 @@
           </div>
           <div class="form-grid form-grid-2">
             <div>
-              <label for="create-budget-min">Budget min</label>
+              <label for="create-budget-min">Budget min (or max — at least one is required)</label>
               <input type="number" id="create-budget-min" min="0">
             </div>
             <div>
@@ -125,6 +149,7 @@
       <span class="filter-chip" data-status-filter="paused" aria-pressed="false">Paused</span>
       <span class="filter-chip" data-status-filter="filled" aria-pressed="false">Filled</span>
       <span class="filter-chip" data-status-filter="closed" aria-pressed="false">Closed</span>
+      <span class="filter-chip" data-status-filter="expired" aria-pressed="false">Expired</span>
       <span class="filter-chip" data-status-filter="rejected" aria-pressed="false">Rejected</span>
       <span class="filter-chip" data-status-filter="" aria-pressed="false">All</span>
     </div>

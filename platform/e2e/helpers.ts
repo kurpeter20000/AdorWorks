@@ -151,6 +151,101 @@ export async function seedContract(talentId: string) {
   };
 }
 
+/**
+ * A real, RLS-scoped client authenticated as a test user — for asserting
+ * the database boundary (RLS + guard triggers) directly rejects an
+ * illegal request, the same way a browser client bypassing the app's own
+ * UI/server actions would be rejected. This is a stronger check than
+ * driving the browser: it proves the boundary holds regardless of which
+ * client makes the request, not just that our own UI doesn't offer the
+ * button.
+ */
+export async function createUserClient(email: string, password = TEST_PASSWORD) {
+  const client = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { error } = await client.auth.signInWithPassword({ email, password });
+  if (error) throw new Error(`Failed to sign in test user ${email}: ${error.message}`);
+  return client;
+}
+
+/** A fresh organisation with its own representative, for tenant-isolation tests. */
+export async function createTestOrganisation(rolePrefix: string) {
+  const rep = await createTestUser(rolePrefix, "individual_client");
+  const org = await mustInsert(
+    admin.from("organisations").insert({ name: `E2E Org ${rolePrefix} ${Date.now()}`, representative_id: rep.id }).select("id").single(),
+    "organisation"
+  );
+  return {
+    id: org.id as string,
+    rep,
+    async cleanup() {
+      await admin.from("organisations").delete().eq("id", org.id);
+      await deleteTestUser(rep.id);
+    },
+  };
+}
+
+/** Defaults to a complete, review-ready opportunity — override individual fields to test a specific gap. */
+export async function seedOpportunity(organisationId: string, overrides: Record<string, unknown> = {}) {
+  const opportunity = await mustInsert<{ id: string }>(
+    admin
+      .from("opportunities")
+      .insert({
+        organisation_id: organisationId,
+        type: "project",
+        title: `E2E Opportunity ${Date.now()}`,
+        category: "digital_technology",
+        skills: ["testing"],
+        work_mode: "remote",
+        engagement_type: "freelance",
+        payment_basis: "fixed",
+        compensation_amount: 100,
+        currency: "SSP",
+        visibility: "public",
+        status: "pending_review",
+        ...overrides,
+      })
+      .select("id")
+      .single(),
+    "opportunity"
+  );
+  return {
+    id: opportunity.id,
+    async cleanup() {
+      await admin.from("opportunities").delete().eq("id", opportunity.id);
+    },
+  };
+}
+
+/** Defaults to a complete, review-ready talent_services row — override individual fields to test a specific gap. */
+export async function seedTalentService(talentId: string, overrides: Record<string, unknown> = {}) {
+  const service = await mustInsert<{ id: string }>(
+    admin
+      .from("talent_services")
+      .insert({
+        talent_id: talentId,
+        title: `E2E Service ${Date.now()}`,
+        category: "digital_technology",
+        deliverables: "A thing worth paying for",
+        payment_basis: "fixed",
+        price: 50,
+        currency: "SSP",
+        status: "pending_review",
+        ...overrides,
+      })
+      .select("id")
+      .single(),
+    "talent_service"
+  );
+  return {
+    id: service.id,
+    async cleanup() {
+      await admin.from("talent_services").delete().eq("id", service.id);
+    },
+  };
+}
+
 export async function loginAs(page: Page, email: string, password = TEST_PASSWORD) {
   await page.goto("/login");
   await page.getByLabel(/email/i).fill(email);

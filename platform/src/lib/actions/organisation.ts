@@ -534,3 +534,67 @@ export async function submitVerificationInfo(
   revalidatePath("/organisation");
   return {};
 }
+
+/**
+ * Appeal for a rejected opportunity (0044) — 'rejected' stays terminal by
+ * itself (see resubmitOpportunity's comment), so this deliberately does
+ * NOT change status; it just records a note for staff, who can then
+ * choose to reopen it via the existing "Request changes" action (already
+ * usable on any status at the trigger level — only the staff console UI
+ * was hiding it for rejected rows) or uphold the rejection. Plain client:
+ * updating a non-status column on the org's own row is already permitted
+ * by is_org_write_member() regardless of the row's current status.
+ */
+export async function appealOpportunityRejection(
+  opportunityId: string,
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  await requireRole(...CLIENT_ROLES);
+
+  const note = String(formData.get("note") || "").trim();
+  if (note.length < 10) {
+    return { errors: { note: ["Say a bit more about why you think this should be reconsidered."] } };
+  }
+
+  const supabase = await createClient();
+  const { data: existing } = await supabase.from("opportunities").select("status").eq("id", opportunityId).maybeSingle();
+  if (!existing) return { message: "Opportunity not found." };
+  if (existing.status !== "rejected") return { message: "This opportunity isn't in a rejected state." };
+
+  const { error } = await supabase
+    .from("opportunities")
+    .update({ appeal_note: note, appealed_at: new Date().toISOString() })
+    .eq("id", opportunityId);
+  if (error) return { message: `Could not submit this appeal: ${error.message}` };
+
+  revalidatePath(`/organisation/opportunities/${opportunityId}`);
+  return {};
+}
+
+const CLOSE_STATUSES = ["filled", "closed", "cancelled"] as const;
+
+/**
+ * Self-service close/fill/cancel (playbook Stage 3 gap: staff were the
+ * only path to end an opportunity's life other than rejection). None of
+ * these three transitions were ever staff-gated by guard_opportunities_
+ * update() — filled/closed/cancelled sit in the same tier as 'draft' —
+ * so, like resubmitOpportunity, the plain client is enough; no new
+ * trigger or RLS change was needed to allow this.
+ */
+export async function closeOpportunity(
+  opportunityId: string,
+  status: (typeof CLOSE_STATUSES)[number]
+): Promise<FormState> {
+  await requireRole(...CLIENT_ROLES);
+  if (!CLOSE_STATUSES.includes(status)) {
+    return { message: "Not a valid status for this action." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("opportunities").update({ status }).eq("id", opportunityId);
+  if (error) return { message: `Could not update this: ${error.message}` };
+
+  revalidatePath(`/organisation/opportunities/${opportunityId}`);
+  return {};
+}
