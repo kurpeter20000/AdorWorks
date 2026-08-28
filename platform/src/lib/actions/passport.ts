@@ -63,3 +63,26 @@ export async function setTalentAvatar(filePath: string): Promise<FormState> {
   revalidatePath(`/passport/${session.userId}`);
   return {};
 }
+
+/**
+ * Free Trust & Safety orientation (0040/master doc §22). Deliberately not
+ * gated behind any plan or fee — see the master document's own explicit
+ * rule that essential safety learning must never be paywalled.
+ */
+export async function completeSafetyOrientation(): Promise<FormState> {
+  const session = await requireRole("talent");
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("talent_profiles")
+    .update({ safety_orientation_completed_at: new Date().toISOString() })
+    .eq("id", session.userId);
+
+  if (error) {
+    return { message: `Could not save this: ${error.message}` };
+  }
+
+  revalidatePath("/trust-safety");
+  revalidatePath("/dashboard");
+  return {};
+}

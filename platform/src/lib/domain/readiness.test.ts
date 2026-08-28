@@ -11,6 +11,7 @@ describe("talent readiness", () => {
     avatar_path: "abc/def.png",
     verification_tier: "registered" as const,
     public_visible: false,
+    safety_orientation_completed_at: "2026-01-01T00:00:00.000Z",
   };
 
   it("lists every missing field, in a stable order", () => {
@@ -23,6 +24,7 @@ describe("talent readiness", () => {
       avatar_path: null,
       verification_tier: "registered",
       public_visible: false,
+      safety_orientation_completed_at: null,
     });
     expect(result.readiness.complete).toBe(false);
     expect(result.readiness.missing).toEqual([
@@ -32,6 +34,7 @@ describe("talent readiness", () => {
       "Choose a category",
       "Add your location",
       "Add a profile photo",
+      "Complete the free Trust & Safety orientation",
     ]);
   });
 

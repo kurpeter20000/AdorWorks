@@ -118,6 +118,7 @@ export type TalentProfileRow = {
   readiness: Record<string, unknown>;
   verification_tier: VerificationTier;
   public_visible: boolean;
+  safety_orientation_completed_at: string | null;
   created_at: string;
   updated_at: string;
 }

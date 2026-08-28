@@ -27,6 +27,7 @@ const experiences: Record<DashboardKind, Omit<DashboardExperience, "kind">> = {
       { href: "/contracts", label: "Contracts", description: "Deliver work, message clients, and view payments." },
       { href: "/opportunities/saved", label: "Saved", description: "Return to opportunities saved for later." },
       { href: "/onboarding", label: "Onboarding", description: "Complete or review your verification steps." },
+      { href: "/trust-safety", label: "Trust & Safety", description: "Free orientation on staying safe on AdorWorks." },
       { href: "/assistance/request", label: "Request help", description: "Ask for assisted onboarding support." },
     ],
   },

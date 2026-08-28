@@ -30,7 +30,15 @@ const TIER_NEXT_STEP: Record<VerificationTier, string | null> = {
 
 type TalentReadinessInput = Pick<
   TalentProfileRow,
-  "headline" | "bio" | "skills" | "category" | "location" | "avatar_path" | "verification_tier" | "public_visible"
+  | "headline"
+  | "bio"
+  | "skills"
+  | "category"
+  | "location"
+  | "avatar_path"
+  | "verification_tier"
+  | "public_visible"
+  | "safety_orientation_completed_at"
 >;
 
 export function getTalentReadiness(profile: TalentReadinessInput): ReadinessState {
@@ -41,6 +49,7 @@ export function getTalentReadiness(profile: TalentReadinessInput): ReadinessStat
   if (!profile.category) missing.push("Choose a category");
   if (!profile.location) missing.push("Add your location");
   if (!profile.avatar_path) missing.push("Add a profile photo");
+  if (!profile.safety_orientation_completed_at) missing.push("Complete the free Trust & Safety orientation");
 
   const complete = missing.length === 0;
 

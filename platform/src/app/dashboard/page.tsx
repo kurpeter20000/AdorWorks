@@ -44,7 +44,9 @@ export default async function DashboardPage({
   if (dashboardKind === "talent") {
     const { data: talentProfile } = await supabase
       .from("talent_profiles")
-      .select("headline, bio, skills, category, location, avatar_path, verification_tier, public_visible")
+      .select(
+        "headline, bio, skills, category, location, avatar_path, verification_tier, public_visible, safety_orientation_completed_at"
+      )
       .eq("id", session.userId)
       .maybeSingle();
     if (talentProfile) readinessState = getTalentReadiness(talentProfile);
