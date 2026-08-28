@@ -12,6 +12,13 @@ import { createClient } from "@/lib/supabase/server";
  * 'pending' on the new row. Old storage objects are cleaned up
  * best-effort after the row write succeeds — a failed cleanup leaves an
  * orphaned file, not a broken video, so it doesn't block the user.
+ *
+ * Gap-check fix: the video (and thumbnail) are already sitting in
+ * storage by the time this runs — if the row write itself fails, that
+ * upload is genuine garbage (nothing will ever reference it), so it's
+ * cleaned up here rather than left to accumulate. This is different from
+ * the old-video cleanup below: here nothing succeeded yet, so there's no
+ * "don't block the real action" concern — the real action IS this write.
  */
 export async function submitIntroductionVideo(input: {
   videoPath: string;
@@ -43,7 +50,11 @@ export async function submitIntroductionVideo(input: {
     },
     { onConflict: "talent_id" }
   );
-  if (error) return { error: error.message };
+  if (error) {
+    const justUploaded = [input.videoPath, input.thumbnailPath].filter((p): p is string => !!p);
+    await supabase.storage.from("talent-videos").remove(justUploaded);
+    return { error: error.message };
+  }
 
   if (existing) {
     const staleObjects = [existing.video_path, existing.thumbnail_path].filter(
@@ -73,9 +84,18 @@ export async function deleteIntroductionVideo(): Promise<{ error?: string }> {
   const { error } = await supabase.from("talent_introduction_videos").delete().eq("talent_id", session.userId);
   if (error) return { error: error.message };
 
+  // The row is already gone, so the video is fully removed from the
+  // talent's own perspective regardless of what happens next — a storage
+  // cleanup failure here shouldn't be reported as if their delete failed
+  // (it didn't), but gap-check found this was previously swallowed
+  // entirely with no trace anywhere. Logged so it's at least visible
+  // server-side instead of silently accumulating.
   const objects = [existing.video_path, existing.thumbnail_path].filter((p): p is string => !!p);
   if (objects.length > 0) {
-    await supabase.storage.from("talent-videos").remove(objects);
+    const { error: removeError } = await supabase.storage.from("talent-videos").remove(objects);
+    if (removeError) {
+      console.error(`talent-videos cleanup failed for ${session.userId}:`, removeError.message);
+    }
   }
 
   revalidatePath("/passport");
