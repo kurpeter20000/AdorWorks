@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { StatusBadge } from "@/components/status-badge";
 import { requireSession } from "@/lib/dal/session";
+import { getMyOrganisationMembership } from "@/lib/dal/organisation";
 import { CONTRACT_STATES } from "@/lib/domain/states";
 import { createClient } from "@/lib/supabase/server";
 
@@ -19,16 +20,19 @@ export default async function ContractsPage() {
       .eq("talent_id", session.userId)
       .order("started_at", { ascending: false }));
   } else {
-    const { data: org } = await supabase
-      .from("organisations")
-      .select("id")
-      .eq("representative_id", session.userId)
-      .maybeSingle();
-    ({ data: contracts } = org
+    // Gap-check fix: this used to resolve "your org" via
+    // organisations.representative_id only, so an invited (non-
+    // representative) team member always saw "No contracts yet" here even
+    // though RLS would happily let them read their org's real contracts.
+    // getMyOrganisationMembership() is the established pattern every other
+    // employer-side page already uses (organisation_members, not
+    // representative_id) — this page had just never been updated to match.
+    const membership = await getMyOrganisationMembership();
+    ({ data: contracts } = membership
       ? await supabase
           .from("contracts")
           .select("id, status, started_at, completed_at, organisation_id, opportunity_id")
-          .eq("organisation_id", org.id)
+          .eq("organisation_id", membership.org.id)
           .order("started_at", { ascending: false })
       : { data: [] });
   }

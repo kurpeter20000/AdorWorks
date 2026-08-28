@@ -62,6 +62,12 @@ export default async function DashboardPage({
   let recommendedOpportunities: { id: string; title: string; compensationLabel: string; orgName: string }[] = [];
   const talentAttention: { href: string; label: string; count: number; tone: "warning" | "danger" | "info" }[] = [];
   const employerPipeline: { href: string; label: string; count: number; tone: "warning" | "danger" | "info" }[] = [];
+  // Gap-check note: the Today widgets' whole point is asserting an absence
+  // ("nothing needs your attention" / "pipeline caught up") -- a silently
+  // swallowed query error would be indistinguishable from a real empty
+  // state, exactly the failure mode this stage's own staff-console fix
+  // (dashboard.js) was built to avoid. Tracked and surfaced below instead.
+  let todayDataError = false;
 
   if (dashboardKind === "talent") {
     const { data: talentProfile } = await supabase
@@ -77,26 +83,34 @@ export default async function DashboardPage({
     // skill-overlap rule as /opportunities?sort=relevant, see matching.ts)
     // and real, actionable counts. No invented metrics: every number below
     // is a direct query scoped to this talent.
-    const [{ data: openOpportunities }, { data: myApplications }, { data: dismissed }, { count: pendingOffers }, { data: myContracts }, { count: upcomingInterviews }] =
-      await Promise.all([
-        supabase
-          .from("opportunities")
-          .select("id, title, skills, payment_basis, compensation_amount, compensation_min, compensation_max, currency, organisation_id, created_at")
-          .eq("status", "open")
-          .eq("visibility", "public")
-          .order("created_at", { ascending: false })
-          .limit(50),
-        supabase.from("applications").select("opportunity_id").eq("talent_id", session.userId),
-        supabase.from("dismissed_opportunities").select("opportunity_id").eq("talent_id", session.userId),
-        supabase.from("offers").select("id", { count: "exact", head: true }).eq("talent_id", session.userId).eq("status", "sent"),
-        supabase.from("contracts").select("id").eq("talent_id", session.userId),
-        supabase
-          .from("applications")
-          .select("id", { count: "exact", head: true })
-          .eq("talent_id", session.userId)
-          .eq("stage", "interviewing")
-          .gt("interview_scheduled_at", new Date().toISOString()),
-      ]);
+    const [openOppsRes, myApplicationsRes, dismissedRes, offersRes, contractsRes, interviewsRes] = await Promise.all([
+      supabase
+        .from("opportunities")
+        .select("id, title, skills, payment_basis, compensation_amount, compensation_min, compensation_max, currency, organisation_id, created_at")
+        .eq("status", "open")
+        .eq("visibility", "public")
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabase.from("applications").select("opportunity_id").eq("talent_id", session.userId),
+      supabase.from("dismissed_opportunities").select("opportunity_id").eq("talent_id", session.userId),
+      supabase.from("offers").select("id", { count: "exact", head: true }).eq("talent_id", session.userId).eq("status", "sent"),
+      supabase.from("contracts").select("id").eq("talent_id", session.userId),
+      supabase
+        .from("applications")
+        .select("id", { count: "exact", head: true })
+        .eq("talent_id", session.userId)
+        .eq("stage", "interviewing")
+        .gt("interview_scheduled_at", new Date().toISOString()),
+    ]);
+    if (openOppsRes.error || myApplicationsRes.error || dismissedRes.error || offersRes.error || contractsRes.error || interviewsRes.error) {
+      todayDataError = true;
+    }
+    const openOpportunities = openOppsRes.data;
+    const myApplications = myApplicationsRes.data;
+    const dismissed = dismissedRes.data;
+    const pendingOffers = offersRes.count;
+    const myContracts = contractsRes.data;
+    const upcomingInterviews = interviewsRes.count;
 
     const appliedOrDismissed = new Set([
       ...(myApplications ?? []).map((a) => a.opportunity_id),
@@ -105,8 +119,8 @@ export default async function DashboardPage({
     const eligible = (openOpportunities ?? []).filter((o) => !appliedOrDismissed.has(o.id));
     const ranked = rankBySkillOverlap(eligible, talentProfile?.skills ?? []).slice(0, 3);
     if (ranked.length > 0) {
-      const orgIds = [...new Set(ranked.map((o) => o.organisation_id))];
-      const { data: orgs } = await supabase.from("organisations").select("id, name").in("id", orgIds);
+      const { data: orgs, error: orgsError } = await supabase.from("organisations").select("id, name").in("id", [...new Set(ranked.map((o) => o.organisation_id))]);
+      if (orgsError) todayDataError = true;
       const orgNameById = new Map((orgs ?? []).map((o) => [o.id, o.name]));
       recommendedOpportunities = ranked.map((o) => ({
         id: o.id,
@@ -117,23 +131,28 @@ export default async function DashboardPage({
     }
 
     const contractIds = (myContracts ?? []).map((c) => c.id);
-    const { count: revisionCount } =
+    const revisionRes =
       contractIds.length > 0
         ? await supabase
             .from("milestones")
             .select("id", { count: "exact", head: true })
             .in("contract_id", contractIds)
             .eq("status", "revision_requested")
-        : { count: 0 };
+        : { count: 0, error: null };
+    if (revisionRes.error) todayDataError = true;
+    const revisionCount = revisionRes.count;
 
-    if ((pendingOffers ?? 0) > 0) {
-      talentAttention.push({ href: "/offers", label: "Offers awaiting your response", count: pendingOffers!, tone: "warning" });
+    const pendingOffersCount = pendingOffers ?? 0;
+    const revisionCountValue = revisionCount ?? 0;
+    const upcomingInterviewsCount = upcomingInterviews ?? 0;
+    if (pendingOffersCount > 0) {
+      talentAttention.push({ href: "/offers", label: "Offers awaiting your response", count: pendingOffersCount, tone: "warning" });
     }
-    if ((revisionCount ?? 0) > 0) {
-      talentAttention.push({ href: "/contracts", label: "Milestones needing a resubmission", count: revisionCount!, tone: "danger" });
+    if (revisionCountValue > 0) {
+      talentAttention.push({ href: "/contracts", label: "Milestones needing a resubmission", count: revisionCountValue, tone: "danger" });
     }
-    if ((upcomingInterviews ?? 0) > 0) {
-      talentAttention.push({ href: "/applications", label: "Upcoming interviews", count: upcomingInterviews!, tone: "info" });
+    if (upcomingInterviewsCount > 0) {
+      talentAttention.push({ href: "/applications", label: "Upcoming interviews", count: upcomingInterviewsCount, tone: "info" });
     }
   } else if (dashboardKind === "employer") {
     const membership = await getMyOrganisationMembership();
@@ -146,38 +165,70 @@ export default async function DashboardPage({
 
       // Stage 8: hiring-priorities pipeline summary — every count scoped to
       // this org's own opportunities/offers/contracts, nothing invented.
-      const [{ data: orgOpportunities }, { count: offersAwaiting }, { data: orgContracts }] = await Promise.all([
-        supabase.from("opportunities").select("id").eq("organisation_id", membership.org.id),
+      const [orgOppsRes, offersRes, orgContractsRes] = await Promise.all([
+        supabase.from("opportunities").select("id, shortlisting_mode").eq("organisation_id", membership.org.id),
         supabase.from("offers").select("id", { count: "exact", head: true }).eq("organisation_id", membership.org.id).eq("status", "sent"),
         supabase.from("contracts").select("id").eq("organisation_id", membership.org.id),
       ]);
+      if (orgOppsRes.error || offersRes.error || orgContractsRes.error) todayDataError = true;
+      const orgOpportunities = orgOppsRes.data;
+      const offersAwaiting = offersRes.count;
+      const orgContracts = orgContractsRes.data;
       const opportunityIds = (orgOpportunities ?? []).map((o) => o.id);
-      const { count: applicationsAwaiting } =
+      // Gap-check fix: this originally counted stage='submitted' only, but
+      // applications_select RLS (0046) hides 'submitted' rows from the
+      // employer entirely on a staff_assisted opportunity (today's default
+      // mode) -- staff have to move it to 'shortlisted' first. Counting
+      // just 'submitted' meant this silently read 0 for the majority of
+      // opportunities even while real shortlisted candidates sat waiting on
+      // an offer decision (organisation/opportunities/[id]/page.tsx renders
+      // SendOfferForm for exactly shortlisted/interviewing). Now counts
+      // both the true "awaiting an offer decision" state (shortlisted/
+      // interviewing, any mode) and, for self-service opportunities only,
+      // the raw 'submitted' pool the employer can actually see and shortlist
+      // themselves.
+      const selfServiceOpportunityIds = (orgOpportunities ?? [])
+        .filter((o) => o.shortlisting_mode === "self_service")
+        .map((o) => o.id);
+      const [offerDecisionRes, selfServiceRes] = await Promise.all([
         opportunityIds.length > 0
-          ? await supabase
+          ? supabase
               .from("applications")
               .select("id", { count: "exact", head: true })
               .in("opportunity_id", opportunityIds)
+              .in("stage", ["shortlisted", "interviewing"])
+          : Promise.resolve({ count: 0, error: null }),
+        selfServiceOpportunityIds.length > 0
+          ? supabase
+              .from("applications")
+              .select("id", { count: "exact", head: true })
+              .in("opportunity_id", selfServiceOpportunityIds)
               .eq("stage", "submitted")
-          : { count: 0 };
+          : Promise.resolve({ count: 0, error: null }),
+      ]);
+      if (offerDecisionRes.error || selfServiceRes.error) todayDataError = true;
+      const applicationsAwaiting = (offerDecisionRes.count ?? 0) + (selfServiceRes.count ?? 0);
       const contractIds = (orgContracts ?? []).map((c) => c.id);
-      const { count: milestonesToPay } =
+      const milestonesToPayRes =
         contractIds.length > 0
           ? await supabase
               .from("milestones")
               .select("id", { count: "exact", head: true })
               .in("contract_id", contractIds)
               .eq("status", "approved")
-          : { count: 0 };
+          : { count: 0, error: null };
+      if (milestonesToPayRes.error) todayDataError = true;
+      const milestonesToPay = milestonesToPayRes.count ?? 0;
+      const offersAwaitingCount = offersAwaiting ?? 0;
 
-      if ((applicationsAwaiting ?? 0) > 0) {
-        employerPipeline.push({ href: "/organisation", label: "Applicants awaiting review", count: applicationsAwaiting!, tone: "info" });
+      if (applicationsAwaiting > 0) {
+        employerPipeline.push({ href: "/organisation", label: "Applicants awaiting review", count: applicationsAwaiting, tone: "info" });
       }
-      if ((offersAwaiting ?? 0) > 0) {
-        employerPipeline.push({ href: "/offers", label: "Offers awaiting a response", count: offersAwaiting!, tone: "warning" });
+      if (offersAwaitingCount > 0) {
+        employerPipeline.push({ href: "/offers", label: "Offers awaiting a response", count: offersAwaitingCount, tone: "warning" });
       }
-      if ((milestonesToPay ?? 0) > 0) {
-        employerPipeline.push({ href: "/contracts", label: "Milestones ready to pay", count: milestonesToPay!, tone: "danger" });
+      if (milestonesToPay > 0) {
+        employerPipeline.push({ href: "/contracts", label: "Milestones ready to pay", count: milestonesToPay, tone: "danger" });
       }
     }
   }
@@ -218,6 +269,14 @@ export default async function DashboardPage({
         )}
 
       {readinessState && <ReadinessPanel state={readinessState} />}
+
+      {todayDataError && (
+        <div className="mt-6">
+          <StatePanel title="Couldn&rsquo;t load your full picture" tone="danger" role="alert">
+            Some of what&rsquo;s below may be incomplete — refresh the page to try again.
+          </StatePanel>
+        </div>
+      )}
 
       {dashboardKind === "talent" && (
         <>
