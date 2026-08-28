@@ -60,4 +60,14 @@
     <lastmod>2026-08-29</lastmod>
     <priority>0.8</priority>
   </url>
+  <url>
+    <loc>https://adorworks.netlify.app/assisted-hiring.html</loc>
+    <lastmod>2026-08-29</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://adorworks.netlify.app/help.html</loc>
+    <lastmod>2026-08-29</lastmod>
+    <priority>0.6</priority>
+  </url>
 </urlset>
