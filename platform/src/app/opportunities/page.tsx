@@ -3,6 +3,8 @@ import Link from "next/link";
 import { requireRole } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { ReportButton } from "@/components/report-button";
+import { rankBySkillOverlap } from "@/lib/domain/matching";
+import { formatCompensation } from "@/lib/domain/format";
 import { ApplyButton } from "./apply-button";
 import { SaveButton } from "./save-button";
 import { DismissButton } from "./dismiss-button";
@@ -42,22 +44,6 @@ const PAGE_SIZE = 10;
 // current scale, but revisit with real SQL-level pagination (a
 // materialized ranking, most likely) before that's a realistic count.
 const FETCH_CAP = 200;
-
-function formatCompensation(o: {
-  payment_basis: string | null;
-  compensation_amount: number | null;
-  compensation_min: number | null;
-  compensation_max: number | null;
-  currency: string | null;
-}) {
-  const currency = o.currency || "SSP";
-  if (o.compensation_amount) return `${currency} ${o.compensation_amount.toLocaleString()}`;
-  if (o.compensation_min && o.compensation_max) {
-    return `${currency} ${o.compensation_min.toLocaleString()}–${o.compensation_max.toLocaleString()}`;
-  }
-  if (o.payment_basis === "negotiable") return "Negotiable";
-  return "Paid — details on application";
-}
 
 export default async function OpportunitiesPage({
   searchParams,
@@ -118,16 +104,7 @@ export default async function OpportunitiesPage({
   // candidates feature (staff/js/opportunities.js): rank by skill
   // overlap, tie-break by recency, never by anything paid or reputation-
   // based, so a new opportunity/new talent isn't buried.
-  let ranked = visible;
-  if (sortMode === "relevant") {
-    const mySkills = new Set((myProfile?.skills ?? []).map((s) => s.toLowerCase()));
-    ranked = [...visible].sort((a, b) => {
-      const aMatches = (a.skills ?? []).filter((s) => mySkills.has(s.toLowerCase())).length;
-      const bMatches = (b.skills ?? []).filter((s) => mySkills.has(s.toLowerCase())).length;
-      if (bMatches !== aMatches) return bMatches - aMatches;
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    });
-  }
+  const ranked = sortMode === "relevant" ? rankBySkillOverlap(visible, myProfile?.skills ?? []) : visible;
 
   const totalPages = Math.max(1, Math.ceil(ranked.length / PAGE_SIZE));
   const pageItems = ranked.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);

@@ -70,3 +70,33 @@ export function getDashboardExperience(role: UserRole): DashboardExperience {
   const kind = getDashboardKind(role);
   return { kind, ...experiences[kind] };
 }
+
+export interface NavLink {
+  href: string;
+  label: string;
+}
+
+// Stage 8: a short, curated set for the persistent top nav — distinct
+// from the full `experiences[kind].actions` list above (which stays the
+// exhaustive dashboard card grid). Kept small deliberately: a nav bar
+// that lists everything isn't navigation, it's the dashboard again.
+const primaryNavLinks: Record<DashboardKind, readonly NavLink[]> = {
+  talent: [
+    { href: "/opportunities", label: "Find work" },
+    { href: "/applications", label: "Applications" },
+    { href: "/contracts", label: "Contracts" },
+    { href: "/passport", label: "Passport" },
+  ],
+  employer: [
+    { href: "/organisation", label: "Organisation" },
+    { href: "/contracts", label: "Contracts" },
+    { href: "/services", label: "Services" },
+  ],
+  assistance: [{ href: "/assist", label: "Assistance sessions" }],
+  operations: [],
+  partner: [],
+};
+
+export function getPrimaryNavLinks(role: UserRole): readonly NavLink[] {
+  return primaryNavLinks[getDashboardKind(role)];
+}

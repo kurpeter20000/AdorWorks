@@ -3,6 +3,7 @@ import { Manrope } from "next/font/google";
 import { ConnectivityBanner } from "@/components/connectivity-banner";
 import { InstallAppBanner } from "@/components/install-app-banner";
 import { PwaRegister } from "@/components/pwa-register";
+import { TopNav } from "@/components/top-nav";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -42,7 +43,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        <ConnectivityBanner />
+        <div className="sticky top-0 z-40">
+          <ConnectivityBanner />
+          <TopNav />
+        </div>
         <InstallAppBanner />
         <PwaRegister />
         <div id="main-content">{children}</div>

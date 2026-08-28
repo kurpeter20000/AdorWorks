@@ -33,10 +33,7 @@ export function ConnectivityBanner() {
   if (online) return null;
 
   return (
-    <div
-      role="status"
-      className="sticky top-0 z-40 bg-coral px-4 py-2 text-center text-sm font-semibold text-white"
-    >
+    <div role="status" className="bg-coral px-4 py-2 text-center text-sm font-semibold text-white">
       You&rsquo;re offline — actions like sending messages or updating a contract won&rsquo;t go through until your
       connection comes back.
     </div>
