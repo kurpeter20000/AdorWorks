@@ -1,7 +1,9 @@
 # Stage 2 — Identity, Profiles, Trust and Assisted Access
 
-Status: first slice implemented (commits `fc39025`..`61b257f`). Several
-items from the original Stage 2 scope remain open — see below.
+Status: **complete** (commits `fc39025`..`40346e1`). An end-of-stage
+review against the master document's full Stage 2 scope found four
+remaining gaps (below the first slice's summary); all four were closed in
+a second pass.
 
 ## What this slice delivered
 
@@ -31,31 +33,48 @@ items from the original Stage 2 scope remain open — see below.
   those are Stage 3 work in the master document's own staging, so this
   slice doesn't get reworked when Stage 3 arrives.
 
-## Explicitly not done in this slice
+## Second pass — the four gaps found on review, now closed
 
-- **Multi-dimensional verification tracking** (separate identity/
-  organisation/relationship/domain/payment/credential checks, each with
-  its own status and decider) — the org side still has a single
-  `verification_status` field. A real gap, deferred to a future
-  continuation.
-- **Free Trust & Safety orientation content** — no in-app orientation
-  page or completion tracking yet.
-- Maker-checker is scoped to admin/finance role assignment only, by
+- **Multi-dimensional organisation verification** (`0038`,
+  `verification_checks`) — split the single `verification_status` into
+  two tracked dimensions (registration, representative), each with its
+  own status, `method` (formal registration vs. alternative referral/
+  physical review/attestation — this is what makes SME/NGO alternative
+  verification consistent and auditable instead of an undocumented
+  judgment call), reason, and decision trail, including a
+  request-information/appeal path for the org. `organisations.
+  verification_status` is kept as a computed headline via a trigger, so
+  nothing that already reads it had to change.
+- **Scoped employer roles enforced, not just labelled** (`0039`) —
+  recruiter/hiring_manager/finance/viewer are now selectable in the
+  invite form, and `viewer` is actually blocked from posting/editing
+  opportunities via a new RLS helper. Explicitly bounded: `is_org_member()`
+  backs ~15 other policies (offers, applications, contracts) not touched
+  here, and recruiter/hiring_manager/finance still behave like `member`
+  everywhere since no functionally distinct surfaces exist for them yet.
+  Documented as a known limitation, not silently claimed as complete.
+- **Free Trust & Safety orientation** (`0040`) — new `/trust-safety`
+  page with a one-click completion marker, linked from the dashboard and
+  folded into the readiness panel's missing-items list. Never gated
+  behind a plan or fee.
+- Maker-checker stays scoped to admin/finance role assignment only, by
   explicit product decision — not generalized to talent/org verification
-  decisions, which stay single-approver given team size.
+  decisions, which stay single-approver given team size. (Confirmed
+  intentional, not reopened as a gap.)
 
-## Migrations added this slice
+## Migrations added across both passes
 
 Run in order, after `0035_audit_events.sql`:
 
 - `0036_role_change_requests.sql`
 - `0037_talent_services_foundation.sql`
+- `0038_organisation_verification_checks.sql`
+- `0039_org_viewer_role_enforcement.sql`
+- `0040_talent_safety_orientation.sql`
 
-Both are additive; each documents its own rollback in-file.
+All additive; each documents its own rollback in-file.
 
 ## Tests
 
-Platform: 52/52 (up from 44 — added `taxonomy.test.ts` in the Stage 1
-continuation and `readiness.test.ts` this slice). Backend: 24/24
-unchanged. Full production build passes with the new `/passport/services`
-route.
+Platform: 52/52. Backend: 24/24. Full production build passes with every
+new route (`/passport/services`, `/trust-safety`).
