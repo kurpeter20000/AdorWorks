@@ -81,18 +81,26 @@ export async function sendApplicationMessage(
     .eq("application_id", applicationId)
     .maybeSingle();
   if (!conversation) {
-    const { data: created } = await admin
+    const { data: created, error: createError } = await admin
       .from("conversations")
       .insert({ application_id: applicationId })
       .select("id")
       .single();
-    conversation = created ?? null;
-    if (conversation) {
-      const memberIds = [parties.talentId, parties.employerId].filter(Boolean) as string[];
-      if (memberIds.length > 0) {
-        await admin
-          .from("conversation_members")
-          .insert(memberIds.map((user_id) => ({ conversation_id: conversation!.id, user_id })));
+    if (createError?.code === "23505") {
+      // Lost a race with a concurrent first message — 0059's unique
+      // index means someone else's insert already won; use their row
+      // instead of forking a duplicate conversation.
+      const { data: existing } = await admin.from("conversations").select("id").eq("application_id", applicationId).maybeSingle();
+      conversation = existing ?? null;
+    } else {
+      conversation = created ?? null;
+      if (conversation) {
+        const memberIds = [parties.talentId, parties.employerId].filter(Boolean) as string[];
+        if (memberIds.length > 0) {
+          await admin
+            .from("conversation_members")
+            .insert(memberIds.map((user_id) => ({ conversation_id: conversation!.id, user_id })));
+        }
       }
     }
   }

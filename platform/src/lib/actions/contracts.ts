@@ -284,6 +284,26 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     .limit(1)
     .maybeSingle();
 
+  // Gap-check fix: the partial unique index below only blocks a
+  // *concurrent* 'processing' row — it does nothing once an intention has
+  // already resolved to 'succeeded'. If the charge went through but the
+  // milestones.update({status: 'paid'}) at the end of this function ever
+  // failed (network blip, replica lag), the milestone stayed 'approved'
+  // and a second call would sail through the status check and charge
+  // again. Checking for an existing succeeded payment_events row closes
+  // that gap regardless of which finalization write failed, and
+  // self-heals the stuck 'approved' status while it's here.
+  const { data: existingPayment } = await admin
+    .from("payment_events")
+    .select("id")
+    .eq("milestone_id", milestoneId)
+    .eq("status", "succeeded")
+    .maybeSingle();
+  if (existingPayment) {
+    await admin.from("milestones").update({ status: "paid" }).eq("id", milestoneId).eq("status", "approved");
+    return { message: "This milestone has already been paid." };
+  }
+
   // status: 'processing' is the default anyway, but named explicitly here
   // since it's exactly what 0057's partial unique index keys off of —
   // this insert is what makes two concurrent payMilestone() calls for
@@ -362,14 +382,41 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     net_amount: fee.netAmount,
     is_simulated: isSimulated,
   });
-  if (paymentError) return { message: paymentError.message };
+  if (paymentError) {
+    // Gap-check fix: the provider charge already succeeded at this point
+    // — only recording it failed. Leaving the intention at 'processing'
+    // would permanently lock this milestone out of ever being paid again
+    // (0057's partial unique index blocks every future attempt with
+    // "already being processing"), with no route anywhere to un-stick
+    // it. Marking it 'failed' with an explicit reason at least unblocks
+    // retrying and leaves a paper trail for whoever has to reconcile the
+    // upstream charge by hand.
+    await admin
+      .from("payment_intentions")
+      .update({
+        status: "failed",
+        failure_reason: `Charge succeeded upstream (ref ${result.reference}) but recording it failed: ${paymentError.message}. Needs manual reconciliation.`,
+        resolved_at: new Date().toISOString(),
+      })
+      .eq("id", intention.id);
+    return { message: "Your payment may have gone through, but AdorWorks couldn't record it. Contact support before trying again." };
+  }
 
-  await admin
+  const { error: intentionUpdateError } = await admin
     .from("payment_intentions")
     .update({ status: "succeeded", resolved_at: new Date().toISOString() })
     .eq("id", intention.id);
-  if (invoice) await admin.from("finance_records").update({ status: "confirmed" }).eq("id", invoice.id);
-  await admin.from("milestones").update({ status: "paid" }).eq("id", milestoneId);
+  if (intentionUpdateError) {
+    console.error(`payMilestone: payment_events ${intention.id} recorded but payment_intentions update failed:`, intentionUpdateError.message);
+  }
+  if (invoice) {
+    const { error: invoiceError } = await admin.from("finance_records").update({ status: "confirmed" }).eq("id", invoice.id);
+    if (invoiceError) console.error(`payMilestone: failed to confirm finance_records ${invoice.id}:`, invoiceError.message);
+  }
+  const { error: milestoneError } = await admin.from("milestones").update({ status: "paid" }).eq("id", milestoneId);
+  if (milestoneError) {
+    console.error(`payMilestone: payment succeeded for milestone ${milestoneId} but marking it 'paid' failed:`, milestoneError.message);
+  }
 
   const paidNoticeBody = `${milestone.currency} ${fee.netAmount.toLocaleString()} net (${milestone.currency} ${milestone.amount.toLocaleString()} gross${fee.feeAmount > 0 ? `, ${milestone.currency} ${fee.feeAmount.toLocaleString()} platform fee` : ""}). Receipt ${receiptNumber}.`;
   await notifyUser(admin, {
@@ -398,22 +445,35 @@ async function postSystemMessage(
     .eq("contract_id", contractId)
     .maybeSingle();
   if (!conversation) {
-    const { data: created } = await admin.from("conversations").insert({ contract_id: contractId }).select("id").single();
-    conversation = created ?? null;
-    if (conversation) {
-      const { data: contract } = await admin
-        .from("contracts")
-        .select("talent_id, organisation_id")
-        .eq("id", contractId)
-        .maybeSingle();
-      const { data: org } = contract
-        ? await admin.from("organisations").select("representative_id").eq("id", contract.organisation_id).maybeSingle()
-        : { data: null };
-      const memberIds = [contract?.talent_id, org?.representative_id].filter(Boolean) as string[];
-      if (memberIds.length > 0) {
-        await admin
-          .from("conversation_members")
-          .insert(memberIds.map((user_id) => ({ conversation_id: conversation!.id, user_id })));
+    const { data: created, error: createError } = await admin
+      .from("conversations")
+      .insert({ contract_id: contractId })
+      .select("id")
+      .single();
+    if (createError?.code === "23505") {
+      // Gap-check fix: lost a race with a concurrent first message —
+      // 0059's unique index means someone else's insert already won.
+      // Use their row instead of the "multiple rows" lookup silently
+      // forking yet another conversation.
+      const { data: existing } = await admin.from("conversations").select("id").eq("contract_id", contractId).maybeSingle();
+      conversation = existing ?? null;
+    } else {
+      conversation = created ?? null;
+      if (conversation) {
+        const { data: contract } = await admin
+          .from("contracts")
+          .select("talent_id, organisation_id")
+          .eq("id", contractId)
+          .maybeSingle();
+        const { data: org } = contract
+          ? await admin.from("organisations").select("representative_id").eq("id", contract.organisation_id).maybeSingle()
+          : { data: null };
+        const memberIds = [contract?.talent_id, org?.representative_id].filter(Boolean) as string[];
+        if (memberIds.length > 0) {
+          await admin
+            .from("conversation_members")
+            .insert(memberIds.map((user_id) => ({ conversation_id: conversation!.id, user_id })));
+        }
       }
     }
   }
