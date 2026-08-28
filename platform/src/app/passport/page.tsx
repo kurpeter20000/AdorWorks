@@ -131,6 +131,16 @@ export default async function PassportPage() {
           items={credentials}
         />
       </div>
+
+      <div className="mt-6 rounded-xl border border-slate/15 bg-white p-5">
+        <h2 className="font-bold text-midnight">Services</h2>
+        <p className="mt-1 text-xs text-slate">
+          Describe a defined service you can deliver, with pricing and turnaround — a draft space for now.
+        </p>
+        <Link href="/passport/services" className="mt-3 inline-block text-sm font-semibold text-teal-ink underline">
+          Manage your services
+        </Link>
+      </div>
     </main>
   );
 }

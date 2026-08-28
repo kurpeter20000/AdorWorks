@@ -220,6 +220,25 @@ export type ServicePackageRow = {
   created_at: string;
 }
 
+export type TalentServiceStatus = "draft" | "pending_review" | "published" | "paused" | "rejected" | "removed";
+
+export type TalentServiceRow = {
+  id: string;
+  talent_id: string;
+  title: string;
+  category: Category | null;
+  problem_solved: string | null;
+  deliverables: string | null;
+  exclusions: string | null;
+  payment_basis: PaymentBasis | null;
+  price: number | null;
+  currency: string | null;
+  turnaround: string | null;
+  status: TalentServiceStatus;
+  created_at: string;
+  updated_at: string;
+}
+
 export type ApplicationRow = {
   id: string;
   opportunity_id: string;
@@ -606,6 +625,12 @@ export type Database = {
         Row: ServicePackageRow;
         Insert: Partial<ServicePackageRow> & { category: Category; title: string; deliverable: string };
         Update: Partial<ServicePackageRow>;
+        Relationships: [];
+      };
+      talent_services: {
+        Row: TalentServiceRow;
+        Insert: Partial<TalentServiceRow> & { talent_id: string; title: string };
+        Update: Partial<TalentServiceRow>;
         Relationships: [];
       };
       applications: {
