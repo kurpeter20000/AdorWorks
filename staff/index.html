@@ -47,46 +47,70 @@
   <div class="container">
     <div class="staff-page-header">
       <h1>Dashboard</h1>
+      <div class="dashboard-toolbar">
+        <span id="dashboard-updated" class="staff-who" role="status">Loading…</span>
+        <button type="button" id="dashboard-refresh" class="btn btn-secondary">Refresh</button>
+      </div>
     </div>
 
-    <div class="stat-grid">
-      <div class="stat-tile"><a href="intake.html">
-        <div class="stat-value" id="stat-new-intake">—</div>
-        <div class="stat-label">New intake submissions</div>
-      </a></div>
-      <div class="stat-tile"><a href="organisations.html">
-        <div class="stat-value" id="stat-pending-orgs">—</div>
-        <div class="stat-label">Organisations pending verification</div>
-      </a></div>
-      <div class="stat-tile"><a href="opportunities.html">
-        <div class="stat-value" id="stat-pending-opps">—</div>
-        <div class="stat-label">Opportunities pending review</div>
-      </a></div>
-      <div class="stat-tile"><a href="engagements.html">
-        <div class="stat-value" id="stat-active-engagements">—</div>
-        <div class="stat-label">Engagements in flight</div>
-      </a></div>
-      <div class="stat-tile"><a href="engagements.html">
-        <div class="stat-value" id="stat-open-disputes">—</div>
-        <div class="stat-label">Open disputes</div>
-      </a></div>
-      <div class="stat-tile"><a href="reports.html">
-        <div class="stat-value" id="stat-open-reports">—</div>
-        <div class="stat-label">Open reports</div>
-      </a></div>
-      <div class="stat-tile"><a href="services.html">
-        <div class="stat-value" id="stat-published-services">—</div>
-        <div class="stat-label">Published services</div>
-      </a></div>
-      <div class="stat-tile"><a href="opportunities.html">
-        <div class="stat-value" id="stat-open-opportunities">—</div>
-        <div class="stat-label">Open opportunities</div>
-      </a></div>
-      <div class="stat-tile"><a href="talent.html">
-        <div class="stat-value" id="stat-pending-videos">—</div>
-        <div class="stat-label">Introduction videos pending review</div>
-      </a></div>
+    <div id="dashboard-error" class="dashboard-error" role="alert" hidden>
+      Some figures below could not be loaded.
+      <button type="button" id="dashboard-retry" class="btn btn-secondary">Retry</button>
     </div>
+
+    <section class="staff-section" style="margin-top: 0;">
+      <h2>Trust queue</h2>
+      <div class="stat-grid">
+        <div class="stat-tile"><a href="organisations.html">
+          <div class="stat-value" id="stat-pending-orgs">—</div>
+          <div class="stat-label">Organisations pending verification</div>
+        </a></div>
+        <div class="stat-tile"><a href="opportunities.html">
+          <div class="stat-value" id="stat-pending-opps">—</div>
+          <div class="stat-label">Opportunities pending review</div>
+        </a></div>
+        <div class="stat-tile"><a href="talent.html">
+          <div class="stat-value" id="stat-pending-videos">—</div>
+          <div class="stat-label">Introduction videos pending review</div>
+        </a></div>
+        <div class="stat-tile"><a href="reports.html">
+          <div class="stat-value" id="stat-open-reports">—</div>
+          <div class="stat-label">Open reports</div>
+        </a></div>
+      </div>
+    </section>
+
+    <section class="staff-section">
+      <h2>Workload</h2>
+      <div class="stat-grid">
+        <div class="stat-tile"><a href="intake.html">
+          <div class="stat-value" id="stat-new-intake">—</div>
+          <div class="stat-label">New intake submissions</div>
+        </a></div>
+        <div class="stat-tile"><a href="engagements.html">
+          <div class="stat-value" id="stat-active-engagements">—</div>
+          <div class="stat-label">Engagements in flight</div>
+        </a></div>
+        <div class="stat-tile"><a href="engagements.html">
+          <div class="stat-value" id="stat-open-disputes">—</div>
+          <div class="stat-label">Open disputes</div>
+        </a></div>
+      </div>
+    </section>
+
+    <section class="staff-section">
+      <h2>Marketplace health</h2>
+      <div class="stat-grid">
+        <div class="stat-tile"><a href="opportunities.html">
+          <div class="stat-value" id="stat-open-opportunities">—</div>
+          <div class="stat-label">Open opportunities</div>
+        </a></div>
+        <div class="stat-tile"><a href="services.html">
+          <div class="stat-value" id="stat-published-services">—</div>
+          <div class="stat-label">Published services</div>
+        </a></div>
+      </div>
+    </section>
 
     <div class="section-header mt-1">
       <h2>Recent submissions</h2>
