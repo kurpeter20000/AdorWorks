@@ -119,6 +119,49 @@
       });
     }
 
+    // Hero background video: decorative only (muted, looping, no controls),
+    // not the talent-facing video feature, so none of that consent/caption
+    // handling applies here. Skipped on narrow screens, reduced-motion or a
+    // Data Saver connection -- the poster frame already shown via the
+    // `poster` attribute is the low-data fallback in every one of those
+    // cases, and autoplay staying off never leaves the section blank.
+    var heroVideo = document.querySelector(".hero-video");
+    if (heroVideo) {
+      var saveData = Boolean(navigator.connection && navigator.connection.saveData);
+      var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var wideEnough = window.matchMedia("(min-width: 768px)").matches;
+      if (wideEnough && !reduceMotion && !saveData) {
+        heroVideo.muted = true;
+        heroVideo.play().catch(function () {
+          // Autoplay blocked by the browser -- poster frame stays visible.
+        });
+      }
+    }
+
+    // Scroll-reveal: cards and section intros ease in as they enter the
+    // viewport. Elements only get the (initially invisible via CSS) .reveal
+    // class from here, so a script failure or missing IntersectionObserver
+    // support never hides content -- it just skips the animation.
+    if ("IntersectionObserver" in window && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      var revealTargets = document.querySelectorAll(".card, .section-header");
+      var revealObserver = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("is-visible");
+              revealObserver.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
+      );
+      revealTargets.forEach(function (el, i) {
+        el.classList.add("reveal");
+        el.style.transitionDelay = (i % 3) * 0.08 + "s";
+        revealObserver.observe(el);
+      });
+    }
+
     // Click tracking: WhatsApp, phone, downloads
     document.querySelectorAll('a[href^="https://wa.me"]').forEach(function (a) {
       a.addEventListener("click", function () {

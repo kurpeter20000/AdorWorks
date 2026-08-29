@@ -13,3 +13,7 @@ node_modules/
 # Raw source photos before optimization (tools/optimize-image.js output
 # goes to img/photos/ instead, which IS committed/deployed).
 img/photos/source/
+
+# Scratch output from ad-hoc local QA scripts (e.g. Playwright screenshot
+# audits) -- never a deploy artifact.
+.responsive-audit/
