@@ -9,7 +9,6 @@ import { getMyOrganisationMembership } from "@/lib/dal/organisation";
 import { rankBySkillOverlap } from "@/lib/domain/matching";
 import { formatCompensation } from "@/lib/domain/format";
 import { StatePanel } from "@/components/state-panel";
-import { PhoneVerificationWidget } from "./phone-verification-widget";
 import { AssistanceConsentWidget } from "./assistance-consent-widget";
 import { ReadinessPanel } from "./readiness-panel";
 import { NotificationsPanel } from "./notifications-panel";
@@ -261,8 +260,6 @@ export default async function DashboardPage({
           </StatePanel>
         </div>
       )}
-
-      {!session.phoneVerified && <PhoneVerificationWidget />}
 
       <NotificationsPanel notifications={notifications ?? []} unreadCount={unreadCount ?? 0} />
 

@@ -3,6 +3,8 @@
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 
 export interface FormState {
   errors?: Record<string, string[]>;
@@ -74,6 +76,17 @@ export async function signup(_prevState: FormState, formData: FormData): Promise
   if (!data.user) {
     return { message: "Something went wrong creating your account. Please try again." };
   }
+
+  // No dashboard gate ever required a verified phone -- the reminder now
+  // lives here instead, waiting in Notifications from the first login,
+  // rather than as an interruption on the dashboard itself.
+  await notifyUser(createAdminClient(), {
+    userId: data.user.id,
+    type: NOTIFICATION_TYPES.PHONE_VERIFICATION_REMINDER,
+    title: "Verify your phone number",
+    body: "Add and verify a phone number so employers and AdorWorks can reach you about time-sensitive opportunities.",
+    link: "/notifications",
+  });
 
   redirect("/check-email");
 }

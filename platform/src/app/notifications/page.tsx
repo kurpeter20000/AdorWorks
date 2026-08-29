@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireSession } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
+import { PhoneVerificationWidget } from "@/components/phone-verification-widget";
 import { NotificationsList } from "./notifications-list";
 
 export const metadata: Metadata = { title: "Notifications" };
@@ -25,6 +26,8 @@ export default async function NotificationsPage() {
           Dashboard
         </Link>
       </div>
+
+      {!session.phoneVerified && <PhoneVerificationWidget />}
 
       {!notifications || notifications.length === 0 ? (
         <p className="mt-8 text-sm text-slate">Nothing yet — you&rsquo;ll see updates here as things happen.</p>
