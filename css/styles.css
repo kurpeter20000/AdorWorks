@@ -469,18 +469,18 @@ table.compare thead th { background: var(--color-surface-alt); color: var(--colo
 .footer-contact li { display: flex; align-items: center; gap: 0.5rem; color: rgba(255,255,255,0.85); }
 .footer-contact svg { flex: none; width: 16px; height: 16px; color: var(--color-accent); }
 .footer-social-label { font-size: 0.8rem; color: rgba(255,255,255,0.55); margin-bottom: 0.5em; }
-.footer-social { display: flex; gap: 0.5rem; }
+.footer-social { display: flex; gap: 0.3rem; }
 .footer-social .social-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px; height: 34px;
+  width: 18px; height: 18px;
   border-radius: 50%;
   background: rgba(255,255,255,0.08);
   color: rgba(255,255,255,0.85);
   cursor: default;
 }
-.footer-social .social-btn svg { width: 16px; height: 16px; }
+.footer-social .social-btn svg { width: 9px; height: 9px; }
 
 .footer-bottom {
   margin-top: 1.5rem;

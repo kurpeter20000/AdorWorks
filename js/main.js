@@ -125,15 +125,17 @@
     // Data Saver connection -- the poster frame already shown via the
     // `poster` attribute is the low-data fallback in every one of those
     // cases, and autoplay staying off never leaves the section blank.
-    var heroVideo = document.querySelector(".hero-video");
-    if (heroVideo) {
+    var heroVideos = document.querySelectorAll(".hero-video");
+    if (heroVideos.length) {
       var saveData = Boolean(navigator.connection && navigator.connection.saveData);
       var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       var wideEnough = window.matchMedia("(min-width: 768px)").matches;
       if (wideEnough && !reduceMotion && !saveData) {
-        heroVideo.muted = true;
-        heroVideo.play().catch(function () {
-          // Autoplay blocked by the browser -- poster frame stays visible.
+        heroVideos.forEach(function (heroVideo) {
+          heroVideo.muted = true;
+          heroVideo.play().catch(function () {
+            // Autoplay blocked by the browser -- poster frame stays visible.
+          });
         });
       }
     }
