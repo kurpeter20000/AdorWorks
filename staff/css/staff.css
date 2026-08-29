@@ -31,9 +31,26 @@ body { background: var(--color-surface-alt); }
 .staff-logout:hover { background: rgba(255,255,255,0.12); }
 
 .staff-nav {
+  position: relative;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   overflow-x: auto;
+}
+/* Fades the right edge so a cut-off tab (e.g. "Organisations" clipped
+   to "Organisatio…" on a phone) reads as "scroll for more", not as the
+   nav just being broken. Fine on wide screens too, where there's
+   nothing to scroll to and the fade sits past the last tab unseen. */
+.staff-nav::after {
+  content: "";
+  position: sticky;
+  top: 0;
+  right: 0;
+  float: right;
+  width: 1.5rem;
+  height: 100%;
+  margin-left: -1.5rem;
+  background: linear-gradient(to right, transparent, var(--color-surface));
+  pointer-events: none;
 }
 .staff-nav .container { display: flex; gap: 0.25rem; padding-block: 0; }
 .staff-nav a {
@@ -97,12 +114,14 @@ body { background: var(--color-surface-alt); }
 }
 .dashboard-error .btn { flex-shrink: 0; }
 
-/* Data tables */
+/* Data tables — overflow-x:auto (not the old overflow:hidden) so wide
+   tables scroll horizontally on narrow screens instead of silently
+   clipping columns off the edge with no way to reach them. */
 .staff-table-wrap {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
 }
 table.staff-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 table.staff-table th, table.staff-table td {

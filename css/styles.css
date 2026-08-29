@@ -337,7 +337,22 @@ p { margin: 0 0 1em; }
 }
 
 /* Table */
-.table-wrap { overflow-x: auto; }
+/* Scrollable on narrow screens (table.compare below sets a min-width
+   wider than a phone viewport) — the fade cues that there's more to
+   the right, since nothing else here hints the table scrolls at all. */
+.table-wrap { position: relative; overflow-x: auto; }
+.table-wrap::after {
+  content: "";
+  position: sticky;
+  top: 0;
+  right: 0;
+  float: right;
+  width: 1.5rem;
+  height: 100%;
+  margin-left: -1.5rem;
+  background: linear-gradient(to right, transparent, var(--color-surface));
+  pointer-events: none;
+}
 table.compare { width: 100%; border-collapse: collapse; min-width: 560px; font-size: 0.95rem; }
 table.compare th, table.compare td {
   text-align: left;
@@ -679,6 +694,15 @@ input[type="checkbox"], input[type="radio"] {
 .cookie-consent-banner__actions { display: flex; gap: 0.6rem; flex-shrink: 0; }
 .cookie-consent-banner__actions .btn { min-height: 40px; padding: 0.55em 1.1em; font-size: 0.9rem; }
 @media (max-width: 640px) {
-  .cookie-consent-banner { flex-direction: column; align-items: stretch; }
-  .cookie-consent-banner__actions { justify-content: flex-end; }
+  .cookie-consent-banner {
+    flex-direction: column;
+    align-items: stretch;
+    /* Netlify's own "Powered by Netlify" badge floats fixed at the
+       bottom-right corner and isn't ours to reposition or restyle — this
+       extra clearance keeps the Decline/Accept buttons from rendering
+       underneath it (confirmed via screenshot: badge sat directly on
+       top of the Decline button, likely blocking clicks on it). */
+    padding-bottom: 3.5rem;
+  }
+  .cookie-consent-banner__actions { justify-content: flex-start; }
 }
