@@ -1,5 +1,26 @@
 import { supabase, requireStaffSession, initLogout, escapeHtml, formatDate, statusBadge } from "./app.js";
 
+// Declared here, before the top-level await below, on purpose: this
+// module's top-level `await requireStaffSession()` pauses execution
+// before the module reaches TILE_QUERIES' original position further
+// down the file, so refreshAll() -> loadCounts() ran with TILE_QUERIES
+// still undefined (its `var` hoists the name but not the assignment) —
+// every count query silently never fired, and the dashboard never
+// finished loading. Confirmed live: zero organisations/opportunities/
+// etc. requests ever left the browser, and TILE_QUERIES.forEach threw
+// "Cannot read properties of undefined" on every load.
+var TILE_QUERIES = [
+  ["stat-new-intake", "intake_submissions", "status", "new"],
+  ["stat-pending-orgs", "organisations", "verification_status", "pending"],
+  ["stat-pending-opps", "opportunities", "status", "pending_review"],
+  ["stat-pending-videos", "talent_introduction_videos", "status", "pending"],
+  ["stat-active-engagements", "engagements", "status", ["proposed", "contracted", "active"]],
+  ["stat-open-disputes", "disputes", "status", ["open", "investigating"]],
+  ["stat-open-reports", "reports", "status", "open"],
+  ["stat-open-opportunities", "opportunities", "status", "open"],
+  ["stat-published-services", "talent_services", "status", "published"],
+];
+
 initLogout();
 
 var auth = await requireStaffSession();
@@ -49,18 +70,6 @@ async function countWhere(table, column, value) {
   var { count, error } = await q;
   return { ok: !error, count: count };
 }
-
-var TILE_QUERIES = [
-  ["stat-new-intake", "intake_submissions", "status", "new"],
-  ["stat-pending-orgs", "organisations", "verification_status", "pending"],
-  ["stat-pending-opps", "opportunities", "status", "pending_review"],
-  ["stat-pending-videos", "talent_introduction_videos", "status", "pending"],
-  ["stat-active-engagements", "engagements", "status", ["proposed", "contracted", "active"]],
-  ["stat-open-disputes", "disputes", "status", ["open", "investigating"]],
-  ["stat-open-reports", "reports", "status", "open"],
-  ["stat-open-opportunities", "opportunities", "status", "open"],
-  ["stat-published-services", "talent_services", "status", "published"],
-];
 
 /** @returns {Promise<boolean>} whether every tile loaded without error. */
 async function loadCounts() {
