@@ -23,6 +23,14 @@ body {
 }
 
 img { max-width: 100%; display: block; }
+/* Safety net for inline icon SVGs: an <svg> with only a viewBox (no
+   width/height) defaults to 300x150 CSS px if nothing else sizes it --
+   a broken selector or an undefined CSS variable (as happened with the
+   hero search icon: color: var(--color-slate), which doesn't exist)
+   would otherwise make that one icon balloon to that default instead
+   of just losing its color. Low specificity (type selector) so every
+   icon-specific width/height rule elsewhere still wins normally. */
+svg { width: 1em; height: 1em; }
 a { color: var(--color-accent-text); }
 a:focus-visible,
 button:focus-visible,
@@ -244,7 +252,7 @@ p { margin: 0 0 1em; }
   border-radius: 999px;
   padding: 0.4rem 0.4rem 0.4rem 1rem;
 }
-.hero-search svg { flex: none; width: 20px; height: 20px; color: var(--color-slate); }
+.hero-search svg { flex: none; width: 20px; height: 20px; color: var(--color-muted); }
 .hero-search input {
   flex: 1;
   min-width: 0;
