@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 const TONE_CLASS = {
   neutral: "border-slate/20 bg-white text-slate",
@@ -19,9 +21,9 @@ export function StatePanel({
   role?: "status" | "alert";
 }) {
   return (
-    <section role={role} className={`rounded-xl border p-5 ${TONE_CLASS[tone]}`}>
+    <Card role={role} className={cn(TONE_CLASS[tone])}>
       <h2 className="font-bold text-midnight">{title}</h2>
       <div className="mt-1 text-sm">{children}</div>
-    </section>
+    </Card>
   );
 }

@@ -30,6 +30,17 @@
   --color-slate: #596274;
   --color-white: #ffffff;
 
+  /* Interactive states for the accent (teal) color, and a warning tone to
+     sit alongside coral (danger) and teal (success/positive). Warning
+     follows the same background/-ink split as coral and teal: #f59e0b is
+     for backgrounds/badges (paired with dark text), #b45309 is the
+     text-safe variant — computed at ≈5.02:1 against white, passing WCAG
+     AA for normal text, same discipline as --color-coral-ink above. */
+  --color-accent-hover: #00967f;
+  --color-accent-active: #00786a;
+  --color-warning: #f59e0b;
+  --color-warning-ink: #b45309;
+
   --background: var(--color-white);
   --foreground: var(--color-midnight);
 }
@@ -46,6 +57,10 @@
   --color-coral-ink: var(--color-coral-ink);
   --color-cloud: var(--color-cloud);
   --color-slate: var(--color-slate);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-active: var(--color-accent-active);
+  --color-warning: var(--color-warning);
+  --color-warning-ink: var(--color-warning-ink);
 
   --font-sans: var(--font-manrope), system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
 }
