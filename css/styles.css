@@ -209,6 +209,35 @@ p { margin: 0 0 1em; }
 .hero-login-note a { color: #fff; text-decoration: underline; font-weight: 700; }
 .hero-login-note a:hover { color: var(--color-accent); }
 
+/* Hero with a real photo behind the text (visual redesign) -- the <img>
+   is a real element (not a CSS background), positioned behind the text,
+   so it still gets WebP+srcset+lazy-loading benefits. The gradient
+   overlay keeps white hero text readable over any photo without
+   needing per-image contrast tuning. */
+.hero-photo { position: relative; overflow: hidden; }
+.hero-photo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(24,34,48,0.82), rgba(24,34,48,0.90));
+  z-index: 1;
+}
+.hero-photo-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+.hero-photo .container { position: relative; z-index: 2; }
+
+/* Card with a photo strip above its content (visual redesign). Negative
+   margin matches .card's own 1.5rem padding so the image bleeds flush to
+   the card's edges, then the rounded corners are clipped to the top only
+   so the card's own border-radius still applies at the bottom. */
+.card-photo-img {
+  display: block;
+  width: calc(100% + 3rem);
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  margin: -1.5rem -1.5rem 1rem;
+  border-radius: 12px 12px 0 0;
+}
+
 /* Jump nav — quick anchor links under a hero, for a page long enough to
    benefit from an at-a-glance table of contents (e.g. For Employers).
    top:64px (not 0) because .site-header is ALSO position:sticky top:0

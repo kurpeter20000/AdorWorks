@@ -9,3 +9,7 @@ node_modules/
 .vercel
 .env*
 !platform/.env.e2e.example
+
+# Raw source photos before optimization (tools/optimize-image.js output
+# goes to img/photos/ instead, which IS committed/deployed).
+img/photos/source/

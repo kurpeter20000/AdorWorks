@@ -1,0 +1,12 @@
+{
+  "name": "adorworks-image-tools",
+  "private": true,
+  "description": "Local-only asset processing for the public site's photography (Stage: visual redesign). Not deployed -- see netlify.toml's /tools/* block. Never a runtime dependency of the site itself.",
+  "type": "module",
+  "scripts": {
+    "optimize": "node optimize-image.js"
+  },
+  "dependencies": {
+    "sharp": "^0.35.4"
+  }
+}
