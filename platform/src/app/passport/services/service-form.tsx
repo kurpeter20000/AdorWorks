@@ -35,7 +35,7 @@ export function ServiceForm({
           placeholder="e.g. Brand logo design"
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
-        {state.errors?.title && <p className="mt-1 text-xs text-coral">{state.errors.title[0]}</p>}
+        {state.errors?.title && <p className="mt-1 text-xs text-coral-ink">{state.errors.title[0]}</p>}
       </div>
 
       <div>
@@ -131,7 +131,7 @@ export function ServiceForm({
         />
       </div>
 
-      {state.message && <p className="text-xs text-coral">{state.message}</p>}
+      {state.message && <p className="text-xs text-coral-ink">{state.message}</p>}
 
       <button
         type="submit"

@@ -32,12 +32,12 @@ export function AssistanceConsentWidget({
           <button
             type="submit"
             disabled={revokePending}
-            className="rounded-lg border border-coral/40 px-4 py-2 text-sm font-bold text-coral disabled:opacity-60"
+            className="rounded-lg border border-coral/40 px-4 py-2 text-sm font-bold text-coral-ink disabled:opacity-60"
           >
             {revokePending ? "Revoking…" : "Revoke assisted access"}
           </button>
         </form>
-        {revokeState.message && <p className="mt-2 text-sm text-coral">{revokeState.message}</p>}
+        {revokeState.message && <p className="mt-2 text-sm text-coral-ink">{revokeState.message}</p>}
       </div>
     );
   }
@@ -83,7 +83,7 @@ export function AssistanceConsentWidget({
           {pending ? "Confirming…" : freshAccount ? "Set password and consent" : "I consent to being helped"}
         </button>
       </form>
-      {state.message && <p className="mt-2 text-sm text-coral">{state.message}</p>}
+      {state.message && <p className="mt-2 text-sm text-coral-ink">{state.message}</p>}
     </div>
   );
 }

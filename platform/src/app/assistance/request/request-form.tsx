@@ -36,7 +36,7 @@ export function RequestForm() {
           placeholder="e.g. I don't have a smartphone and need help signing up"
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
-        {state.errors?.reason && <p className="mt-1 text-sm text-coral">{state.errors.reason[0]}</p>}
+        {state.errors?.reason && <p className="mt-1 text-sm text-coral-ink">{state.errors.reason[0]}</p>}
       </div>
 
       <div>
@@ -51,7 +51,7 @@ export function RequestForm() {
         />
       </div>
 
-      {state.message && <p className="text-sm text-coral">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
 
       <button
         type="submit"

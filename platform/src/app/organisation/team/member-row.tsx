@@ -38,7 +38,7 @@ export function MemberRow({
           {name}
           {isRepresentative && <span className="ml-2 text-xs font-normal text-slate">(representative)</span>}
         </p>
-        {error && <p className="text-xs text-coral">{error}</p>}
+        {error && <p className="text-xs text-coral-ink">{error}</p>}
       </div>
       {canManage ? (
         <div className="flex items-center gap-2">
@@ -79,7 +79,7 @@ export function MemberRow({
                   }
                 });
               }}
-              className="text-xs font-semibold text-coral underline disabled:opacity-60"
+              className="text-xs font-semibold text-coral-ink underline disabled:opacity-60"
             >
               Remove
             </button>

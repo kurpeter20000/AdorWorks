@@ -185,8 +185,8 @@ export function ApplicantEvaluationPanel({
           className="mt-2 space-y-1"
         >
           <textarea name="body" rows={2} placeholder="Add a note for your team" className="w-full rounded-lg border border-slate/25 px-2 py-1.5 text-xs" />
-          {noteState.errors?.body && <p className="text-xs text-coral">{noteState.errors.body[0]}</p>}
-          {noteState.message && <p className="text-xs text-coral">{noteState.message}</p>}
+          {noteState.errors?.body && <p className="text-xs text-coral-ink">{noteState.errors.body[0]}</p>}
+          {noteState.message && <p className="text-xs text-coral-ink">{noteState.message}</p>}
           <button type="submit" className="rounded-lg border border-slate/25 px-3 py-1.5 text-xs font-semibold text-midnight">
             Add note
           </button>
@@ -199,7 +199,7 @@ export function ApplicantEvaluationPanel({
         <ApplicationMessageThread applicationId={applicationId} currentUserId={myUserId} messages={messages} />
       </div>
 
-      {error && <p className="text-xs text-coral">{error}</p>}
+      {error && <p className="text-xs text-coral-ink">{error}</p>}
     </div>
   );
 }

@@ -39,7 +39,7 @@ export async function reviewTimesheet(
 
   const { data: membership, error: membershipError } = await admin
     .from("organisation_members")
-    .select("user_id")
+    .select("user_id, role")
     .eq("organisation_id", contract.organisation_id)
     .eq("user_id", session.userId)
     .maybeSingle();
@@ -49,7 +49,7 @@ export async function reviewTimesheet(
     !canReviewTimesheet({
       actorUserId: session.userId,
       talentUserId: contract.talent_id,
-      hasOrganisationMembership: !!membership,
+      organisationRole: membership?.role ?? null,
       contractStatus: contract.status,
       timesheetStatus: timesheet.status,
     })

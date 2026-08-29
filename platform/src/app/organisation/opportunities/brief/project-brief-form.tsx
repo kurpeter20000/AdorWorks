@@ -24,7 +24,7 @@ export function ProjectBriefForm({ organisationId }: { organisationId: string })
           placeholder="e.g. I need our brand refreshed across our website and social channels before our product launch in October."
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
-        {state.errors?.outcome && <p className="mt-1 text-sm text-coral">{state.errors.outcome[0]}</p>}
+        {state.errors?.outcome && <p className="mt-1 text-sm text-coral-ink">{state.errors.outcome[0]}</p>}
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -60,7 +60,7 @@ export function ProjectBriefForm({ organisationId }: { organisationId: string })
             <option value="digital_technology">Digital &amp; technology</option>
             <option value="business_project_support">Business &amp; project support</option>
           </select>
-          {state.errors?.category && <p className="mt-1 text-sm text-coral">{state.errors.category[0]}</p>}
+          {state.errors?.category && <p className="mt-1 text-sm text-coral-ink">{state.errors.category[0]}</p>}
         </div>
       </div>
 
@@ -79,7 +79,7 @@ export function ProjectBriefForm({ organisationId }: { organisationId: string })
         />
       </div>
 
-      {state.message && <p className="text-sm text-coral">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
 
       <button
         type="submit"

@@ -30,7 +30,7 @@ export function NotificationsPanel({ notifications, unreadCount }: { notificatio
     <section className="mt-6 rounded-xl border border-slate/15 bg-white p-5">
       <div className="flex items-center justify-between">
         <h2 className="font-bold text-midnight">
-          Notifications{unreadCount > 0 && <span className="ml-2 text-xs font-semibold text-coral">({unreadCount} new)</span>}
+          Notifications{unreadCount > 0 && <span className="ml-2 text-xs font-semibold text-coral-ink">({unreadCount} new)</span>}
         </h2>
         <div className="flex items-center gap-3">
           {unreadCount > 0 && (

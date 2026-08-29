@@ -33,8 +33,8 @@ export function CancelContractSection({ contractId }: { contractId: string }) {
         placeholder="Why are you cancelling?"
         className="mt-2 w-full rounded-lg border border-slate/25 px-2 py-1.5 text-sm"
       />
-      {state.errors?.reason && <p className="mt-1 text-xs text-coral">{state.errors.reason[0]}</p>}
-      {state.message && <p className="mt-1 text-xs text-coral">{state.message}</p>}
+      {state.errors?.reason && <p className="mt-1 text-xs text-coral-ink">{state.errors.reason[0]}</p>}
+      {state.message && <p className="mt-1 text-xs text-coral-ink">{state.message}</p>}
       <div className="mt-2 flex gap-2">
         <button
           type="button"

@@ -29,12 +29,12 @@ export function PaymentCheckout({
   return (
     <form action={formAction} className="mt-3 rounded-lg border border-coral/30 bg-coral/5 p-3">
       {realPaymentsEnabled ? (
-        <p className="text-xs font-bold uppercase tracking-wide text-coral">
+        <p className="text-xs font-bold uppercase tracking-wide text-coral-ink">
           Live payment — MTN Mobile Money is connected; m-Gurush is not yet
         </p>
       ) : (
         <>
-          <p className="text-xs font-bold uppercase tracking-wide text-coral">Simulation — no real money moves</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-coral-ink">Simulation — no real money moves</p>
           <p className="mt-1 text-xs text-slate">
             AdorWorks doesn&apos;t process real payments yet. This walks through a checkout and records a simulated
             payment event, so the milestone can be marked paid and a receipt issued.
@@ -98,7 +98,7 @@ export function PaymentCheckout({
               placeholder="4242 4242 4242 4242"
               className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-1.5 text-sm"
             />
-            {state.errors?.cardNumber && <p className="mt-1 text-xs text-coral">{state.errors.cardNumber[0]}</p>}
+            {state.errors?.cardNumber && <p className="mt-1 text-xs text-coral-ink">{state.errors.cardNumber[0]}</p>}
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
@@ -111,7 +111,7 @@ export function PaymentCheckout({
                 placeholder="12/28"
                 className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-1.5 text-sm"
               />
-              {state.errors?.cardExpiry && <p className="mt-1 text-xs text-coral">{state.errors.cardExpiry[0]}</p>}
+              {state.errors?.cardExpiry && <p className="mt-1 text-xs text-coral-ink">{state.errors.cardExpiry[0]}</p>}
             </div>
             <div>
               <label htmlFor="cardCvv" className="block text-xs font-semibold text-midnight">
@@ -124,7 +124,7 @@ export function PaymentCheckout({
                 placeholder="123"
                 className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-1.5 text-sm"
               />
-              {state.errors?.cardCvv && <p className="mt-1 text-xs text-coral">{state.errors.cardCvv[0]}</p>}
+              {state.errors?.cardCvv && <p className="mt-1 text-xs text-coral-ink">{state.errors.cardCvv[0]}</p>}
             </div>
           </div>
         </div>
@@ -140,12 +140,12 @@ export function PaymentCheckout({
             placeholder="e.g. +211 9XX XXX XXX"
             className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-1.5 text-sm"
           />
-          {state.errors?.phone && <p className="mt-1 text-xs text-coral">{state.errors.phone[0]}</p>}
+          {state.errors?.phone && <p className="mt-1 text-xs text-coral-ink">{state.errors.phone[0]}</p>}
         </div>
       )}
 
-      {state.errors?.provider && <p className="mt-1 text-xs text-coral">{state.errors.provider[0]}</p>}
-      {state.message && <p className="mt-1 text-xs text-coral">{state.message}</p>}
+      {state.errors?.provider && <p className="mt-1 text-xs text-coral-ink">{state.errors.provider[0]}</p>}
+      {state.message && <p className="mt-1 text-xs text-coral-ink">{state.message}</p>}
 
       <button
         type="submit"

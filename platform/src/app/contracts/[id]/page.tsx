@@ -18,6 +18,9 @@ import { CancelContractSection } from "./cancel-contract-section";
 
 export const metadata: Metadata = { title: "Contract" };
 
+// Stage 10: bounds the message-thread fetch below — see its own comment.
+const MESSAGE_FETCH_CAP = 200;
+
 // Split out of the main bundle — only ever rendered for an employer once a
 // milestone is 'approved', so most contract-page visits never need it.
 const PaymentCheckout = dynamic(() => import("./payment-checkout").then((m) => m.PaymentCheckout));
@@ -102,13 +105,23 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
     .select("id")
     .eq("contract_id", contract.id)
     .maybeSingle();
-  const { data: messages } = conversation
+  // Stage 10 perf fix: this had no .limit() at all -- a long-running
+  // contract's full message history (with attachments) re-downloaded on
+  // every visit, unbounded, which is both a server-load and a low-data-
+  // mobile cost (an explicit product principle for this market). Fetch
+  // the most recent MESSAGE_FETCH_CAP descending, then reverse for the
+  // thread's expected chronological order -- same cap-then-reverse shape
+  // used nowhere else yet, but the least surprising fix for a UI that
+  // already assumes ascending order.
+  const { data: recentMessages } = conversation
     ? await supabase
         .from("messages")
         .select("id, sender_id, body, file_path, file_name, created_at")
         .eq("conversation_id", conversation.id)
-        .order("created_at", { ascending: true })
+        .order("created_at", { ascending: false })
+        .limit(MESSAGE_FETCH_CAP)
     : { data: [] };
+  const messages = recentMessages ? [...recentMessages].reverse() : recentMessages;
 
   const { data: timesheets } = await supabase
     .from("timesheets")
@@ -149,7 +162,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
       )}
 
       {contract.status === "disputed" && (
-        <p className="mt-4 rounded-lg bg-coral/10 px-4 py-3 text-sm font-semibold text-coral">
+        <p className="mt-4 rounded-lg bg-coral/10 px-4 py-3 text-sm font-semibold text-coral-ink">
           This contract is paused while AdorWorks staff review an open dispute — see below.
         </p>
       )}

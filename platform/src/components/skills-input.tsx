@@ -66,7 +66,7 @@ export function SkillsInput({
                 e.stopPropagation();
                 removeChip(chip);
               }}
-              className="text-slate hover:text-coral"
+              className="text-slate hover:text-coral-ink"
               aria-label={`Remove ${chip}`}
             >
               ×

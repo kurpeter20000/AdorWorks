@@ -57,7 +57,7 @@ export function SaveServiceButton({ serviceId, initialSaved }: { serviceId: stri
       >
         {saved ? "Saved" : "Save for later"}
       </button>
-      {error && <span className="ml-2 text-xs text-coral">{error}</span>}
+      {error && <span className="ml-2 text-xs text-coral-ink">{error}</span>}
     </span>
   );
 }

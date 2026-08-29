@@ -36,7 +36,7 @@ export function DisputeSection({
         <ul className="mt-3 space-y-3">
           {disputes.map((d) => (
             <li key={d.id} className="rounded-xl border border-coral/30 bg-coral/5 p-4">
-              <p className="text-xs font-semibold text-coral">{STATUS_LABEL[d.status] ?? d.status}</p>
+              <p className="text-xs font-semibold text-coral-ink">{STATUS_LABEL[d.status] ?? d.status}</p>
               <p className="mt-1 text-sm text-midnight">{d.description}</p>
               {d.resolution && (
                 <div className="mt-2 rounded-lg bg-white p-3">
@@ -66,8 +66,8 @@ export function DisputeSection({
             placeholder="Describe what's happened…"
             className="mt-2 w-full rounded-lg border border-slate/25 px-2 py-1.5 text-sm"
           />
-          {state.errors?.description && <p className="mt-1 text-xs text-coral">{state.errors.description[0]}</p>}
-          {state.message && <p className="mt-1 text-xs text-coral">{state.message}</p>}
+          {state.errors?.description && <p className="mt-1 text-xs text-coral-ink">{state.errors.description[0]}</p>}
+          {state.message && <p className="mt-1 text-xs text-coral-ink">{state.message}</p>}
           <button
             type="submit"
             disabled={pending}

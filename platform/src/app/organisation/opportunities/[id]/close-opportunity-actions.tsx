@@ -44,7 +44,7 @@ export function CloseOpportunityActions({ opportunityId }: { opportunityId: stri
           </button>
         ))}
       </div>
-      {error && <p className="mt-2 text-xs text-coral">{error}</p>}
+      {error && <p className="mt-2 text-xs text-coral-ink">{error}</p>}
     </div>
   );
 }

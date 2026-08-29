@@ -59,13 +59,13 @@ export function EvidenceUpload({ orgId, existingPath }: { orgId: string; existin
         className="w-full text-sm"
       />
       {status && (
-        <p className={`text-sm ${status.kind === "error" ? "text-coral" : "text-teal-ink"}`}>{status.message}</p>
+        <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`}>{status.message}</p>
       )}
       <button
         type="button"
         onClick={handleUpload}
         disabled={!file || busy}
-        className="rounded-lg border border-coral px-4 py-2 text-sm font-bold text-coral disabled:opacity-60"
+        className="rounded-lg border border-coral px-4 py-2 text-sm font-bold text-coral-ink disabled:opacity-60"
       >
         {busy ? "Uploading…" : "Upload document"}
       </button>

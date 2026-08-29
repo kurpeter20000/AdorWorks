@@ -44,7 +44,7 @@ export function InviteForm({ opportunityId, talentId }: { opportunityId: string;
         placeholder="A short note about why you're reaching out (optional)"
         className="w-full rounded-lg border border-slate/25 px-2 py-1.5 text-xs"
       />
-      {error && <p className="text-xs text-coral">{error}</p>}
+      {error && <p className="text-xs text-coral-ink">{error}</p>}
       <div className="flex gap-2">
         <button
           type="submit"

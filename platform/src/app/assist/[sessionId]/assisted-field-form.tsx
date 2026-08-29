@@ -58,7 +58,7 @@ export function AssistedFieldForm({
         >
           {pending ? "Saving…" : "Save"}
         </button>
-        {state.message && <span className="text-xs text-coral">{state.message}</span>}
+        {state.message && <span className="text-xs text-coral-ink">{state.message}</span>}
       </div>
     </form>
   );

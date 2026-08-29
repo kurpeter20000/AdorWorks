@@ -105,7 +105,7 @@ export function ReceiptView({
           <dd>{new Date(createdAt).toLocaleString()}</dd>
         </div>
       </dl>
-      {isSimulated && <p className="mt-2 text-xs text-coral">Simulated payment — no real money moved.</p>}
+      {isSimulated && <p className="mt-2 text-xs text-coral-ink">Simulated payment — no real money moved.</p>}
       <button
         type="button"
         onClick={() => window.print()}

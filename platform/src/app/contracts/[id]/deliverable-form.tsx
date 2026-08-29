@@ -86,7 +86,7 @@ export function DeliverableForm({ contractId, milestoneId }: { contractId: strin
         onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         className="w-full text-xs"
       />
-      {error && <p className="text-xs text-coral">{error}</p>}
+      {error && <p className="text-xs text-coral-ink">{error}</p>}
       <button
         type="button"
         disabled={working || pending}

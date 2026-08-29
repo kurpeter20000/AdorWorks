@@ -53,8 +53,8 @@ export function PhoneVerificationWidget() {
             required
             className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm sm:w-64"
           />
-          {sendState.errors?.phone && <p className="text-sm text-coral">{sendState.errors.phone[0]}</p>}
-          {sendState.message && <p className="text-sm text-coral">{sendState.message}</p>}
+          {sendState.errors?.phone && <p className="text-sm text-coral-ink">{sendState.errors.phone[0]}</p>}
+          {sendState.message && <p className="text-sm text-coral-ink">{sendState.message}</p>}
           <button
             type="submit"
             disabled={sending}
@@ -73,8 +73,8 @@ export function PhoneVerificationWidget() {
             required
             className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm sm:w-40"
           />
-          {verifyState.errors?.code && <p className="text-sm text-coral">{verifyState.errors.code[0]}</p>}
-          {verifyState.message && <p className="text-sm text-coral">{verifyState.message}</p>}
+          {verifyState.errors?.code && <p className="text-sm text-coral-ink">{verifyState.errors.code[0]}</p>}
+          {verifyState.message && <p className="text-sm text-coral-ink">{verifyState.message}</p>}
           <div className="flex items-center gap-3">
             <button
               type="submit"
@@ -92,7 +92,7 @@ export function PhoneVerificationWidget() {
                 formData.set("phone", phone);
                 sendAction(formData);
               }}
-              className="text-xs font-semibold text-coral underline disabled:opacity-60"
+              className="text-xs font-semibold text-coral-ink underline disabled:opacity-60"
             >
               {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
             </button>

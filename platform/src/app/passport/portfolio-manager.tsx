@@ -184,7 +184,7 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
                 type="button"
                 disabled={busy}
                 onClick={() => handleDelete(item.id)}
-                className="text-xs font-semibold text-coral disabled:opacity-60"
+                className="text-xs font-semibold text-coral-ink disabled:opacity-60"
               >
                 Remove
               </button>
@@ -220,7 +220,7 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
           className="w-full text-sm"
         />
         {status && (
-          <p className={`text-sm ${status.kind === "error" ? "text-coral" : "text-teal-ink"}`}>{status.message}</p>
+          <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`}>{status.message}</p>
         )}
         <button
           type="button"

@@ -188,7 +188,7 @@ export function OpportunityForm({
             placeholder="e.g. Graphic designer for a 2-month brand refresh"
             className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
           />
-          {state.errors?.title && <p className="mt-1 text-sm text-coral">{state.errors.title[0]}</p>}
+          {state.errors?.title && <p className="mt-1 text-sm text-coral-ink">{state.errors.title[0]}</p>}
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -227,7 +227,7 @@ export function OpportunityForm({
               <option value="digital_technology">Digital &amp; technology</option>
               <option value="business_project_support">Business &amp; project support</option>
             </select>
-            {state.errors?.category && <p className="mt-1 text-sm text-coral">{state.errors.category[0]}</p>}
+            {state.errors?.category && <p className="mt-1 text-sm text-coral-ink">{state.errors.category[0]}</p>}
           </div>
         </div>
 
@@ -289,7 +289,7 @@ export function OpportunityForm({
             defaultValue={opportunity?.skills?.join(", ")}
             placeholder="e.g. Figma, brand identity, illustration"
           />
-          {state.errors?.skills && <p className="mt-1 text-sm text-coral">{state.errors.skills[0]}</p>}
+          {state.errors?.skills && <p className="mt-1 text-sm text-coral-ink">{state.errors.skills[0]}</p>}
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -341,7 +341,7 @@ export function OpportunityForm({
             <option value="managed_service">Managed service</option>
           </select>
           {state.errors?.engagementType && (
-            <p className="mt-1 text-sm text-coral">{state.errors.engagementType[0]}</p>
+            <p className="mt-1 text-sm text-coral-ink">{state.errors.engagementType[0]}</p>
           )}
         </div>
       </div>
@@ -429,7 +429,7 @@ export function OpportunityForm({
             </div>
           </div>
           {state.errors?.compensationAmount && (
-            <p className="mt-2 text-sm text-coral">{state.errors.compensationAmount[0]}</p>
+            <p className="mt-2 text-sm text-coral-ink">{state.errors.compensationAmount[0]}</p>
           )}
         </div>
 
@@ -491,7 +491,7 @@ export function OpportunityForm({
                 <button
                   type="button"
                   onClick={() => removeQuestion(q.key)}
-                  className="mt-1 text-xs font-semibold text-coral"
+                  className="mt-1 text-xs font-semibold text-coral-ink"
                 >
                   Remove
                 </button>
@@ -595,7 +595,7 @@ export function OpportunityForm({
           </div>
         )}
         {erroredFields.length > 0 && (
-          <div className="rounded-lg bg-coral/10 px-4 py-3 text-sm text-coral">
+          <div className="rounded-lg bg-coral/10 px-4 py-3 text-sm text-coral-ink">
             <p className="font-semibold">Fix these before submitting:</p>
             <ul className="mt-1 space-y-1">
               {erroredFields.map((f) => (
@@ -608,7 +608,7 @@ export function OpportunityForm({
             </ul>
           </div>
         )}
-        {state.message && <p className="text-sm text-coral">{state.message}</p>}
+        {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
       </div>
 
       <div className="flex items-center justify-between gap-3 pt-2">

@@ -49,7 +49,7 @@ export function BasicsForm({
             required
             className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
           />
-          {state.errors?.legalName && <p className="mt-1 text-sm text-coral">{state.errors.legalName[0]}</p>}
+          {state.errors?.legalName && <p className="mt-1 text-sm text-coral-ink">{state.errors.legalName[0]}</p>}
         </div>
       </div>
 
@@ -64,7 +64,7 @@ export function BasicsForm({
           required
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
-        {state.errors?.displayName && <p className="mt-1 text-sm text-coral">{state.errors.displayName[0]}</p>}
+        {state.errors?.displayName && <p className="mt-1 text-sm text-coral-ink">{state.errors.displayName[0]}</p>}
       </div>
 
       <div>
@@ -79,7 +79,7 @@ export function BasicsForm({
           required
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
-        {state.errors?.headline && <p className="mt-1 text-sm text-coral">{state.errors.headline[0]}</p>}
+        {state.errors?.headline && <p className="mt-1 text-sm text-coral-ink">{state.errors.headline[0]}</p>}
       </div>
 
       <div>
@@ -107,7 +107,7 @@ export function BasicsForm({
             required
             className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
           />
-          {state.errors?.location && <p className="mt-1 text-sm text-coral">{state.errors.location[0]}</p>}
+          {state.errors?.location && <p className="mt-1 text-sm text-coral-ink">{state.errors.location[0]}</p>}
         </div>
         <div>
           <label htmlFor="category" className="text-sm font-semibold text-midnight">
@@ -125,7 +125,7 @@ export function BasicsForm({
             <option value="digital_technology">Digital &amp; technology</option>
             <option value="business_project_support">Business &amp; project support</option>
           </select>
-          {state.errors?.category && <p className="mt-1 text-sm text-coral">{state.errors.category[0]}</p>}
+          {state.errors?.category && <p className="mt-1 text-sm text-coral-ink">{state.errors.category[0]}</p>}
         </div>
       </div>
 
@@ -140,7 +140,7 @@ export function BasicsForm({
           required
           placeholder="e.g. Figma, brand identity, illustration"
         />
-        {state.errors?.skills && <p className="mt-1 text-sm text-coral">{state.errors.skills[0]}</p>}
+        {state.errors?.skills && <p className="mt-1 text-sm text-coral-ink">{state.errors.skills[0]}</p>}
       </div>
 
       <div>
@@ -186,7 +186,7 @@ export function BasicsForm({
         </div>
       </div>
 
-      {state.message && <p className="text-sm text-coral">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
 
       <button
         type="submit"

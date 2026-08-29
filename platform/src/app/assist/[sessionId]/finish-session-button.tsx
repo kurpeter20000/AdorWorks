@@ -26,7 +26,7 @@ export function FinishSessionButton({ sessionId }: { sessionId: string }) {
       >
         {pending ? "Finishing…" : "Finish session"}
       </button>
-      {error && <p className="mt-2 text-xs text-coral">{error}</p>}
+      {error && <p className="mt-2 text-xs text-coral-ink">{error}</p>}
     </div>
   );
 }

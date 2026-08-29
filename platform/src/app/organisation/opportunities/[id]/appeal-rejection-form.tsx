@@ -22,8 +22,8 @@ export function AppealRejectionForm({ opportunityId }: { opportunityId: string }
         rows={3}
         className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
       />
-      {state.errors?.note && <p className="text-xs text-coral">{state.errors.note[0]}</p>}
-      {state.message && <p className="text-xs text-coral">{state.message}</p>}
+      {state.errors?.note && <p className="text-xs text-coral-ink">{state.errors.note[0]}</p>}
+      {state.message && <p className="text-xs text-coral-ink">{state.message}</p>}
       <button
         type="submit"
         disabled={pending}

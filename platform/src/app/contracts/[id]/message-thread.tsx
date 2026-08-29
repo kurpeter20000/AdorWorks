@@ -146,7 +146,7 @@ export function MessageThread({
           {file && <span className="text-xs text-slate">{file.name}</span>}
         </div>
       </div>
-      {error && <p className="mt-1 text-xs text-coral">{error}</p>}
+      {error && <p className="mt-1 text-xs text-coral-ink">{error}</p>}
     </div>
   );
 }

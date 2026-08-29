@@ -213,13 +213,13 @@ export function IntroductionVideoManager({ existing }: { existing: TalentIntrodu
         <div className="rounded-lg border border-slate/15 bg-white p-3">
           <p className="text-sm font-semibold text-midnight">{STATUS_LABEL[existing.status]}</p>
           {existing.status === "rejected" && existing.rejection_reason && (
-            <p className="mt-1 text-xs text-coral">{existing.rejection_reason}</p>
+            <p className="mt-1 text-xs text-coral-ink">{existing.rejection_reason}</p>
           )}
           <button
             type="button"
             disabled={busy}
             onClick={handleDelete}
-            className="mt-2 text-xs font-semibold text-coral underline disabled:opacity-60"
+            className="mt-2 text-xs font-semibold text-coral-ink underline disabled:opacity-60"
           >
             Remove video
           </button>
@@ -252,7 +252,7 @@ export function IntroductionVideoManager({ existing }: { existing: TalentIntrodu
         )}
         {error && (
           <div className="mt-2">
-            <p className="text-xs text-coral">{error}</p>
+            <p className="text-xs text-coral-ink">{error}</p>
             {file && (
               <button type="button" onClick={handleUpload} className="mt-1 text-xs font-semibold text-teal-ink underline">
                 Try again

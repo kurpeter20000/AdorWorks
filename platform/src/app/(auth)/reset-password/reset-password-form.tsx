@@ -22,10 +22,10 @@ export function ResetPasswordForm() {
           required
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
-        {state.errors?.password && <p className="mt-1 text-sm text-coral">{state.errors.password[0]}</p>}
+        {state.errors?.password && <p className="mt-1 text-sm text-coral-ink">{state.errors.password[0]}</p>}
       </div>
 
-      {state.message && <p className="text-sm text-coral">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
 
       <button
         type="submit"

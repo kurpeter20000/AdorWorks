@@ -58,7 +58,7 @@ export function ServicesList({ services }: { services: TalentServiceRow[] }) {
                       .join(" · ") || "Draft — details not filled in yet"}
                   </p>
                   {service.status === "rejected" && service.status_note && (
-                    <p className="mt-1 text-xs text-coral">Not approved: {service.status_note}</p>
+                    <p className="mt-1 text-xs text-coral-ink">Not approved: {service.status_note}</p>
                   )}
                   {service.status === "paused" && service.status_note && (
                     <p className="mt-1 text-xs text-slate">Paused: {service.status_note}</p>
@@ -93,7 +93,7 @@ export function ServicesList({ services }: { services: TalentServiceRow[] }) {
                         type="button"
                         disabled={busyId === service.id}
                         onClick={() => handleDelete(service.id)}
-                        className="text-xs font-semibold text-coral disabled:opacity-60"
+                        className="text-xs font-semibold text-coral-ink disabled:opacity-60"
                       >
                         Delete
                       </button>
@@ -134,7 +134,7 @@ export function ServicesList({ services }: { services: TalentServiceRow[] }) {
                       type="button"
                       disabled={busyId === service.id}
                       onClick={() => runAction(service.id, withdrawService)}
-                      className="text-xs font-semibold text-coral disabled:opacity-60"
+                      className="text-xs font-semibold text-coral-ink disabled:opacity-60"
                     >
                       Withdraw
                     </button>
@@ -172,7 +172,7 @@ export function ServicesList({ services }: { services: TalentServiceRow[] }) {
         </ul>
       )}
 
-      {error && <p className="mt-2 text-sm text-coral">{error}</p>}
+      {error && <p className="mt-2 text-sm text-coral-ink">{error}</p>}
 
       {addingNew ? (
         <ServiceForm onSaved={() => setAddingNew(false)} />

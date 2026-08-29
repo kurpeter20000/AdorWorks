@@ -80,7 +80,7 @@ export function VerificationForm({ hasExisting }: { hasExisting: boolean }) {
       </div>
 
       {status && (
-        <p className={`text-sm ${status.kind === "error" ? "text-coral" : "text-teal-ink"}`}>{status.message}</p>
+        <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`}>{status.message}</p>
       )}
 
       <button

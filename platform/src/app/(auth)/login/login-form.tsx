@@ -23,7 +23,7 @@ export function LoginForm() {
           required
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
-        {state.errors?.email && <p className="mt-1 text-sm text-coral">{state.errors.email[0]}</p>}
+        {state.errors?.email && <p className="mt-1 text-sm text-coral-ink">{state.errors.email[0]}</p>}
       </div>
 
       <div>
@@ -45,7 +45,7 @@ export function LoginForm() {
         />
       </div>
 
-      {state.message && <p className="text-sm text-coral">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
 
       <button
         type="submit"

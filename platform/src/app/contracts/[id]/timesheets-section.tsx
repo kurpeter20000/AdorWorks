@@ -14,7 +14,7 @@ const STATUS_LABEL: Record<string, string> = {
 const STATUS_STYLE: Record<string, string> = {
   submitted: "bg-slate/10 text-slate",
   approved: "bg-teal/10 text-teal-ink",
-  rejected: "bg-coral/10 text-coral",
+  rejected: "bg-coral/10 text-coral-ink",
 };
 
 export function TimesheetsSection({
@@ -108,7 +108,7 @@ export function TimesheetsSection({
                       type="button"
                       disabled={pending}
                       onClick={() => setStatus(t.id, "rejected")}
-                      className="text-xs font-semibold text-coral underline disabled:opacity-60"
+                      className="text-xs font-semibold text-coral-ink underline disabled:opacity-60"
                     >
                       Reject
                     </button>
@@ -146,7 +146,7 @@ export function TimesheetsSection({
               className="rounded-lg border border-slate/25 px-2 py-1.5 text-sm"
             />
           </div>
-          {error && <p className="mt-2 text-xs text-coral">{error}</p>}
+          {error && <p className="mt-2 text-xs text-coral-ink">{error}</p>}
           <button
             type="button"
             disabled={pending}

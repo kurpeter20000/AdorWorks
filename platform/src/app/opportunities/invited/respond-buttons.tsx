@@ -41,7 +41,7 @@ export function RespondButtons({ invitationId }: { invitationId: string }) {
           Decline
         </button>
       </div>
-      {error && <p className="mt-1 text-xs text-coral">{error}</p>}
+      {error && <p className="mt-1 text-xs text-coral-ink">{error}</p>}
     </div>
   );
 }

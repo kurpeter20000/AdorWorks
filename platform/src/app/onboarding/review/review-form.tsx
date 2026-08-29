@@ -18,7 +18,7 @@ export function ReviewForm() {
         prospective employers.
       </label>
 
-      {state.message && <p className="text-sm text-coral">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
 
       <button
         type="submit"

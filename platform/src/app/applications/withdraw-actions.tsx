@@ -36,11 +36,11 @@ export function WithdrawActions({
           type="button"
           disabled={pending}
           onClick={() => act(withdrawApplication)}
-          className="text-xs font-semibold text-coral underline disabled:opacity-60"
+          className="text-xs font-semibold text-coral-ink underline disabled:opacity-60"
         >
           Withdraw
         </button>
-        {error && <p className="mt-1 text-xs text-coral">{error}</p>}
+        {error && <p className="mt-1 text-xs text-coral-ink">{error}</p>}
       </div>
     );
   }
@@ -56,7 +56,7 @@ export function WithdrawActions({
         >
           Reapply
         </button>
-        {error && <p className="mt-1 text-xs text-coral">{error}</p>}
+        {error && <p className="mt-1 text-xs text-coral-ink">{error}</p>}
       </div>
     );
   }

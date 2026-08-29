@@ -21,7 +21,7 @@ export function SetupForm() {
           required
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
-        {state.errors?.name && <p className="mt-1 text-sm text-coral">{state.errors.name[0]}</p>}
+        {state.errors?.name && <p className="mt-1 text-sm text-coral-ink">{state.errors.name[0]}</p>}
       </div>
 
       <div>
@@ -59,11 +59,11 @@ export function SetupForm() {
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
         {state.errors?.billingEmail && (
-          <p className="mt-1 text-sm text-coral">{state.errors.billingEmail[0]}</p>
+          <p className="mt-1 text-sm text-coral-ink">{state.errors.billingEmail[0]}</p>
         )}
       </div>
 
-      {state.message && <p className="text-sm text-coral">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
 
       <button
         type="submit"

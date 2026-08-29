@@ -45,14 +45,14 @@ export function ReportButton({ targetType, targetId }: { targetType: ReportTarge
           </option>
         ))}
       </select>
-      {state.errors?.reason && <p className="text-xs text-coral">{state.errors.reason[0]}</p>}
+      {state.errors?.reason && <p className="text-xs text-coral-ink">{state.errors.reason[0]}</p>}
       <textarea
         name="note"
         rows={2}
         placeholder="Anything else staff should know? (optional)"
         className="w-full rounded-lg border border-slate/25 px-2 py-1.5 text-xs"
       />
-      {state.message && <p className="text-xs text-coral">{state.message}</p>}
+      {state.message && <p className="text-xs text-coral-ink">{state.message}</p>}
       <div className="flex gap-2">
         <button
           type="submit"

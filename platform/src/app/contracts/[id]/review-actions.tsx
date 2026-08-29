@@ -21,7 +21,7 @@ export function ReviewActions({ deliverableId }: { deliverableId: string }) {
           placeholder="What needs to change?"
           className="w-full rounded-lg border border-slate/25 px-2 py-1.5 text-sm"
         />
-        {error && <p className="text-xs text-coral">{error}</p>}
+        {error && <p className="text-xs text-coral-ink">{error}</p>}
         <div className="flex gap-2">
           <button
             type="button"
@@ -74,7 +74,7 @@ export function ReviewActions({ deliverableId }: { deliverableId: string }) {
           {pending ? "Working…" : "Approve"}
         </button>
       </div>
-      {error && <p className="mt-1 text-xs text-coral">{error}</p>}
+      {error && <p className="mt-1 text-xs text-coral-ink">{error}</p>}
     </div>
   );
 }

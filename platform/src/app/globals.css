@@ -18,6 +18,14 @@
   --color-teal-ink: #00786a;
   --color-violet: #5b4bdb;
   --color-coral: #ff6b4a;
+  /* Same hue as --color-coral, darkened for text-on-white use (Stage 10
+     audit: #ff6b4a as body text is ≈2.82:1 against white -- fails even
+     WCAG AA's 3:1 floor for large text, let alone 4.5:1 for normal
+     text -- and this is the app's error/danger text color, the text
+     most in need of being legible. #c8391a computes to ≈5.18:1. Anything
+     using --color-coral as a *background* (badges, focus rings) is
+     unaffected and keeps the brighter brand coral. */
+  --color-coral-ink: #c8391a;
   --color-cloud: #f4f7fb;
   --color-slate: #596274;
   --color-white: #ffffff;
@@ -35,6 +43,7 @@
   --color-teal-ink: var(--color-teal-ink);
   --color-violet: var(--color-violet);
   --color-coral: var(--color-coral);
+  --color-coral-ink: var(--color-coral-ink);
   --color-cloud: var(--color-cloud);
   --color-slate: var(--color-slate);
 

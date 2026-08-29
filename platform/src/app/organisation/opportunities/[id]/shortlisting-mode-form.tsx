@@ -56,7 +56,7 @@ export function ShortlistingModeForm({
           I&rsquo;ll shortlist myself
         </button>
       </div>
-      {error && <p className="mt-2 text-xs text-coral">{error}</p>}
+      {error && <p className="mt-2 text-xs text-coral-ink">{error}</p>}
     </div>
   );
 }

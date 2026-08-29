@@ -18,7 +18,7 @@ export function InviteForm({ organisationId }: { organisationId: string }) {
         required
         className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
       />
-      {state.errors?.email && <p className="text-sm text-coral">{state.errors.email[0]}</p>}
+      {state.errors?.email && <p className="text-sm text-coral-ink">{state.errors.email[0]}</p>}
       <input
         name="fullName"
         placeholder="Full name (optional)"
@@ -35,7 +35,7 @@ export function InviteForm({ organisationId }: { organisationId: string }) {
       <p className="text-xs text-slate">
         Recruiter, hiring manager, and finance behave like Member today — labels only, for now.
       </p>
-      {state.message && <p className="text-sm text-coral">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
       {/* inviteTeamMember returns {} (or {temporaryPassword}) on success —
           state !== initialState is what distinguishes "just succeeded"
           from "never submitted yet", same empty-success-object shape as

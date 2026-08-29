@@ -144,7 +144,7 @@ export default async function OpportunityDetailPage({
       <ShortlistingModeForm opportunityId={opportunity.id} mode={opportunity.shortlisting_mode} />
 
       {opportunity.status === "rejected" && opportunity.rejection_reason && (
-        <div className="mt-4 rounded-lg bg-coral/10 px-4 py-3 text-sm text-coral">
+        <div className="mt-4 rounded-lg bg-coral/10 px-4 py-3 text-sm text-coral-ink">
           <p>Not approved: {opportunity.rejection_reason}</p>
           {opportunity.appeal_note ? (
             <p className="mt-2 text-midnight">Appeal submitted: {opportunity.appeal_note}</p>

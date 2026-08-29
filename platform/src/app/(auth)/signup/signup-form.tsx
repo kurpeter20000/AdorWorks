@@ -20,7 +20,7 @@ export function SignupForm() {
           <input type="radio" name="intent" value="hire" className="accent-teal" />
           Hire talent — for myself or an organisation
         </label>
-        {state.errors?.intent && <p className="text-sm text-coral">{state.errors.intent[0]}</p>}
+        {state.errors?.intent && <p className="text-sm text-coral-ink">{state.errors.intent[0]}</p>}
       </fieldset>
 
       <div>
@@ -34,7 +34,7 @@ export function SignupForm() {
           required
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
-        {state.errors?.fullName && <p className="mt-1 text-sm text-coral">{state.errors.fullName[0]}</p>}
+        {state.errors?.fullName && <p className="mt-1 text-sm text-coral-ink">{state.errors.fullName[0]}</p>}
       </div>
 
       <div>
@@ -49,7 +49,7 @@ export function SignupForm() {
           required
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
-        {state.errors?.email && <p className="mt-1 text-sm text-coral">{state.errors.email[0]}</p>}
+        {state.errors?.email && <p className="mt-1 text-sm text-coral-ink">{state.errors.email[0]}</p>}
       </div>
 
       <div>
@@ -65,7 +65,7 @@ export function SignupForm() {
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
         {state.errors?.password && (
-          <ul className="mt-1 list-disc pl-5 text-sm text-coral">
+          <ul className="mt-1 list-disc pl-5 text-sm text-coral-ink">
             {state.errors.password.map((err) => (
               <li key={err}>{err}</li>
             ))}
@@ -73,7 +73,7 @@ export function SignupForm() {
         )}
       </div>
 
-      {state.message && <p className="text-sm text-coral">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
 
       <button
         type="submit"

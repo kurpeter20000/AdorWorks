@@ -23,7 +23,7 @@ export function ProfessionalLinksForm({ initial }: { initial: TalentProfileRow }
           defaultValue={initial.linkedin_url ?? ""}
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
-        {state.errors?.linkedinUrl && <p className="mt-1 text-sm text-coral">{state.errors.linkedinUrl[0]}</p>}
+        {state.errors?.linkedinUrl && <p className="mt-1 text-sm text-coral-ink">{state.errors.linkedinUrl[0]}</p>}
       </div>
 
       <div>
@@ -37,7 +37,7 @@ export function ProfessionalLinksForm({ initial }: { initial: TalentProfileRow }
           defaultValue={initial.github_url ?? ""}
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
-        {state.errors?.githubUrl && <p className="mt-1 text-sm text-coral">{state.errors.githubUrl[0]}</p>}
+        {state.errors?.githubUrl && <p className="mt-1 text-sm text-coral-ink">{state.errors.githubUrl[0]}</p>}
       </div>
 
       <div>
@@ -51,10 +51,10 @@ export function ProfessionalLinksForm({ initial }: { initial: TalentProfileRow }
           defaultValue={initial.website_url ?? ""}
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
-        {state.errors?.websiteUrl && <p className="mt-1 text-sm text-coral">{state.errors.websiteUrl[0]}</p>}
+        {state.errors?.websiteUrl && <p className="mt-1 text-sm text-coral-ink">{state.errors.websiteUrl[0]}</p>}
       </div>
 
-      {state.message && <p className="text-sm text-coral">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
 
       <button
         type="submit"

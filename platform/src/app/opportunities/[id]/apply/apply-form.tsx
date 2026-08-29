@@ -30,7 +30,7 @@ export function ApplyForm({
           placeholder="Share relevant experience, how you'd approach this, or anything that sets you apart."
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
-        {state.errors?.pitch && <p className="mt-1 text-sm text-coral">{state.errors.pitch[0]}</p>}
+        {state.errors?.pitch && <p className="mt-1 text-sm text-coral-ink">{state.errors.pitch[0]}</p>}
       </div>
 
       {questions.length > 0 && (
@@ -39,7 +39,7 @@ export function ApplyForm({
           {questions.map((q) => (
             <div key={q.id}>
               <label htmlFor={`answer-${q.id}`} className="text-sm text-midnight">
-                {q.question} {q.required && <span className="text-coral">*</span>}
+                {q.question} {q.required && <span className="text-coral-ink">*</span>}
               </label>
               <input
                 id={`answer-${q.id}`}
@@ -48,14 +48,14 @@ export function ApplyForm({
                 className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
               />
               {state.errors?.[`answer-${q.id}`] && (
-                <p className="mt-1 text-sm text-coral">{state.errors[`answer-${q.id}`][0]}</p>
+                <p className="mt-1 text-sm text-coral-ink">{state.errors[`answer-${q.id}`][0]}</p>
               )}
             </div>
           ))}
         </div>
       )}
 
-      {state.message && <p className="text-sm text-coral">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
 
       <button
         type="submit"

@@ -73,7 +73,7 @@ export function AvatarUpload({ existingUrl }: { existingUrl: string | null }) {
           className="w-full text-sm"
         />
         {status && (
-          <p className={`text-sm ${status.kind === "error" ? "text-coral" : "text-teal-ink"}`}>{status.message}</p>
+          <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`}>{status.message}</p>
         )}
         <button
           type="button"
