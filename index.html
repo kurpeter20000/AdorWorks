@@ -79,11 +79,40 @@
       <p class="hero-kicker">Talent found. Work delivered.</p>
       <h1>Hire verified African talent without the guesswork.</h1>
       <p class="lede">AdorWorks helps businesses and organisations find trusted professionals for freelance projects, contracts, full-time roles and managed services. We verify capability, recommend the right people and support delivery from brief to completion.</p>
-      <div class="hero-ctas">
-        <a href="for-employers.html#categories" class="btn btn-primary">Find talent</a>
-        <a href="for-talent.html" class="btn btn-outline-light">Find work</a>
-        <a href="for-employers.html#brief-form" class="btn btn-outline-light">Post a project or job</a>
+
+      <div class="hero-audience" data-hero-audience>
+        <div class="hero-audience-toggle" role="tablist" aria-label="I am looking to">
+          <button type="button" role="tab" aria-selected="true" data-audience-tab="employer">I'm hiring</button>
+          <button type="button" role="tab" aria-selected="false" data-audience-tab="talent">I'm looking for work</button>
+        </div>
+
+        <form class="hero-search" role="search" action="for-employers.html" data-audience-search>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <label for="hero-search-q" class="visually-hidden">Search skills or categories</label>
+          <input type="search" id="hero-search-q" name="q" data-audience-placeholder-employer="Search skills or categories to hire" data-audience-placeholder-talent="Search roles or categories to find work" placeholder="Search skills or categories to hire">
+          <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+
+        <div class="hero-chips" data-audience-chips="employer">
+          <a href="for-employers.html#categories" class="chip">Creative &amp; media &rarr;</a>
+          <a href="for-employers.html#categories" class="chip">Digital &amp; technology &rarr;</a>
+          <a href="for-employers.html#categories" class="chip">Business &amp; project support &rarr;</a>
+          <a href="assisted-hiring.html" class="chip">Assisted hiring &rarr;</a>
+        </div>
+        <div class="hero-chips" data-audience-chips="talent" hidden>
+          <a href="for-talent.html" class="chip">Creative &amp; media &rarr;</a>
+          <a href="for-talent.html" class="chip">Digital &amp; technology &rarr;</a>
+          <a href="for-talent.html" class="chip">Business &amp; project support &rarr;</a>
+        </div>
+
+        <div class="hero-ctas">
+          <a href="for-employers.html#categories" class="btn btn-outline-light" data-audience-cta="employer">Find talent</a>
+          <a href="for-talent.html" class="btn btn-outline-light" data-audience-cta="talent" hidden>Find work</a>
+          <a href="for-employers.html#brief-form" class="hero-secondary-link" data-audience-secondary="employer">Post a project instead &rarr;</a>
+        </div>
       </div>
+
+      <p class="hero-trustline">Built for growing businesses, NGOs and development programs in South Sudan.</p>
     </div>
   </section>
 

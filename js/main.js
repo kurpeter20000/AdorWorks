@@ -164,6 +164,66 @@
       });
     }
 
+    // Hero audience toggle (homepage only): switches the search
+    // destination/placeholder, which chip set shows, and which CTA is
+    // primary for the visitor's stated intent, instead of showing three
+    // flat, equal-weight buttons at once.
+    var heroAudience = document.querySelector("[data-hero-audience]");
+    if (heroAudience) {
+      var audienceTabs = heroAudience.querySelectorAll("[data-audience-tab]");
+      var searchForm = heroAudience.querySelector("[data-audience-search]");
+      var searchInput = searchForm ? searchForm.querySelector("input[name=q]") : null;
+
+      function setAudience(audience) {
+        audienceTabs.forEach(function (tab) {
+          tab.setAttribute("aria-selected", String(tab.getAttribute("data-audience-tab") === audience));
+        });
+        heroAudience.querySelectorAll("[data-audience-chips]").forEach(function (el) {
+          el.hidden = el.getAttribute("data-audience-chips") !== audience;
+        });
+        heroAudience.querySelectorAll("[data-audience-cta]").forEach(function (el) {
+          el.hidden = el.getAttribute("data-audience-cta") !== audience;
+        });
+        heroAudience.querySelectorAll("[data-audience-secondary]").forEach(function (el) {
+          el.hidden = el.getAttribute("data-audience-secondary") !== audience;
+        });
+        if (searchForm) searchForm.action = audience === "talent" ? "for-talent.html" : "for-employers.html";
+        if (searchInput) {
+          var placeholder = searchInput.getAttribute("data-audience-placeholder-" + audience);
+          if (placeholder) searchInput.placeholder = placeholder;
+        }
+        track("hero_audience_switch", { audience: audience });
+      }
+
+      audienceTabs.forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          setAudience(tab.getAttribute("data-audience-tab"));
+        });
+      });
+    }
+
+    // Category search-match highlight: if a visitor arrives at
+    // for-employers.html (or is redirected there from the homepage
+    // search) with a ?q= term, scroll to and highlight any matching
+    // category card instead of the search silently going nowhere.
+    var categoryCards = document.querySelectorAll(".category-card");
+    if (categoryCards.length) {
+      var q = new URLSearchParams(window.location.search).get("q");
+      if (q && q.trim()) {
+        var needle = q.trim().toLowerCase();
+        var firstMatch = null;
+        categoryCards.forEach(function (card) {
+          if (card.textContent.toLowerCase().indexOf(needle) !== -1) {
+            card.classList.add("is-match");
+            if (!firstMatch) firstMatch = card;
+          }
+        });
+        if (firstMatch) {
+          firstMatch.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }
+    }
+
     // Click tracking: WhatsApp, phone, downloads
     document.querySelectorAll('a[href^="https://wa.me"]').forEach(function (a) {
       a.addEventListener("click", function () {

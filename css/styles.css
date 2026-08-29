@@ -211,6 +211,88 @@ p { margin: 0 0 1em; }
 .hero-login-note a { color: #fff; text-decoration: underline; font-weight: 700; }
 .hero-login-note a:hover { color: var(--color-accent); }
 
+/* Hero audience toggle, search and category chips (competitive-research
+   pattern: a clear two-path entry point above a real search input, with
+   quick category chips underneath -- replaces three flat, equal-weight
+   CTA buttons with one primary interaction per audience). */
+.hero-audience { margin-top: 1.75rem; max-width: 640px; }
+.hero-audience-toggle {
+  display: inline-flex;
+  background: rgba(255,255,255,0.12);
+  border-radius: 999px;
+  padding: 0.25rem;
+  gap: 0.25rem;
+  margin-bottom: 0.85rem;
+}
+.hero-audience-toggle button {
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.85);
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.hero-audience-toggle button[aria-selected="true"] { background: #fff; color: var(--color-primary); }
+
+.hero-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.4rem 0.4rem 0.4rem 1rem;
+}
+.hero-search svg { flex: none; width: 20px; height: 20px; color: var(--color-slate); }
+.hero-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  font-size: 0.95rem;
+  color: var(--color-primary);
+  padding: 0.6rem 0;
+}
+.hero-search input:focus { outline: none; }
+.hero-search .btn { min-height: 40px; padding: 0.55em 1.3em; font-size: 0.88rem; border-radius: 999px; }
+
+.hero-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.85rem; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: rgba(255,255,255,0.14);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.chip:hover { background: rgba(255,255,255,0.24); }
+.chip.is-match { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+/* Landing highlight for a category card matched from the homepage's hero
+   search (js/main.js reads ?q= and adds this class) -- confirms the
+   search actually went somewhere, rather than dropping the visitor on
+   the page with no sign anything happened. */
+.category-card.is-match { border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(0,168,143,0.25); }
+
+.hero-audience .hero-ctas { margin-top: 1rem; align-items: center; }
+.hero-secondary-link { color: rgba(255,255,255,0.85); font-weight: 700; font-size: 0.88rem; text-decoration: underline; }
+.hero-secondary-link:hover { color: #fff; }
+
+.hero-trustline { margin-top: 1.5rem; margin-bottom: 0; font-size: 0.85rem; color: rgba(255,255,255,0.65); }
+
+/* .hero-chips (flex) and .btn (inline-flex) both set their own `display`,
+   which otherwise beats the browser's default `[hidden]{display:none}` at
+   equal specificity by source order -- this rule comes later, so hidden
+   audience-toggle elements actually disappear instead of just losing
+   their box model. */
+.hero-audience [hidden] { display: none; }
+
 /* Hero with a real photo behind the text (visual redesign) -- the <img>
    is a real element (not a CSS background), positioned behind the text,
    so it still gets WebP+srcset+lazy-loading benefits. The gradient
