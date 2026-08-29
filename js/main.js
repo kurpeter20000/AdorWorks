@@ -140,30 +140,6 @@
       }
     }
 
-    // Scroll-reveal: cards and section intros ease in as they enter the
-    // viewport. Elements only get the (initially invisible via CSS) .reveal
-    // class from here, so a script failure or missing IntersectionObserver
-    // support never hides content -- it just skips the animation.
-    if ("IntersectionObserver" in window && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      var revealTargets = document.querySelectorAll(".card, .section-header");
-      var revealObserver = new IntersectionObserver(
-        function (entries) {
-          entries.forEach(function (entry) {
-            if (entry.isIntersecting) {
-              entry.target.classList.add("is-visible");
-              revealObserver.unobserve(entry.target);
-            }
-          });
-        },
-        { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
-      );
-      revealTargets.forEach(function (el, i) {
-        el.classList.add("reveal");
-        el.style.transitionDelay = (i % 3) * 0.08 + "s";
-        revealObserver.observe(el);
-      });
-    }
-
     // Hero audience toggle (homepage only): switches the search
     // destination/placeholder, which chip set shows, and which CTA is
     // primary for the visitor's stated intent, instead of showing three

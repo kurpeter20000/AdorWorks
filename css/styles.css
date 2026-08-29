@@ -322,6 +322,17 @@ p { margin: 0 0 1em; }
 .hero-photo-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
 .hero-photo .container { position: relative; z-index: 2; }
 
+/* Hero split layout (about.html): copy alongside a portrait rather than
+   a full-bleed background photo -- a plain .hero has no dark overlay to
+   protect text contrast, so a background photo isn't appropriate here. */
+.hero-split { display: flex; flex-direction: column-reverse; gap: 2rem; align-items: center; }
+.hero-split-photo { flex: none; width: 60%; max-width: 220px; }
+.hero-split-photo img { width: 100%; height: auto; border-radius: 16px; border: 3px solid rgba(255,255,255,0.18); }
+@media (min-width: 880px) {
+  .hero-split { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 3rem; }
+  .hero-split-photo { width: 320px; max-width: 320px; }
+}
+
 /* Card with a photo strip above its content (visual redesign). Negative
    margin matches .card's own 1.5rem padding so the image bleeds flush to
    the card's edges, then the rounded corners are clipped to the top only
@@ -395,15 +406,38 @@ p { margin: 0 0 1em; }
 }
 @media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
 
-/* Scroll-reveal: js/main.js adds .is-visible via IntersectionObserver.
-   Elements start visible (no js class) -- this only upgrades to an
-   entrance animation when JS actually runs, so content is never
-   hidden if a script fails to load. */
-@media (prefers-reduced-motion: no-preference) {
-  .reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.5s ease, transform 0.5s ease; }
-  .reveal.is-visible { opacity: 1; transform: none; }
-}
 .card h3 { margin-bottom: 0.4em; }
+/* Service/detail cards write their facts as "<strong>Label:</strong>
+   value<br>" -- turning each label into its own block (instead of
+   running inline into the previous line) reads as a clean stacked
+   fact-sheet instead of one dense paragraph, with no HTML/content
+   change needed. */
+.card p strong {
+  display: block;
+  margin-top: 0.65em;
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.card p strong:first-child { margin-top: 0; }
+
+/* Small icon badge above a section heading -- a quick visual anchor for
+   scanning a page with several similarly-structured sections (e.g. the
+   three service categories), not decoration for its own sake. */
+.section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  margin-bottom: 0.85rem;
+}
+.section-icon svg { width: 22px; height: 22px; }
+.section-icon-teal { background: rgba(0,168,143,0.12); color: var(--color-accent-text); }
+.section-icon-violet { background: rgba(91,75,219,0.12); color: var(--color-secondary); }
+.section-icon-coral { background: rgba(255,107,74,0.14); color: var(--color-highlight); }
 .card a { text-decoration: none; }
 /* When a card's whole content is one link (e.g. the 404/offline shortcut
    cards), make the entire card tappable rather than just the heading
