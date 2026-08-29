@@ -6,13 +6,22 @@
   tool, not part of the deploy.
 
   Usage:
-    npm run optimize -- <source-file> <output-name> [--widths=480,960,1440] [--quality=80]
+    npm run optimize -- <source-file> <output-name> [--widths=480,960,1440] [--quality=80] [--aspect=W:H] [--position=centre]
 
   Example:
     npm run optimize -- ~/Downloads/team-photo.jpg home-hero
     -> ../img/photos/home-hero-480.webp + .jpg
        ../img/photos/home-hero-960.webp + .jpg
        ../img/photos/home-hero-1440.webp + .jpg
+
+  --aspect=W:H: crop to this exact ratio server-side (fit: cover) instead of
+    a free resize. Use this for anything going into a fixed-ratio CSS box
+    (e.g. --aspect=16:10 for .card-photo-img) -- otherwise the browser's own
+    object-fit: cover crops blindly from the image centre, which silently
+    ruins portrait-oriented source photos (subject ends up outside the box).
+  --position=<sharp position>: where to anchor the crop when --aspect trims
+    the source, e.g. "top", "bottom", "centre" (default), "entropy",
+    "attention". Check the output visually -- there's no substitute.
 
   Budgets (warned, not enforced -- a human should decide whether a
   warning is acceptable for a specific hero vs card image):
@@ -31,6 +40,8 @@ function parseArgs(argv) {
   const positional = [];
   let widths = [480, 960, 1440];
   let quality = 80;
+  let aspect = null;
+  let position = "centre";
   for (const arg of argv) {
     if (arg.startsWith("--widths=")) {
       widths = arg
@@ -40,11 +51,16 @@ function parseArgs(argv) {
         .filter((w) => Number.isFinite(w) && w > 0);
     } else if (arg.startsWith("--quality=")) {
       quality = Number(arg.slice("--quality=".length));
+    } else if (arg.startsWith("--aspect=")) {
+      const [w, h] = arg.slice("--aspect=".length).split(":").map(Number);
+      if (Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0) aspect = w / h;
+    } else if (arg.startsWith("--position=")) {
+      position = arg.slice("--position=".length);
     } else {
       positional.push(arg);
     }
   }
-  return { source: positional[0], outputName: positional[1], widths, quality };
+  return { source: positional[0], outputName: positional[1], widths, quality, aspect, position };
 }
 
 function formatKb(bytes) {
@@ -52,7 +68,7 @@ function formatKb(bytes) {
 }
 
 async function main() {
-  const { source, outputName, widths, quality } = parseArgs(process.argv.slice(2));
+  const { source, outputName, widths, quality, aspect, position } = parseArgs(process.argv.slice(2));
 
   if (!source || !outputName) {
     console.error("Usage: npm run optimize -- <source-file> <output-name> [--widths=480,960,1440] [--quality=80]");
@@ -82,13 +98,16 @@ async function main() {
       continue;
     }
     const budget = width >= 960 ? 150 * 1024 : 60 * 1024;
+    const resizeOpts = aspect
+      ? { width, height: Math.round(width / aspect), fit: "cover", position, withoutEnlargement: true }
+      : { width, withoutEnlargement: true };
 
     const webpPath = join(OUTPUT_DIR, `${outputName}-${width}.webp`);
-    const webpInfo = await sharp(sourcePath).resize({ width, withoutEnlargement: true }).webp({ quality }).toFile(webpPath);
+    const webpInfo = await sharp(sourcePath).resize(resizeOpts).webp({ quality }).toFile(webpPath);
 
     const jpgPath = join(OUTPUT_DIR, `${outputName}-${width}.jpg`);
     const jpgInfo = await sharp(sourcePath)
-      .resize({ width, withoutEnlargement: true })
+      .resize(resizeOpts)
       .jpeg({ quality, mozjpeg: true })
       .toFile(jpgPath);
 
