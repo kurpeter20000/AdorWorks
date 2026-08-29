@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { changeTeamMemberRole, removeTeamMember } from "@/lib/actions/organisationTeam";
 import type { OrganisationMemberRole } from "@/lib/database.types";
+import { Badge } from "@/components/ui/badge";
 
 const ROLE_LABEL: Record<OrganisationMemberRole, string> = {
   member: "Member",
@@ -86,9 +87,9 @@ export function MemberRow({
           )}
         </div>
       ) : (
-        <span className="rounded-full bg-cloud px-3 py-1 text-xs font-semibold text-slate">
-          {ROLE_LABEL[role] ?? role}
-        </span>
+        // Read-only: this visitor cannot change this member's role (not an
+        // admin) -- a Badge, not a control, is the honest signal here.
+        <Badge variant="neutral">{ROLE_LABEL[role] ?? role}</Badge>
       )}
     </li>
   );

@@ -5,15 +5,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/lib/actions/auth";
 import type { NavLink } from "@/lib/domain/navigation";
+import type { UserRole } from "@/lib/database.types";
+import { USER_ROLE_LABELS, getRoleBadgeVariant } from "@/lib/domain/roles";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export function TopNavClient({
   links,
   unreadCount,
   displayName,
+  role,
 }: {
   links: readonly NavLink[];
   unreadCount: number;
   displayName: string;
+  role: UserRole;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -59,13 +65,14 @@ export function TopNavClient({
         </nav>
 
         <div className="hidden items-center gap-3 sm:flex">
+          <Badge variant={getRoleBadgeVariant(role)}>{USER_ROLE_LABELS[role]}</Badge>
           <span className="max-w-[10rem] truncate text-xs text-slate" title={displayName}>
             {displayName}
           </span>
           <form action={logout}>
-            <button type="submit" className="rounded-lg border border-slate/25 px-3 py-1.5 text-xs font-semibold text-midnight">
+            <Button type="submit" variant="ghost" size="sm">
               Sign out
-            </button>
+            </Button>
           </form>
         </div>
 
@@ -104,11 +111,14 @@ export function TopNavClient({
               </li>
             ))}
             <li className="mt-2 flex items-center justify-between border-t border-slate/15 px-3 pt-3">
-              <span className="truncate text-xs text-slate">{displayName}</span>
+              <span className="flex min-w-0 items-center gap-2">
+                <Badge variant={getRoleBadgeVariant(role)}>{USER_ROLE_LABELS[role]}</Badge>
+                <span className="truncate text-xs text-slate">{displayName}</span>
+              </span>
               <form action={logout}>
-                <button type="submit" className="rounded-lg border border-slate/25 px-3 py-1.5 text-xs font-semibold text-midnight">
+                <Button type="submit" variant="ghost" size="sm">
                   Sign out
-                </button>
+                </Button>
               </form>
             </li>
           </ul>

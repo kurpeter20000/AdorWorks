@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { login, type FormState } from "@/lib/actions/auth";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const initialState: FormState = {};
 
@@ -15,14 +17,7 @@ export function LoginForm() {
         <label htmlFor="email" className="text-sm font-semibold text-midnight">
           Email
         </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
-        />
+        <Input id="email" name="email" type="email" autoComplete="email" required className="mt-1" />
         {state.errors?.email && <p className="mt-1 text-sm text-coral-ink">{state.errors.email[0]}</p>}
       </div>
 
@@ -35,25 +30,14 @@ export function LoginForm() {
             Forgot password?
           </Link>
         </div>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
-        />
+        <Input id="password" name="password" type="password" autoComplete="current-password" required className="mt-1" />
       </div>
 
       {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-lg bg-teal px-4 py-2.5 text-sm font-bold text-midnight disabled:opacity-60"
-      >
+      <Button type="submit" loading={pending} className="w-full">
         {pending ? "Signing in…" : "Sign in"}
-      </button>
+      </Button>
     </form>
   );
 }

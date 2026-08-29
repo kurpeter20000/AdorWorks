@@ -29,6 +29,7 @@ export async function TopNav() {
       links={links}
       unreadCount={unreadCount ?? 0}
       displayName={session.fullName || session.email || "Account"}
+      role={session.role}
     />
   );
 }

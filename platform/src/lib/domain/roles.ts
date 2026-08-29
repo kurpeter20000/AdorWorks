@@ -35,6 +35,28 @@ export const STAFF_ACCOUNT_ROLES = [
 
 export type DashboardKind = "talent" | "employer" | "assistance" | "operations" | "partner";
 
+/** Human-friendly account-role label for the nav's role Badge — display only, never used for authorization. */
+export const USER_ROLE_LABELS: Record<UserRole, string> = {
+  talent: "Talent",
+  employer: "Employer",
+  individual_client: "Client",
+  org_member: "Team member",
+  org_admin: "Org admin",
+  reviewer: "Reviewer",
+  matcher: "Matcher",
+  finance: "Finance",
+  admin: "Admin",
+  onboarding_agent: "Assistance",
+  partner_hub_admin: "Partner",
+};
+
+/** Which Badge variant a role's label renders in — grouped by account kind, not per-role. */
+export function getRoleBadgeVariant(role: UserRole): "success" | "accent" | "warning" {
+  if (role === "talent") return "success";
+  if (isStaffAccountRole(role)) return "warning";
+  return "accent";
+}
+
 const employerRoles = new Set<UserRole>(EMPLOYER_ACCOUNT_ROLES);
 const staffRoles = new Set<UserRole>(STAFF_ACCOUNT_ROLES);
 
