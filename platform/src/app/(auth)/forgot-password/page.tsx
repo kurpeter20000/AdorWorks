@@ -14,7 +14,7 @@ export default async function ForgotPasswordPage({
   if (sent) {
     return (
       <div className="text-center">
-        <h1 className="text-xl font-bold text-midnight">Check your email</h1>
+        <h1 className="text-2xl font-bold text-midnight">Check your email</h1>
         <p className="mt-3 text-sm text-slate">
           If that email matches an AdorWorks account, we&apos;ve sent a link to reset your password.
         </p>
@@ -31,7 +31,7 @@ export default async function ForgotPasswordPage({
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-midnight">Reset your password</h1>
+      <h1 className="text-2xl font-bold text-midnight">Reset your password</h1>
       <p className="mt-1 text-sm text-slate">Enter your account email and we&apos;ll send you a reset link.</p>
       <ForgotPasswordForm />
       <p className="mt-4 text-center text-sm text-slate">

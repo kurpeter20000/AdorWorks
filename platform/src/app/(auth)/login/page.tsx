@@ -46,7 +46,7 @@ export default async function LoginPage({
         </Link>
       </div>
 
-      <h1 className="text-xl font-bold text-midnight">Sign in</h1>
+      <h1 className="text-2xl font-bold text-midnight">Sign in</h1>
       {intent && <p className="mt-1 text-sm text-slate">{INTENT_COPY[intent]}</p>}
       <LoginForm />
       <p className="mt-4 text-center text-sm text-slate">

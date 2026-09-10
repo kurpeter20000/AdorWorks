@@ -1,3 +1,4 @@
+import { Compass } from "lucide-react";
 import { MARKETING_SITE_URL } from "@/lib/domain/marketingSite";
 import { HeroVideoBackground } from "@/components/hero-video-background";
 
@@ -32,20 +33,30 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <HeroVideoBackground className="absolute inset-0 -z-20 h-full w-full object-cover" />
       <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-midnight/80 to-midnight/90" />
 
-      <div className="relative z-0 flex items-center justify-between px-6 py-4 text-white lg:hidden">
-        <a href={MARKETING_SITE_URL} className="text-sm font-semibold text-white/85 hover:text-white">
-          &larr; Back
-        </a>
+      {/* One clean, standard way back to the marketing site — same
+          "Explore" language and icon as Explore Mode in the authenticated
+          app's mode switcher (see mode-switcher.tsx), so a signed-out
+          visitor and a signed-in user leaving the app both reach for the
+          same affordance. Fixed in the corner rather than buried at the
+          end of the value-prop list, and shared by mobile and desktop
+          instead of two different back links. */}
+      <a
+        href={MARKETING_SITE_URL}
+        className="absolute top-4 right-4 z-10 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/20 sm:top-6 sm:right-6"
+      >
+        <Compass className="size-4" aria-hidden="true" />
+        Explore AdorWorks
+      </a>
+
+      <div className="relative z-0 flex items-center px-6 py-4 text-white lg:hidden">
         <span className="text-lg font-extrabold">AdorWorks</span>
       </div>
 
       <div className="relative z-0 flex flex-1 flex-col lg:flex-row">
-        <div className="hidden flex-col justify-between py-16 text-white lg:flex lg:w-1/2 lg:px-16 xl:px-24">
-          <a href={MARKETING_SITE_URL} className="text-lg font-extrabold">
-            AdorWorks
-          </a>
+        <div className="hidden flex-col justify-center py-16 text-white lg:flex lg:w-1/2 lg:px-16 xl:px-24">
+          <span className="text-lg font-extrabold">AdorWorks</span>
 
-          <div>
+          <div className="mt-10">
             <p className="text-4xl leading-snug font-extrabold">
               Talent found.
               <br />
@@ -60,14 +71,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               ))}
             </ul>
           </div>
-
-          <a href={MARKETING_SITE_URL} className="text-sm font-semibold text-white/70 hover:text-white">
-            &larr; Back to the AdorWorks website
-          </a>
         </div>
 
         <div className="flex flex-1 flex-col items-center justify-center px-6 pb-10 sm:px-10 lg:w-1/2 lg:px-16 lg:py-16">
-          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">{children}</div>
+          <div className="w-full max-w-lg rounded-2xl bg-white p-10 shadow-xl">{children}</div>
         </div>
       </div>
     </div>

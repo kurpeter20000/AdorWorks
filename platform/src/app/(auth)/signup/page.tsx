@@ -14,7 +14,7 @@ export default async function SignupPage({
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-midnight">Create your account</h1>
+      <h1 className="text-2xl font-bold text-midnight">Create your account</h1>
       <p className="mt-1 text-sm text-slate">
         Free to register, always. We&apos;ll never charge you to be considered for work.
       </p>

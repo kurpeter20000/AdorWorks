@@ -12,7 +12,7 @@ export default async function ResetPasswordPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-midnight">Set a new password</h1>
+      <h1 className="text-2xl font-bold text-midnight">Set a new password</h1>
       <p className="mt-1 text-sm text-slate">Choose a new password for your account.</p>
       <ResetPasswordForm />
     </div>
