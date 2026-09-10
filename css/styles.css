@@ -300,6 +300,29 @@ p { margin: 0 0 1em; }
 
 .hero-trustline { margin-top: 1.85rem; margin-bottom: 0; font-size: 0.85rem; color: rgba(255,255,255,0.65); }
 
+/* Hero entrance: each top-level block fades/rises in on load, cascading
+   top to bottom -- restrained (no bounce, short distance/duration), and
+   generic by design (targets .hero .container's direct children by
+   position, not specific classes) so it works unmodified across every
+   hero variant on the site -- plain, photo+search, and the About page's
+   text+portrait split. Wrapped in the no-preference query rather than
+   added-then-cancelled, so a reduced-motion visitor never gets a
+   flash of animated content -- see also .reveal below and this file's
+   header note on restrained animation. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero .container > * { animation: hero-fade-up 0.7s ease both; }
+  .hero .container > *:nth-child(1) { animation-delay: 0.05s; }
+  .hero .container > *:nth-child(2) { animation-delay: 0.15s; }
+  .hero .container > *:nth-child(3) { animation-delay: 0.25s; }
+  .hero .container > *:nth-child(4) { animation-delay: 0.35s; }
+  .hero .container > *:nth-child(5) { animation-delay: 0.45s; }
+  .hero .container > *:nth-child(6) { animation-delay: 0.55s; }
+}
+@keyframes hero-fade-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* .hero-chips (flex) and .btn (inline-flex) both set their own `display`,
    which otherwise beats the browser's default `[hidden]{display:none}` at
    equal specificity by source order -- this rule comes later, so hidden
@@ -388,23 +411,231 @@ p { margin: 0 0 1em; }
 .section-header { max-width: 70ch; margin-bottom: 2rem; }
 .section-header p { color: var(--color-muted); font-size: 1.05rem; }
 
-/* Section header with a photo instead of an icon badge (services.html
-   category headers) -- stacks on mobile, sits beside the heading from
-   720px up. Reuses the 16/10 crop already proven safe for these source
-   photos in .card-photo-img. */
-.section-header-media { display: flex; flex-direction: column; gap: 1.1rem; align-items: flex-start; max-width: none; }
-.section-header-media picture, .section-header-media img { width: 100%; max-width: 320px; }
-.section-header-media img { aspect-ratio: 16 / 10; object-fit: cover; border-radius: 12px; }
-.section-header-media h2 { margin: 0; }
-@media (min-width: 720px) {
-  .section-header-media { flex-direction: row; align-items: center; }
-  .section-header-media picture, .section-header-media img { flex: none; width: 280px; }
+/* Category card (services.html) -- one large gradient card per category:
+   an intro (icon, description, quick stats) on one side, a horizontally
+   scrollable strip of clickable service photos on the other. The point
+   of difference from a plain static listing is exactly that pairing --
+   scroll AND click-through -- so both stay front and center rather than
+   being just a grid of equal-weight boxes. */
+.service-category {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.75rem;
+  margin-bottom: 2rem;
 }
+.service-category-creative { background: linear-gradient(135deg, var(--color-primary) 0%, #00786A 100%); }
+.service-category-digital { background: linear-gradient(135deg, var(--color-primary) 0%, #5B4BDB 100%); }
+.service-category-business { background: linear-gradient(135deg, var(--color-primary) 0%, #FF6B4A 100%); }
+
+/* Purely atmospheric blurred circle -- decorative only, so it's not
+   part of the DOM as a real element; each gradient card gets one. */
+.service-category::before {
+  content: "";
+  position: absolute;
+  top: -70px; right: -70px;
+  width: 240px; height: 240px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.service-category-intro { position: relative; z-index: 1; }
+.service-category-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px; height: 42px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.16);
+  margin-bottom: 0.85rem;
+}
+.service-category-icon svg { width: 22px; height: 22px; }
+.service-category-intro h2 { color: #fff; margin-bottom: 0.45em; }
+.service-category-desc { color: rgba(255,255,255,0.88); max-width: 42ch; margin-bottom: 1rem; }
+.service-category-stats { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.service-category-stats li {
+  font-size: 0.78rem;
+  font-weight: 800;
+  background: rgba(255,255,255,0.16);
+  padding: 0.4em 0.75em;
+  border-radius: 999px;
+}
+
+.service-category-services { position: relative; z-index: 1; }
+.service-tile-scroll {
+  display: flex;
+  gap: 0.9rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding: 0.2rem 0.2rem 0.4rem;
+  margin: -0.2rem -0.2rem 0;
+}
+.service-tile-scroll::-webkit-scrollbar { display: none; }
+.service-tile-scroll .service-tile {
+  flex: none;
+  width: 150px;
+  scroll-snap-align: start;
+  border: none;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+}
+.service-tile-scroll .service-tile img { aspect-ratio: 4 / 5; }
+
+.service-scroll-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px; height: 34px;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--color-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+.service-scroll-btn svg { width: 18px; height: 18px; }
+.service-scroll-prev { left: -8px; }
+.service-scroll-next { right: -8px; }
+.service-scroll-btn:disabled { opacity: 0.35; cursor: default; }
+
+@media (min-width: 880px) {
+  .service-category { flex-direction: row; align-items: center; padding: 2.25rem; gap: 2rem; }
+  .service-category-intro { flex: none; width: 280px; }
+  .service-category-services { flex: 1 1 auto; min-width: 0; }
+}
+
+.service-tile {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.service-tile:hover, .service-tile:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 22px rgba(24,34,48,0.14);
+  border-color: var(--color-accent);
+}
+@media (prefers-reduced-motion: reduce) { .service-tile { transition: none; } .service-tile:hover { transform: none; } }
+.service-tile img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
+.service-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 45%, rgba(24,34,48,0.85));
+}
+.service-tile-label {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  z-index: 1;
+  padding: 0.6rem 0.7rem;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.85rem;
+  line-height: 1.25;
+}
+
+/* Service detail modal -- native <dialog> for built-in focus trap,
+   Escape-to-close and top-layer stacking. Prev/next cycle within the
+   category the opened tile belongs to (see the JS "service group"
+   logic), not across the whole page. */
+.service-modal {
+  border: none;
+  border-radius: 16px;
+  padding: 0;
+  width: min(560px, calc(100vw - 2rem));
+  max-height: min(680px, calc(100vh - 2rem));
+  overflow-y: auto;
+}
+.service-modal::backdrop { background: rgba(24,34,48,0.72); }
+.service-modal-photo { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
+.service-modal-close {
+  position: absolute;
+  top: 0.75rem; right: 0.75rem;
+  z-index: 2;
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: rgba(24,34,48,0.55);
+  color: #fff;
+  cursor: pointer;
+}
+.service-modal-close svg { width: 18px; height: 18px; }
+.service-modal-body { padding: 1.5rem; }
+.service-modal-eyebrow {
+  margin: 0 0 0.35em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--color-accent-text);
+}
+.service-modal-body h3 { margin-bottom: 0.6em; }
+.service-modal-facts dt {
+  margin-top: 0.75em;
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 800;
+}
+.service-modal-facts dt:first-child { margin-top: 0; }
+.service-modal-facts dd { margin: 0.15em 0 0; }
+.service-modal-body .btn { margin-top: 1.25rem; }
+.service-modal-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+.service-modal-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  padding: 0.4rem;
+}
+.service-modal-nav svg { width: 18px; height: 18px; }
+.service-modal-nav:disabled { color: var(--color-border); cursor: default; }
+.service-modal-position { color: var(--color-muted); font-size: 0.85rem; }
 
 /* Cards / grid */
 .grid { display: grid; gap: 1.25rem; grid-template-columns: 1fr; }
 @media (min-width: 640px) { .grid-2 { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 880px) { .grid-3 { grid-template-columns: repeat(3, 1fr); } }
+/* .grid-3 used to jump straight from 1 column to 3 at 880px -- every
+   tablet in between (iPad portrait at 768px included) fell through to a
+   single column, so every 3-up section on the site (card grids,
+   category grids, etc.) rendered as one long stacked list instead of a
+   grid. A 2-column tablet step (matching .steps-3/.tier-grid's existing
+   700px convention) closes that gap; 3 columns only once there's
+   actually room for them, at the same 960px the header nav already
+   switches to its desktop layout. */
+@media (min-width: 700px) { .grid-3 { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 960px) { .grid-3 { grid-template-columns: repeat(3, 1fr); } }
 
 .card {
   background: var(--color-surface);
@@ -420,7 +651,91 @@ p { margin: 0 0 1em; }
 }
 @media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
 
+/* Scroll reveal (js/main.js adds .reveal to cards/steps/tiers/notices as
+   they mount, then .is-revealed via IntersectionObserver once each one
+   enters the viewport) -- a gentle fade/rise, same restrained distance
+   and easing as the hero entrance above. The transition list here
+   deliberately repeats .card/.service-tile's own transform/box-shadow/
+   border-color properties (not just opacity/transform) so adding
+   .reveal doesn't clobber their existing hover transition once revealed.
+   No JS = no .reveal class = content simply visible; see main.js for
+   the prefers-reduced-motion guard that skips this path entirely. */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s ease, transform 0.4s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.reveal.is-revealed { opacity: 1; transform: none; }
+
 .card h3 { margin-bottom: 0.4em; }
+
+/* Path cards ("five ways to work" on the homepage) -- title + a circular
+   arrow link at top, description, a text CTA, then a photo bled flush to
+   the card's bottom/side edges (mirrors .card-photo-img's top-bleed
+   technique, just inverted). One card can carry .path-card-highlight for
+   a solid-navy "primary path" treatment, same navy+white pairing already
+   used in .hero and .cta-band so it reads as consistent, not a one-off. */
+.path-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 1.5rem 1.5rem 0;
+}
+.path-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.path-card-head h3 { margin: 0; }
+.path-card-arrow {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-accent);
+  color: var(--color-accent-text);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.path-card-arrow svg { width: 16px; height: 16px; }
+.path-card-arrow:hover { background: var(--color-accent); color: var(--color-accent-ink); }
+.path-card p { color: var(--color-muted); font-size: 0.95rem; }
+.path-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 800;
+  font-size: 0.92rem;
+  color: var(--color-accent-text);
+  text-decoration: none;
+  margin-bottom: 1.25rem;
+}
+.path-card-cta:hover { text-decoration: underline; }
+.path-card-photo {
+  display: block;
+  width: calc(100% + 3rem);
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  margin: auto -1.5rem 0;
+  border-radius: 0 0 12px 12px;
+}
+.path-card-highlight { background: var(--color-primary); border-color: var(--color-primary); }
+.path-card-highlight h3,
+.path-card-highlight p { color: #fff; }
+.path-card-highlight .path-card-arrow { border-color: rgba(255,255,255,0.5); color: #fff; }
+.path-card-highlight .path-card-arrow:hover { background: #fff; color: var(--color-primary); }
+.path-card-highlight .path-card-cta { color: #fff; }
+
+/* The 6th, photo-less "not sure which fits" card in the same grid --
+   dashed border marks it as the fallback/escape-hatch, not a sixth
+   equal-weight path competing with the five real ones. */
+.path-card-fallback {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  border-style: dashed;
+  background: var(--color-surface-alt);
+}
 /* Service/detail cards write their facts as "<strong>Label:</strong>
    value<br>" -- turning each label into its own block (instead of
    running inline into the previous line) reads as a clean stacked

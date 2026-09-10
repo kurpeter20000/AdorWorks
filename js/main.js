@@ -194,6 +194,129 @@
       }
     }
 
+    // Service detail modal (services.html): each category card's photo
+    // tiles open a shared <dialog> with the full deliverable/inputs/
+    // excludes detail plus prev/next through that same category's tiles.
+    var serviceModal = document.getElementById("service-modal");
+    if (serviceModal && typeof serviceModal.showModal === "function") {
+      var serviceGroups = Array.from(document.querySelectorAll("[data-service-group]")).map(function (group) {
+        return {
+          name: group.getAttribute("data-service-group"),
+          tiles: Array.from(group.querySelectorAll(".service-tile")),
+        };
+      });
+      var modalPhoto = document.getElementById("service-modal-photo");
+      var modalCategory = document.getElementById("service-modal-category");
+      var modalTitle = document.getElementById("service-modal-title");
+      var modalFacts = document.getElementById("service-modal-facts");
+      var modalPosition = document.getElementById("service-modal-position");
+      var modalRequest = document.getElementById("service-modal-request");
+      var modalPrev = serviceModal.querySelector("[data-modal-prev]");
+      var modalNext = serviceModal.querySelector("[data-modal-next]");
+      var activeGroup = null;
+      var activeIndex = 0;
+
+      function renderService() {
+        var tile = activeGroup.tiles[activeIndex];
+        var img = tile.querySelector("img");
+        modalPhoto.src = img.currentSrc || img.src;
+        modalCategory.textContent = activeGroup.name;
+        modalTitle.textContent = tile.getAttribute("data-title");
+        modalRequest.setAttribute("data-service-title", tile.getAttribute("data-title"));
+
+        var facts = "";
+        facts += "<dt>Deliverable</dt><dd>" + tile.getAttribute("data-deliverable") + "</dd>";
+        facts += "<dt>Inputs needed</dt><dd>" + tile.getAttribute("data-inputs") + "</dd>";
+        var timeframe = tile.getAttribute("data-timeframe");
+        if (timeframe) facts += "<dt>Typical timeframe</dt><dd>" + timeframe + "</dd>";
+        facts += "<dt>Excludes</dt><dd>" + tile.getAttribute("data-excludes") + "</dd>";
+        modalFacts.innerHTML = facts;
+
+        modalPosition.textContent = (activeIndex + 1) + " of " + activeGroup.tiles.length;
+        modalPrev.disabled = activeGroup.tiles.length < 2;
+        modalNext.disabled = activeGroup.tiles.length < 2;
+      }
+
+      function openService(group, index) {
+        activeGroup = group;
+        activeIndex = index;
+        renderService();
+        if (!serviceModal.open) serviceModal.showModal();
+        track("service_detail_view", { service: activeGroup.tiles[activeIndex].getAttribute("data-title") });
+      }
+
+      function step(delta) {
+        if (!activeGroup) return;
+        var len = activeGroup.tiles.length;
+        activeIndex = (activeIndex + delta + len) % len;
+        renderService();
+      }
+
+      serviceGroups.forEach(function (group) {
+        group.tiles.forEach(function (tile, index) {
+          tile.addEventListener("click", function () {
+            openService(group, index);
+          });
+        });
+      });
+
+      modalPrev.addEventListener("click", function () { step(-1); });
+      modalNext.addEventListener("click", function () { step(1); });
+
+      serviceModal.addEventListener("click", function (e) {
+        if (e.target === serviceModal || e.target.closest("[data-modal-close]")) {
+          serviceModal.close();
+        }
+      });
+
+      serviceModal.addEventListener("keydown", function (e) {
+        if (e.key === "ArrowLeft") step(-1);
+        if (e.key === "ArrowRight") step(1);
+      });
+
+      // Preselect the matching option in the "Request a service" form below
+      // instead of just scrolling to a blank dropdown.
+      modalRequest.addEventListener("click", function () {
+        var select = document.getElementById("sv-service");
+        var title = modalRequest.getAttribute("data-service-title");
+        if (select && title) {
+          var match = Array.from(select.options).find(function (opt) { return opt.text === title; });
+          if (match) select.value = match.value;
+        }
+        serviceModal.close();
+      });
+    }
+
+    // Service scroll strips (services.html): each gradient category card's
+    // photo row scrolls horizontally -- the arrow buttons are a click
+    // alternative to dragging/swiping, and their disabled state tracks how
+    // far the strip has already scrolled.
+    document.querySelectorAll(".service-tile-scroll").forEach(function (strip) {
+      var wrap = strip.closest(".service-category-services");
+      if (!wrap) return;
+      var prevBtn = wrap.querySelector("[data-scroll-prev]");
+      var nextBtn = wrap.querySelector("[data-scroll-next]");
+      if (!prevBtn || !nextBtn) return;
+
+      function updateButtons() {
+        var max = strip.scrollWidth - strip.clientWidth;
+        prevBtn.disabled = strip.scrollLeft <= 2;
+        nextBtn.disabled = strip.scrollLeft >= max - 2;
+      }
+
+      function scrollByTile(direction) {
+        var tile = strip.querySelector(".service-tile");
+        var step = tile ? tile.getBoundingClientRect().width + 14 : 160;
+        strip.scrollBy({ left: direction * step, behavior: "smooth" });
+      }
+
+      prevBtn.addEventListener("click", function () { scrollByTile(-1); });
+      nextBtn.addEventListener("click", function () { scrollByTile(1); });
+      strip.addEventListener("scroll", updateButtons);
+      window.addEventListener("resize", updateButtons);
+      updateButtons();
+    });
+
     // Click tracking: WhatsApp, phone, downloads
     document.querySelectorAll('a[href^="https://wa.me"]').forEach(function (a) {
       a.addEventListener("click", function () {
@@ -315,5 +438,49 @@
         status.setAttribute("role", "status");
       }
     });
+
+    // Scroll reveal: cards and section content fade/rise gently into
+    // place as they enter the viewport (restrained -- no bounce, no
+    // looping, short distance/duration -- matching this file's existing
+    // "mobile-first, restrained animation" principle). Progressive
+    // enhancement only: the .reveal class -- the thing that actually
+    // hides content pre-animation -- is added by this script, so with
+    // JS disabled or IntersectionObserver unsupported, content is just
+    // visible with no animation, never stuck hidden. Skipped entirely
+    // under prefers-reduced-motion rather than animated then hidden.
+    var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var revealTargets = document.querySelectorAll(
+      ".card, .step, .category-banner, .notice, .service-tile, .tier-card"
+    );
+    if (revealTargets.length && "IntersectionObserver" in window && !reduceMotion) {
+      revealTargets.forEach(function (el) { el.classList.add("reveal"); });
+
+      // Stagger by position among reveal-eligible siblings (capped) so a
+      // row of cards cascades in rather than popping simultaneously.
+      var groups = new Map();
+      revealTargets.forEach(function (el) {
+        var parent = el.parentElement || document.body;
+        if (!groups.has(parent)) groups.set(parent, []);
+        groups.get(parent).push(el);
+      });
+      groups.forEach(function (siblings) {
+        siblings.forEach(function (el, index) {
+          el.style.transitionDelay = (Math.min(index, 5) * 70) + "ms";
+        });
+      });
+
+      var revealObserver = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("is-revealed");
+              revealObserver.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
+      );
+      revealTargets.forEach(function (el) { revealObserver.observe(el); });
+    }
   });
 })();
