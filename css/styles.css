@@ -467,7 +467,11 @@ p { margin: 0 0 1em; }
   border-radius: 999px;
 }
 
-.service-category-services { position: relative; z-index: 1; }
+/* min-width: 0 overrides the flex-item default of min-width: auto --
+   without it this item refuses to shrink below the scroll strip's full
+   unscrolled content width, which pushes the whole card (and page) wider
+   than the viewport instead of letting .service-tile-scroll scroll. */
+.service-category-services { position: relative; z-index: 1; min-width: 0; }
 .service-tile-scroll {
   display: flex;
   gap: 0.9rem;
