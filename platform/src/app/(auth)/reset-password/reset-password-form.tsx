@@ -2,6 +2,8 @@
 
 import { useActionState } from "react";
 import { resetPassword, type FormState } from "@/lib/actions/auth";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const initialState: FormState = {};
 
@@ -14,26 +16,15 @@ export function ResetPasswordForm() {
         <label htmlFor="password" className="text-sm font-semibold text-midnight">
           New password
         </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          required
-          className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
-        />
+        <Input id="password" name="password" type="password" autoComplete="new-password" required className="mt-1" />
         {state.errors?.password && <p className="mt-1 text-sm text-coral-ink">{state.errors.password[0]}</p>}
       </div>
 
       {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-lg bg-teal px-4 py-2.5 text-sm font-bold text-midnight disabled:opacity-60"
-      >
+      <Button type="submit" loading={pending} className="w-full">
         {pending ? "Saving…" : "Set new password"}
-      </button>
+      </Button>
     </form>
   );
 }
