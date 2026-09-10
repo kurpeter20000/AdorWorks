@@ -60,13 +60,14 @@ export async function signup(_prevState: FormState, formData: FormData): Promise
   // privilege-escalation bug.
   const targetRole = intent === "talent" ? "talent" : "individual_client";
   const nextPath = intent === "talent" ? "/onboarding" : "/organisation";
+  const safeNextPath = nextPath.startsWith("/") ? nextPath : "/dashboard";
 
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { full_name: fullName, intended_role: targetRole },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=${nextPath}`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(safeNextPath)}`,
     },
   });
 
@@ -135,7 +136,7 @@ export async function requestPasswordReset(_prevState: FormState, formData: Form
 
   const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(validated.data.email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/reset-password`,
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent("/reset-password")}`,
   });
 
   redirect("/forgot-password?sent=1");
