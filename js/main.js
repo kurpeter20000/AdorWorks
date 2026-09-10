@@ -140,99 +140,20 @@
       }
     }
 
-    // Hero audience toggle (homepage only): switches the search
-    // destination/placeholder, which chip set shows, and which CTA is
-    // primary for the visitor's stated intent, instead of showing three
-    // flat, equal-weight buttons at once.
+    // Hero audience toggle (homepage only): updates the full opening
+    // story—copy, image, search intent and quick links—so employers and
+    // talent each get a clear first action without duplicating the hero.
     var heroAudience = document.querySelector("[data-hero-audience]");
     if (heroAudience) {
+      var hero = heroAudience.closest(".hero-home") || document;
       var audienceTabs = heroAudience.querySelectorAll("[data-audience-tab]");
       var searchForm = heroAudience.querySelector("[data-audience-search]");
       var searchInput = searchForm ? searchForm.querySelector("input[name=q]") : null;
 
-      // Auto-typing example queries in the search placeholder -- writes
-      // only to `placeholder`, never `value`, so it can never clobber
-      // anything the visitor actually types (and typing into the field
-      // simply hides the placeholder underneath, same as any input).
-      // Fully skipped under prefers-reduced-motion in favour of the
-      // plain static swap this replaces (see the `data-audience-
-      // placeholder-*` attributes still on the input in index.html).
-      var SEARCH_TYPEWRITER_PHRASES = {
-        employer: [
-          "Search skills or categories to hire",
-          "e.g. graphic designer",
-          "e.g. web developer",
-          "e.g. virtual assistant",
-          "e.g. video editor",
-        ],
-        talent: [
-          "Search roles or categories to find work",
-          "e.g. content writer",
-          "e.g. bookkeeper",
-          "e.g. photographer",
-          "e.g. data entry",
-        ],
-      };
-      var reduceMotionForSearch = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      var stopSearchTypewriter = null;
-
-      function startSearchTypewriter(input, phrases) {
-        var phraseIndex = 0;
-        var charIndex = phrases[0].length;
-        var deleting = true;
-        var timeoutId = null;
-
-        // Starts already showing phrases[0] in full -- identical to the
-        // static placeholder this replaces, so there's no visible jump
-        // the moment the typewriter takes over.
-        input.placeholder = phrases[0];
-
-        function tick() {
-          var phrase = phrases[phraseIndex % phrases.length];
-          if (deleting) {
-            charIndex--;
-            input.placeholder = phrase.slice(0, charIndex);
-            if (charIndex === 0) {
-              deleting = false;
-              phraseIndex++;
-              timeoutId = window.setTimeout(tick, 400);
-              return;
-            }
-            timeoutId = window.setTimeout(tick, 28);
-          } else {
-            var next = phrases[phraseIndex % phrases.length];
-            charIndex++;
-            input.placeholder = next.slice(0, charIndex);
-            if (charIndex === next.length) {
-              deleting = true;
-              timeoutId = window.setTimeout(tick, 1700);
-              return;
-            }
-            timeoutId = window.setTimeout(tick, 55);
-          }
-        }
-
-        timeoutId = window.setTimeout(tick, 1700);
-        return function stop() {
-          window.clearTimeout(timeoutId);
-        };
-      }
-
       function updateSearchPlaceholder(audience) {
         if (!searchInput) return;
-        if (stopSearchTypewriter) {
-          stopSearchTypewriter();
-          stopSearchTypewriter = null;
-        }
-        if (reduceMotionForSearch) {
-          var placeholder = searchInput.getAttribute("data-audience-placeholder-" + audience);
-          if (placeholder) searchInput.placeholder = placeholder;
-          return;
-        }
-        stopSearchTypewriter = startSearchTypewriter(
-          searchInput,
-          SEARCH_TYPEWRITER_PHRASES[audience] || SEARCH_TYPEWRITER_PHRASES.employer
-        );
+        var placeholder = searchInput.getAttribute("data-audience-placeholder-" + audience);
+        if (placeholder) searchInput.placeholder = placeholder;
       }
 
       function setAudience(audience) {
@@ -242,7 +163,18 @@
         heroAudience.querySelectorAll("[data-audience-chips]").forEach(function (el) {
           el.hidden = el.getAttribute("data-audience-chips") !== audience;
         });
-        if (searchForm) searchForm.action = audience === "talent" ? "for-talent.html" : "for-employers.html";
+        hero.querySelectorAll("[data-audience-copy]").forEach(function (el) {
+          var copy = el.getAttribute("data-" + audience);
+          if (copy) el.textContent = copy;
+        });
+        hero.querySelectorAll("[data-audience-image]").forEach(function (el) {
+          el.hidden = el.getAttribute("data-audience-image") !== audience;
+        });
+        hero.querySelectorAll("[data-audience-label]").forEach(function (el) {
+          var label = el.getAttribute("data-" + audience);
+          if (label) el.textContent = label;
+        });
+        if (searchForm) searchForm.action = audience === "talent" ? "jobs-projects.html" : "for-employers.html";
         updateSearchPlaceholder(audience);
         track("hero_audience_switch", { audience: audience });
       }
@@ -336,13 +268,13 @@
         renderService();
       }
 
-      serviceGroups.forEach(function (group) {
-        group.tiles.forEach(function (tile, index) {
-          tile.addEventListener("click", function () {
-            openService(group, index);
-          });
-        });
-      });
+      // Tile clicks are wired by initServiceCoverflows() below, not here
+      // directly -- each category's tiles now sit inside their own mini
+      // 3D coverflow, so a click needs to mean "select" when the tile
+      // isn't already centred and only "open the detail modal" (this
+      // openService) once it is. Passing this function in keeps the
+      // modal itself unaware that coverflow exists.
+      initServiceCoverflows(serviceGroups, openService);
 
       modalPrev.addEventListener("click", function () { step(-1); });
       modalNext.addEventListener("click", function () { step(1); });
@@ -371,106 +303,136 @@
       });
     }
 
-    // Service deck rows (services.html): each category's row of full-size
-    // service cards is its own scroll-snap carousel -- the flanking arrows
-    // move it by exactly one card and disable at either end, mirroring
-    // native browser prev/next controls rather than jumping between
-    // categories (each category is its own always-visible section, same
-    // as any other .section on the page).
-    var reduceMotionForDeck = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    document.querySelectorAll(".service-deck-row").forEach(function (row) {
-      var wrap = row.closest(".service-deck-visual");
-      if (!wrap) return;
-      var prevBtn = wrap.querySelector("[data-row-prev]");
-      var nextBtn = wrap.querySelector("[data-row-next]");
-      if (!prevBtn || !nextBtn) return;
+    // Service coverflow (services.html): each category's four service
+    // tiles are their own independent 3D coverflow -- one active,
+    // sharp, slightly enlarged card in front, the other three receding
+    // (smaller, faded, lightly blurred and rotated) either side. Same
+    // index-driven, --offset-custom-property mechanism as the CSS
+    // (see .service-coverflow-slide in styles.css): one activeIndex per
+    // panel, written to each slide, with every visual property a pure
+    // calc() function of that number in CSS -- this function only ever
+    // manages one integer per category.
+    //
+    // Interaction: clicking a tile that ISN'T the active one re-centres
+    // it (same "select" pattern as the old homepage coverflow); clicking
+    // the ALREADY-active tile calls openService(group, index) -- the
+    // exact function the modal itself uses, passed in as a parameter so
+    // this function never needs to know how the modal works internally.
+    // Supports touch swipe and mouse drag via pointer events (not
+    // setPointerCapture -- see the flat carousels elsewhere in this file
+    // for why that breaks click targeting) and Left/Right arrow keys.
+    function initServiceCoverflows(serviceGroups, openService) {
+      var reduceMotionForServiceCoverflow = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-      function updateButtons() {
-        // Tolerance (not <= 0) because scroll-snap can settle the resting
-        // position a few px off true zero/max (the row's own bleed
-        // padding for the tile hover-lift shadow shifts the snap point).
-        var max = row.scrollWidth - row.clientWidth;
-        prevBtn.disabled = row.scrollLeft <= 4;
-        nextBtn.disabled = row.scrollLeft >= max - 4;
-      }
+      document.querySelectorAll("[data-service-coverflow]").forEach(function (coverflow) {
+        var groupName = coverflow.getAttribute("data-service-group");
+        var group = serviceGroups.filter(function (g) { return g.name === groupName; })[0];
+        if (!group) return;
 
-      function stepRow(direction) {
-        var tile = row.querySelector(".service-tile");
-        var gap = parseFloat(getComputedStyle(row).columnGap || getComputedStyle(row).gap || "0");
-        var step = tile ? tile.getBoundingClientRect().width + gap : row.clientWidth;
-        row.scrollBy({ left: direction * step, behavior: reduceMotionForDeck ? "auto" : "smooth" });
-      }
+        var slides = Array.from(coverflow.querySelectorAll("[data-service-coverflow-slide]"));
+        var prevBtn = coverflow.querySelector("[data-service-coverflow-prev]");
+        var nextBtn = coverflow.querySelector("[data-service-coverflow-next]");
+        var dots = Array.from(coverflow.querySelectorAll("[data-service-coverflow-dot]"));
+        var stage = coverflow.querySelector("[data-service-coverflow-stage]");
+        var activeIndex = 0;
 
-      prevBtn.addEventListener("click", function () {
-        stepRow(-1);
-        track("service_row_nav", { direction: "prev", category: row.getAttribute("data-service-group") });
+        function render() {
+          slides.forEach(function (slide, i) {
+            var offset = i - activeIndex;
+            var isActive = offset === 0;
+            slide.style.setProperty("--offset", String(offset));
+            slide.dataset.active = String(isActive);
+            var tile = slide.querySelector(".service-tile");
+            if (tile) tile.tabIndex = isActive ? 0 : -1;
+          });
+          if (prevBtn) prevBtn.disabled = activeIndex <= 0;
+          if (nextBtn) nextBtn.disabled = activeIndex >= slides.length - 1;
+          dots.forEach(function (dot, i) {
+            dot.setAttribute("aria-selected", String(i === activeIndex));
+          });
+        }
+
+        function goTo(index) {
+          var clamped = Math.max(0, Math.min(slides.length - 1, index));
+          if (clamped === activeIndex) return;
+          activeIndex = clamped;
+          render();
+          track("service_coverflow_select", { category: groupName, index: activeIndex });
+        }
+
+        if (prevBtn) prevBtn.addEventListener("click", function () { goTo(activeIndex - 1); });
+        if (nextBtn) nextBtn.addEventListener("click", function () { goTo(activeIndex + 1); });
+        dots.forEach(function (dot, i) {
+          dot.addEventListener("click", function () { goTo(i); });
+        });
+
+        slides.forEach(function (slide, i) {
+          var tile = slide.querySelector(".service-tile");
+          if (!tile) return;
+          tile.addEventListener("click", function () {
+            if (i === activeIndex) {
+              openService(group, i);
+            } else {
+              goTo(i);
+            }
+          });
+        });
+
+        if (stage) {
+          stage.addEventListener("keydown", function (e) {
+            if (e.key === "ArrowLeft") {
+              e.preventDefault();
+              goTo(activeIndex - 1);
+            }
+            if (e.key === "ArrowRight") {
+              e.preventDefault();
+              goTo(activeIndex + 1);
+            }
+          });
+
+          // Touch swipe / mouse drag to navigate: a release-time
+          // direction check, not continuous tracking, since slides are
+          // absolutely positioned (not a real scroll container) --
+          // there's no scrollLeft to drag. window-level listeners so a
+          // swipe that leaves the stage mid-gesture still resolves.
+          var swiping = false;
+          var swiped = false;
+          var swipeStartX = 0;
+          stage.addEventListener("pointerdown", function (e) {
+            swiping = true;
+            swiped = false;
+            swipeStartX = e.clientX;
+          });
+          window.addEventListener("pointermove", function (e) {
+            if (!swiping) return;
+            if (Math.abs(e.clientX - swipeStartX) > 6) swiped = true;
+          });
+          window.addEventListener("pointerup", function (e) {
+            if (!swiping) return;
+            swiping = false;
+            if (!swiped) return;
+            var delta = e.clientX - swipeStartX;
+            if (Math.abs(delta) > 40) goTo(activeIndex + (delta < 0 ? 1 : -1));
+          });
+          window.addEventListener("pointercancel", function () { swiping = false; });
+          // Swallow the click a real swipe would otherwise also fire on
+          // release, same "dragged" suppression pattern used by the
+          // flat scroll carousels elsewhere in this file.
+          stage.addEventListener(
+            "click",
+            function (e) {
+              if (swiped) {
+                e.stopPropagation();
+                e.preventDefault();
+              }
+            },
+            true
+          );
+        }
+
+        render();
       });
-      nextBtn.addEventListener("click", function () {
-        stepRow(1);
-        track("service_row_nav", { direction: "next", category: row.getAttribute("data-service-group") });
-      });
-      row.addEventListener("scroll", updateButtons);
-      window.addEventListener("resize", updateButtons);
-      updateButtons();
-
-      // A "scroll" or window "resize" event isn't the only thing that can
-      // change how much there is left to scroll -- late web-font swap,
-      // an image finishing decode, or anything else reflowing the row
-      // changes scrollWidth/clientWidth without firing either. Without
-      // this, updateButtons()'s one-time initial read can go stale and
-      // leave an arrow disabled (or enabled) when reality has since
-      // moved on. ResizeObserver is exactly the primitive for "recompute
-      // whenever this element's box actually changes," so it's a
-      // correctness fix, not just a nice-to-have.
-      if ("ResizeObserver" in window) {
-        new ResizeObserver(updateButtons).observe(row);
-      }
-
-      // Mouse click-and-drag scrolling -- touch swipe, trackpad and
-      // keyboard scrolling already work natively via plain overflow-x
-      // scrolling, but a held-mouse-button drag doesn't on a plain div.
-      // A drag past a small pixel threshold marks `dragged`, which the
-      // capture-phase click listener below uses to swallow the click a
-      // drag would otherwise fire on release -- without it, every drag
-      // would also pop open whichever tile the pointer happened to land
-      // on. Deliberately NOT using setPointerCapture: capturing the
-      // pointer on the row redirects the click event's own target
-      // resolution to the row instead of the tile underneath it in this
-      // browser's implementation, which broke every tile click, dragged
-      // or not. window-level move/up listeners (only doing anything
-      // while `isDragging`) give the same "keep tracking outside the
-      // row's bounds" behaviour without that side effect.
-      var isDragging = false;
-      var dragged = false;
-      var dragStartX = 0;
-      var dragStartScroll = 0;
-
-      row.addEventListener("pointerdown", function (e) {
-        if (e.pointerType !== "mouse") return;
-        isDragging = true;
-        dragged = false;
-        dragStartX = e.clientX;
-        dragStartScroll = row.scrollLeft;
-      });
-      window.addEventListener("pointermove", function (e) {
-        if (!isDragging) return;
-        var delta = e.clientX - dragStartX;
-        if (Math.abs(delta) > 4) dragged = true;
-        row.scrollLeft = dragStartScroll - delta;
-      });
-      window.addEventListener("pointerup", function () { isDragging = false; });
-      window.addEventListener("pointercancel", function () { isDragging = false; });
-      row.addEventListener(
-        "click",
-        function (e) {
-          if (dragged) {
-            e.stopPropagation();
-            e.preventDefault();
-          }
-        },
-        true
-      );
-    });
+    }
 
     // Click tracking: WhatsApp, phone, downloads
     document.querySelectorAll('a[href^="https://wa.me"]').forEach(function (a) {
@@ -604,8 +566,20 @@
     // visible with no animation, never stuck hidden. Skipped entirely
     // under prefers-reduced-motion rather than animated then hidden.
     var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // .work-path-card is excluded even though it's also a .card: it lives
+    // inside a horizontally-clipped carousel (.work-path-viewport), and
+    // IntersectionObserver correctly treats a card scrolled out of that
+    // clipped area as "not intersecting" -- so the off-screen 5th card
+    // would never fire and stay stuck at opacity 0 forever, since this
+    // observer is built for vertical scroll-into-view, not a manually
+    // scrolled strip. .service-tile is excluded for the same reason
+    // (now living inside .service-coverflow-slide, itself clipped by
+    // the stage's overflow:hidden) plus a second one: its own opacity
+    // is already a live calc() function of --offset in CSS, so a
+    // separate .reveal/.is-revealed opacity toggle on the same element
+    // would fight that, not just risk getting stuck.
     var revealTargets = document.querySelectorAll(
-      ".card, .step, .category-banner, .notice, .service-tile, .tier-card"
+      ".card:not(.work-path-card), .step, .category-banner, .notice, .tier-card"
     );
     if (revealTargets.length && "IntersectionObserver" in window && !reduceMotion) {
       revealTargets.forEach(function (el) { el.classList.add("reveal"); });
@@ -638,84 +612,92 @@
       revealTargets.forEach(function (el) { revealObserver.observe(el); });
     }
 
-    // Coverflow (homepage "five ways to work"): index-driven, not
-    // scroll-driven -- one activeIndex, written to every slide as the
-    // --offset custom property (its position relative to the active
-    // card); styles.css turns that single number into the whole
-    // centred/sharp vs. receding/blurred/rotated presentation via
-    // calc(), so this file only ever manages one integer.
-    var coverflow = document.querySelector("[data-coverflow]");
-    if (coverflow) {
-      var cfSlides = Array.from(coverflow.querySelectorAll("[data-coverflow-slide]"));
-      var cfPrev = coverflow.querySelector("[data-coverflow-prev]");
-      var cfNext = coverflow.querySelector("[data-coverflow-next]");
-      var cfDots = Array.from(coverflow.querySelectorAll("[data-coverflow-dot]"));
-      var cfStage = coverflow.querySelector("[data-coverflow-stage]");
-      // Leads with the highlighted "Post a project" card (index 1) rather
-      // than card 0 -- the flagship path stays front and centre without
-      // requiring a visitor to interact first.
-      var cfActiveIndex = 1;
+    // Work-path carousel (homepage "five ways to work"): a plain flat,
+    // scroll-snap carousel -- the two arrows move the viewport by
+    // exactly one card and disable at either end (same pattern as the
+    // services page's category rows). Touch swipe and trackpad
+    // scrolling work natively via overflow-x; click-and-drag with a
+    // mouse doesn't, so it's added here.
+    var workPathViewport = document.querySelector("[data-work-path-viewport]");
+    if (workPathViewport) {
+      var workPathPrev = document.querySelector("[data-work-path-prev]");
+      var workPathNext = document.querySelector("[data-work-path-next]");
+      var reduceMotionForWorkPath = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-      function renderCoverflow() {
-        cfSlides.forEach(function (slide, i) {
-          var offset = i - cfActiveIndex;
-          var isActive = offset === 0;
-          slide.style.setProperty("--offset", String(offset));
-          slide.dataset.active = String(isActive);
-          slide.setAttribute("aria-hidden", isActive ? "false" : "true");
-          slide.querySelectorAll("a").forEach(function (a) {
-            a.tabIndex = isActive ? 0 : -1;
-          });
-        });
-        if (cfPrev) cfPrev.disabled = cfActiveIndex <= 0;
-        if (cfNext) cfNext.disabled = cfActiveIndex >= cfSlides.length - 1;
-        cfDots.forEach(function (dot, i) {
-          dot.setAttribute("aria-selected", String(i === cfActiveIndex));
-        });
+      function updateWorkPathArrows() {
+        var max = workPathViewport.scrollWidth - workPathViewport.clientWidth;
+        if (workPathPrev) workPathPrev.disabled = workPathViewport.scrollLeft <= 4;
+        if (workPathNext) workPathNext.disabled = workPathViewport.scrollLeft >= max - 4;
       }
 
-      function goToCoverflow(index) {
-        var clamped = Math.max(0, Math.min(cfSlides.length - 1, index));
-        if (clamped === cfActiveIndex) return;
-        cfActiveIndex = clamped;
-        renderCoverflow();
-        track("path_coverflow_select", { index: cfActiveIndex });
+      function stepWorkPath(direction) {
+        var card = workPathViewport.querySelector(".work-path-card");
+        var gap = parseFloat(getComputedStyle(workPathViewport.querySelector(".work-path-track")).columnGap || getComputedStyle(workPathViewport.querySelector(".work-path-track")).gap || "0");
+        var step = card ? card.getBoundingClientRect().width + gap : workPathViewport.clientWidth;
+        workPathViewport.scrollBy({ left: direction * step, behavior: reduceMotionForWorkPath ? "auto" : "smooth" });
       }
 
-      if (cfPrev) cfPrev.addEventListener("click", function () { goToCoverflow(cfActiveIndex - 1); });
-      if (cfNext) cfNext.addEventListener("click", function () { goToCoverflow(cfActiveIndex + 1); });
-      cfDots.forEach(function (dot, i) {
-        dot.addEventListener("click", function () { goToCoverflow(i); });
+      if (workPathPrev) {
+        workPathPrev.addEventListener("click", function () {
+          stepWorkPath(-1);
+          track("work_path_nav", { direction: "prev" });
+        });
+      }
+      if (workPathNext) {
+        workPathNext.addEventListener("click", function () {
+          stepWorkPath(1);
+          track("work_path_nav", { direction: "next" });
+        });
+      }
+      workPathViewport.addEventListener("scroll", updateWorkPathArrows);
+      window.addEventListener("resize", updateWorkPathArrows);
+      // A "scroll"/"resize" event isn't the only thing that can change
+      // how much there is left to scroll (late web-font swap, etc.) --
+      // see services.html's identical ResizeObserver fix for why this
+      // is a correctness measure, not a nice-to-have.
+      if ("ResizeObserver" in window) {
+        new ResizeObserver(updateWorkPathArrows).observe(workPathViewport);
+      }
+      updateWorkPathArrows();
+
+      // Mouse click-and-drag: window-level move/up listeners, NOT
+      // setPointerCapture -- capturing the pointer on the viewport
+      // redirects the click event's own target resolution away from
+      // whichever card link is underneath it, in this browser's
+      // implementation, breaking every card click (see services.html's
+      // identical fix for the full explanation). A 4px threshold before
+      // it counts as a drag (rather than a click), and the click that
+      // follows a real drag is suppressed once so releasing over a
+      // card's link doesn't navigate.
+      var workPathDragging = false;
+      var workPathDragged = false;
+      var workPathDragStartX = 0;
+      var workPathDragStartScroll = 0;
+      workPathViewport.addEventListener("pointerdown", function (e) {
+        if (e.pointerType !== "mouse") return;
+        workPathDragging = true;
+        workPathDragged = false;
+        workPathDragStartX = e.clientX;
+        workPathDragStartScroll = workPathViewport.scrollLeft;
       });
-
-      // Selecting a non-active card re-centres it instead of following
-      // its link -- its links are already out of tab order (tabIndex -1
-      // above) while inactive, so this only needs to catch the mouse/
-      // touch case. The active card's own links are left alone and
-      // navigate normally.
-      cfSlides.forEach(function (slide, i) {
-        slide.addEventListener("click", function (e) {
-          if (i !== cfActiveIndex) {
-            e.preventDefault();
-            goToCoverflow(i);
-          }
-        });
+      window.addEventListener("pointermove", function (e) {
+        if (!workPathDragging) return;
+        var delta = e.clientX - workPathDragStartX;
+        if (Math.abs(delta) > 4) workPathDragged = true;
+        workPathViewport.scrollLeft = workPathDragStartScroll - delta;
       });
-
-      if (cfStage) {
-        cfStage.addEventListener("keydown", function (e) {
-          if (e.key === "ArrowLeft") {
+      window.addEventListener("pointerup", function () { workPathDragging = false; });
+      window.addEventListener("pointercancel", function () { workPathDragging = false; });
+      workPathViewport.addEventListener(
+        "click",
+        function (e) {
+          if (workPathDragged) {
+            e.stopPropagation();
             e.preventDefault();
-            goToCoverflow(cfActiveIndex - 1);
           }
-          if (e.key === "ArrowRight") {
-            e.preventDefault();
-            goToCoverflow(cfActiveIndex + 1);
-          }
-        });
-      }
-
-      renderCoverflow();
+        },
+        true
+      );
     }
   });
 })();

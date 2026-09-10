@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>AdorWorks — Hire Verified African Talent Without the Guesswork</title>
-<meta name="description" content="AdorWorks is a South Sudan-born talent and work marketplace. We verify capability, match the right people and support delivery — for freelance projects, contracts, full-time roles and managed teams.">
+<title>AdorWorks — Verified African Talent, Jobs &amp; Project Opportunities</title>
+<meta name="description" content="AdorWorks connects employers with verified African professionals and helps talent find fair jobs and project opportunities, with human matching and delivery support.">
 <link rel="canonical" href="https://adorworks.netlify.app/">
-<meta property="og:title" content="AdorWorks — Talent found. Work delivered.">
-<meta property="og:description" content="A curated African work marketplace that verifies capability, matches the right people and supports successful delivery.">
+<meta property="og:title" content="AdorWorks — Trusted talent. Fair opportunities.">
+<meta property="og:description" content="Find verified African professionals or discover fair jobs and projects through a curated, human-supported marketplace.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://adorworks.netlify.app/">
 <meta property="og:site_name" content="AdorWorks">
 <meta property="og:image" content="https://adorworks.netlify.app/img/icons/icon-any-512.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="AdorWorks — Talent found. Work delivered.">
-<meta name="twitter:description" content="A curated African work marketplace that verifies capability, matches the right people and supports successful delivery.">
+<meta name="twitter:title" content="AdorWorks — Trusted talent. Fair opportunities.">
+<meta name="twitter:description" content="Find verified African professionals or discover fair jobs and projects through a curated, human-supported marketplace.">
 <meta name="twitter:image" content="https://adorworks.netlify.app/img/icons/icon-any-512.png">
 <link rel="icon" href="img/adorworks-mark.svg" type="image/svg+xml">
 <link rel="icon" href="img/icons/favicon-32.png" sizes="32x32" type="image/png">
@@ -57,11 +57,11 @@
     <nav class="site-nav" id="site-nav" aria-label="Primary">
       <ul>
         <li><a href="index.html" aria-current="page">Home</a></li>
+        <li><a href="jobs-projects.html">Find Jobs</a></li>
+        <li><a href="for-employers.html">Find Talent</a></li>
         <li><a href="services.html">Services</a></li>
-        <li><a href="for-employers.html">For Employers</a></li>
-        <li><a href="for-talent.html">For Talent</a></li>
+        <li><a href="how-it-works.html">How It Works</a></li>
         <li><a href="trust-safety.html">Trust &amp; Safety</a></li>
-        <li><a href="about.html">About</a></li>
         <li class="nav-cta"><a href="for-employers.html#brief-form" class="btn btn-primary">Post a project</a></li>
       </ul>
     </nav>
@@ -70,15 +70,19 @@
 
 <main id="main">
 
-  <section class="hero hero-photo">
-    <video class="hero-photo-img hero-video" poster="img/photos/hero-video-poster-1440.jpg" muted loop playsinline preload="none" aria-hidden="true">
-      <source src="img/photos/hero-video-720.mp4" type="video/mp4" media="(max-width: 767px)">
-      <source src="img/photos/hero-video-1080.mp4" type="video/mp4">
-    </video>
+  <section class="hero hero-photo hero-home">
+    <picture class="hero-audience-image" data-audience-image="employer">
+      <source type="image/webp" srcset="img/photos/hero-employers-480.webp 480w, img/photos/hero-employers-960.webp 960w, img/photos/hero-employers-1440.webp 1440w" sizes="100vw">
+      <img class="hero-photo-img" src="img/photos/hero-employers-1440.jpg" srcset="img/photos/hero-employers-480.jpg 480w, img/photos/hero-employers-960.jpg 960w, img/photos/hero-employers-1440.jpg 1440w" sizes="100vw" alt="" width="1440" height="960" fetchpriority="high">
+    </picture>
+    <picture class="hero-audience-image" data-audience-image="talent" hidden>
+      <source type="image/webp" srcset="img/photos/hero-talent-480.webp 480w, img/photos/hero-talent-960.webp 960w, img/photos/hero-talent-1440.webp 1440w" sizes="100vw">
+      <img class="hero-photo-img" src="img/photos/hero-talent-1440.jpg" srcset="img/photos/hero-talent-480.jpg 480w, img/photos/hero-talent-960.jpg 960w, img/photos/hero-talent-1440.jpg 1440w" sizes="100vw" alt="" width="1440" height="960">
+    </picture>
     <div class="container">
-      <p class="hero-kicker">Talent found. Work delivered.</p>
-      <h1>Hire verified African talent without the guesswork.</h1>
-      <p class="lede">AdorWorks helps businesses and organisations find trusted professionals for freelance projects, contracts, full-time roles and managed services. We verify capability, recommend the right people and support delivery from brief to completion.</p>
+      <p class="hero-kicker" data-audience-copy data-employer="Trusted talent. Stronger delivery." data-talent="Your skills deserve real opportunity.">Trusted talent. Stronger delivery.</p>
+      <h1 data-audience-copy data-employer="Hire verified African talent with confidence." data-talent="Find fair opportunities that match your skills.">Hire verified African talent with confidence.</h1>
+      <p class="lede" data-audience-copy data-employer="Tell us what you need. We assess capability, recommend a qualified shortlist and support delivery from brief to completion." data-talent="Build a credible profile, complete practical verification and get matched to legitimate jobs and project briefs without paying to be considered.">Tell us what you need. We assess capability, recommend a qualified shortlist and support delivery from brief to completion.</p>
 
       <div class="hero-audience" data-hero-audience>
         <div class="hero-audience-toggle" role="tablist" aria-label="I am looking to">
@@ -88,9 +92,9 @@
 
         <form class="hero-search" role="search" action="for-employers.html" data-audience-search>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <label for="hero-search-q" class="visually-hidden">Search skills or categories</label>
+          <label for="hero-search-q" class="visually-hidden" data-audience-label data-employer="Search for talent by skill or category" data-talent="Search for jobs by role or category">Search for talent by skill or category</label>
           <input type="search" id="hero-search-q" name="q" data-audience-placeholder-employer="Search skills or categories to hire" data-audience-placeholder-talent="Search roles or categories to find work" placeholder="Search skills or categories to hire">
-          <button type="submit" class="btn btn-primary">Search</button>
+          <button type="submit" class="btn btn-primary" data-audience-copy data-employer="Find talent" data-talent="Find jobs">Find talent</button>
         </form>
 
         <div class="hero-chips" data-audience-chips="employer">
@@ -106,24 +110,24 @@
         </div>
       </div>
 
-      <p class="hero-trustline">Built for growing businesses, NGOs and development programs in South Sudan.</p>
+      <p class="hero-trustline" data-audience-copy data-employer="Built for growing businesses, NGOs and development programmes in South Sudan." data-talent="Free for talent to join and be considered for legitimate opportunities.">Built for growing businesses, NGOs and development programmes in South Sudan.</p>
     </div>
   </section>
 
   <section class="section">
     <div class="container">
-      <div class="grid grid-3">
-        <div class="card">
-          <h3>Verified, not just listed</h3>
-          <p>Identity, portfolio, references and a practical assessment stand behind every AdorVerified badge — not a certificate alone.</p>
+      <div class="grid grid-3 trust-strip" aria-label="Why people use AdorWorks">
+        <div class="card trust-card">
+          <span class="trust-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 12 2 2 4-5"/><path d="M12 3 5 6v5c0 4.8 3 8.3 7 10 4-1.7 7-5.2 7-10V6l-7-3Z"/></svg></span>
+          <div><h3>Verified capability</h3><p>Identity, evidence and practical assessments support every verification decision.</p></div>
         </div>
-        <div class="card">
-          <h3>Human-matched, not self-serve</h3>
-          <p>An AdorWorks matcher reviews your brief and recommends a qualified shortlist — not an unfiltered directory.</p>
+        <div class="card trust-card">
+          <span class="trust-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2"/><path d="M3 20c0-3.6 2.2-6 5-6s5 2.4 5 6M14 15c2.7-.8 5 1.2 5 4"/></svg></span>
+          <div><h3>Human matching</h3><p>A real person reviews each brief and recommends a focused, qualified shortlist.</p></div>
         </div>
-        <div class="card">
-          <h3>Fair by design</h3>
-          <p>Registration and access to legitimate work is free for talent. We never charge a jobseeker a fee to be considered.</p>
+        <div class="card trust-card">
+          <span class="trust-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16M12 4v16"/><circle cx="12" cy="12" r="9"/></svg></span>
+          <div><h3>Fair access to work</h3><p>Talent never pays a fee to register or be considered for a legitimate opportunity.</p></div>
         </div>
       </div>
     </div>
@@ -135,13 +139,13 @@
         <h2>Tell us what you need. We'll find who can deliver.</h2>
         <p>Five ways to work with AdorWorks, depending on how much support you want.</p>
       </div>
-      <div class="coverflow" data-coverflow>
-        <button type="button" class="coverflow-arrow coverflow-prev" data-coverflow-prev aria-label="Previous card">
+      <div class="work-path-carousel" data-work-path-carousel>
+        <button type="button" class="work-path-arrow work-path-prev" data-work-path-prev aria-label="Previous card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
-        <div class="coverflow-stage" data-coverflow-stage tabindex="0" role="group" aria-label="Five ways to work with AdorWorks">
-          <div class="coverflow-slide" data-coverflow-slide data-index="0">
-            <div class="card path-card">
+        <div class="work-path-viewport" data-work-path-viewport tabindex="0" role="group" aria-label="Five ways to work with AdorWorks, scrollable">
+          <div class="work-path-track">
+            <div class="card path-card work-path-card">
               <div class="path-card-head">
                 <h3>Buy a service</h3>
                 <a class="path-card-arrow" href="services.html" aria-label="Get started: buy a service">
@@ -155,9 +159,7 @@
                 <img class="path-card-photo" src="img/photos/card-creative-freelance-960.jpg" srcset="img/photos/card-creative-freelance-480.jpg 480w, img/photos/card-creative-freelance-960.jpg 960w" sizes="246px" alt="" loading="lazy">
               </picture>
             </div>
-          </div>
-          <div class="coverflow-slide" data-coverflow-slide data-index="1">
-            <div class="card path-card path-card-highlight">
+            <div class="card path-card path-card-highlight work-path-card">
               <div class="path-card-head">
                 <h3>Post a project</h3>
                 <a class="path-card-arrow" href="for-employers.html#brief-form" aria-label="Get started: post a project">
@@ -171,9 +173,7 @@
                 <img class="path-card-photo" src="img/photos/card-getstarted-960.jpg" srcset="img/photos/card-getstarted-480.jpg 480w, img/photos/card-getstarted-960.jpg 960w" sizes="246px" alt="" loading="lazy">
               </picture>
             </div>
-          </div>
-          <div class="coverflow-slide" data-coverflow-slide data-index="2">
-            <div class="card path-card">
+            <div class="card path-card work-path-card">
               <div class="path-card-head">
                 <h3>Hire contract talent</h3>
                 <a class="path-card-arrow" href="for-employers.html#brief-form" aria-label="Get started: hire contract talent">
@@ -187,9 +187,7 @@
                 <img class="path-card-photo" src="img/photos/card-remote-work-960.jpg" srcset="img/photos/card-remote-work-480.jpg 480w, img/photos/card-remote-work-960.jpg 960w" sizes="246px" alt="" loading="lazy">
               </picture>
             </div>
-          </div>
-          <div class="coverflow-slide" data-coverflow-slide data-index="3">
-            <div class="card path-card">
+            <div class="card path-card work-path-card">
               <div class="path-card-head">
                 <h3>Recruit full-time</h3>
                 <a class="path-card-arrow" href="for-employers.html#brief-form" aria-label="Get started: recruit full-time">
@@ -203,9 +201,7 @@
                 <img class="path-card-photo" src="img/photos/card-workfromhome-concept-960.jpg" srcset="img/photos/card-workfromhome-concept-480.jpg 480w, img/photos/card-workfromhome-concept-960.jpg 960w" sizes="246px" alt="" loading="lazy">
               </picture>
             </div>
-          </div>
-          <div class="coverflow-slide" data-coverflow-slide data-index="4">
-            <div class="card path-card">
+            <div class="card path-card work-path-card">
               <div class="path-card-head">
                 <h3>Build a talent squad</h3>
                 <a class="path-card-arrow" href="for-employers.html#brief-form" aria-label="Get started: build a talent squad">
@@ -221,16 +217,9 @@
             </div>
           </div>
         </div>
-        <button type="button" class="coverflow-arrow coverflow-next" data-coverflow-next aria-label="Next card">
+        <button type="button" class="work-path-arrow work-path-next" data-work-path-next aria-label="Next card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
         </button>
-        <div class="coverflow-dots" data-coverflow-dots role="tablist" aria-label="Choose a path">
-          <button type="button" class="coverflow-dot" data-coverflow-dot="0" role="tab" aria-selected="true" aria-label="Buy a service"></button>
-          <button type="button" class="coverflow-dot" data-coverflow-dot="1" role="tab" aria-selected="false" aria-label="Post a project"></button>
-          <button type="button" class="coverflow-dot" data-coverflow-dot="2" role="tab" aria-selected="false" aria-label="Hire contract talent"></button>
-          <button type="button" class="coverflow-dot" data-coverflow-dot="3" role="tab" aria-selected="false" aria-label="Recruit full-time"></button>
-          <button type="button" class="coverflow-dot" data-coverflow-dot="4" role="tab" aria-selected="false" aria-label="Build a talent squad"></button>
-        </div>
       </div>
       <p class="mt-1 text-center"><a href="how-it-works.html">Not sure which fits? See how each path works &rarr;</a></p>
     </div>
@@ -239,24 +228,34 @@
   <section class="section">
     <div class="container">
       <div class="section-header">
-        <h2>Where we're starting</h2>
-        <p>AdorWorks launches with three categories Adormedia can assess and sell — depth over breadth, while trust is being built.</p>
+        <p class="eyebrow">Explore the marketplace</p>
+        <h2>Skills for the work that moves organisations forward</h2>
+        <p>Start with a focused category, then tell us the outcome you need. We will help you identify the right service or specialist.</p>
       </div>
-      <div class="grid grid-3">
-        <div class="card">
-          <h3>Creative &amp; media</h3>
-          <p>Graphic design, photography, video production, editing, animation, content creation and copywriting.</p>
-        </div>
-        <div class="card">
-          <h3>Digital &amp; technology</h3>
-          <p>Web development, software, data support, digital advertising, analytics and IT support.</p>
-        </div>
-        <div class="card">
-          <h3>Business &amp; project support</h3>
-          <p>Virtual assistance, bookkeeping, research, enumeration, transcription, translation and project administration.</p>
-        </div>
+      <div class="grid grid-3 category-feature-grid">
+        <a class="category-feature-card" href="services.html#services-deck">
+          <picture class="category-feature-media">
+            <source type="image/webp" srcset="img/photos/tile-brand-design-480.webp 480w, img/photos/tile-brand-design-960.webp 960w" sizes="(min-width: 700px) 33vw, 100vw">
+            <img src="img/photos/tile-brand-design-960.jpg" srcset="img/photos/tile-brand-design-480.jpg 480w, img/photos/tile-brand-design-960.jpg 960w" sizes="(min-width: 700px) 33vw, 100vw" alt="Designer working on a visual identity" width="960" height="768" loading="lazy">
+          </picture>
+          <span class="category-feature-body"><span class="category-feature-meta">4 services</span><span class="category-feature-title">Creative &amp; media <span aria-hidden="true">↗</span></span><span>Brand design, photography, video production, editing and content that make ideas visible.</span></span>
+        </a>
+        <a class="category-feature-card" href="services.html#services-deck">
+          <picture class="category-feature-media">
+            <source type="image/webp" srcset="img/photos/tile-web-dev-480.webp 480w, img/photos/tile-web-dev-960.webp 960w" sizes="(min-width: 700px) 33vw, 100vw">
+            <img src="img/photos/tile-web-dev-960.jpg" srcset="img/photos/tile-web-dev-480.jpg 480w, img/photos/tile-web-dev-960.jpg 960w" sizes="(min-width: 700px) 33vw, 100vw" alt="Developer building a digital product" width="960" height="768" loading="lazy">
+          </picture>
+          <span class="category-feature-body"><span class="category-feature-meta">4 services</span><span class="category-feature-title">Digital &amp; technology <span aria-hidden="true">↗</span></span><span>Web, software, data and digital support for reliable products and better decisions.</span></span>
+        </a>
+        <a class="category-feature-card" href="services.html#services-deck">
+          <picture class="category-feature-media">
+            <source type="image/webp" srcset="img/photos/tile-project-admin-480.webp 480w, img/photos/tile-project-admin-960.webp 960w" sizes="(min-width: 700px) 33vw, 100vw">
+            <img src="img/photos/tile-project-admin-960.jpg" srcset="img/photos/tile-project-admin-480.jpg 480w, img/photos/tile-project-admin-960.jpg 960w" sizes="(min-width: 700px) 33vw, 100vw" alt="Project team coordinating work" width="960" height="768" loading="lazy">
+          </picture>
+          <span class="category-feature-body"><span class="category-feature-meta">4 services</span><span class="category-feature-title">Business &amp; project support <span aria-hidden="true">↗</span></span><span>Research, administration, bookkeeping and operational support that keep work moving.</span></span>
+        </a>
       </div>
-      <p class="mt-1"><a href="for-employers.html#categories">Browse categories and request one &rarr;</a></p>
+      <p class="mt-1 text-center"><a href="services.html">Browse all services &rarr;</a></p>
     </div>
   </section>
 
@@ -266,20 +265,20 @@
         <h2>How it works</h2>
       </div>
       <div class="grid grid-2">
-        <div class="card journey-card">
-          <h3>For employers</h3>
+        <div class="card journey-card journey-card-employer">
+          <div class="journey-card-heading"><span class="journey-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V4h6v3M3 12h18"/></svg></span><div><p class="eyebrow">For employers</p><h3>Hire with clarity</h3></div></div>
           <ol class="journey-steps">
-            <li><span class="step-number">1</span><div><strong>Tell us what you need</strong><p>A brief, role or service, with budget and timing.</p></div></li>
-            <li><span class="step-number">2</span><div><strong>Review a qualified shortlist</strong><p>Verified people matched against your requirements.</p></div></li>
-            <li><span class="step-number">3</span><div><strong>Get delivery support</strong><p>Scope, milestones and a named AdorWorks contact through to completion.</p></div></li>
+            <li><span class="step-number">1</span><div><strong>Tell us what you need</strong><p>Share the role or scope, budget and timing.</p></div></li>
+            <li><span class="step-number">2</span><div><strong>Review a qualified shortlist</strong><p>Compare verified people matched to your requirements.</p></div></li>
+            <li><span class="step-number">3</span><div><strong>Start work with support</strong><p>Agree the terms and receive milestone support through delivery.</p></div></li>
           </ol>
         </div>
-        <div class="card journey-card">
-          <h3>For talent</h3>
+        <div class="card journey-card journey-card-talent">
+          <div class="journey-card-heading"><span class="journey-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5 21c0-4 2.8-7 7-7s7 3 7 7"/><path d="m17 11 2 2 3-4"/></svg></span><div><p class="eyebrow">For talent</p><h3>Build a trusted profile</h3></div></div>
           <ol class="journey-steps">
-            <li><span class="step-number">1</span><div><strong>Build a profile</strong><p>Skills, evidence, portfolio and identity.</p></div></li>
-            <li><span class="step-number">2</span><div><strong>Complete an assessment</strong><p>Practical evidence, not just a certificate.</p></div></li>
-            <li><span class="step-number">3</span><div><strong>Get matched to real briefs</strong><p>Qualified opportunities, fair terms, no fees.</p></div></li>
+            <li><span class="step-number">1</span><div><strong>Show what you can do</strong><p>Add your skills, identity, evidence and strongest work.</p></div></li>
+            <li><span class="step-number">2</span><div><strong>Complete verification</strong><p>Demonstrate practical capability, not certificates alone.</p></div></li>
+            <li><span class="step-number">3</span><div><strong>Get matched fairly</strong><p>Receive relevant opportunities without paying to be considered.</p></div></li>
           </ol>
         </div>
       </div>
@@ -287,27 +286,43 @@
     </div>
   </section>
 
-  <section class="section">
+  <section class="section trust-story-section">
     <div class="container">
-      <div class="notice notice-violet">
-        <span class="notice-label">Where we are</span>
-        <p class="mt-0">AdorWorks is in its founding pilot: a curated, human-assisted marketplace verifying its first cohort of professionals and working with founding employers before opening up self-service search. That means every shortlist is checked by a person, and every outcome we publish will be real and consented to — see how on the <a href="impact-stories.html">Impact &amp; Stories</a> page.</p>
+      <div class="trust-story-grid">
+        <picture class="trust-story-media">
+          <source type="image/webp" srcset="img/photos/hero-talent-480.webp 480w, img/photos/hero-talent-960.webp 960w" sizes="(min-width: 760px) 45vw, 100vw">
+          <img src="img/photos/hero-talent-960.jpg" srcset="img/photos/hero-talent-480.jpg 480w, img/photos/hero-talent-960.jpg 960w" sizes="(min-width: 760px) 45vw, 100vw" alt="African professional working at a desk" width="960" height="640" loading="lazy">
+        </picture>
+        <div class="trust-story-copy">
+          <p class="eyebrow">A marketplace built on proof</p>
+          <h2>Human judgement still matters in hiring.</h2>
+          <p>AdorWorks is beginning as a curated, human-assisted marketplace in South Sudan. We are verifying our first cohort and working closely with founding employers before opening wider self-service discovery.</p>
+          <ul class="trust-story-list">
+            <li>Every shortlist is reviewed by a person.</li>
+            <li>Talent is assessed with evidence and practical work.</li>
+            <li>Stories and outcomes are published only with consent.</li>
+          </ul>
+          <div class="trust-story-actions">
+            <a href="trust-safety.html" class="btn btn-secondary">How verification works</a>
+            <a href="impact-stories.html">See our pilot story &rarr;</a>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
   <section class="cta-band hero-photo">
-    <video class="hero-photo-img hero-video" poster="img/photos/hero-video-poster-1440.jpg" muted loop playsinline preload="none" aria-hidden="true">
-      <source src="img/photos/hero-video-720.mp4" type="video/mp4" media="(max-width: 767px)">
-      <source src="img/photos/hero-video-1080.mp4" type="video/mp4">
-    </video>
+    <picture>
+      <source type="image/webp" srcset="img/photos/home-hero-480.webp 480w, img/photos/home-hero-960.webp 960w, img/photos/home-hero-1440.webp 1440w" sizes="100vw">
+      <img class="hero-photo-img" src="img/photos/home-hero-1440.jpg" srcset="img/photos/home-hero-480.jpg 480w, img/photos/home-hero-960.jpg 960w, img/photos/home-hero-1440.jpg 1440w" sizes="100vw" alt="" width="1440" height="960" loading="lazy">
+    </picture>
     <div class="container">
-      <h2>Ready to put talent to work?</h2>
-      <p>For employers: request a shortlist. For professionals: build your profile. For partners: help create fair pathways into work.</p>
-      <div class="hero-ctas justify-center" style="margin-top:1.5rem;">
+      <h2>Ready to find the right next step?</h2>
+      <p>Explore legitimate opportunities, request a verified shortlist or partner with us to create fairer pathways into work.</p>
+      <div class="hero-ctas justify-center final-cta-actions">
+        <a href="jobs-projects.html" class="btn btn-primary">Find opportunities</a>
         <a href="for-employers.html#brief-form" class="btn btn-outline-light">Request a shortlist</a>
-        <a href="for-talent.html#talent-form" class="btn btn-outline-light">Build your profile</a>
-        <a href="contact.html" class="btn btn-outline-light">Partner with us</a>
+        <a href="contact.html" class="final-cta-link">Partner with AdorWorks &rarr;</a>
       </div>
     </div>
   </section>
@@ -385,7 +400,7 @@
 </footer>
 
 <div class="mobile-contact-bar">
-  <a href="for-employers.html#categories">Find talent</a>
+  <a href="jobs-projects.html">Find jobs</a>
   <a href="for-employers.html#brief-form" class="is-primary">Post a project</a>
 </div>
 
