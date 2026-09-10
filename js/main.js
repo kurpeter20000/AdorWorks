@@ -150,6 +150,91 @@
       var searchForm = heroAudience.querySelector("[data-audience-search]");
       var searchInput = searchForm ? searchForm.querySelector("input[name=q]") : null;
 
+      // Auto-typing example queries in the search placeholder -- writes
+      // only to `placeholder`, never `value`, so it can never clobber
+      // anything the visitor actually types (and typing into the field
+      // simply hides the placeholder underneath, same as any input).
+      // Fully skipped under prefers-reduced-motion in favour of the
+      // plain static swap this replaces (see the `data-audience-
+      // placeholder-*` attributes still on the input in index.html).
+      var SEARCH_TYPEWRITER_PHRASES = {
+        employer: [
+          "Search skills or categories to hire",
+          "e.g. graphic designer",
+          "e.g. web developer",
+          "e.g. virtual assistant",
+          "e.g. video editor",
+        ],
+        talent: [
+          "Search roles or categories to find work",
+          "e.g. content writer",
+          "e.g. bookkeeper",
+          "e.g. photographer",
+          "e.g. data entry",
+        ],
+      };
+      var reduceMotionForSearch = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var stopSearchTypewriter = null;
+
+      function startSearchTypewriter(input, phrases) {
+        var phraseIndex = 0;
+        var charIndex = phrases[0].length;
+        var deleting = true;
+        var timeoutId = null;
+
+        // Starts already showing phrases[0] in full -- identical to the
+        // static placeholder this replaces, so there's no visible jump
+        // the moment the typewriter takes over.
+        input.placeholder = phrases[0];
+
+        function tick() {
+          var phrase = phrases[phraseIndex % phrases.length];
+          if (deleting) {
+            charIndex--;
+            input.placeholder = phrase.slice(0, charIndex);
+            if (charIndex === 0) {
+              deleting = false;
+              phraseIndex++;
+              timeoutId = window.setTimeout(tick, 400);
+              return;
+            }
+            timeoutId = window.setTimeout(tick, 28);
+          } else {
+            var next = phrases[phraseIndex % phrases.length];
+            charIndex++;
+            input.placeholder = next.slice(0, charIndex);
+            if (charIndex === next.length) {
+              deleting = true;
+              timeoutId = window.setTimeout(tick, 1700);
+              return;
+            }
+            timeoutId = window.setTimeout(tick, 55);
+          }
+        }
+
+        timeoutId = window.setTimeout(tick, 1700);
+        return function stop() {
+          window.clearTimeout(timeoutId);
+        };
+      }
+
+      function updateSearchPlaceholder(audience) {
+        if (!searchInput) return;
+        if (stopSearchTypewriter) {
+          stopSearchTypewriter();
+          stopSearchTypewriter = null;
+        }
+        if (reduceMotionForSearch) {
+          var placeholder = searchInput.getAttribute("data-audience-placeholder-" + audience);
+          if (placeholder) searchInput.placeholder = placeholder;
+          return;
+        }
+        stopSearchTypewriter = startSearchTypewriter(
+          searchInput,
+          SEARCH_TYPEWRITER_PHRASES[audience] || SEARCH_TYPEWRITER_PHRASES.employer
+        );
+      }
+
       function setAudience(audience) {
         audienceTabs.forEach(function (tab) {
           tab.setAttribute("aria-selected", String(tab.getAttribute("data-audience-tab") === audience));
@@ -158,10 +243,7 @@
           el.hidden = el.getAttribute("data-audience-chips") !== audience;
         });
         if (searchForm) searchForm.action = audience === "talent" ? "for-talent.html" : "for-employers.html";
-        if (searchInput) {
-          var placeholder = searchInput.getAttribute("data-audience-placeholder-" + audience);
-          if (placeholder) searchInput.placeholder = placeholder;
-        }
+        updateSearchPlaceholder(audience);
         track("hero_audience_switch", { audience: audience });
       }
 
@@ -170,6 +252,8 @@
           setAudience(tab.getAttribute("data-audience-tab"));
         });
       });
+
+      updateSearchPlaceholder("employer");
     }
 
     // Category search-match highlight: if a visitor arrives at
