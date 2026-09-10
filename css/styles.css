@@ -899,55 +899,114 @@ p { margin: 0 0 1em; }
 .path-card-highlight .path-card-arrow:hover { background: #fff; color: var(--color-primary); }
 .path-card-highlight .path-card-cta { color: #fff; }
 
-/* Path-card carousel (homepage "five ways to work") -- a manual,
-   scroll-snap carousel: exactly five cards, once, never duplicated.
-   .path-marquee-track is the scrollable flex row itself (min-width: 0 is
-   the standard flex-item fix that lets it actually shrink and scroll
-   instead of forcing the whole section wider); the two .path-marquee-arrow
-   buttons sit outside it as plain flex siblings so they never overlap a
-   card, and move the track by exactly one card per click (see
-   js/main.js), disabling at either end. Trackpad/touch scrolling and
-   keyboard scrolling (the track itself is focusable) work natively via
-   overflow-x; click-and-drag with a mouse is added in JS. */
-/* Bleeds 1.25rem past the .container's own padding on each side (same
-   reclaim-the-padding technique as .card-photo-img) -- purely to buy back
-   enough width for 4 cards + both arrows to fit at a typical desktop
-   size; nothing else on the page is affected. */
-.path-marquee { display: flex; align-items: center; gap: 0.5rem; margin-inline: -1.25rem; }
-.path-marquee-track {
-  display: flex;
-  gap: 1rem;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
-  scrollbar-width: none;
-  min-width: 0;
-  flex: 1 1 auto;
-  padding: 0.2rem 0.2rem 0.5rem;
-  margin: -0.2rem -0.2rem -0.3rem;
-  cursor: grab;
+/* Coverflow (homepage "five ways to work") -- exactly five cards, one
+   centred/active/sharp, the rest receding into depth (smaller, blurred,
+   rotated, faded) either side. index-driven, not scroll-driven: JS
+   (js/main.js) tracks a single activeIndex and writes it to each
+   .coverflow-slide as the --offset custom property (its position
+   relative to the active card); every visual property below is a pure
+   function of that one number, via calc(), so there's one source of
+   truth and no per-offset rule duplication. --abs-offset uses CSS's
+   max(x, -x) trick for absolute value (no abs() function in this
+   browser's CSS support).
+
+   Clicking a non-active slide re-centres it instead of following its
+   link (its links get tabindex -1 while inactive, restored once it
+   becomes active) -- exactly the "select the next card" interaction,
+   not just the prev/next arrows. Depth (rotateY/translateZ/blur) is
+   wrapped in prefers-reduced-motion: no-preference; reduced-motion gets
+   a flat, instant-snap arrangement instead -- 3D depth/parallax is
+   exactly the kind of effect that guidance calls out, not just the
+   transition between states. */
+.coverflow { position: relative; padding-inline: 3.25rem; }
+.coverflow-stage {
+  position: relative;
+  height: 420px;
+  overflow: hidden;
+  perspective: 1400px;
 }
-.path-marquee-track:active { cursor: grabbing; }
-.path-marquee-track::-webkit-scrollbar { display: none; }
-.path-marquee-track:focus-visible { outline: 3px solid var(--color-highlight); outline-offset: 2px; }
-.path-marquee-track .path-card { scroll-snap-align: start; }
-.path-marquee-arrow {
-  flex: none;
+.coverflow-slide {
+  --offset: 0;
+  --abs-offset: max(var(--offset), calc(-1 * var(--offset)));
+  position: absolute;
+  top: 0;
+  left: 50%;
+  opacity: max(0, calc(1 - var(--abs-offset) * 0.32));
+  z-index: calc(10 - var(--abs-offset));
+}
+.coverflow-slide[data-active="false"] { cursor: pointer; }
+.coverflow-slide .path-card { pointer-events: none; }
+.coverflow-slide[data-active="true"] .path-card { pointer-events: auto; }
+/* Step (155px) and the scale curve (1.05 active down to 0.9/0.75/...)
+   are tuned together, not independent numbers: the active card's own
+   right edge and the next card's centre need a visible gap between
+   them, or the enlarged, frontmost active card visually and
+   pointer-events-wise covers the exact spot a visitor would naturally
+   click on its neighbour. */
+@media (prefers-reduced-motion: no-preference) {
+  .coverflow-slide {
+    transition: transform 0.6s cubic-bezier(.22,.61,.36,1), opacity 0.6s ease, filter 0.6s ease;
+    transform:
+      translateX(-50%)
+      translateX(calc(var(--offset) * 155px))
+      translateZ(calc(var(--abs-offset) * -90px))
+      rotateY(calc(var(--offset) * -30deg))
+      scale(max(0.55, calc(1.05 - var(--abs-offset) * 0.15)));
+    filter: blur(calc(min(var(--abs-offset), 3) * 1.5px));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .coverflow-slide {
+    transition: none;
+    transform: translateX(-50%) translateX(calc(var(--offset) * 150px)) scale(max(0.82, calc(1.05 - var(--abs-offset) * 0.08)));
+    filter: none;
+  }
+}
+.coverflow-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  width: 42px;
+  height: 42px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
   border-radius: 999px;
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   color: var(--color-primary);
+  box-shadow: 0 4px 14px rgba(24,34,48,0.12);
   cursor: pointer;
 }
-.path-marquee-arrow svg { width: 17px; height: 17px; }
-.path-marquee-arrow:hover { border-color: var(--color-accent); color: var(--color-accent-text); }
-.path-marquee-arrow:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
-@media (prefers-reduced-motion: reduce) { .path-marquee-track { scroll-behavior: auto; } }
+.coverflow-prev { left: 0; }
+.coverflow-next { right: 0; }
+.coverflow-arrow svg { width: 18px; height: 18px; }
+.coverflow-arrow:hover { border-color: var(--color-accent); color: var(--color-accent-text); }
+.coverflow-arrow:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+.coverflow-dots { display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.25rem; }
+.coverflow-dot {
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--color-border);
+  cursor: pointer;
+  transition: background 0.2s ease, width 0.2s ease;
+}
+.coverflow-dot[aria-selected="true"] { width: 24px; background: var(--color-accent); }
+@media (prefers-reduced-motion: reduce) { .coverflow-dot { transition: none; } }
+@media (max-width: 560px) {
+  .coverflow { padding-inline: 2.75rem; }
+  .coverflow-stage { height: 400px; }
+  @media (prefers-reduced-motion: no-preference) {
+    .coverflow-slide { transform: translateX(-50%) translateX(calc(var(--offset) * 108px)) translateZ(calc(var(--abs-offset) * -90px)) rotateY(calc(var(--offset) * -30deg)) scale(max(0.55, calc(1.05 - var(--abs-offset) * 0.15))); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .coverflow-slide { transform: translateX(-50%) translateX(calc(var(--offset) * 105px)) scale(max(0.82, calc(1.05 - var(--abs-offset) * 0.08))); }
+  }
+}
 /* Service/detail cards write their facts as "<strong>Label:</strong>
    value<br>" -- turning each label into its own block (instead of
    running inline into the previous line) reads as a clean stacked

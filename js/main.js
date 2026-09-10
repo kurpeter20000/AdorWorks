@@ -638,73 +638,84 @@
       revealTargets.forEach(function (el) { revealObserver.observe(el); });
     }
 
-    // Path-card carousel (homepage "five ways to work"): manual,
-    // scroll-snap carousel -- the two arrows move the track by exactly
-    // one card and disable at either end (same pattern as the services
-    // page's category rows). Touch swipe and trackpad scrolling work
-    // natively via overflow-x; click-and-drag with a mouse doesn't, so
-    // it's added here.
-    var pathTrack = document.querySelector("[data-marquee-track]");
-    if (pathTrack) {
-      var pathPrev = document.querySelector("[data-marquee-prev]");
-      var pathNext = document.querySelector("[data-marquee-next]");
-      var reduceMotionForPath = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Coverflow (homepage "five ways to work"): index-driven, not
+    // scroll-driven -- one activeIndex, written to every slide as the
+    // --offset custom property (its position relative to the active
+    // card); styles.css turns that single number into the whole
+    // centred/sharp vs. receding/blurred/rotated presentation via
+    // calc(), so this file only ever manages one integer.
+    var coverflow = document.querySelector("[data-coverflow]");
+    if (coverflow) {
+      var cfSlides = Array.from(coverflow.querySelectorAll("[data-coverflow-slide]"));
+      var cfPrev = coverflow.querySelector("[data-coverflow-prev]");
+      var cfNext = coverflow.querySelector("[data-coverflow-next]");
+      var cfDots = Array.from(coverflow.querySelectorAll("[data-coverflow-dot]"));
+      var cfStage = coverflow.querySelector("[data-coverflow-stage]");
+      // Leads with the highlighted "Post a project" card (index 1) rather
+      // than card 0 -- the flagship path stays front and centre without
+      // requiring a visitor to interact first.
+      var cfActiveIndex = 1;
 
-      function updatePathArrows() {
-        var max = pathTrack.scrollWidth - pathTrack.clientWidth;
-        if (pathPrev) pathPrev.disabled = pathTrack.scrollLeft <= 4;
-        if (pathNext) pathNext.disabled = pathTrack.scrollLeft >= max - 4;
-      }
-
-      function stepPathTrack(direction) {
-        var card = pathTrack.querySelector(".path-card");
-        var gap = parseFloat(getComputedStyle(pathTrack).columnGap || getComputedStyle(pathTrack).gap || "0");
-        var step = card ? card.getBoundingClientRect().width + gap : pathTrack.clientWidth;
-        pathTrack.scrollBy({ left: direction * step, behavior: reduceMotionForPath ? "auto" : "smooth" });
-      }
-
-      if (pathPrev) {
-        pathPrev.addEventListener("click", function () {
-          stepPathTrack(-1);
-          track("path_card_nav", { direction: "prev" });
+      function renderCoverflow() {
+        cfSlides.forEach(function (slide, i) {
+          var offset = i - cfActiveIndex;
+          var isActive = offset === 0;
+          slide.style.setProperty("--offset", String(offset));
+          slide.dataset.active = String(isActive);
+          slide.setAttribute("aria-hidden", isActive ? "false" : "true");
+          slide.querySelectorAll("a").forEach(function (a) {
+            a.tabIndex = isActive ? 0 : -1;
+          });
+        });
+        if (cfPrev) cfPrev.disabled = cfActiveIndex <= 0;
+        if (cfNext) cfNext.disabled = cfActiveIndex >= cfSlides.length - 1;
+        cfDots.forEach(function (dot, i) {
+          dot.setAttribute("aria-selected", String(i === cfActiveIndex));
         });
       }
-      if (pathNext) {
-        pathNext.addEventListener("click", function () {
-          stepPathTrack(1);
-          track("path_card_nav", { direction: "next" });
-        });
-      }
-      pathTrack.addEventListener("scroll", updatePathArrows);
-      window.addEventListener("resize", updatePathArrows);
-      updatePathArrows();
 
-      // Mouse click-and-drag: a 5px threshold before it counts as a drag
-      // (rather than a click), and the click that follows a real drag is
-      // suppressed once so releasing over a card's link doesn't navigate.
-      var pathDrag = null;
-      pathTrack.addEventListener("pointerdown", function (e) {
-        if (e.pointerType === "touch") return;
-        pathDrag = { startX: e.clientX, startScroll: pathTrack.scrollLeft, moved: false };
+      function goToCoverflow(index) {
+        var clamped = Math.max(0, Math.min(cfSlides.length - 1, index));
+        if (clamped === cfActiveIndex) return;
+        cfActiveIndex = clamped;
+        renderCoverflow();
+        track("path_coverflow_select", { index: cfActiveIndex });
+      }
+
+      if (cfPrev) cfPrev.addEventListener("click", function () { goToCoverflow(cfActiveIndex - 1); });
+      if (cfNext) cfNext.addEventListener("click", function () { goToCoverflow(cfActiveIndex + 1); });
+      cfDots.forEach(function (dot, i) {
+        dot.addEventListener("click", function () { goToCoverflow(i); });
       });
-      pathTrack.addEventListener("pointermove", function (e) {
-        if (!pathDrag) return;
-        var delta = e.clientX - pathDrag.startX;
-        if (Math.abs(delta) > 5) pathDrag.moved = true;
-        if (pathDrag.moved) pathTrack.scrollLeft = pathDrag.startScroll - delta;
-      });
-      function endPathDrag() {
-        if (pathDrag && pathDrag.moved) {
-          var suppressClick = function (e) {
+
+      // Selecting a non-active card re-centres it instead of following
+      // its link -- its links are already out of tab order (tabIndex -1
+      // above) while inactive, so this only needs to catch the mouse/
+      // touch case. The active card's own links are left alone and
+      // navigate normally.
+      cfSlides.forEach(function (slide, i) {
+        slide.addEventListener("click", function (e) {
+          if (i !== cfActiveIndex) {
             e.preventDefault();
-            pathTrack.removeEventListener("click", suppressClick, true);
-          };
-          pathTrack.addEventListener("click", suppressClick, true);
-        }
-        pathDrag = null;
+            goToCoverflow(i);
+          }
+        });
+      });
+
+      if (cfStage) {
+        cfStage.addEventListener("keydown", function (e) {
+          if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            goToCoverflow(cfActiveIndex - 1);
+          }
+          if (e.key === "ArrowRight") {
+            e.preventDefault();
+            goToCoverflow(cfActiveIndex + 1);
+          }
+        });
       }
-      pathTrack.addEventListener("pointerup", endPathDrag);
-      pathTrack.addEventListener("pointerleave", endPathDrag);
+
+      renderCoverflow();
     }
   });
 })();
