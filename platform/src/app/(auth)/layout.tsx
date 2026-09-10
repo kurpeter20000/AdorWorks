@@ -1,4 +1,5 @@
 import { MARKETING_SITE_URL } from "@/lib/domain/marketingSite";
+import { HeroVideoBackground } from "@/components/hero-video-background";
 
 // Same three value props on both sides of the marketplace — the auth
 // pages are the one place login/signup for talent and employers share a
@@ -21,45 +22,53 @@ const VALUE_PROPS = [
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-1 flex-col lg:flex-row">
-      <aside className="relative hidden overflow-hidden bg-midnight px-10 py-12 text-white lg:flex lg:w-[44%] lg:flex-col lg:justify-between xl:w-2/5">
-        <div aria-hidden className="pointer-events-none absolute -top-24 -left-24 size-72 rounded-full bg-teal/25 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute -right-16 -bottom-32 size-80 rounded-full bg-violet/30 blur-3xl" />
+    <div className="relative isolate flex flex-1 flex-col overflow-hidden">
+      {/* One shared background across the whole page — video on wider,
+          motion-safe, non-Data-Saver connections (see hero-video-
+          background.tsx), the poster frame everywhere else — with the
+          same dark scrim the marketing site uses over its own hero photo
+          (css/styles.css .hero-photo) so white text stays legible over
+          any frame of the footage. */}
+      <HeroVideoBackground className="absolute inset-0 -z-20 h-full w-full object-cover" />
+      <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-midnight/80 to-midnight/90" />
 
-        <a href={MARKETING_SITE_URL} className="relative text-lg font-extrabold">
-          AdorWorks
+      <div className="relative z-0 flex items-center justify-between px-6 py-4 text-white lg:hidden">
+        <a href={MARKETING_SITE_URL} className="text-sm font-semibold text-white/85 hover:text-white">
+          &larr; Back
         </a>
+        <span className="text-lg font-extrabold">AdorWorks</span>
+      </div>
 
-        <div className="relative">
-          <p className="text-2xl leading-snug font-extrabold">
-            Talent found.
-            <br />
-            Work delivered.
-          </p>
-          <ul className="mt-8 space-y-6">
-            {VALUE_PROPS.map((item) => (
-              <li key={item.title}>
-                <p className="font-bold text-teal">{item.title}</p>
-                <p className="mt-1 text-sm text-white/70">{item.body}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <a href={MARKETING_SITE_URL} className="relative text-sm font-semibold text-white/70 hover:text-white">
-          &larr; Back to the AdorWorks website
-        </a>
-      </aside>
-
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6">
-        <div className="flex w-full max-w-sm items-center justify-between lg:hidden">
-          <a href={MARKETING_SITE_URL} className="text-sm font-semibold text-slate hover:text-midnight">
-            &larr; Back
+      <div className="relative z-0 flex flex-1 flex-col lg:flex-row">
+        <div className="hidden flex-col justify-between py-16 text-white lg:flex lg:w-1/2 lg:px-16 xl:px-24">
+          <a href={MARKETING_SITE_URL} className="text-lg font-extrabold">
+            AdorWorks
           </a>
-          <span className="text-lg font-extrabold text-midnight">AdorWorks</span>
+
+          <div>
+            <p className="text-4xl leading-snug font-extrabold">
+              Talent found.
+              <br />
+              Work delivered.
+            </p>
+            <ul className="mt-8 max-w-md space-y-6">
+              {VALUE_PROPS.map((item) => (
+                <li key={item.title}>
+                  <p className="font-bold text-teal">{item.title}</p>
+                  <p className="mt-1 text-sm text-white/75">{item.body}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <a href={MARKETING_SITE_URL} className="text-sm font-semibold text-white/70 hover:text-white">
+            &larr; Back to the AdorWorks website
+          </a>
         </div>
 
-        <div className="w-full max-w-sm rounded-2xl border border-slate/15 bg-white p-8 shadow-sm">{children}</div>
+        <div className="flex flex-1 flex-col items-center justify-center px-6 pb-10 sm:px-10 lg:w-1/2 lg:px-16 lg:py-16">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">{children}</div>
+        </div>
       </div>
     </div>
   );
