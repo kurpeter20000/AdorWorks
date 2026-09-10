@@ -371,35 +371,106 @@
       });
     }
 
-    // Service deck (services.html): only one .service-deck-panel (one per
-    // category) is shown at a time; the prev/next arrows -- present on
-    // every panel, but only the visible panel's are reachable -- cycle
-    // which category is active. Falls back to showing all three stacked
-    // (no cycling) if this markup isn't present or JS never runs.
-    var deckPanels = Array.from(document.querySelectorAll(".service-deck-panel"));
-    if (deckPanels.length > 1) {
-      var deckIndex = 0;
+    // Service deck rows (services.html): each category's row of full-size
+    // service cards is its own scroll-snap carousel -- the flanking arrows
+    // move it by exactly one card and disable at either end, mirroring
+    // native browser prev/next controls rather than jumping between
+    // categories (each category is its own always-visible section, same
+    // as any other .section on the page).
+    var reduceMotionForDeck = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.querySelectorAll(".service-deck-row").forEach(function (row) {
+      var wrap = row.closest(".service-deck-visual");
+      if (!wrap) return;
+      var prevBtn = wrap.querySelector("[data-row-prev]");
+      var nextBtn = wrap.querySelector("[data-row-next]");
+      if (!prevBtn || !nextBtn) return;
 
-      function showDeckPanel(index) {
-        deckIndex = (index + deckPanels.length) % deckPanels.length;
-        deckPanels.forEach(function (panel, i) { panel.hidden = i !== deckIndex; });
+      function updateButtons() {
+        // Tolerance (not <= 0) because scroll-snap can settle the resting
+        // position a few px off true zero/max (the row's own bleed
+        // padding for the tile hover-lift shadow shifts the snap point).
+        var max = row.scrollWidth - row.clientWidth;
+        prevBtn.disabled = row.scrollLeft <= 4;
+        nextBtn.disabled = row.scrollLeft >= max - 4;
       }
 
-      document.querySelectorAll("[data-deck-prev]").forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          showDeckPanel(deckIndex - 1);
-          track("service_deck_nav", { direction: "prev" });
-        });
-      });
-      document.querySelectorAll("[data-deck-next]").forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          showDeckPanel(deckIndex + 1);
-          track("service_deck_nav", { direction: "next" });
-        });
-      });
+      function stepRow(direction) {
+        var tile = row.querySelector(".service-tile");
+        var gap = parseFloat(getComputedStyle(row).columnGap || getComputedStyle(row).gap || "0");
+        var step = tile ? tile.getBoundingClientRect().width + gap : row.clientWidth;
+        row.scrollBy({ left: direction * step, behavior: reduceMotionForDeck ? "auto" : "smooth" });
+      }
 
-      showDeckPanel(0);
-    }
+      prevBtn.addEventListener("click", function () {
+        stepRow(-1);
+        track("service_row_nav", { direction: "prev", category: row.getAttribute("data-service-group") });
+      });
+      nextBtn.addEventListener("click", function () {
+        stepRow(1);
+        track("service_row_nav", { direction: "next", category: row.getAttribute("data-service-group") });
+      });
+      row.addEventListener("scroll", updateButtons);
+      window.addEventListener("resize", updateButtons);
+      updateButtons();
+
+      // A "scroll" or window "resize" event isn't the only thing that can
+      // change how much there is left to scroll -- late web-font swap,
+      // an image finishing decode, or anything else reflowing the row
+      // changes scrollWidth/clientWidth without firing either. Without
+      // this, updateButtons()'s one-time initial read can go stale and
+      // leave an arrow disabled (or enabled) when reality has since
+      // moved on. ResizeObserver is exactly the primitive for "recompute
+      // whenever this element's box actually changes," so it's a
+      // correctness fix, not just a nice-to-have.
+      if ("ResizeObserver" in window) {
+        new ResizeObserver(updateButtons).observe(row);
+      }
+
+      // Mouse click-and-drag scrolling -- touch swipe, trackpad and
+      // keyboard scrolling already work natively via plain overflow-x
+      // scrolling, but a held-mouse-button drag doesn't on a plain div.
+      // A drag past a small pixel threshold marks `dragged`, which the
+      // capture-phase click listener below uses to swallow the click a
+      // drag would otherwise fire on release -- without it, every drag
+      // would also pop open whichever tile the pointer happened to land
+      // on. Deliberately NOT using setPointerCapture: capturing the
+      // pointer on the row redirects the click event's own target
+      // resolution to the row instead of the tile underneath it in this
+      // browser's implementation, which broke every tile click, dragged
+      // or not. window-level move/up listeners (only doing anything
+      // while `isDragging`) give the same "keep tracking outside the
+      // row's bounds" behaviour without that side effect.
+      var isDragging = false;
+      var dragged = false;
+      var dragStartX = 0;
+      var dragStartScroll = 0;
+
+      row.addEventListener("pointerdown", function (e) {
+        if (e.pointerType !== "mouse") return;
+        isDragging = true;
+        dragged = false;
+        dragStartX = e.clientX;
+        dragStartScroll = row.scrollLeft;
+      });
+      window.addEventListener("pointermove", function (e) {
+        if (!isDragging) return;
+        var delta = e.clientX - dragStartX;
+        if (Math.abs(delta) > 4) dragged = true;
+        row.scrollLeft = dragStartScroll - delta;
+      });
+      window.addEventListener("pointerup", function () { isDragging = false; });
+      window.addEventListener("pointercancel", function () { isDragging = false; });
+      row.addEventListener(
+        "click",
+        function (e) {
+          if (dragged) {
+            e.stopPropagation();
+            e.preventDefault();
+          }
+        },
+        true
+      );
+    });
 
     // Click tracking: WhatsApp, phone, downloads
     document.querySelectorAll('a[href^="https://wa.me"]').forEach(function (a) {
@@ -567,24 +638,73 @@
       revealTargets.forEach(function (el) { revealObserver.observe(el); });
     }
 
-    // Path-card marquee pause/play (homepage): required, not decorative --
-    // WCAG 2.2.2 says auto-moving content running past 5s needs a way to
-    // stop it. Hover/focus-within already pauses it live in CSS; this is
-    // the persistent, keyboard/touch-reachable control (see .path-marquee
-    // in styles.css for the full mechanism, including the
-    // prefers-reduced-motion path that removes the animation and the
-    // hidden duplicate card set entirely).
-    var marquee = document.querySelector("[data-path-marquee]");
-    if (marquee) {
-      var marqueeToggle = marquee.querySelector("[data-marquee-toggle]");
-      var marqueeLabel = marquee.querySelector("[data-marquee-toggle-label]");
-      if (marqueeToggle) {
-        marqueeToggle.addEventListener("click", function () {
-          var paused = marquee.classList.toggle("is-paused");
-          marqueeToggle.setAttribute("aria-pressed", String(paused));
-          if (marqueeLabel) marqueeLabel.textContent = paused ? "Resume auto-scrolling" : "Pause auto-scrolling";
+    // Path-card carousel (homepage "five ways to work"): manual,
+    // scroll-snap carousel -- the two arrows move the track by exactly
+    // one card and disable at either end (same pattern as the services
+    // page's category rows). Touch swipe and trackpad scrolling work
+    // natively via overflow-x; click-and-drag with a mouse doesn't, so
+    // it's added here.
+    var pathTrack = document.querySelector("[data-marquee-track]");
+    if (pathTrack) {
+      var pathPrev = document.querySelector("[data-marquee-prev]");
+      var pathNext = document.querySelector("[data-marquee-next]");
+      var reduceMotionForPath = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      function updatePathArrows() {
+        var max = pathTrack.scrollWidth - pathTrack.clientWidth;
+        if (pathPrev) pathPrev.disabled = pathTrack.scrollLeft <= 4;
+        if (pathNext) pathNext.disabled = pathTrack.scrollLeft >= max - 4;
+      }
+
+      function stepPathTrack(direction) {
+        var card = pathTrack.querySelector(".path-card");
+        var gap = parseFloat(getComputedStyle(pathTrack).columnGap || getComputedStyle(pathTrack).gap || "0");
+        var step = card ? card.getBoundingClientRect().width + gap : pathTrack.clientWidth;
+        pathTrack.scrollBy({ left: direction * step, behavior: reduceMotionForPath ? "auto" : "smooth" });
+      }
+
+      if (pathPrev) {
+        pathPrev.addEventListener("click", function () {
+          stepPathTrack(-1);
+          track("path_card_nav", { direction: "prev" });
         });
       }
+      if (pathNext) {
+        pathNext.addEventListener("click", function () {
+          stepPathTrack(1);
+          track("path_card_nav", { direction: "next" });
+        });
+      }
+      pathTrack.addEventListener("scroll", updatePathArrows);
+      window.addEventListener("resize", updatePathArrows);
+      updatePathArrows();
+
+      // Mouse click-and-drag: a 5px threshold before it counts as a drag
+      // (rather than a click), and the click that follows a real drag is
+      // suppressed once so releasing over a card's link doesn't navigate.
+      var pathDrag = null;
+      pathTrack.addEventListener("pointerdown", function (e) {
+        if (e.pointerType === "touch") return;
+        pathDrag = { startX: e.clientX, startScroll: pathTrack.scrollLeft, moved: false };
+      });
+      pathTrack.addEventListener("pointermove", function (e) {
+        if (!pathDrag) return;
+        var delta = e.clientX - pathDrag.startX;
+        if (Math.abs(delta) > 5) pathDrag.moved = true;
+        if (pathDrag.moved) pathTrack.scrollLeft = pathDrag.startScroll - delta;
+      });
+      function endPathDrag() {
+        if (pathDrag && pathDrag.moved) {
+          var suppressClick = function (e) {
+            e.preventDefault();
+            pathTrack.removeEventListener("click", suppressClick, true);
+          };
+          pathTrack.addEventListener("click", suppressClick, true);
+        }
+        pathDrag = null;
+      }
+      pathTrack.addEventListener("pointerup", endPathDrag);
+      pathTrack.addEventListener("pointerleave", endPathDrag);
     }
   });
 })();

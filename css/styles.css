@@ -514,15 +514,13 @@ p { margin: 0 0 1em; }
 .section-header { max-width: 70ch; margin-bottom: 2rem; }
 .section-header p { color: var(--color-muted); font-size: 1.05rem; }
 
-/* Service deck (services.html) -- ONE gradient panel per category, with
-   its 4 services shown full-size, side by side (not shrunk into a small
-   grid) so all of them read at a glance. Only one .service-deck-panel is
-   shown at a time (JS toggles the `hidden` attribute); the arrows advance
-   which category is active. */
-/* Equal specificity to .service-deck-panel's own `display: flex` below,
-   so source order alone would decide the fight -- spelling it out here
-   keeps a hidden panel hidden regardless of stylesheet edit order. */
-.service-deck-panel[hidden] { display: none; }
+/* Service deck (services.html) -- one gradient panel per category, each
+   stacked in the page (all three visible, like any other section) with
+   its 4 services shown full-size in a single horizontal row -- never
+   shrunk, stacked or fanned. Each row scrolls independently: the arrows
+   flanking it move it by exactly one card and disable at either end;
+   past that, the row is a native scroll-snap container so drag/swipe/
+   trackpad scrolling and keyboard scrolling all work without extra JS. */
 .service-deck-panel {
   position: relative;
   overflow: hidden;
@@ -533,7 +531,9 @@ p { margin: 0 0 1em; }
   gap: 1.5rem;
   padding: 1.75rem;
   align-items: center;
+  margin-bottom: 2rem;
 }
+.service-deck-panel:last-child { margin-bottom: 0; }
 .service-deck-creative { background: linear-gradient(135deg, var(--color-primary) 0%, #00786A 100%); }
 .service-deck-digital { background: linear-gradient(135deg, var(--color-primary) 0%, #5B4BDB 100%); }
 .service-deck-business { background: linear-gradient(135deg, var(--color-primary) 0%, #FF6B4A 100%); }
@@ -592,12 +592,18 @@ p { margin: 0 0 1em; }
   gap: 0.9rem;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
   scrollbar-width: none;
   min-width: 0;
   padding: 0.2rem 0.2rem 0.4rem;
   margin: -0.2rem -0.2rem 0;
 }
 .service-deck-row::-webkit-scrollbar { display: none; }
+/* The row itself is keyboard-scrollable (arrow keys / trackpad / drag)
+   once focused, in addition to the two .deck-arrow buttons -- so give it
+   the same focus ring as every other interactive element on the site. */
+.service-deck-row:focus-visible { outline: 3px solid var(--color-highlight); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .service-deck-row { scroll-behavior: auto; } }
 .service-deck-row .service-tile {
   flex: none;
   width: 150px;
@@ -621,13 +627,27 @@ p { margin: 0 0 1em; }
 }
 .deck-arrow:hover { background: rgba(255,255,255,0.3); }
 .deck-arrow svg { width: 18px; height: 18px; }
+.deck-arrow:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
 
-@media (min-width: 880px) {
-  .service-deck-panel { flex-direction: row; align-items: center; padding: 2.5rem 3rem; gap: 2.5rem; text-align: left; }
-  .service-deck-intro { flex: none; width: 280px; text-align: left; }
+/* Tablet keeps the same two-part (info left / carousel right) layout as
+   desktop rather than falling all the way back to mobile's stacked
+   arrangement -- just with a narrower intro column and tighter padding,
+   so the row has enough room to show at least one full tile plus a peek
+   of the next (fewer than desktop's ~3, as intended -- "reduce the
+   number of visible service cards", not remove the layout). 700px
+   matches this site's established tablet breakpoint (.grid-3,
+   .steps-3, .tier-grid); 960px matches its desktop one (same as the
+   header nav's own switch), where the roomier desktop sizing kicks in. */
+@media (min-width: 700px) {
+  .service-deck-panel { flex-direction: row; align-items: center; padding: 1.75rem 2rem; gap: 1.75rem; text-align: left; }
+  .service-deck-intro { flex: none; width: 210px; text-align: left; }
   .service-deck-desc { margin-inline: 0; }
   .service-deck-stats { justify-content: flex-start; margin-bottom: 0; }
   .service-deck-visual { flex: 1 1 auto; width: auto; }
+}
+@media (min-width: 960px) {
+  .service-deck-panel { padding: 2.5rem 3rem; gap: 2.5rem; }
+  .service-deck-intro { width: 280px; }
 }
 
 .service-tile {
@@ -650,6 +670,29 @@ p { margin: 0 0 1em; }
   border-color: var(--color-accent);
 }
 @media (prefers-reduced-motion: reduce) { .service-tile { transition: none; } .service-tile:hover { transform: none; } }
+/* Clickability indicator -- always visible (not just on :hover), since
+   hover never fires for touch users and this is the only cue a tile
+   opens something. Reuses the same arrow-in-circle language as the
+   homepage's path-cards, not a Terawork element. */
+.service-tile::before {
+  content: "\2197";
+  position: absolute;
+  top: 0.5rem; right: 0.5rem;
+  z-index: 2;
+  width: 26px; height: 26px;
+  border-radius: 999px;
+  background: rgba(24,34,48,0.55);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.service-tile:hover::before,
+.service-tile:focus-visible::before { background: var(--color-accent); color: var(--color-accent-ink); transform: scale(1.1); }
+@media (prefers-reduced-motion: reduce) { .service-tile::before { transition: none; } .service-tile:hover::before { transform: none; } }
 .service-tile img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
 .service-tile::after {
   content: "";
@@ -715,6 +758,7 @@ p { margin: 0 0 1em; }
 }
 .service-modal-facts dt:first-child { margin-top: 0; }
 .service-modal-facts dd { margin: 0.15em 0 0; }
+.service-modal-pricing { margin: 1rem 0 0; font-size: 0.85rem; color: var(--color-muted); }
 .service-modal-body .btn { margin-top: 1.25rem; }
 .service-modal-controls {
   display: flex;
@@ -790,47 +834,62 @@ p { margin: 0 0 1em; }
    the card's bottom/side edges (mirrors .card-photo-img's top-bleed
    technique, just inverted). One card can carry .path-card-highlight for
    a solid-navy "primary path" treatment, same navy+white pairing already
-   used in .hero and .cta-band so it reads as consistent, not a one-off. */
+   used in .hero and .cta-band so it reads as consistent, not a one-off.
+   Fixed at 264px wide (within the 250-280px target) with the description
+   clamped to 3 lines, so all five stay the same height (340-390px) no
+   matter how long each one's copy runs -- never the card that grows. */
 .path-card {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 1.5rem 1.5rem 0;
+  flex: 0 0 auto;
+  width: 246px;
+  padding: 1.5rem 1.25rem 0;
 }
-.path-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
-.path-card-head h3 { margin: 0; }
+.path-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.path-card-head h3 { margin: 0; font-size: 1.05rem; }
 .path-card-arrow {
   flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
   border: 1.5px solid var(--color-accent);
   color: var(--color-accent-text);
   transition: background 0.15s ease, color 0.15s ease;
 }
-.path-card-arrow svg { width: 16px; height: 16px; }
+.path-card-arrow svg { width: 15px; height: 15px; }
 .path-card-arrow:hover { background: var(--color-accent); color: var(--color-accent-ink); }
-.path-card p { color: var(--color-muted); font-size: 0.95rem; }
+.path-card p {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0 0 0.75rem;
+  height: calc(1.5em * 3);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
 .path-card-cta {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
   font-weight: 800;
-  font-size: 0.92rem;
+  font-size: 0.85rem;
   color: var(--color-accent-text);
   text-decoration: none;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
 }
 .path-card-cta:hover { text-decoration: underline; }
 .path-card-photo {
   display: block;
-  width: calc(100% + 3rem);
-  aspect-ratio: 16 / 10;
+  width: calc(100% + 2.5rem);
+  height: 165px;
   object-fit: cover;
-  margin: auto -1.5rem 0;
+  margin: auto -1.25rem 0;
   border-radius: 0 0 12px 12px;
 }
 .path-card-highlight { background: var(--color-primary); border-color: var(--color-primary); }
@@ -840,73 +899,55 @@ p { margin: 0 0 1em; }
 .path-card-highlight .path-card-arrow:hover { background: #fff; color: var(--color-primary); }
 .path-card-highlight .path-card-cta { color: #fff; }
 
-/* Path-card marquee (homepage "five ways to work") -- an infinite,
-   self-scrolling row instead of a static grid. The DOM holds the five
-   cards twice back to back (.path-marquee-set x2, second one
-   aria-hidden with every link detabbed) and the track animates exactly
-   -50% -- since that's precisely one set's width, the moment it
-   finishes the loop is visually identical to the start, so it reads as
-   continuous motion with no jump/reset.
-
-   WCAG 2.2.2 requires a way to pause auto-moving content that runs
-   longer than 5s, so this isn't optional polish: a visible toggle
-   button (wired in js/main.js) sits above the strip, hover/focus
-   within it also pauses (so a mouse or keyboard user can actually read
-   a card or reach "Get started" without it sliding away), and
-   prefers-reduced-motion drops the animation entirely in favour of a
-   plain manually-scrollable strip with the hidden duplicate removed. */
-.path-marquee { position: relative; padding-top: 3rem; }
-.path-marquee-toggle {
-  position: absolute;
-  top: 0;
-  right: 0;
+/* Path-card carousel (homepage "five ways to work") -- a manual,
+   scroll-snap carousel: exactly five cards, once, never duplicated.
+   .path-marquee-track is the scrollable flex row itself (min-width: 0 is
+   the standard flex-item fix that lets it actually shrink and scroll
+   instead of forcing the whole section wider); the two .path-marquee-arrow
+   buttons sit outside it as plain flex siblings so they never overlap a
+   card, and move the track by exactly one card per click (see
+   js/main.js), disabling at either end. Trackpad/touch scrolling and
+   keyboard scrolling (the track itself is focusable) work natively via
+   overflow-x; click-and-drag with a mouse is added in JS. */
+/* Bleeds 1.25rem past the .container's own padding on each side (same
+   reclaim-the-padding technique as .card-photo-img) -- purely to buy back
+   enough width for 4 cards + both arrows to fit at a typical desktop
+   size; nothing else on the page is affected. */
+.path-marquee { display: flex; align-items: center; gap: 0.5rem; margin-inline: -1.25rem; }
+.path-marquee-track {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 0.2rem 0.2rem 0.5rem;
+  margin: -0.2rem -0.2rem -0.3rem;
+  cursor: grab;
+}
+.path-marquee-track:active { cursor: grabbing; }
+.path-marquee-track::-webkit-scrollbar { display: none; }
+.path-marquee-track:focus-visible { outline: 3px solid var(--color-highlight); outline-offset: 2px; }
+.path-marquee-track .path-card { scroll-snap-align: start; }
+.path-marquee-arrow {
+  flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 999px;
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   color: var(--color-primary);
   cursor: pointer;
 }
-.path-marquee-toggle svg { width: 16px; height: 16px; }
-/* Belt-and-suspenders over the icon-play element's [hidden] attribute --
-   an inline SVG's [hidden] doesn't reliably compute to display:none in
-   every engine, so state it explicitly rather than trust the attribute
-   alone (the toggle is driven by .is-paused either way). */
-.path-marquee-toggle .icon-play { display: none; }
-.path-marquee-viewport { overflow: hidden; margin-inline: -1.25rem; padding-inline: 1.25rem; }
-.path-marquee-track {
-  display: flex;
-  width: max-content;
-  animation: path-marquee-scroll 36s linear infinite;
-}
-.path-marquee-set { display: flex; gap: 1.25rem; padding-right: 1.25rem; flex: none; }
-.path-marquee-track .path-card { width: min(85vw, 320px); flex: none; }
-@keyframes path-marquee-scroll {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-/* Hovering/focusing *anywhere* in the strip pauses it, not just on the
-   toggle -- reaching for a card's own "Get started" link should never
-   be a race against the animation. .is-paused mirrors the same
-   play-state so the toggle button's own state persists after the
-   pointer leaves. */
-.path-marquee:hover .path-marquee-track,
-.path-marquee:focus-within .path-marquee-track,
-.path-marquee.is-paused .path-marquee-track {
-  animation-play-state: paused;
-}
-.path-marquee.is-paused .path-marquee-toggle .icon-pause { display: none; }
-.path-marquee.is-paused .path-marquee-toggle .icon-play { display: block; }
-@media (prefers-reduced-motion: reduce) {
-  .path-marquee-toggle { display: none; }
-  .path-marquee-track { animation: none; }
-  .path-marquee-viewport { overflow-x: auto; }
-  .path-marquee-set[aria-hidden="true"] { display: none; }
-}
+.path-marquee-arrow svg { width: 17px; height: 17px; }
+.path-marquee-arrow:hover { border-color: var(--color-accent); color: var(--color-accent-text); }
+.path-marquee-arrow:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .path-marquee-track { scroll-behavior: auto; } }
 /* Service/detail cards write their facts as "<strong>Label:</strong>
    value<br>" -- turning each label into its own block (instead of
    running inline into the previous line) reads as a clean stacked

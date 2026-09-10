@@ -97,10 +97,10 @@
             <a href="#service-request-form" class="btn btn-outline-light">Request a service</a>
           </div>
           <div class="service-deck-visual">
-            <button type="button" class="deck-arrow deck-arrow-prev" data-deck-prev aria-label="Previous category">
+            <button type="button" class="deck-arrow deck-arrow-prev" data-row-prev aria-label="Previous service">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
             </button>
-            <div class="service-deck-row" data-service-group="Creative &amp; media">
+            <div class="service-deck-row" data-service-group="Creative &amp; media" tabindex="0" role="group" aria-label="Creative &amp; media services, scrollable">
               <button type="button" class="service-tile" data-title="Brand &amp; graphic design" data-deliverable="logo, brand mark, social templates or print-ready collateral." data-inputs="brand brief, references, existing assets." data-excludes="full brand strategy (see AdorWorks&rsquo; sister company, Adormedia).">
                 <picture>
                   <source type="image/webp" srcset="img/photos/tile-brand-design-480.webp 480w">
@@ -130,7 +130,7 @@
                 <span class="service-tile-label">Content creation &amp; copywriting</span>
               </button>
             </div>
-            <button type="button" class="deck-arrow deck-arrow-next" data-deck-next aria-label="Next category">
+            <button type="button" class="deck-arrow deck-arrow-next" data-row-next aria-label="Next service">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
             </button>
           </div>
@@ -149,10 +149,10 @@
             <a href="#service-request-form" class="btn btn-outline-light">Request a service</a>
           </div>
           <div class="service-deck-visual">
-            <button type="button" class="deck-arrow deck-arrow-prev" data-deck-prev aria-label="Previous category">
+            <button type="button" class="deck-arrow deck-arrow-prev" data-row-prev aria-label="Previous service">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
             </button>
-            <div class="service-deck-row" data-service-group="Digital &amp; technology">
+            <div class="service-deck-row" data-service-group="Digital &amp; technology" tabindex="0" role="group" aria-label="Digital &amp; technology services, scrollable">
               <button type="button" class="service-tile" data-title="Web development" data-deliverable="a working website or web application to an agreed specification." data-inputs="content, brand assets, hosting access." data-excludes="ongoing maintenance unless a retainer is agreed separately.">
                 <picture>
                   <source type="image/webp" srcset="img/photos/tile-web-dev-480.webp 480w">
@@ -182,7 +182,7 @@
                 <span class="service-tile-label">IT &amp; software support</span>
               </button>
             </div>
-            <button type="button" class="deck-arrow deck-arrow-next" data-deck-next aria-label="Next category">
+            <button type="button" class="deck-arrow deck-arrow-next" data-row-next aria-label="Next service">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
             </button>
           </div>
@@ -201,10 +201,10 @@
             <a href="#service-request-form" class="btn btn-outline-light">Request a service</a>
           </div>
           <div class="service-deck-visual">
-            <button type="button" class="deck-arrow deck-arrow-prev" data-deck-prev aria-label="Previous category">
+            <button type="button" class="deck-arrow deck-arrow-prev" data-row-prev aria-label="Previous service">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
             </button>
-            <div class="service-deck-row" data-service-group="Business &amp; project support">
+            <div class="service-deck-row" data-service-group="Business &amp; project support" tabindex="0" role="group" aria-label="Business &amp; project support services, scrollable">
               <button type="button" class="service-tile" data-title="Virtual assistance &amp; bookkeeping" data-deliverable="ongoing administrative or bookkeeping support against an agreed weekly scope." data-inputs="system access, task list, reporting cadence." data-timeframe="ongoing, reviewed monthly." data-excludes="statutory tax filing (refer to a licensed accountant).">
                 <picture>
                   <source type="image/webp" srcset="img/photos/tile-virtual-assistance-480.webp 480w">
@@ -234,7 +234,7 @@
                 <span class="service-tile-label">Project administration</span>
               </button>
             </div>
-            <button type="button" class="deck-arrow deck-arrow-next" data-deck-next aria-label="Next category">
+            <button type="button" class="deck-arrow deck-arrow-next" data-row-next aria-label="Next service">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
             </button>
           </div>
@@ -406,6 +406,7 @@
     <p class="service-modal-eyebrow" id="service-modal-category"></p>
     <h3 id="service-modal-title"></h3>
     <dl class="service-modal-facts" id="service-modal-facts"></dl>
+    <p class="service-modal-pricing">Price and scope are confirmed together before anything is booked — see the fee model on <a href="pricing.html">Pricing</a>.</p>
     <a href="#service-request-form" class="btn btn-secondary" id="service-modal-request">Request this service &rarr;</a>
   </div>
   <div class="service-modal-controls">
