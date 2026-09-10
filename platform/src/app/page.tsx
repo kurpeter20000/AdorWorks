@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { verifySession } from "@/lib/dal/session";
+import { MARKETING_SITE_URL } from "@/lib/domain/marketingSite";
 
 export default async function Home() {
   const session = await verifySession();
@@ -29,6 +30,9 @@ export default async function Home() {
           Create an account
         </Link>
       </div>
+      <a href={MARKETING_SITE_URL} className="mt-6 text-sm font-semibold text-slate hover:text-midnight">
+        &larr; Back to the AdorWorks website
+      </a>
     </main>
   );
 }
