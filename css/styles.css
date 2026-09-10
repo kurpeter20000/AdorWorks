@@ -411,13 +411,19 @@ p { margin: 0 0 1em; }
 .section-header { max-width: 70ch; margin-bottom: 2rem; }
 .section-header p { color: var(--color-muted); font-size: 1.05rem; }
 
-/* Category card (services.html) -- one large gradient card per category:
-   an intro (icon, description, quick stats) on one side, a horizontally
-   scrollable strip of clickable service photos on the other. The point
-   of difference from a plain static listing is exactly that pairing --
-   scroll AND click-through -- so both stay front and center rather than
-   being just a grid of equal-weight boxes. */
-.service-category {
+/* Service deck (services.html) -- ONE compact card-stack widget per
+   category, cycled with prev/next arrows rather than three separate
+   full-width sections. Modelled on a "curated collection" card: a small
+   white card holding a 2x2 grid of clickable service photos, with two
+   faded "peek" cards behind it suggesting more content, sitting on a
+   gradient panel that recolors per category. Only one .service-deck-panel
+   is shown at a time (JS toggles the `hidden` attribute); the arrows
+   advance which category is active. */
+/* Equal specificity to .service-deck-panel's own `display: flex` below,
+   so source order alone would decide the fight -- spelling it out here
+   keeps a hidden panel hidden regardless of stylesheet edit order. */
+.service-deck-panel[hidden] { display: none; }
+.service-deck-panel {
   position: relative;
   overflow: hidden;
   border-radius: 20px;
@@ -426,15 +432,15 @@ p { margin: 0 0 1em; }
   flex-direction: column;
   gap: 1.5rem;
   padding: 1.75rem;
-  margin-bottom: 2rem;
+  align-items: center;
 }
-.service-category-creative { background: linear-gradient(135deg, var(--color-primary) 0%, #00786A 100%); }
-.service-category-digital { background: linear-gradient(135deg, var(--color-primary) 0%, #5B4BDB 100%); }
-.service-category-business { background: linear-gradient(135deg, var(--color-primary) 0%, #FF6B4A 100%); }
+.service-deck-creative { background: linear-gradient(135deg, var(--color-primary) 0%, #00786A 100%); }
+.service-deck-digital { background: linear-gradient(135deg, var(--color-primary) 0%, #5B4BDB 100%); }
+.service-deck-business { background: linear-gradient(135deg, var(--color-primary) 0%, #FF6B4A 100%); }
 
 /* Purely atmospheric blurred circle -- decorative only, so it's not
-   part of the DOM as a real element; each gradient card gets one. */
-.service-category::before {
+   part of the DOM as a real element; each panel gets one. */
+.service-deck-panel::before {
   content: "";
   position: absolute;
   top: -70px; right: -70px;
@@ -445,8 +451,8 @@ p { margin: 0 0 1em; }
   pointer-events: none;
 }
 
-.service-category-intro { position: relative; z-index: 1; }
-.service-category-icon {
+.service-deck-intro { position: relative; z-index: 1; text-align: center; }
+.service-deck-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -455,11 +461,19 @@ p { margin: 0 0 1em; }
   background: rgba(255,255,255,0.16);
   margin-bottom: 0.85rem;
 }
-.service-category-icon svg { width: 22px; height: 22px; }
-.service-category-intro h2 { color: #fff; margin-bottom: 0.45em; }
-.service-category-desc { color: rgba(255,255,255,0.88); max-width: 42ch; margin-bottom: 1rem; }
-.service-category-stats { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.service-category-stats li {
+.service-deck-icon svg { width: 22px; height: 22px; }
+.service-deck-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: rgba(255,255,255,0.75);
+  margin-bottom: 0.4em;
+}
+.service-deck-intro h2 { color: #fff; margin-bottom: 0.45em; }
+.service-deck-desc { color: rgba(255,255,255,0.88); max-width: 42ch; margin: 0 auto 1rem; }
+.service-deck-stats { list-style: none; margin: 0 0 1.25rem; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+.service-deck-stats li {
   font-size: 0.78rem;
   font-weight: 800;
   background: rgba(255,255,255,0.16);
@@ -467,55 +481,67 @@ p { margin: 0 0 1em; }
   border-radius: 999px;
 }
 
-/* min-width: 0 overrides the flex-item default of min-width: auto --
-   without it this item refuses to shrink below the scroll strip's full
-   unscrolled content width, which pushes the whole card (and page) wider
-   than the viewport instead of letting .service-tile-scroll scroll. */
-.service-category-services { position: relative; z-index: 1; min-width: 0; }
-.service-tile-scroll {
-  display: flex;
-  gap: 0.9rem;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  padding: 0.2rem 0.2rem 0.4rem;
-  margin: -0.2rem -0.2rem 0;
-}
-.service-tile-scroll::-webkit-scrollbar { display: none; }
-.service-tile-scroll .service-tile {
-  flex: none;
-  width: 150px;
-  scroll-snap-align: start;
-  border: none;
-  box-shadow: 0 8px 18px rgba(0,0,0,0.25);
-}
-.service-tile-scroll .service-tile img { aspect-ratio: 4 / 5; }
+.service-deck-visual { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 0.75rem; width: 100%; }
+.service-deck-stack { position: relative; width: 232px; height: 300px; flex: none; }
 
-.service-scroll-btn {
+.service-deck-card {
+  position: relative;
+  z-index: 2;
+  width: 232px;
+  background: var(--color-surface);
+  border-radius: 16px;
+  padding: 10px;
+  box-shadow: 0 16px 32px rgba(0,0,0,0.28);
+}
+.service-deck-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.service-deck-card-footer { padding: 0.7rem 0.2rem 0.1rem; }
+.service-deck-card-footer h3 { color: var(--color-primary); margin-bottom: 0.2em; font-size: 1rem; }
+.service-deck-card-footer p { margin: 0; color: var(--color-muted); font-size: 0.8rem; }
+
+/* Decorative echoes of the deck behind the front card -- aria-hidden,
+   not interactive, just the "stack of collections" illusion. */
+.service-deck-peek {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 34px; height: 34px;
+  top: 8px;
+  width: 180px;
+  height: 240px;
+  border-radius: 16px;
+  overflow: hidden;
+  z-index: 1;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.25);
+  filter: brightness(0.72);
+}
+.service-deck-peek img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.service-deck-peek-left { left: -34px; transform: rotate(-8deg); }
+.service-deck-peek-right { right: -34px; transform: rotate(8deg); }
+
+.deck-arrow {
+  flex: none;
+  width: 38px; height: 38px;
   border: none;
   border-radius: 999px;
-  background: #fff;
-  color: var(--color-primary);
+  background: rgba(255,255,255,0.16);
+  color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 2;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
-.service-scroll-btn svg { width: 18px; height: 18px; }
-.service-scroll-prev { left: -8px; }
-.service-scroll-next { right: -8px; }
-.service-scroll-btn:disabled { opacity: 0.35; cursor: default; }
+.deck-arrow:hover { background: rgba(255,255,255,0.3); }
+.deck-arrow svg { width: 18px; height: 18px; }
 
 @media (min-width: 880px) {
-  .service-category { flex-direction: row; align-items: center; padding: 2.25rem; gap: 2rem; }
-  .service-category-intro { flex: none; width: 280px; }
-  .service-category-services { flex: 1 1 auto; min-width: 0; }
+  .service-deck-panel { flex-direction: row; align-items: center; padding: 2.5rem 3rem; gap: 2.5rem; text-align: left; }
+  .service-deck-intro { flex: 1 1 auto; text-align: left; }
+  .service-deck-desc { margin-inline: 0; }
+  .service-deck-stats { justify-content: flex-start; margin-bottom: 0; }
+  .service-deck-visual { flex: none; width: auto; }
 }
 
 .service-tile {
@@ -555,6 +581,11 @@ p { margin: 0 0 1em; }
   font-size: 0.85rem;
   line-height: 1.25;
 }
+
+/* Deck-grid tiles run much smaller than the label's default size, so
+   scale it (and its padding) down to fit an ~100px square. */
+.service-deck-grid .service-tile { border: none; }
+.service-deck-grid .service-tile-label { padding: 0.4rem; font-size: 0.62rem; line-height: 1.15; }
 
 /* Service detail modal -- native <dialog> for built-in focus trap,
    Escape-to-close and top-layer stacking. Prev/next cycle within the
@@ -728,17 +759,72 @@ p { margin: 0 0 1em; }
 .path-card-highlight .path-card-arrow:hover { background: #fff; color: var(--color-primary); }
 .path-card-highlight .path-card-cta { color: #fff; }
 
-/* The 6th, photo-less "not sure which fits" card in the same grid --
-   dashed border marks it as the fallback/escape-hatch, not a sixth
-   equal-weight path competing with the five real ones. */
-.path-card-fallback {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+/* Path-card marquee (homepage "five ways to work") -- an infinite,
+   self-scrolling row instead of a static grid. The DOM holds the five
+   cards twice back to back (.path-marquee-set x2, second one
+   aria-hidden with every link detabbed) and the track animates exactly
+   -50% -- since that's precisely one set's width, the moment it
+   finishes the loop is visually identical to the start, so it reads as
+   continuous motion with no jump/reset.
+
+   WCAG 2.2.2 requires a way to pause auto-moving content that runs
+   longer than 5s, so this isn't optional polish: a visible toggle
+   button (wired in js/main.js) sits above the strip, hover/focus
+   within it also pauses (so a mouse or keyboard user can actually read
+   a card or reach "Get started" without it sliding away), and
+   prefers-reduced-motion drops the animation entirely in favour of a
+   plain manually-scrollable strip with the hidden duplicate removed. */
+.path-marquee { position: relative; padding-top: 3rem; }
+.path-marquee-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
   align-items: center;
-  text-align: center;
-  border-style: dashed;
-  background: var(--color-surface-alt);
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  cursor: pointer;
+}
+.path-marquee-toggle svg { width: 16px; height: 16px; }
+/* Belt-and-suspenders over the icon-play element's [hidden] attribute --
+   an inline SVG's [hidden] doesn't reliably compute to display:none in
+   every engine, so state it explicitly rather than trust the attribute
+   alone (the toggle is driven by .is-paused either way). */
+.path-marquee-toggle .icon-play { display: none; }
+.path-marquee-viewport { overflow: hidden; margin-inline: -1.25rem; padding-inline: 1.25rem; }
+.path-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: path-marquee-scroll 36s linear infinite;
+}
+.path-marquee-set { display: flex; gap: 1.25rem; padding-right: 1.25rem; flex: none; }
+.path-marquee-track .path-card { width: min(85vw, 320px); flex: none; }
+@keyframes path-marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+/* Hovering/focusing *anywhere* in the strip pauses it, not just on the
+   toggle -- reaching for a card's own "Get started" link should never
+   be a race against the animation. .is-paused mirrors the same
+   play-state so the toggle button's own state persists after the
+   pointer leaves. */
+.path-marquee:hover .path-marquee-track,
+.path-marquee:focus-within .path-marquee-track,
+.path-marquee.is-paused .path-marquee-track {
+  animation-play-state: paused;
+}
+.path-marquee.is-paused .path-marquee-toggle .icon-pause { display: none; }
+.path-marquee.is-paused .path-marquee-toggle .icon-play { display: block; }
+@media (prefers-reduced-motion: reduce) {
+  .path-marquee-toggle { display: none; }
+  .path-marquee-track { animation: none; }
+  .path-marquee-viewport { overflow-x: auto; }
+  .path-marquee-set[aria-hidden="true"] { display: none; }
 }
 /* Service/detail cards write their facts as "<strong>Label:</strong>
    value<br>" -- turning each label into its own block (instead of

@@ -86,8 +86,13 @@
 
     var text = document.createElement("p");
     text.className = "cookie-consent-banner__text";
-    text.textContent =
-      "We use analytics cookies to understand how people use AdorWorks and improve it. Nothing is tracked unless you accept.";
+    text.appendChild(document.createTextNode(
+      "We use analytics cookies to understand how people use AdorWorks and improve it. Nothing is tracked unless you accept. "
+    ));
+    var privacyLink = document.createElement("a");
+    privacyLink.href = "privacy.html#main";
+    privacyLink.textContent = "Privacy policy";
+    text.appendChild(privacyLink);
     banner.appendChild(text);
 
     var actions = document.createElement("div");

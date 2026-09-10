@@ -287,35 +287,35 @@
       });
     }
 
-    // Service scroll strips (services.html): each gradient category card's
-    // photo row scrolls horizontally -- the arrow buttons are a click
-    // alternative to dragging/swiping, and their disabled state tracks how
-    // far the strip has already scrolled.
-    document.querySelectorAll(".service-tile-scroll").forEach(function (strip) {
-      var wrap = strip.closest(".service-category-services");
-      if (!wrap) return;
-      var prevBtn = wrap.querySelector("[data-scroll-prev]");
-      var nextBtn = wrap.querySelector("[data-scroll-next]");
-      if (!prevBtn || !nextBtn) return;
+    // Service deck (services.html): only one .service-deck-panel (one per
+    // category) is shown at a time; the prev/next arrows -- present on
+    // every panel, but only the visible panel's are reachable -- cycle
+    // which category is active. Falls back to showing all three stacked
+    // (no cycling) if this markup isn't present or JS never runs.
+    var deckPanels = Array.from(document.querySelectorAll(".service-deck-panel"));
+    if (deckPanels.length > 1) {
+      var deckIndex = 0;
 
-      function updateButtons() {
-        var max = strip.scrollWidth - strip.clientWidth;
-        prevBtn.disabled = strip.scrollLeft <= 2;
-        nextBtn.disabled = strip.scrollLeft >= max - 2;
+      function showDeckPanel(index) {
+        deckIndex = (index + deckPanels.length) % deckPanels.length;
+        deckPanels.forEach(function (panel, i) { panel.hidden = i !== deckIndex; });
       }
 
-      function scrollByTile(direction) {
-        var tile = strip.querySelector(".service-tile");
-        var step = tile ? tile.getBoundingClientRect().width + 14 : 160;
-        strip.scrollBy({ left: direction * step, behavior: "smooth" });
-      }
+      document.querySelectorAll("[data-deck-prev]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          showDeckPanel(deckIndex - 1);
+          track("service_deck_nav", { direction: "prev" });
+        });
+      });
+      document.querySelectorAll("[data-deck-next]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          showDeckPanel(deckIndex + 1);
+          track("service_deck_nav", { direction: "next" });
+        });
+      });
 
-      prevBtn.addEventListener("click", function () { scrollByTile(-1); });
-      nextBtn.addEventListener("click", function () { scrollByTile(1); });
-      strip.addEventListener("scroll", updateButtons);
-      window.addEventListener("resize", updateButtons);
-      updateButtons();
-    });
+      showDeckPanel(0);
+    }
 
     // Click tracking: WhatsApp, phone, downloads
     document.querySelectorAll('a[href^="https://wa.me"]').forEach(function (a) {
@@ -481,6 +481,26 @@
         { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
       );
       revealTargets.forEach(function (el) { revealObserver.observe(el); });
+    }
+
+    // Path-card marquee pause/play (homepage): required, not decorative --
+    // WCAG 2.2.2 says auto-moving content running past 5s needs a way to
+    // stop it. Hover/focus-within already pauses it live in CSS; this is
+    // the persistent, keyboard/touch-reachable control (see .path-marquee
+    // in styles.css for the full mechanism, including the
+    // prefers-reduced-motion path that removes the animation and the
+    // hidden duplicate card set entirely).
+    var marquee = document.querySelector("[data-path-marquee]");
+    if (marquee) {
+      var marqueeToggle = marquee.querySelector("[data-marquee-toggle]");
+      var marqueeLabel = marquee.querySelector("[data-marquee-toggle-label]");
+      if (marqueeToggle) {
+        marqueeToggle.addEventListener("click", function () {
+          var paused = marquee.classList.toggle("is-paused");
+          marqueeToggle.setAttribute("aria-pressed", String(paused));
+          if (marqueeLabel) marqueeLabel.textContent = paused ? "Resume auto-scrolling" : "Pause auto-scrolling";
+        });
+      }
     }
   });
 })();
