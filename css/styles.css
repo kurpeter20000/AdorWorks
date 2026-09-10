@@ -154,7 +154,7 @@ p { margin: 0 0 1em; }
     flex-direction: row;
     align-items: center;
     padding: 0;
-    gap: 1.25rem;
+    gap: 1.5rem;
     flex-wrap: wrap;
     justify-content: center;
   }
@@ -165,7 +165,12 @@ p { margin: 0 0 1em; }
   }
   .site-nav a:hover,
   .site-nav a[aria-current="page"] { border-bottom-color: var(--color-accent); }
-  .site-nav .nav-cta { margin-top: 0; }
+  .site-nav .nav-cta {
+    margin-top: 0;
+    margin-left: 0.5rem;
+    padding-left: 1.5rem;
+    border-left: 1px solid var(--color-border);
+  }
 }
 
 /* Buttons */
@@ -293,11 +298,7 @@ p { margin: 0 0 1em; }
    the page with no sign anything happened. */
 .category-card.is-match { border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(0,168,143,0.25); }
 
-.hero-audience .hero-ctas { margin-top: 1rem; align-items: center; }
-.hero-secondary-link { color: rgba(255,255,255,0.85); font-weight: 700; font-size: 0.88rem; text-decoration: underline; }
-.hero-secondary-link:hover { color: #fff; }
-
-.hero-trustline { margin-top: 1.5rem; margin-bottom: 0; font-size: 0.85rem; color: rgba(255,255,255,0.65); }
+.hero-trustline { margin-top: 1.85rem; margin-bottom: 0; font-size: 0.85rem; color: rgba(255,255,255,0.65); }
 
 /* .hero-chips (flex) and .btn (inline-flex) both set their own `display`,
    which otherwise beats the browser's default `[hidden]{display:none}` at
@@ -386,6 +387,19 @@ p { margin: 0 0 1em; }
 .section-alt { background: var(--color-surface-alt); }
 .section-header { max-width: 70ch; margin-bottom: 2rem; }
 .section-header p { color: var(--color-muted); font-size: 1.05rem; }
+
+/* Section header with a photo instead of an icon badge (services.html
+   category headers) -- stacks on mobile, sits beside the heading from
+   720px up. Reuses the 16/10 crop already proven safe for these source
+   photos in .card-photo-img. */
+.section-header-media { display: flex; flex-direction: column; gap: 1.1rem; align-items: flex-start; max-width: none; }
+.section-header-media picture, .section-header-media img { width: 100%; max-width: 320px; }
+.section-header-media img { aspect-ratio: 16 / 10; object-fit: cover; border-radius: 12px; }
+.section-header-media h2 { margin: 0; }
+@media (min-width: 720px) {
+  .section-header-media { flex-direction: row; align-items: center; }
+  .section-header-media picture, .section-header-media img { flex: none; width: 280px; }
+}
 
 /* Cards / grid */
 .grid { display: grid; gap: 1.25rem; grid-template-columns: 1fr; }

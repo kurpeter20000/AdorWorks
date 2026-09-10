@@ -157,12 +157,6 @@
         heroAudience.querySelectorAll("[data-audience-chips]").forEach(function (el) {
           el.hidden = el.getAttribute("data-audience-chips") !== audience;
         });
-        heroAudience.querySelectorAll("[data-audience-cta]").forEach(function (el) {
-          el.hidden = el.getAttribute("data-audience-cta") !== audience;
-        });
-        heroAudience.querySelectorAll("[data-audience-secondary]").forEach(function (el) {
-          el.hidden = el.getAttribute("data-audience-secondary") !== audience;
-        });
         if (searchForm) searchForm.action = audience === "talent" ? "for-talent.html" : "for-employers.html";
         if (searchInput) {
           var placeholder = searchInput.getAttribute("data-audience-placeholder-" + audience);
