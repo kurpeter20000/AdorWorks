@@ -45,6 +45,20 @@ const PAGE_SIZE = 10;
 // materialized ranking, most likely) before that's a realistic count.
 const FETCH_CAP = 200;
 
+// Coarse work-type buckets offered by the Talent Mode switcher (see
+// components/mode-switcher.tsx) — distinct from the fine-grained
+// `engagementType` filter below. "freelance_contract" merges the
+// freelance and fixed_term_contract EngagementType values, which read as
+// the same real-world arrangement to someone picking a mode to work in.
+const WORK_TYPE_ENGAGEMENT_TYPES: Record<string, EngagementType[]> = {
+  full_time: ["full_time"],
+  freelance_contract: ["freelance", "fixed_term_contract"],
+};
+const WORK_TYPE_LABEL: Record<string, string> = {
+  full_time: "Full-time",
+  freelance_contract: "Freelancing/Contract",
+};
+
 export default async function OpportunitiesPage({
   searchParams,
 }: {
@@ -53,12 +67,13 @@ export default async function OpportunitiesPage({
     category?: string;
     engagementType?: string;
     workMode?: string;
+    workType?: string;
     sort?: string;
     page?: string;
   }>;
 }) {
   const session = await requireRole("talent");
-  const { q, category, engagementType, workMode, sort, page } = await searchParams;
+  const { q, category, engagementType, workMode, workType, sort, page } = await searchParams;
   const supabase = await createClient();
   const sortMode = sort === "relevant" ? "relevant" : "recent";
   const currentPage = Math.max(1, Number(page) || 1);
@@ -81,6 +96,7 @@ export default async function OpportunitiesPage({
   if (category && category in CATEGORY_LABEL) query = query.eq("category", category as Category);
   if (engagementType && engagementType in ENGAGEMENT_LABEL) query = query.eq("engagement_type", engagementType as EngagementType);
   if (workMode && workMode in WORK_MODE_LABEL) query = query.eq("work_mode", workMode as WorkMode);
+  if (workType && workType in WORK_TYPE_ENGAGEMENT_TYPES) query = query.in("engagement_type", WORK_TYPE_ENGAGEMENT_TYPES[workType]);
 
   const [{ data: opportunities }, { data: orgs }, { data: myApplications }, { data: saved }, { data: dismissed }, { data: myProfile }] =
     await Promise.all([
@@ -96,7 +112,7 @@ export default async function OpportunitiesPage({
   const appliedIds = new Set((myApplications ?? []).map((a) => a.opportunity_id));
   const savedIds = new Set((saved ?? []).map((s) => s.opportunity_id));
   const dismissedIds = new Set((dismissed ?? []).map((d) => d.opportunity_id));
-  const hasFilters = !!(q || category || engagementType || workMode);
+  const hasFilters = !!(q || category || engagementType || workMode || workType);
 
   const visible = (opportunities ?? []).filter((o) => !dismissedIds.has(o.id));
 
@@ -111,7 +127,7 @@ export default async function OpportunitiesPage({
 
   function pageHref(overrides: Record<string, string | undefined>) {
     const params = new URLSearchParams();
-    const merged = { q, category, engagementType, workMode, sort: sortMode, page: String(currentPage), ...overrides };
+    const merged = { q, category, engagementType, workMode, workType, sort: sortMode, page: String(currentPage), ...overrides };
     for (const [key, value] of Object.entries(merged)) {
       if (value) params.set(key, value);
     }
@@ -133,6 +149,15 @@ export default async function OpportunitiesPage({
         </div>
       </div>
       <p className="mt-2 text-sm text-slate">Open, paid opportunities on AdorWorks right now.</p>
+
+      {workType && workType in WORK_TYPE_LABEL && (
+        <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-teal/10 px-3 py-1 text-xs font-semibold text-teal-ink">
+          Showing {WORK_TYPE_LABEL[workType]} work
+          <Link href={pageHref({ workType: undefined, page: "1" })} className="underline">
+            Clear
+          </Link>
+        </p>
+      )}
 
       <div className="mt-4 flex gap-2">
         <Link
@@ -157,6 +182,7 @@ export default async function OpportunitiesPage({
 
       <form method="get" className="mt-4 space-y-2">
         <input type="hidden" name="sort" value={sortMode} />
+        {workType && <input type="hidden" name="workType" value={workType} />}
         <label htmlFor="opportunities-search" className="sr-only">
           Search opportunities by title or description
         </label>
@@ -229,7 +255,7 @@ export default async function OpportunitiesPage({
             Search
           </button>
           {hasFilters && (
-            <Link href={pageHref({ q: undefined, category: undefined, engagementType: undefined, workMode: undefined, page: "1" })} className="text-xs font-semibold text-slate underline">
+            <Link href={pageHref({ q: undefined, category: undefined, engagementType: undefined, workMode: undefined, workType: undefined, page: "1" })} className="text-xs font-semibold text-slate underline">
               Clear filters
             </Link>
           )}
@@ -241,7 +267,7 @@ export default async function OpportunitiesPage({
           {hasFilters ? (
             <>
               <p>No opportunities match these filters.</p>
-              <Link href={pageHref({ q: undefined, category: undefined, engagementType: undefined, workMode: undefined, page: "1" })} className="mt-1 inline-block font-semibold text-teal-ink underline">
+              <Link href={pageHref({ q: undefined, category: undefined, engagementType: undefined, workMode: undefined, workType: undefined, page: "1" })} className="mt-1 inline-block font-semibold text-teal-ink underline">
                 Clear filters and see everything open
               </Link>
             </>

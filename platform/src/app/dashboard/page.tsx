@@ -61,6 +61,10 @@ export default async function DashboardPage({
   let recommendedOpportunities: { id: string; title: string; compensationLabel: string; orgName: string }[] = [];
   const talentAttention: { href: string; label: string; count: number; tone: "warning" | "danger" | "info" }[] = [];
   const employerPipeline: { href: string; label: string; count: number; tone: "warning" | "danger" | "info" }[] = [];
+  // Real counts only (see the "skip the wallet card" decision) — every
+  // number here comes from a query scoped to this org, same discipline as
+  // employerPipeline above. Drives the stat tiles in the employer view.
+  let employerStats: { openOpportunities: number; activeContracts: number; applicantsAwaiting: number; milestonesToPay: number } | null = null;
   // Gap-check note: the Today widgets' whole point is asserting an absence
   // ("nothing needs your attention" / "pipeline caught up") -- a silently
   // swallowed query error would be indistinguishable from a real empty
@@ -236,11 +240,18 @@ export default async function DashboardPage({
       if (milestonesToPay > 0) {
         employerPipeline.push({ href: "/contracts", label: "Milestones ready to pay", count: milestonesToPay, tone: "danger" });
       }
+
+      employerStats = {
+        openOpportunities: opportunityCount ?? 0,
+        activeContracts: (orgContracts ?? []).length,
+        applicantsAwaiting: applicationsAwaiting,
+        milestonesToPay,
+      };
     }
   }
 
   return (
-    <main className="mx-auto max-w-2xl p-8">
+    <main className="mx-auto max-w-6xl p-6 sm:p-8 lg:p-10">
       <h1 className="text-2xl font-extrabold text-midnight">
         Welcome{session.fullName ? `, ${session.fullName}` : ""}
       </h1>
@@ -296,43 +307,71 @@ export default async function DashboardPage({
         </>
       )}
 
-      {dashboardKind === "employer" && (
+      {dashboardKind === "employer" && employerStats && (
         <section className="mt-6">
-          <h2 className="text-lg font-extrabold text-midnight">Hiring priorities</h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <StatTile label="Open opportunities" value={employerStats.openOpportunities} href="/organisation" />
+            <StatTile label="Applicants awaiting" value={employerStats.applicantsAwaiting} href="/organisation" />
+            <StatTile label="Active contracts" value={employerStats.activeContracts} href="/contracts" />
+            <StatTile label="Milestones to pay" value={employerStats.milestonesToPay} href="/contracts" />
+          </div>
+
+          <div className="mt-6 flex items-center justify-between">
+            <h2 className="text-lg font-extrabold text-midnight">Hiring priorities</h2>
+            <div className="flex items-center gap-3 text-xs font-semibold">
+              <Link href="/organisation/opportunities/new" className="text-teal-ink underline">
+                Post a job
+              </Link>
+              <Link href="/organisation" className="text-slate underline">
+                Browse talent
+              </Link>
+            </div>
+          </div>
           <EmployerPipelineSummary items={employerPipeline} />
         </section>
       )}
 
-      <section className="mt-8">
-        <h2 className="text-xl font-extrabold text-midnight">{experience.title}</h2>
-        <p className="mt-1 text-sm text-slate">{experience.description}</p>
+      {(dashboardKind !== "employer" || !employerStats) && (
+        <section className="mt-8">
+          <h2 className="text-xl font-extrabold text-midnight">{experience.title}</h2>
+          <p className="mt-1 text-sm text-slate">{experience.description}</p>
 
-        {experience.actions.length > 0 ? (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {experience.actions.map((action) => (
-              <Link
-                key={action.href}
-                href={action.href}
-                className={`rounded-xl border p-4 transition-colors ${
-                  action.primary
-                    ? "border-teal bg-teal text-midnight hover:bg-teal/80"
-                    : "border-slate/20 bg-white hover:border-teal/50"
-                }`}
-              >
-                <span className="block font-bold">{action.label}</span>
-                <span className="mt-1 block text-xs text-slate">{action.description}</span>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="mt-4">
-            <StatePanel title="Workspace unchanged" tone="info">
-              This role continues in its existing operational workspace while the integrated experience is built behind
-              feature flags.
-            </StatePanel>
-          </div>
-        )}
-      </section>
+          {experience.actions.length > 0 ? (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {experience.actions.map((action) => (
+                <Link
+                  key={action.href}
+                  href={action.href}
+                  className={`rounded-xl border p-4 transition-colors ${
+                    action.primary
+                      ? "border-teal bg-teal text-midnight hover:bg-teal/80"
+                      : "border-slate/20 bg-white hover:border-teal/50"
+                  }`}
+                >
+                  <span className="block font-bold">{action.label}</span>
+                  <span className="mt-1 block text-xs text-slate">{action.description}</span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4">
+              <StatePanel title="Workspace unchanged" tone="info">
+                This role continues in its existing operational workspace while the integrated experience is built
+                behind feature flags.
+              </StatePanel>
+            </div>
+          )}
+        </section>
+      )}
     </main>
+  );
+}
+
+function StatTile({ label, value, href }: { label: string; value: number; href: string }) {
+  return (
+    <Link href={href} className="rounded-xl border border-slate/15 bg-white p-4 transition-colors hover:border-teal/40">
+      <span className="block text-2xl font-extrabold text-midnight">{value}</span>
+      <span className="mt-0.5 block text-xs font-semibold text-slate">{label}</span>
+    </Link>
   );
 }
