@@ -885,6 +885,37 @@ table.compare thead th { background: var(--color-surface-alt); color: var(--colo
 }
 .step h3 { margin-bottom: 0.3em; }
 
+/* Homepage "How it works" -- each audience (employers/talent) gets its
+   own bordered card holding a connected vertical timeline, instead of
+   two unstyled columns of numbered items that read as one flat run of
+   six steps. Deliberately its own component (not a .steps/.step
+   variant) since those classes are shared with how-it-works.html's
+   different 4-across grid layout. Inherently responsive: the timeline
+   is vertical by construction, so .grid-2 stacking the cards to one
+   column on narrow screens needs no extra rule here. */
+.journey-card { display: flex; flex-direction: column; }
+.journey-steps {
+  list-style: none;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.journey-steps li { position: relative; display: flex; gap: 0.9rem; }
+.journey-steps li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 17px;
+  top: 36px;
+  height: 1.25rem;
+  width: 2px;
+  background: var(--color-border);
+}
+.journey-steps .step-number { margin-bottom: 0; }
+.journey-steps strong { display: block; color: var(--color-primary); margin-bottom: 0.2em; }
+.journey-steps p { margin: 0; color: var(--color-muted); font-size: 0.92rem; }
+
 /* Verification tier cards */
 .tier-grid { display: grid; gap: 1rem; grid-template-columns: 1fr; }
 @media (min-width: 700px) { .tier-grid { grid-template-columns: repeat(2, 1fr); } }
