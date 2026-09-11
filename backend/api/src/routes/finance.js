@@ -3,6 +3,7 @@ import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireFinanceStaff } from "../middleware/auth.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
+import { logAuditEvent } from "../audit.js";
 
 export const financeRouter = Router();
 // Manual tracking only (no payment gateway is called anywhere in this
@@ -64,6 +65,22 @@ financeRouter.post(
       .select()
       .single();
     if (error) throw new HttpError(400, error.message);
+
+    // Every manual money record needs a traceable creator (Stage 10
+    // gap-check defect #5) — "manual" is exactly why this can't fall back
+    // on a payment gateway's own transaction log.
+    await logAuditEvent(supabaseAdmin, {
+      name: "finance.record_created",
+      actorId: req.user.id,
+      subjectId: null,
+      entityType: "finance_records",
+      entityId: data.id,
+      reason: body.notes ?? null,
+      before: null,
+      after: { record_type: body.record_type, amount: body.amount, currency: body.currency },
+      metadata: { engagement_id: body.engagement_id },
+    });
+
     res.status(201).json({ data });
   })
 );
@@ -78,6 +95,13 @@ financeRouter.patch(
   "/:id",
   asyncRoute(async (req, res) => {
     const body = updateSchema.parse(req.body);
+
+    const { data: before } = await supabaseAdmin
+      .from("finance_records")
+      .select("status")
+      .eq("id", req.params.id)
+      .maybeSingle();
+
     const { data, error } = await supabaseAdmin
       .from("finance_records")
       .update(body)
@@ -85,6 +109,21 @@ financeRouter.patch(
       .select()
       .single();
     if (error) throw new HttpError(400, error.message);
+
+    if (body.status) {
+      await logAuditEvent(supabaseAdmin, {
+        name: "finance.record_updated",
+        actorId: req.user.id,
+        subjectId: null,
+        entityType: "finance_records",
+        entityId: req.params.id,
+        reason: body.notes ?? null,
+        before: before ? { status: before.status } : null,
+        after: { status: body.status },
+        metadata: {},
+      });
+    }
+
     res.json({ data });
   })
 );

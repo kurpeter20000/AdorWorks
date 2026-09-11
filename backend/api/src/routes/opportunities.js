@@ -3,6 +3,7 @@ import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff } from "../middleware/auth.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
+import { logAuditEvent } from "../audit.js";
 
 export const opportunitiesRouter = Router();
 opportunitiesRouter.use(requireAuth, requireStaff);
@@ -125,6 +126,8 @@ opportunitiesRouter.patch(
 opportunitiesRouter.post(
   "/:id/approve",
   asyncRoute(async (req, res) => {
+    const { data: before } = await supabaseAdmin.from("opportunities").select("status").eq("id", req.params.id).maybeSingle();
+
     const { data, error } = await supabaseAdmin
       .from("opportunities")
       .update({ status: "open", approved_by: req.user.id, approved_at: new Date().toISOString() })
@@ -132,6 +135,23 @@ opportunitiesRouter.post(
       .select()
       .single();
     if (error) throw new HttpError(400, error.message);
+
+    // "opportunity.published" was already fixed in the event vocabulary
+    // (platform/src/lib/domain/events.ts) but never actually emitted from
+    // here — moderation decisions are exactly the "sensitive staff action"
+    // Stage 10's gap-check flagged as unaudited (defect #5).
+    await logAuditEvent(supabaseAdmin, {
+      name: "opportunity.published",
+      actorId: req.user.id,
+      subjectId: null,
+      entityType: "opportunities",
+      entityId: req.params.id,
+      reason: null,
+      before: before ? { status: before.status } : null,
+      after: { status: "open" },
+      metadata: { organisation_id: data.organisation_id },
+    });
+
     res.json({ data });
   })
 );
@@ -148,6 +168,9 @@ opportunitiesRouter.post(
   "/:id/reject",
   asyncRoute(async (req, res) => {
     const { reason } = rejectSchema.parse(req.body);
+
+    const { data: before } = await supabaseAdmin.from("opportunities").select("status").eq("id", req.params.id).maybeSingle();
+
     const { data, error } = await supabaseAdmin
       .from("opportunities")
       .update({ status: "rejected", rejection_reason: reason })
@@ -155,6 +178,19 @@ opportunitiesRouter.post(
       .select()
       .single();
     if (error) throw new HttpError(400, error.message);
+
+    await logAuditEvent(supabaseAdmin, {
+      name: "opportunity.rejected",
+      actorId: req.user.id,
+      subjectId: null,
+      entityType: "opportunities",
+      entityId: req.params.id,
+      reason,
+      before: before ? { status: before.status } : null,
+      after: { status: "rejected" },
+      metadata: { organisation_id: data.organisation_id },
+    });
+
     res.json({ data });
   })
 );
@@ -171,6 +207,9 @@ opportunitiesRouter.post(
   "/:id/request-changes",
   asyncRoute(async (req, res) => {
     const { note } = requestChangesSchema.parse(req.body);
+
+    const { data: before } = await supabaseAdmin.from("opportunities").select("status").eq("id", req.params.id).maybeSingle();
+
     const { data, error } = await supabaseAdmin
       .from("opportunities")
       .update({ status: "changes_required", status_note: note })
@@ -178,6 +217,19 @@ opportunitiesRouter.post(
       .select()
       .single();
     if (error) throw new HttpError(400, error.message);
+
+    await logAuditEvent(supabaseAdmin, {
+      name: "opportunity.changes_requested",
+      actorId: req.user.id,
+      subjectId: null,
+      entityType: "opportunities",
+      entityId: req.params.id,
+      reason: note,
+      before: before ? { status: before.status } : null,
+      after: { status: "changes_required" },
+      metadata: { organisation_id: data.organisation_id },
+    });
+
     res.json({ data });
   })
 );
@@ -192,6 +244,9 @@ opportunitiesRouter.post(
   "/:id/pause",
   asyncRoute(async (req, res) => {
     const { note } = pauseSchema.parse(req.body);
+
+    const { data: before } = await supabaseAdmin.from("opportunities").select("status").eq("id", req.params.id).maybeSingle();
+
     const { data, error } = await supabaseAdmin
       .from("opportunities")
       .update({ status: "paused", status_note: note || null })
@@ -199,6 +254,19 @@ opportunitiesRouter.post(
       .select()
       .single();
     if (error) throw new HttpError(400, error.message);
+
+    await logAuditEvent(supabaseAdmin, {
+      name: "opportunity.paused",
+      actorId: req.user.id,
+      subjectId: null,
+      entityType: "opportunities",
+      entityId: req.params.id,
+      reason: note ?? null,
+      before: before ? { status: before.status } : null,
+      after: { status: "paused" },
+      metadata: { organisation_id: data.organisation_id },
+    });
+
     res.json({ data });
   })
 );
