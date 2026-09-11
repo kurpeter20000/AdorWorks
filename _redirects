@@ -1,0 +1,29 @@
+# Cloudflare Pages equivalent of netlify.toml's [[redirects]] rules — see
+# that file's comments for the reasoning. Kept in sync by hand during the
+# Netlify -> Cloudflare Pages migration; once Netlify is fully retired,
+# netlify.toml can go and this becomes the only copy.
+#
+# No "force" flag here (unlike netlify.toml's force = true): confirmed
+# against Cloudflare's docs that Pages redirects always apply, even when
+# the request path matches a real file in the deployment — Netlify's
+# default is the opposite (a non-forced redirect is skipped if a real file
+# matches), which is why netlify.toml needed force = true on the rules
+# below to begin with. Order matters here exactly like it does there:
+# first match wins, so the catch-all stays last.
+
+/find-talent.html  /for-employers.html#categories  301
+
+# "publish = '.'" on Netlify (and the equivalent root-as-output-directory
+# setup on Cloudflare Pages) means this repo's ENTIRE git-tracked tree is
+# otherwise servable as static files, not just the marketing pages --
+# backend/ (Express source), platform/ (the Next.js app's own source,
+# deployed separately), docs/ (internal stage write-ups, including
+# known-gap notes) and .github/ would otherwise be directly fetchable.
+/backend/*   /404.html  404
+/platform/*  /404.html  404
+/docs/*      /404.html  404
+/.github/*   /404.html  404
+/.git/*      /404.html  404
+/render.yaml /404.html  404
+
+/*  /404.html  404

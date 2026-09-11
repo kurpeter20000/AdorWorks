@@ -1,0 +1,26 @@
+# Cloudflare Pages equivalent of netlify.toml's [[headers]] blocks — see
+# that file's comments for the reasoning behind each rule. Kept in sync by
+# hand during the Netlify -> Cloudflare Pages migration; once Netlify is
+# fully retired, netlify.toml can go and this becomes the only copy.
+#
+# Rule blocks are kept comment-free and blank-line-separated below (no
+# comments between a path pattern and its header lines, or between two
+# blocks) after an earlier version of this file — sitting uncommitted
+# locally, never actually deployed — turned out untestable for exactly
+# this until it finally shipped. Once live, X-Frame-Options was silently
+# dropped even though X-Content-Type-Options and Referrer-Policy from the
+# same block came through fine, and the /staff/* block didn't apply at
+# all — cause unconfirmed (Cloudflare's own docs don't document _headers
+# parse-error behavior for malformed/interleaved lines), so this rewrite
+# removes the interleaved comments as the most likely culprit and adds a
+# CSP fallback for the framing protection in case X-Frame-Options really
+# is filtered rather than just a parsing casualty.
+
+/*
+  X-Frame-Options: DENY
+  Content-Security-Policy: frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+/staff/*
+  X-Robots-Tag: noindex, nofollow
