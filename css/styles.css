@@ -1007,14 +1007,26 @@ p { margin: 0 0 1em; }
   border-color: var(--color-accent);
   box-shadow: 0 16px 34px rgba(24,34,48,0.13);
 }
-.category-feature-media { display: block; overflow: hidden; background: var(--color-surface-alt); }
+/* Explicit height (not aspect-ratio) is deliberate: this <img> also
+   carries width/height content attributes for layout-shift prevention,
+   and this browser's replaced-element sizing keeps using that
+   attribute-derived intrinsic height even when aspect-ratio is set in
+   CSS to something else -- an explicit height has no such ambiguity to
+   resolve, and object-fit: cover crops any source image to fill it
+   regardless of its own dimensions. ~210px at the ~345-360px card
+   widths this grid actually renders is approximately the requested
+   5:3 look without depending on that computation. */
+.category-feature-media { display: block; overflow: hidden; background: var(--color-surface-alt); height: 210px; }
 .category-feature-media img {
   width: 100%;
-  aspect-ratio: 5 / 3;
+  height: 100%;
   object-fit: cover;
   transition: transform 0.35s ease;
 }
 .category-feature-card:hover .category-feature-media img { transform: scale(1.035); }
+@media (min-width: 960px) {
+  .category-feature-media { height: 230px; }
+}
 .category-feature-body { display: flex; flex-direction: column; flex: 1; padding: 1.25rem; }
 .category-feature-body > span:last-child { color: var(--color-muted); font-size: 0.91rem; line-height: 1.55; }
 .category-feature-meta {
