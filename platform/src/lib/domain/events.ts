@@ -17,6 +17,7 @@ export const DOMAIN_EVENTS = {
   OPPORTUNITY_SUBMITTED: "opportunity.submitted",
   OPPORTUNITY_PUBLISHED: "opportunity.published",
   OPPORTUNITY_REJECTED: "opportunity.rejected",
+  OPPORTUNITY_CHANGES_REQUESTED: "opportunity.changes_requested",
   APPLICATION_SUBMITTED: "application.submitted",
   APPLICATION_STAGE_CHANGED: "application.stage_changed",
   OFFER_SENT: "offer.sent",

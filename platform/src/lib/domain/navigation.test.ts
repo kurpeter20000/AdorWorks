@@ -31,4 +31,18 @@ describe("dashboard navigation contract", () => {
       },
     ]);
   });
+
+  it("gives every staff role a real entry point into the operations review queue", () => {
+    for (const role of ["reviewer", "matcher", "finance", "admin"] as const) {
+      const experience = getDashboardExperience(role);
+      expect(experience.kind).toBe("operations");
+      expect(experience.actions.some((action) => action.href === "/operations")).toBe(true);
+    }
+  });
+
+  it("keeps the partner workspace stubbed and free of dead links", () => {
+    const experience = getDashboardExperience("partner_hub_admin");
+    expect(experience.kind).toBe("partner");
+    expect(experience.actions).toEqual([]);
+  });
 });
