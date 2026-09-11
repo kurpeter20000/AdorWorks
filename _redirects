@@ -3,22 +3,26 @@
 # Netlify -> Cloudflare Pages migration; once Netlify is fully retired,
 # netlify.toml can go and this becomes the only copy.
 #
-# No "force" flag here (unlike netlify.toml's force = true): confirmed
-# against Cloudflare's docs that Pages redirects always apply, even when
-# the request path matches a real file in the deployment — Netlify's
-# default is the opposite (a non-forced redirect is skipped if a real file
-# matches), which is why netlify.toml needed force = true on the rules
-# below to begin with. Order matters here exactly like it does there:
-# first match wins, so the catch-all stays last.
+# Confirmed live (not just from docs, which turned out to be misleading on
+# this) that a Cloudflare Pages redirect does NOT reliably override a
+# request whose path matches a real uploaded file — /render.yaml kept
+# serving the real file instead of hitting its /404.html redirect below,
+# same for /backend/*, /platform/*, /docs/*, /.github/*. Netlify's own
+# default has the same limitation (a non-forced redirect is skipped when a
+# real file matches, which is why netlify.toml needed force = true), so
+# this isn't actually a regression versus Netlify's *documented* default —
+# it just means the rules below were never a complete fix on their own.
+#
+# The real fix is build-cf-pages.mjs: it copies only the files this site
+# needs to serve into _site/ (the actual deploy output), so backend/,
+# platform/, docs/, .github/, render.yaml etc. are never uploaded as
+# deployable assets in the first place — nothing here for a redirect to
+# lose a race against. The rules below stay as defense in depth (in case
+# a stray file with one of these names ever ends up in the real output)
+# rather than as the primary protection.
 
 /find-talent.html  /for-employers.html#categories  301
 
-# "publish = '.'" on Netlify (and the equivalent root-as-output-directory
-# setup on Cloudflare Pages) means this repo's ENTIRE git-tracked tree is
-# otherwise servable as static files, not just the marketing pages --
-# backend/ (Express source), platform/ (the Next.js app's own source,
-# deployed separately), docs/ (internal stage write-ups, including
-# known-gap notes) and .github/ would otherwise be directly fetchable.
 /backend/*   /404.html  404
 /platform/*  /404.html  404
 /docs/*      /404.html  404
