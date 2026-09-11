@@ -12,6 +12,7 @@ import {
   FilePlus2,
   FileSignature,
   IdCard,
+  Inbox,
   LayoutDashboard,
   LifeBuoy,
   ListChecks,
@@ -44,6 +45,7 @@ const ICONS: Record<string, LucideIcon> = {
   "/onboarding": ListChecks,
   "/trust-safety": ShieldCheck,
   "/assist": LifeBuoy,
+  "/operations": Inbox,
 };
 
 export function AppSidebar({

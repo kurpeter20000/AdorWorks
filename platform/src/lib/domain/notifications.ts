@@ -15,6 +15,9 @@ export const NOTIFICATION_TYPES = {
   INTRODUCTION_VIDEO_REVIEWED: "introduction_video_reviewed",
   MESSAGE_RECEIVED: "message_received",
   PHONE_VERIFICATION_REMINDER: "phone_verification_reminder",
+  OPPORTUNITY_PUBLISHED: "opportunity_published",
+  OPPORTUNITY_REJECTED: "opportunity_rejected",
+  OPPORTUNITY_CHANGES_REQUESTED: "opportunity_changes_requested",
 } as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];

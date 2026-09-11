@@ -56,8 +56,12 @@ const experiences: Record<DashboardKind, Omit<DashboardExperience, "kind">> = {
   },
   operations: {
     title: "AdorWorks Operations",
-    description: "The existing staff console remains the operational workspace during this staged enhancement.",
-    actions: [],
+    description:
+      "Review queues for opportunities, services and organisation verification, plus contract oversight. Disputes and finance still live in the existing staff console during this staged rollout.",
+    actions: [
+      { href: "/operations", label: "Operations", description: "Review queue counts and open the opportunity review queue.", primary: true },
+      { href: "/contracts", label: "Contracts", description: "Browse contracts across every organisation." },
+    ],
   },
   partner: {
     title: "Partner workspace",
