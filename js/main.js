@@ -150,11 +150,26 @@
       var searchForm = heroAudience.querySelector("[data-audience-search]");
       var searchInput = searchForm ? searchForm.querySelector("input[name=q]") : null;
 
+      // At 360-390px the button ("Find talent"/"Find jobs") leaves too
+      // little room for the full placeholder to read before it's clipped
+      // -- a short mobile-only variant swaps in below this breakpoint,
+      // via matchMedia so resizing/rotating updates it live rather than
+      // only at initial page load.
+      var mobilePlaceholderQuery = window.matchMedia("(max-width: 480px)");
+      var currentAudience = "employer";
+
       function updateSearchPlaceholder(audience) {
         if (!searchInput) return;
-        var placeholder = searchInput.getAttribute("data-audience-placeholder-" + audience);
+        currentAudience = audience;
+        var suffix = mobilePlaceholderQuery.matches ? audience + "-mobile" : audience;
+        var placeholder =
+          searchInput.getAttribute("data-audience-placeholder-" + suffix) ||
+          searchInput.getAttribute("data-audience-placeholder-" + audience);
         if (placeholder) searchInput.placeholder = placeholder;
       }
+      mobilePlaceholderQuery.addEventListener("change", function () {
+        updateSearchPlaceholder(currentAudience);
+      });
 
       function setAudience(audience) {
         audienceTabs.forEach(function (tab) {
