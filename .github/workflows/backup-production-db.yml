@@ -21,6 +21,16 @@ on:
 jobs:
   backup:
     runs-on: ubuntu-latest
+    # Runs inside the official postgres:17 image so pg_dump/pg_restore
+    # match Supabase's actual server version (confirmed live: 17.6).
+    # Ubuntu's own postgresql-client package installs v16, and pg_dump
+    # refuses outright to dump from a server newer than itself — hit
+    # this for real on the first live run. Bump this tag if Supabase
+    # ever upgrades to a new Postgres major version (a newer pg_dump can
+    # still read an older server, so this only needs to track "at least
+    # as new as the server," not an exact match).
+    container:
+      image: postgres:17
     steps:
       - name: Check the secret is configured
         env:
@@ -34,9 +44,6 @@ jobs:
             echo "::error::PROD_SUPABASE_DB_URL secret is not set — add it under Settings -> Secrets and variables -> Actions before this workflow can back anything up."
             exit 1
           fi
-
-      - name: Install postgresql-client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
       - name: Dump production database
         env:
