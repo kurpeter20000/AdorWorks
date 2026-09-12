@@ -42,6 +42,9 @@ app.use(
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/health", (req, res) => res.json({ ok: true }));
+app.get("/__sentry-wiring-test", () => {
+  throw new Error("AdorWorks Sentry wiring test — production, to be reverted immediately");
+});
 
 app.use("/api/intake", intakeRouter);
 app.use("/api/talent", talentRouter);
