@@ -4,6 +4,9 @@ Add a new entry for every important decision. Keep entries even if a later decis
 
 ---
 
+**2026-09-12 — Vercel Preview environment now points at the test database, verified live (S02-01/S02-05)**
+Owner: Founder + Claude Code. Reason: needed a real staging deployment of the platform app, not just a database. Impact: production's `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SECRET_KEY` had been saved as Vercel "Secret" type since before this project (Aug 24) — turned out that also locks the environment scope, not just the type, so narrowing them to Production-only required deleting and recreating each (production's real values recovered from the Supabase dashboard first, never from Vercel, since Secret values can't be read back). Separate Preview-scoped entries were then added pointing at the test project. Verified for real: pushed a disposable branch, waited for the resulting Vercel preview deployment, and logged into it with a seeded test account — it showed the exact seeded data (talent "Amara Deng," the seeded opportunity), proving the preview genuinely reads the test database rather than production.
+
 **2026-09-12 — Staging reuses the test Supabase project, not a third one**
 Owner: Founder. Reason: Supabase's free plan only allows 2 active projects per organization; production + the test project already use both. A third project would need pausing another one manually, or a paid plan upgrade. Impact: staging and the automated e2e test database are the same Supabase project. Trade-off accepted: don't run the e2e suite at the same time someone's manually reviewing staging, since the suite creates/deletes real records there.
 
