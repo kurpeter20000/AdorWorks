@@ -1,7 +1,7 @@
 # Stage 3 — Data, backups and observability
 
-Status: **10 of 12 steps complete and verified live.** S03-09 is built
-and just needs its one-time secret added; S03-10 is blocked on that.
+Status: **11 of 12 steps complete and verified live.** Only S03-10
+(restore rehearsal) remains.
 
 **Correction (2026-09-12), found while attempting S03-10**: S03-09 was
 originally marked "already implemented" on the belief that Supabase's
@@ -40,8 +40,8 @@ closed part, not all, of what it flagged).
 | S03-06 | Application error monitoring | **Missing** | No Sentry/Datadog/Bugsnag/equivalent in `platform/package.json` or `backend/api/package.json`. Backend errors go to stdout only. **Needs a founder decision** — this means signing up for a third-party vendor, even on a free tier. |
 | S03-07 | Uptime monitoring | **Missing** | `backend/api` has a real `/health` endpoint (`render.yaml`'s `healthCheckPath`, used by Render itself for its own restarts) but nothing external polls it and alerts a human. No UptimeRobot/equivalent. **Needs a founder decision** — another vendor signup. |
 | S03-08 | Structured logs with correlation IDs | **Missing** | Only 4 raw `console.*` calls exist in `backend/api/src/*.js` — no structured (JSON) log format, no request/correlation ID threaded through a request's lifecycle. Doable with no new paid dependency. |
-| S03-09 | Automated database backups | **Built, needs one founder step** | `.github/workflows/backup-production-db.yml` — daily `pg_dump` of production to a verified GitHub Actions artifact (30-day retention). Founder chose this over Supabase Pro ($25/month+). Needs a `PROD_SUPABASE_DB_URL` repo secret added directly in GitHub (never through chat) before it can run. |
-| S03-10 | Database restore rehearsal | **Blocked on S03-09's secret** | Nothing to rehearse restoring from until the backup workflow has actually run once. Full restore steps already documented and ready to follow once a real backup artifact exists. |
+| S03-09 | Automated database backups | **Complete, verified live** | `.github/workflows/backup-production-db.yml` ran successfully against real production (run #3, after fixing two real issues found only by actually running it — see below): produced `adorworks-production-20260912T211349Z.dump`, 97KB, validated with `pg_restore --list` before upload, stored as a GitHub Actions artifact expiring 2026-10-12 (30-day retention). Confirmed via the run's artifacts API, not just "the job went green." |
+| S03-10 | Database restore rehearsal | **Not yet performed** | A real backup now exists to restore from. Next step: download the artifact and restore it into the test project per `docs/governance/backups-and-restore.md`'s instructions. |
 | S03-11 | Incident response/escalation docs | **Missing** | No dedicated doc. Stage 10 §8 already has real content for rollback triggers/procedure (reusable) but nothing on who to actually contact or how a human incident gets escalated — that part needs the founder's real contact chain, which I don't have. |
 | S03-12 | Release rollback rehearsal | **Partial** | Stage 10 §8 documents the procedure in detail (Vercel/Render dashboard one-click rollback as the fast path, `git revert` as the fallback, and the real limits of database-layer rollback — only migrations 0031+ have executable rollback SQL). It's never actually been rehearsed live. Doable safely on the `staging` branch now that it exists (it didn't when Stage 10 was written). |
 
