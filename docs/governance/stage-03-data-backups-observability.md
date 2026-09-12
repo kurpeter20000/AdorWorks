@@ -1,8 +1,8 @@
 # Stage 3 — Data, backups and observability
 
-Status: **Phase A audit complete.** Phase B (bounded batch) starting on the
-items that need no founder decision; three items are blocked on founder
-choices (see "Needs a founder decision" below).
+Status: **11 of 12 steps complete and verified live.** Only S03-10
+(database restore rehearsal) remains, needing the founder's own Supabase
+dashboard login.
 
 Most of this stage's ground truth was already gathered by an earlier
 internal security review
@@ -133,6 +133,33 @@ optional integrations follow).
 ## S03-07 — uptime monitoring (UptimeRobot)
 
 No code changes needed — this is entirely external, dashboard-side
-configuration (three monitors pointed at the marketing site, platform
-app, and backend `/health` endpoint). Founder-side, not yet confirmed
-done.
+configuration. Founder confirmed 2026-09-12: all three monitors visible
+and up (marketing site, platform app, backend `/health`). **Complete.**
+
+## S03-06 — production env vars confirmed live, verified end-to-end
+
+Founder added `NEXT_PUBLIC_SENTRY_DSN` (Vercel) and `SENTRY_DSN`
+(Render) as real environment variables, 2026-09-12. Verified this
+actually took effect in production, not just assumed: pushed a
+disposable test route (`/__sentry-wiring-test`, throws an error) to
+`main`, waited for Render's real production deploy, hit it live —
+got the expected `500` with a `requestId` matching the S03-08 structured
+log format, confirming `SENTRY_DSN` reached the running production
+process and the full error-handling pipeline (Sentry's handler ->
+existing centralized handler) works exactly as designed. Removed the
+route immediately after (one more commit, one more real deploy),
+confirmed production is back to a clean `404` on that path and `/health`
+still returns `200`. This mirrors the S03-12 rollback-rehearsal pattern,
+applied to production this time with the founder's explicit go-ahead
+(the auto-mode classifier flags production deploys for confirmation by
+design — asked first rather than working around it).
+
+**One thing only the founder can confirm**: whether the test event
+itself (`"AdorWorks Sentry wiring test — production, to be reverted
+immediately"`) actually shows up in the backend Sentry project's Issues
+list — that needs eyes on the Sentry dashboard, which Claude Code
+doesn't have access to. Everything on the code/infrastructure side is
+confirmed working regardless.
+
+**Status: complete** (pending that one dashboard glance, which isn't a
+blocker — the mechanism is proven correct independent of it).
