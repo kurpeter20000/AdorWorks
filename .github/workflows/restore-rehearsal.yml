@@ -7,13 +7,25 @@ name: Restore rehearsal (test project only)
 # reusing an old artifact, and needs no run-id lookups from whoever
 # triggers it.
 #
+# Data-only, same as the backup workflow (see its comment for why):
+# AdorWorks's schema is already fully reproducible from
+# backend/supabase/migrations/, applied identically to both projects —
+# a real restore only ever needs to bring the DATA back, never recreate
+# schema/triggers/extensions. Two earlier attempts at a full
+# schema+data restore both failed for real, live reasons: dumping
+# Supabase's own platform-managed schemas (auth, storage, extensions,
+# etc.) collides with the different copies already in the test project
+# (575 errors), and even scoped to public alone, pg_dump still captures
+# database-wide event triggers Supabase owns as a superuser that a
+# non-superuser restoring role can never recreate in any project (687
+# errors, "extensions.pgrst_drop_watch"). A data-only dump contains
+# none of that.
+#
 # IMPORTANT: running this OVERWRITES the test project's public-schema
 # data (its own application tables — talent profiles, organisations,
 # contracts, etc.) with a copy of production's real data for those same
-# tables (pg_restore --clean drops and recreates them first). Scoped to
-# --schema=public only, so this never touches the test project's own
-# Supabase-managed auth/storage/etc. — see the dump step's comment.
-# That's intentional — it's what actually proves a restore works — but
+# tables (every public table is truncated first, see below). That's
+# intentional — it's what actually proves a restore works — but
 # re-seed the test project afterward (cd backend/api &&
 # SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=...
 # SEED_CONFIRM=yes-seed-this-database npm run seed) so it doesn't sit
@@ -53,14 +65,7 @@ jobs:
           SUPABASE_DB_URL: ${{ secrets.PROD_SUPABASE_DB_URL }}
         run: |
           set -euo pipefail
-          # --schema=public only — see backup-production-db.yml's comment
-          # for why: dumping Supabase's own internal schemas (auth,
-          # storage, realtime, extensions, etc.) causes hundreds of
-          # restore-time conflicts against a different project's own
-          # copies of those same platform-managed schemas. Confirmed
-          # live: the first rehearsal attempt hit exactly this (575
-          # errors) before this fix.
-          pg_dump "$SUPABASE_DB_URL" --format=custom --no-owner --no-acl --schema=public --file=rehearsal.dump
+          pg_dump "$SUPABASE_DB_URL" --format=custom --no-owner --no-acl --schema=public --data-only --file=rehearsal.dump
 
       - name: Verify the fresh dump is valid
         run: |
@@ -69,12 +74,36 @@ jobs:
           echo "Fresh dump verified as valid."
           ls -lh rehearsal.dump
 
-      - name: Restore into the TEST project
+      - name: Empty the test project's public tables first
         env:
           TEST_SUPABASE_DB_URL: ${{ secrets.TEST_SUPABASE_DB_URL }}
         run: |
           set -euo pipefail
-          pg_restore --clean --if-exists --no-owner --no-acl --dbname="$TEST_SUPABASE_DB_URL" rehearsal.dump
+          # A data-only restore doesn't remove existing rows on its own —
+          # truncate every public table first so this is a clean
+          # replace, not an append that would collide on primary keys.
+          # CASCADE handles the foreign-key dependency order automatically.
+          psql "$TEST_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -c "
+          DO \$\$
+          DECLARE r RECORD;
+          BEGIN
+            FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+              EXECUTE 'TRUNCATE TABLE public.' || quote_ident(r.tablename) || ' CASCADE';
+            END LOOP;
+          END \$\$;
+          "
+
+      - name: Restore data into the TEST project
+        env:
+          TEST_SUPABASE_DB_URL: ${{ secrets.TEST_SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          # --disable-triggers: standard practice for a data-only restore
+          # of tables with foreign keys between them — avoids constraint
+          # checks firing mid-load before every table's data has arrived.
+          # Safe here since the restoring role owns these tables (it's
+          # the same role the migrations created them with).
+          pg_restore --data-only --disable-triggers --no-owner --no-acl --dbname="$TEST_SUPABASE_DB_URL" rehearsal.dump
 
       - name: Confirm real data landed
         env:

@@ -52,28 +52,40 @@ jobs:
           set -euo pipefail
           FILENAME="adorworks-production-$(date -u +%Y%m%dT%H%M%SZ).dump"
           echo "FILENAME=$FILENAME" >> "$GITHUB_ENV"
-          # --schema=public only: a Supabase project's full database
-          # also contains Supabase's own platform-managed schemas
-          # (auth, storage, realtime, extensions, vault, graphql, etc.)
-          # that already exist, differently, in any other Supabase
-          # project — restoring those causes hundreds of "already
-          # exists"/"must be owner" conflicts (confirmed live: 575 errors
-          # on the first restore rehearsal, before this fix). public
-          # holds every one of AdorWorks's own application tables — see
+          # --schema=public --data-only: AdorWorks's schema is already
+          # fully reproducible from backend/supabase/migrations/ (the
+          # same files applied to every environment via
+          # backend/api/scripts/apply-migrations.js) — this backup only
+          # needs to cover DATA, never schema. That's not just simpler;
+          # it's the fix for two real conflicts hit restoring a
+          # schema-carrying dump into a different Supabase project: (1)
+          # a full pg_dump also captures Supabase's own platform-managed
+          # schemas (auth, storage, realtime, extensions, vault, etc.),
+          # which already exist — differently — in any other Supabase
+          # project (575 restore errors, first rehearsal attempt); (2)
+          # even scoped to just public, pg_dump still captures database-
+          # wide objects like event triggers, one of which
+          # (extensions.pgrst_drop_watch, PostgREST's own schema-cache
+          # invalidation trigger) is owned by a superuser in production
+          # but the restoring role isn't a superuser in any project —
+          # Postgres refuses to recreate it regardless of which project
+          # you restore into (687 restore errors, second attempt). A
+          # data-only dump contains no DDL/triggers/extensions at all,
+          # sidestepping both permanently. public holds every one of
+          # AdorWorks's own application tables — see
           # docs/governance/schema-and-ownership-map.md.
           #
           # Known, accepted limitation: this does NOT capture auth.users
           # (Supabase Auth's own account records — emails, password
-          # hashes). Restoring auth data across Supabase projects is
-          # meaningfully riskier (tied to each project's own Auth service
-          # internals) and free-tier Supabase gives no backup of that
-          # layer either way. A full disaster-recovery scenario would
-          # still recover every application record (profiles, contracts,
-          # payments, etc.) — just not existing accounts' ability to log
-          # back in with their old credentials unchanged. Worth revisiting
-          # deliberately later, not silently accepted.
+          # hashes) — a separate, riskier restore concern tied to each
+          # project's own Auth service internals, and free-tier Supabase
+          # has no backup of that layer regardless. A real disaster
+          # recovery would still recover every application record
+          # (profiles, contracts, payments, etc.), just not existing
+          # accounts' ability to log back in with unchanged credentials.
+          # Worth revisiting deliberately later, not silently accepted.
           pg_dump "$SUPABASE_DB_URL" --format=custom --no-owner --no-acl \
-            --schema=public --file="$FILENAME"
+            --schema=public --data-only --file="$FILENAME"
 
       - name: Verify the dump is a valid, readable archive
         run: |
