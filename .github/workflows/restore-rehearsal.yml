@@ -1,0 +1,81 @@
+name: Restore rehearsal (test project only)
+
+# S03-10 — proves the S03-09 backup can actually be restored, not just
+# that it exists. Takes a FRESH dump of production (same command the
+# backup workflow uses) and restores it straight into the TEST project,
+# all in one run — closer to a real disaster-recovery drill than
+# reusing an old artifact, and needs no run-id lookups from whoever
+# triggers it.
+#
+# IMPORTANT: running this OVERWRITES the test project's current data
+# with a full copy of production's real data (pg_restore --clean drops
+# and recreates everything first). That's intentional — it's what
+# actually proves a restore works — but re-seed the test project
+# afterward (cd backend/api && SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=...
+# SEED_CONFIRM=yes-seed-this-database npm run seed) so it doesn't sit
+# holding a copy of production data indefinitely.
+#
+# Needs a second repository secret beyond the backup workflow's:
+# TEST_SUPABASE_DB_URL — the TEST project's Session pooler connection
+# string (Supabase dashboard -> the TEST project, not production ->
+# Connect -> Session pooler). Same reasoning as PROD_SUPABASE_DB_URL:
+# add it directly via GitHub's Settings -> Secrets and variables ->
+# Actions UI, never through chat.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  restore-rehearsal:
+    runs-on: ubuntu-latest
+    container:
+      image: postgres:17
+    steps:
+      - name: Check both secrets are configured
+        env:
+          PROD_SUPABASE_DB_URL: ${{ secrets.PROD_SUPABASE_DB_URL }}
+          TEST_SUPABASE_DB_URL: ${{ secrets.TEST_SUPABASE_DB_URL }}
+        run: |
+          missing=""
+          [ -z "$PROD_SUPABASE_DB_URL" ] && missing="$missing PROD_SUPABASE_DB_URL"
+          [ -z "$TEST_SUPABASE_DB_URL" ] && missing="$missing TEST_SUPABASE_DB_URL"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing secret(s):$missing — add them under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+      - name: Dump production (fresh, same as the nightly backup)
+        env:
+          SUPABASE_DB_URL: ${{ secrets.PROD_SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          pg_dump "$SUPABASE_DB_URL" --format=custom --no-owner --no-acl --file=rehearsal.dump
+
+      - name: Verify the fresh dump is valid
+        run: |
+          set -euo pipefail
+          pg_restore --list rehearsal.dump > /dev/null
+          echo "Fresh dump verified as valid."
+          ls -lh rehearsal.dump
+
+      - name: Restore into the TEST project
+        env:
+          TEST_SUPABASE_DB_URL: ${{ secrets.TEST_SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          pg_restore --clean --if-exists --no-owner --no-acl --dbname="$TEST_SUPABASE_DB_URL" rehearsal.dump
+
+      - name: Confirm real data landed
+        env:
+          TEST_SUPABASE_DB_URL: ${{ secrets.TEST_SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          echo "Row counts in the restored test database:"
+          psql "$TEST_SUPABASE_DB_URL" -c "select 'talent_profiles' as table_name, count(*) from talent_profiles union all select 'organisations', count(*) from organisations union all select 'opportunities', count(*) from opportunities;"
+
+      - name: Upload the rehearsal dump for reference
+        uses: actions/upload-artifact@v4
+        with:
+          name: restore-rehearsal-dump
+          path: rehearsal.dump
+          retention-days: 7
