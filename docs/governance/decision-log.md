@@ -4,6 +4,9 @@ Add a new entry for every important decision. Keep entries even if a later decis
 
 ---
 
+**2026-09-12 — First dedicated test Supabase project created (S02-07)**
+Owner: Founder + Claude Code. Reason: needed to actually verify the seed script and run the e2e suite for real instead of leaving them "looks right, untested." Impact: a real, separate Supabase project (`adorworks-test`) now exists, all 60 migrations applied cleanly to it. Running the seed script against it for real found two genuine bugs (a bad `onConflict` column, and an old `budget_min`/`budget_max` field name that the current schema replaced with `compensation_*`) — both fixed. The existing end-to-end test suite also ran successfully for the first time in this project's history: 11/12 passed, 1 flaky on a heavier test (passed on retry, looks like timing rather than a real bug). Credentials live in `platform/.env.e2e.local`, git-ignored, never committed.
+
 **2026-09-12 — Pilot geography: South Sudan only. Languages: English, Swahili, Arabic**
 Owner: Founder. Reason: founder decision (S01-02). Impact: the pilot does not target other countries in the region yet — that's a deliberate later expansion, not MVP scope. The product needs to support three languages; it is currently English-only everywhere (marketing site, platform app, staff console). This is a substantial, cross-cutting body of work with no dedicated tracker stage of its own — closest fit is S12-15 ("Standardise interface language and content"), which as written doesn't fully capture a three-language requirement. Flagging now so it's designed for from here on rather than retrofitted later.
 

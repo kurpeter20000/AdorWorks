@@ -125,23 +125,56 @@ async function main() {
     phone: "+211900000003",
   });
 
-  const { data: org, error: orgError } = await supabaseAdmin
+  // organisations has no unique constraint on representative_id (one
+  // person could legitimately represent more than one org), so this
+  // can't use .upsert()'s onConflict the way createSeedUser does for
+  // auth users by email -- check-then-insert instead, same idea.
+  const { data: existingOrg } = await supabaseAdmin
     .from("organisations")
-    .upsert(
-      {
+    .select("*")
+    .eq("representative_id", employerId)
+    .maybeSingle();
+
+  let org = existingOrg;
+  if (!org) {
+    const { data: newOrg, error: orgError } = await supabaseAdmin
+      .from("organisations")
+      .insert({
         name: "Nile Youth Foundation",
         sector: "Non-profit / education",
         representative_id: employerId,
         verification_status: "verified",
-      },
-      { onConflict: "representative_id" }
-    )
-    .select()
-    .single();
-  if (orgError) throw new Error(`organisations upsert failed: ${orgError.message}`);
+      })
+      .select()
+      .single();
+    if (orgError) throw new Error(`organisations insert failed: ${orgError.message}`);
+    org = newOrg;
+  } else {
+    console.log("  (reusing existing organisation)");
+  }
+
+  // opportunities has no unique constraint to upsert against either --
+  // same check-then-insert approach as organisations above, keyed on
+  // title + organisation_id so re-running this script doesn't pile up
+  // duplicate seed opportunities.
+  async function createSeedOpportunity(fields) {
+    const { data: existing } = await supabaseAdmin
+      .from("opportunities")
+      .select("id")
+      .eq("organisation_id", fields.organisation_id)
+      .eq("title", fields.title)
+      .maybeSingle();
+    if (existing) {
+      console.log(`  (reusing existing opportunity) ${fields.title}`);
+      return;
+    }
+    const { error } = await supabaseAdmin.from("opportunities").insert(fields);
+    if (error) throw new Error(`opportunities insert (${fields.title}) failed: ${error.message}`);
+    console.log(`  created ${fields.title}`);
+  }
 
   console.log("Seeding opportunities...");
-  const { error: opp1Error } = await supabaseAdmin.from("opportunities").insert({
+  await createSeedOpportunity({
     organisation_id: org.id,
     type: "project",
     title: "Design a new brand identity for our youth programme",
@@ -152,8 +185,7 @@ async function main() {
     payment_basis: "fixed",
     location: "Juba",
     work_mode: "remote",
-    budget_min: 500,
-    budget_max: 1200,
+    compensation_amount: 800,
     currency: "SSP",
     visibility: "public",
     status: "open",
@@ -161,9 +193,8 @@ async function main() {
     approved_by: employerId,
     approved_at: new Date().toISOString(),
   });
-  if (opp1Error) throw new Error(`opportunities insert (design) failed: ${opp1Error.message}`);
 
-  const { error: opp2Error } = await supabaseAdmin.from("opportunities").insert({
+  await createSeedOpportunity({
     organisation_id: org.id,
     type: "contract",
     title: "Maintain and update our programme website",
@@ -174,14 +205,12 @@ async function main() {
     payment_basis: "monthly",
     location: "Juba",
     work_mode: "hybrid",
-    budget_min: 800,
-    budget_max: 800,
+    compensation_amount: 800,
     currency: "SSP",
     visibility: "public",
     status: "pending_review",
     created_by: employerId,
   });
-  if (opp2Error) throw new Error(`opportunities insert (website) failed: ${opp2Error.message}`);
 
   console.log("\nDone. Seeded 2 talent profiles, 1 employer/organisation, 2 opportunities (one open, one pending review).");
   console.log("Applications, offers and contracts are not seeded yet — a reasonable next increment once this is verified working.");
