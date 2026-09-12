@@ -109,17 +109,35 @@ Not built yet:
 
 ## Deploy
 
-1. Create a **new** Netlify site (don't reuse the Adormedia one) connected
-   to the `kurpeter20000/AdorWorks` repo. Leave **base directory**, **build
-   command** and **functions directory** all blank, and leave **publish
-   directory** blank too (or `.`) — this repo's root is the site, there's
-   no build step, and `netlify.toml` already declares `publish = "."`.
-2. Netlify auto-detects the six forms in this repo's HTML
-   (`data-netlify="true"`) at deploy time — no extra config.
-3. In the Netlify dashboard → **Forms**, turn on email notifications for
-   each form so submissions don't sit unseen — especially
-   `adorworks-employer` and `adorworks-talent`, the two intake forms the
-   whole concierge model depends on.
+**Cloudflare Pages** (current):
+
+1. Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** →
+   **Import an existing Git repository** → the `AdorWorks` repo.
+2. Build settings: **Framework preset** `None`, **Build command**
+   `node build-cf-pages.mjs`, **Build output directory** `_site`, **Root
+   directory** blank (repo root).
+3. `build-cf-pages.mjs` copies only the files this site needs to serve
+   (every top-level `*.html`, `css/`, `js/`, `img/`, `staff/`,
+   `manifest.webmanifest`, `sw.js`, `robots.txt`, `sitemap.xml`,
+   `_headers`, `_redirects`) into `_site/` — the actual deploy output —
+   so `backend/`, `platform/`, `docs/`, `.github/` and repo-management
+   files are never uploaded as deployable assets at all. This isn't
+   optional cleanliness: a Cloudflare Pages redirect does **not** reliably
+   override a request whose path matches a real uploaded file (confirmed
+   live, not just from docs), so relying on `_redirects` alone to block
+   those paths after the fact was found not to work.
+4. No environment variables needed — `js/supabase-config.js` already has
+   the public URL/key committed. Forms submit directly to Supabase
+   client-side; there's no server-side form handling to configure.
+
+**Netlify** (being retired — kept here until DNS/references are fully
+migrated): a **new** Netlify site connected to this repo, base/build/
+functions/publish directories all left blank (`netlify.toml` already
+declares `publish = "."`). Its `[[redirects]]`/`[[headers]]` are the
+source `_headers`/`_redirects` were translated from. Netlify auto-detects
+the six `data-netlify="true"` forms, but that path is already dead code
+in production since Supabase is configured — see `js/main.js`'s
+`submitToSupabase`/`submitToNetlify` fallback logic.
 
 ## Local preview
 

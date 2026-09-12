@@ -1,0 +1,40 @@
+# Cloudflare Pages equivalent of netlify.toml's [[redirects]] rules — see
+# that file's comments for the reasoning. Kept in sync by hand during the
+# Netlify -> Cloudflare Pages migration; once Netlify is fully retired,
+# netlify.toml can go and this becomes the only copy.
+#
+# CORRECTION (confirmed from the actual Cloudflare Pages build log, not
+# docs or guesswork): every /backend/*, /platform/*, /docs/*, /.github/*,
+# /.git/*, /render.yaml and catch-all rule below was silently REJECTED at
+# deploy time — "Valid status codes are 200, 301, 302 (default), 303,
+# 307, or 308. Got 404." Cloudflare's _redirects has no true "return 404"
+# status; only 200 (rewrite: serve the target's content, keep the
+# original URL and status) or a real 3xx redirect. An earlier version of
+# this comment blamed "redirects don't override a real file" instead —
+# that was the wrong diagnosis, reached before the build log was checked.
+#
+# None of this ever mattered for actual protection, confirmed by testing
+# a fresh per-deployment *.adorworks.pages.dev URL directly (bypassing
+# any cache): /backend/*, /platform/*, /docs/*, /.github/*, /render.yaml
+# all correctly 404 with zero working rules here, because build-cf-
+# pages.mjs never uploads them as deployable assets in the first place —
+# these rules are pure defense in depth (a stray file with one of these
+# names ending up in the real output), not the actual protection.
+#
+# Fixed to use 200 (rewrite to /404.html's content, valid per the log
+# above) so this now actually parses and does something, however minor.
+#
+# No catch-all rule: it had the same invalid-404 problem, and unlike the
+# rules above it isn't even needed — Cloudflare Pages serves 404.html
+# with a genuine 404 status for any unmatched path by default, which is
+# what the old catch-all was trying to force explicitly. Confirmed live:
+# a nonexistent path 404s correctly with no rule for it at all.
+
+/find-talent.html  /for-employers.html#categories  301
+
+/backend/*   /404.html  200
+/platform/*  /404.html  200
+/docs/*      /404.html  200
+/.github/*   /404.html  200
+/.git/*      /404.html  200
+/render.yaml /404.html  200

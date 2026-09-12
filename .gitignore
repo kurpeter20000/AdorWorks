@@ -17,3 +17,7 @@ img/photos/source/
 # Scratch output from ad-hoc local QA scripts (e.g. Playwright screenshot
 # audits) -- never a deploy artifact.
 .responsive-audit/
+
+# Cloudflare Pages build output (build-cf-pages.mjs) -- generated fresh on
+# every deploy, never committed.
+/_site/

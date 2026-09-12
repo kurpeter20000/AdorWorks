@@ -18,6 +18,7 @@ export const DOMAIN_EVENTS = {
   OPPORTUNITY_PUBLISHED: "opportunity.published",
   OPPORTUNITY_REJECTED: "opportunity.rejected",
   OPPORTUNITY_CHANGES_REQUESTED: "opportunity.changes_requested",
+  OPPORTUNITY_PAUSED: "opportunity.paused",
   APPLICATION_SUBMITTED: "application.submitted",
   APPLICATION_STAGE_CHANGED: "application.stage_changed",
   OFFER_SENT: "offer.sent",
@@ -28,7 +29,12 @@ export const DOMAIN_EVENTS = {
   MESSAGE_SENT: "message.sent",
   DISPUTE_RAISED: "case.dispute.raised",
   DISPUTE_RESOLVED: "case.dispute.resolved",
+  DISPUTE_ESCALATED: "case.dispute.escalated",
   PAYMENT_STATUS_CHANGED: "payment.status_changed",
+  PAYMENT_REFUND_ISSUED: "payment.refund_issued",
+  FINANCE_RECORD_CREATED: "finance.record_created",
+  FINANCE_RECORD_UPDATED: "finance.record_updated",
+  ASSISTANCE_SESSION_STARTED: "assistance.session.started",
 } as const;
 
 export type DomainEventName = (typeof DOMAIN_EVENTS)[keyof typeof DOMAIN_EVENTS];

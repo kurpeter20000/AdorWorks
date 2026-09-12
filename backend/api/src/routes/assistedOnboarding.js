@@ -4,6 +4,7 @@ import { randomInt } from "crypto";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff, requireAdmin } from "../middleware/auth.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
+import { logAuditEvent } from "../audit.js";
 
 // A random, easy-to-read-aloud temporary password — for a brand-new
 // account (an agent, or later an assisted person in Stage B) that a staff
@@ -154,6 +155,22 @@ assistedOnboardingRouter.post(
       .single();
     if (agentError) throw new HttpError(400, agentError.message);
 
+    // Granting the onboarding_agent role is granting real, standing access
+    // to other people's profile fields (see ASSISTED_TALENT_FIELDS above)
+    // — an admin doing that needs to be traceable the same way any other
+    // role assignment is (Stage 10 gap-check defect #5).
+    await logAuditEvent(supabaseAdmin, {
+      name: "identity.account.role_assigned",
+      actorId: req.user.id,
+      subjectId: agentId,
+      entityType: "profiles",
+      entityId: agentId,
+      reason: null,
+      before: null,
+      after: { role: "onboarding_agent", partner_hub_id: body.partner_hub_id },
+      metadata: { existing_account: !!existing },
+    });
+
     res.json({ data: agent, temporary_password: temporaryPassword || null });
   })
 );
@@ -265,6 +282,22 @@ assistedOnboardingRouter.post(
     if (sessionError) throw new HttpError(400, sessionError.message);
 
     await supabaseAdmin.from("assistance_requests").update({ status: "assigned" }).eq("id", request.id);
+
+    // Starting a session is staff granting themselves a scoped, time-boxed
+    // window onto someone else's profile — worth its own audit row even
+    // though the person's later *consent* is separately tracked (platform's
+    // ASSISTANCE_CONSENTED/ASSISTANCE_REVOKED events) once they act on it.
+    await logAuditEvent(supabaseAdmin, {
+      name: "assistance.session.started",
+      actorId: req.user.id,
+      subjectId: userId,
+      entityType: "assistance_sessions",
+      entityId: session.id,
+      reason: null,
+      before: null,
+      after: { status: "pending_consent", fields: body.fields },
+      metadata: { agent_id: agent.id, assistance_request_id: request.id, fresh_account: freshAccount },
+    });
 
     res.json({ data: session, temporary_password: temporaryPassword || null });
   })

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff } from "../middleware/auth.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
+import { logAuditEvent } from "../audit.js";
 
 export const disputesRouter = Router();
 disputesRouter.use(requireAuth, requireStaff);
@@ -59,6 +60,9 @@ disputesRouter.patch(
       patch.resolved_by = req.user.id;
       patch.resolved_at = new Date().toISOString();
     }
+
+    const { data: before } = await supabaseAdmin.from("disputes").select("status").eq("id", req.params.id).maybeSingle();
+
     const { data, error } = await supabaseAdmin
       .from("disputes")
       .update(patch)
@@ -66,6 +70,24 @@ disputesRouter.patch(
       .select()
       .single();
     if (error) throw new HttpError(400, error.message);
+
+    // Audit only the two outcome-bearing transitions (same condition the
+    // notification below already gates on) — a dispute resolution or
+    // escalation decides a real-money/contract outcome, so who decided it
+    // and why has to be traceable (Stage 10 gap-check defect #5).
+    if (body.status === "resolved" || body.status === "escalated") {
+      await logAuditEvent(supabaseAdmin, {
+        name: body.status === "resolved" ? "case.dispute.resolved" : "case.dispute.escalated",
+        actorId: req.user.id,
+        subjectId: null,
+        entityType: "disputes",
+        entityId: req.params.id,
+        reason: body.resolution ?? null,
+        before: before ? { status: before.status } : null,
+        after: { status: body.status },
+        metadata: { contract_id: data.contract_id ?? null, engagement_id: data.engagement_id ?? null },
+      });
+    }
 
     if (body.status === "resolved" && data.contract_id) {
       await supabaseAdmin
@@ -155,6 +177,26 @@ disputesRouter.post(
       .select()
       .single();
     if (recordError) throw new HttpError(500, recordError.message);
+
+    // Real money moving back out — same traceability bar as every other
+    // finance_records write (Stage 10 gap-check defect #5).
+    await logAuditEvent(supabaseAdmin, {
+      name: "payment.refund_issued",
+      actorId: req.user.id,
+      subjectId: null,
+      entityType: "finance_records",
+      entityId: record.id,
+      reason: notes ?? null,
+      before: { payment_event_status: payment.status },
+      after: { payment_event_status: "refunded", finance_record_id: record.id },
+      metadata: {
+        dispute_id: req.params.id,
+        contract_id: dispute.contract_id,
+        milestone_id,
+        amount: payment.amount,
+        currency: payment.currency,
+      },
+    });
 
     res.json({ data: record });
   })
