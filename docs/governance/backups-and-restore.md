@@ -1,65 +1,84 @@
 # Database backups and restore (S03-09, S03-10)
 
-## What's already in place (S03-09) — platform-provided, not something we configure
+**Correction (2026-09-12)**: an earlier version of this doc stated that
+Supabase's free plan includes automatic daily backups. That was wrong —
+confirmed directly against Supabase's own current documentation while
+attempting the S03-10 restore rehearsal below, which is what surfaced the
+mistake. Leaving this note rather than quietly fixing it, since the
+wrong version was treated as settled fact in Stage 3's audit.
 
-Supabase automatically backs up every project daily, including on the
-free plan, with **7 days of retention**. This isn't a script or setting
-AdorWorks controls — it's inherent to the hosting, the same way Vercel
-and Render's own deployment history exists without anything in this repo
-configuring it.
+## What Supabase actually provides, by plan
 
-**What free-tier backup does and doesn't cover:**
-- Covers: restoring the whole database to the state it was in at the end
-  of a given day, within the last 7 days.
-- Doesn't cover: restoring to an arbitrary point in time within a day
-  (point-in-time recovery / PITR) — that needs a paid Supabase plan. If
-  something destructive happens mid-day, the daily backup can only get
-  back to the *previous* day's end-of-day state, losing everything in
-  between. Worth knowing before assuming a backup means "no data is ever
-  really at risk."
-- Applies separately to each project — production and the test/staging
-  project each have their own independent daily backups.
+- **Free plan (what both AdorWorks Supabase projects are on today)**: **no
+  automatic backups at all**, and no self-serve restore. Supabase's own
+  guidance for free-tier projects is to manually export data yourself
+  (`pg_dump` / the Supabase CLI's `db dump`) and keep your own off-site
+  copy — there is nothing built in.
+- **Pro plan ($25/month for the organization, covering the first project;
+  +$10/month for each additional project in the same org)**: automatic
+  daily backups, 7 days of retention, self-serve restore through the
+  dashboard (Database → Backups).
+- **Team plan**: 14 days of retention. **Enterprise**: 30 days, plus
+  point-in-time recovery (restoring to an arbitrary moment, not just a
+  daily snapshot) — PITR isn't available on Pro either.
 
-**Where to actually restore from**: Supabase dashboard → the project →
-Database → Backups. This needs the founder's own login (Claude Code
-doesn't have dashboard access, only the API/DB connection strings) — see
-the rehearsal steps below.
+## What this means right now
 
-## Restore rehearsal (S03-10) — not yet performed, here's exactly how
+**Production has zero backup protection today.** If something destructive
+happened to the production database — a bad migration, an accidental
+delete, a compromised credential — there is currently no built-in way to
+get any of that data back. This is a real, live gap, not a theoretical
+one, and it's more serious than how Stage 3 originally described it.
 
-This has never actually been tested, only assumed to work because
-Supabase says it does. Given the standing "verify live, don't just
-assume" approach used for everything else in this project (the seed
-script, the migration runner, both staging deployments), this should
-actually be rehearsed once — safely, against the test project, which
-has no real user data to lose:
+## The actual decision (founder's call — this costs real money)
 
-1. Log into the Supabase dashboard for the **test project** (the one
-   `platform/.env.e2e.local` points at — project ref
-   `ukftlseobdojlygyjkwj`). **Do not do this against the production
-   project.**
-2. Note the current state first, so the restore's effect is verifiable
-   afterward — e.g. the exact row count of `talent_profiles` and
-   `organisations` (Table Editor, or a quick query).
-3. Database → Backups → pick the most recent daily backup → Restore.
-   Supabase will walk through its own confirmation flow.
-4. Once it completes, re-check the same counts from step 2, and run the
-   e2e suite (`platform/e2e/`) against it — a real pass is the actual
-   proof the restore left a working database, not just a database that
-   "looks" restored.
-5. Afterward, re-run `npm run seed` (from `backend/api/`) if the restore
-   rolled back past the last seed run, so the test project ends in the
-   same known-good state it was in before this rehearsal.
+**Option A — Upgrade the Supabase organization to Pro ($25/month)**
+Gets production automatic daily backups + self-serve restore
+immediately, no engineering work needed. The test/staging project could
+stay on free (it holds no real user data, only seeded test data that's
+already fully reproducible via `npm run seed`) — upgrading is normally
+an org-wide setting, so check Supabase's billing page for exactly how it
+prices "Pro org, one project actively using paid features" before
+committing, since the extra-project fee structure can vary.
 
-This needs the founder to actually click through steps 1 and 3 — flagging
-it here rather than marking it done, since no restore has been performed
-yet.
+**Option B — Build a manual/scripted backup ourselves (no new recurring
+cost)**
+A scheduled job (e.g. a GitHub Action on a cron schedule) that runs
+`pg_dump` against production's connection string and stores the result
+somewhere durable (this would need a place to put it — a cloud storage
+bucket is the normal answer, which may itself have a small cost or a
+free tier depending on the provider). This is real, unbuilt engineering
+work, and restoring from a plain SQL dump is a manual process we'd have
+to script and rehearse ourselves rather than a dashboard click.
 
-## If production ever actually needs a restore
+**Option C — Accept the risk for now, revisit before scaling past the
+pilot**
+Explicitly document that production is unprotected and move on, given
+this is still a small, founder-supervised pilot. Reasonable only as a
+conscious, written-down decision — not as something left silently
+unaddressed.
 
-Same dashboard path, on the production project instead. Given free-tier
-daily-only granularity, expect to lose up to a day of data doing this —
-which is exactly why steps like the destructive-migration policy
-(`docs/governance/destructive-migration-policy.md`) and applying every
-migration to staging first exist: to make actually needing this as rare
-as possible, not to make it painless when it happens.
+## Restore rehearsal (S03-10) — blocked on the decision above
+
+Can't be genuinely rehearsed on the free plan — there is nothing to
+restore *from*, since no backup is being taken. Whichever option is
+chosen above determines what this rehearsal actually looks like:
+
+- **Option A**: once Pro is active, the original rehearsal plan applies —
+  log into the Supabase dashboard for the test project (safe to
+  experiment on), Database → Backups → restore the most recent one,
+  verify row counts and re-run the e2e suite, re-seed if needed.
+- **Option B**: once a backup script exists, rehearse restoring from an
+  actual dump file into a scratch database (not production) and confirm
+  the data comes back intact.
+- **Option C**: nothing to rehearse — the decision itself gets logged
+  instead.
+
+## If production ever needs a restore before this is resolved
+
+Right now, there is no path to restore lost production data beyond
+whatever manual precautions exist outside this system (nothing is
+known to exist). This is exactly why the destructive-migration policy
+(`docs/governance/destructive-migration-policy.md`) — always test on
+staging first, real rollback SQL, a second pair of eyes — matters more
+than it would if a safety net already existed underneath it.
