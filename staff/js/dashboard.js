@@ -9,16 +9,19 @@ import { supabase, requireStaffSession, initLogout, escapeHtml, formatDate, stat
 // finished loading. Confirmed live: zero organisations/opportunities/
 // etc. requests ever left the browser, and TILE_QUERIES.forEach threw
 // "Cannot read properties of undefined" on every load.
+// 5th element is a human label used only in the error banner/console when
+// this specific query fails — see countWhere()'s doc comment for why that
+// was worth adding.
 var TILE_QUERIES = [
-  ["stat-new-intake", "intake_submissions", "status", "new"],
-  ["stat-pending-orgs", "organisations", "verification_status", "pending"],
-  ["stat-pending-opps", "opportunities", "status", "pending_review"],
-  ["stat-pending-videos", "talent_introduction_videos", "status", "pending"],
-  ["stat-active-engagements", "engagements", "status", ["proposed", "contracted", "active"]],
-  ["stat-open-disputes", "disputes", "status", ["open", "investigating"]],
-  ["stat-open-reports", "reports", "status", "open"],
-  ["stat-open-opportunities", "opportunities", "status", "open"],
-  ["stat-published-services", "talent_services", "status", "published"],
+  ["stat-new-intake", "intake_submissions", "status", "new", "New intake submissions"],
+  ["stat-pending-orgs", "organisations", "verification_status", "pending", "Organisations pending verification"],
+  ["stat-pending-opps", "opportunities", "status", "pending_review", "Opportunities pending review"],
+  ["stat-pending-videos", "talent_introduction_videos", "status", "pending", "Introduction videos pending review"],
+  ["stat-active-engagements", "engagements", "status", ["proposed", "contracted", "active"], "Engagements in flight"],
+  ["stat-open-disputes", "disputes", "status", ["open", "investigating"], "Open disputes"],
+  ["stat-open-reports", "reports", "status", "open", "Open reports"],
+  ["stat-open-opportunities", "opportunities", "status", "open", "Open opportunities"],
+  ["stat-published-services", "talent_services", "status", "published", "Published services"],
 ];
 
 initLogout();
@@ -40,10 +43,10 @@ async function refreshAll() {
   var refreshBtn = document.getElementById("dashboard-refresh");
   if (refreshBtn) refreshBtn.disabled = true;
   hideError();
-  var [countsOk] = await Promise.all([loadCounts(), loadRecentIntake()]);
+  var [counts] = await Promise.all([loadCounts(), loadRecentIntake()]);
   if (refreshBtn) refreshBtn.disabled = false;
-  setUpdatedAt(countsOk);
-  if (!countsOk) showError();
+  setUpdatedAt(counts.ok);
+  if (!counts.ok) showError(counts.failedLabels);
 }
 
 function setUpdatedAt(ok) {
@@ -53,9 +56,25 @@ function setUpdatedAt(ok) {
   el.textContent = ok ? "Updated " + when : "Last attempt failed — " + when;
 }
 
-function showError() {
+/**
+ * Was a plain "Some figures below could not be loaded" with no way to
+ * tell which one, or why — every retry looked identical whether it was
+ * one flaky tile or all nine, and the real Postgrest error (permissions?
+ * a renamed column? a timeout?) was discarded in countWhere() before it
+ * ever reached here. Names the specific tile(s) so it's diagnosable
+ * without guessing, instead of just "try again and hope".
+ */
+function showError(failedLabels) {
   var el = document.getElementById("dashboard-error");
-  if (el) el.hidden = false;
+  if (!el) return;
+  var msg = document.getElementById("dashboard-error-message");
+  if (msg) {
+    msg.textContent =
+      failedLabels && failedLabels.length
+        ? "Could not load: " + failedLabels.join(", ") + ". See the browser console for the exact error."
+        : "Some figures below could not be loaded.";
+  }
+  el.hidden = false;
 }
 
 function hideError() {
@@ -63,31 +82,44 @@ function hideError() {
   if (el) el.hidden = true;
 }
 
-async function countWhere(table, column, value) {
+/**
+ * The `error` from a failed count used to be discarded entirely (only
+ * `ok: false` survived) — the dashboard could tell *that* a tile failed
+ * but nothing about *why*, so "Retry" was the only available move even
+ * for a permissions/schema error that would never succeed on retry.
+ * Logged with the table/column/label so it's identifiable in devtools
+ * without reproducing the query by hand.
+ */
+async function countWhere(table, column, value, label) {
   var q = supabase.from(table).select("*", { count: "exact", head: true });
   if (Array.isArray(value)) q = q.in(column, value);
   else q = q.eq(column, value);
   var { count, error } = await q;
+  if (error) {
+    console.error('[dashboard] "' + label + '" (' + table + "." + column + ") failed:", error);
+  }
   return { ok: !error, count: count };
 }
 
-/** @returns {Promise<boolean>} whether every tile loaded without error. */
+/** @returns {Promise<{ok: boolean, failedLabels: string[]}>} */
 async function loadCounts() {
   TILE_QUERIES.forEach(function (t) { setTileLoading(t[0]); });
   var results = await Promise.all(
     TILE_QUERIES.map(function (t) {
-      return countWhere(t[1], t[2], t[3]).then(function (r) { return { id: t[0], result: r }; });
+      return countWhere(t[1], t[2], t[3], t[4]).then(function (r) { return { id: t[0], label: t[4], result: r }; });
     })
   );
   var allOk = true;
+  var failedLabels = [];
   results.forEach(function (r) {
     if (r.result.ok) setTile(r.id, r.result.count);
     else {
       setTileError(r.id);
       allOk = false;
+      failedLabels.push(r.label);
     }
   });
-  return allOk;
+  return { ok: allOk, failedLabels: failedLabels };
 }
 
 function setTileLoading(id) {

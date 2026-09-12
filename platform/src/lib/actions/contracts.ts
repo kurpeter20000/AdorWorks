@@ -428,7 +428,7 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
   }
   const { error: milestoneError } = await admin.from("milestones").update({ status: "paid" }).eq("id", milestoneId);
   if (milestoneError) {
-    console.error(`payMilestone: payment succeeded for milestone ${milestoneId} but marking it 'paid' failed:`, milestoneError.message);
+    console.error("payMilestone: payment succeeded for milestone %s but marking it 'paid' failed:", milestoneId, milestoneError.message);
   }
 
   await logAuditEvent(admin, {
