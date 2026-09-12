@@ -51,9 +51,11 @@ If real engineers join later, ownership splits back out along the lines the play
 
 ## S01-07 — Protect the main branch and require review
 
-**I cannot do this myself** — it needs GitHub repository admin access, which I don't have (no `gh` CLI, and an unauthenticated check confirmed I can't even read the current protection status). This has to be either done by you directly in GitHub (Settings → Branches → Add rule for `main`), or you'll need to grant access to whoever does it.
+**Correction, 2026-09-12:** I initially wrote here that I couldn't tell whether branch protection existed. That was wrong to leave unverified — my very next push after writing it returned `Bypassed rule violations for refs/heads/main: Cannot update this protected ref.` **Some protection rule does exist on `main`.** It let my push through as a bypass, which on GitHub normally means the pushing account has admin/owner rights that are allowed to override the rule.
 
-**Confirmed 2026-09-12 — you've authorized me to commit and push every change we make**, without asking per-commit, reserving your direct approval for anything sensitive or potentially costly (recorded in the decision log). Worth flagging honestly: until S01-07 is turned on, that means `main` really can be updated directly, by me, with no independent review catching a mistake before it's live. That's a real tradeoff for moving fast with just the two of us — turning on branch protection later would mean even your authorization would need to go through a pull request rather than a direct push. Let me know if you'd rather have that safety net sooner.
+**What I still can't confirm** (GitHub's API won't show branch-protection detail without authenticated access, and I don't have that): exactly what the rule requires — status checks, required reviews, who besides an admin can bypass it. **This still needs you** to open GitHub → this repo → Settings → Branches → the rule on `main`, and tell me what it actually says, or decide whether to tighten it (e.g. remove the bypass, require review) now that you know it's being bypassed on every push I make.
+
+**Confirmed 2026-09-12 — you've authorized me to commit and push every change we make**, without asking per-commit, reserving your direct approval for anything sensitive or potentially costly (recorded in the decision log). Given the above, that authorization is currently exercised as a direct-push bypass of whatever rule exists on `main`, not as a reviewed pull request. That's a real tradeoff for moving fast with just the two of us — let me know if you'd rather tighten it once you've seen what the rule actually says.
 
 ## S01-08 — Use one branch or worktree for each bounded task
 

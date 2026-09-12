@@ -4,6 +4,9 @@ Add a new entry for every important decision. Keep entries even if a later decis
 
 ---
 
+**2026-09-12 — Correction: `main` does have some branch protection, discovered live**
+Owner: Claude Code. Reason: the Stage 1 write-up initially said branch protection status was unverifiable and assumed it wasn't set up. The very next push proved that wrong: GitHub returned `Bypassed rule violations for refs/heads/main: Cannot update this protected ref.` — a rule exists, and the push succeeded only because it was logged as an admin bypass. Impact: corrected both Stage 1 documents rather than leaving the wrong assumption on record. Still open: what the rule actually requires, and whether the founder wants to keep it bypassable for direct pushes or tighten it now that the gap is known.
+
 **2026-09-12 — No separate Engineer A / Engineer B for now; Claude Code covers both roles**
 Owner: Founder. Reason: no other engineers are on the project yet. Impact: until real engineers join, I (Claude Code) do the work the playbook assigns to both Engineer A and Engineer B, under the founder's review — legal counsel, security reviewer and pilot team roles remain unfilled and genuinely blocked, since the playbook is explicit those cannot be substituted.
 
