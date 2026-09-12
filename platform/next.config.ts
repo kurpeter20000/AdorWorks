@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   images: {
@@ -16,4 +17,14 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// S03-06 — no SENTRY_AUTH_TOKEN is configured anywhere (Vercel/CI), so
+// the source-map upload this plugin can do is skipped automatically —
+// errors still report with unminified stack traces missing, which is an
+// acceptable tradeoff for now rather than provisioning another Sentry
+// credential just for this. `silent: true` keeps that skip from being
+// noisy in every build log.
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  widenClientFileUpload: false,
+  disableLogger: true,
+});

@@ -1,4 +1,5 @@
 import "dotenv/config";
+import * as Sentry from "@sentry/node";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -59,6 +60,19 @@ app.use("/api/people", peopleRouter);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Not found." });
+});
+
+// S03-06 — reports genuinely unexpected errors to Sentry, then calls
+// next(err) so the centralized handler below still shapes the client
+// response exactly as before. Skips ZodError (expected 422s on bad
+// input) and anything already carrying a 4xx HttpError status — those
+// aren't bugs, just normal request validation, and would be pure noise.
+Sentry.setupExpressErrorHandler(app, {
+  shouldHandleError(err) {
+    if (err?.name === "ZodError") return false;
+    const status = err?.status || err?.statusCode;
+    return !status || status >= 500;
+  },
 });
 
 // Centralized error handler — every route uses asyncRoute() to funnel

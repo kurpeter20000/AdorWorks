@@ -87,3 +87,52 @@ already cleaned up; `staging` is back to its pre-rehearsal state.
 **Status**: all 12 Stage 3 steps addressed. S03-10 (restore rehearsal)
 is the one remaining item needing the founder's hands (Supabase dashboard
 login) — everything else is complete and verified.
+
+## S03-06 — error monitoring (Sentry), wired and verified live
+
+Founder created two Sentry projects (platform: Next.js, backend/api:
+Node.js/Express) and provided both DSNs. Wired up:
+
+- `platform/`: `@sentry/nextjs` 10.74.0. `src/instrumentation-client.ts`
+  (client-side init — Next.js's own auto-loaded hook, required for
+  Turbopack, which is this app's default bundler), `sentry.server.config.ts`,
+  `sentry.edge.config.ts`, loaded via `src/instrumentation.ts`'s
+  `register()`. `next.config.ts` wrapped with `withSentryConfig`. DSN
+  read from `NEXT_PUBLIC_SENTRY_DSN` — unset locally/in CI, so nothing
+  is sent anywhere without a real value configured. Session Replay
+  deliberately not enabled (bigger privacy surface than plain error
+  capture, not needed).
+- `backend/api/`: `@sentry/node` 10.74.0. `instrument.mjs`, loaded via
+  `node --import` (both `start` and `dev` scripts) so OpenTelemetry
+  auto-instrumentation patches Express/http/pg before those modules are
+  first imported. `Sentry.setupExpressErrorHandler` added before the
+  existing centralized error handler, filtered to skip `ZodError` and
+  any already-4xx `HttpError` — those are expected validation failures,
+  not bugs, and would be pure noise. DSN read from `SENTRY_DSN`.
+
+**Verified live, not just wired**: sent a real test exception directly
+through each DSN with the actual SDK (`Sentry.captureException` +
+`Sentry.flush()`), confirmed both returned a real Sentry event ID and a
+successful flush. Separately booted the real backend/api server with its
+production `--import` loader, hit a route that throws, and confirmed the
+full pipeline — Sentry's error handler, then the existing centralized
+handler — still returns the exact same JSON error shape as before
+(matching `requestId` from S03-08's structured logging), so this is
+additive, not a behavior change. All temporary test code (a throwaway
+route, standalone test scripts, a temp local `.env`) was removed before
+committing. `npm run lint`/`npm test` clean in both apps; platform's
+`tsc --noEmit` and `next build` also clean.
+
+**Still needed — founder-side, not code**: add `NEXT_PUBLIC_SENTRY_DSN`
+(Vercel) and `SENTRY_DSN` (Render) as real environment variables in each
+platform's dashboard — see the message accompanying this update for
+exact steps. Nothing sends to Sentry in production until those are set,
+by design (same "unset = no-op" safety the rest of this project's
+optional integrations follow).
+
+## S03-07 — uptime monitoring (UptimeRobot)
+
+No code changes needed — this is entirely external, dashboard-side
+configuration (three monitors pointed at the marketing site, platform
+app, and backend `/health` endpoint). Founder-side, not yet confirmed
+done.
