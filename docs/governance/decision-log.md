@@ -4,6 +4,12 @@ Add a new entry for every important decision. Keep entries even if a later decis
 
 ---
 
+**2026-09-12 — Pilot geography: South Sudan only. Languages: English, Swahili, Arabic**
+Owner: Founder. Reason: founder decision (S01-02). Impact: the pilot does not target other countries in the region yet — that's a deliberate later expansion, not MVP scope. The product needs to support three languages; it is currently English-only everywhere (marketing site, platform app, staff console). This is a substantial, cross-cutting body of work with no dedicated tracker stage of its own — closest fit is S12-15 ("Standardise interface language and content"), which as written doesn't fully capture a three-language requirement. Flagging now so it's designed for from here on rather than retrofitted later.
+
+**2026-09-12 — Founder deleted the existing branch-protection ruleset on `main`**
+Owner: Founder. Reason: founder's own action, taken directly in GitHub after learning (from the prior correction above) that a rule existed and every push was going through as a bypass. Impact: `main` now has no branch protection at all — direct pushes go through cleanly with no bypass logging. Combined with the standing commit/push authorization, this means there is currently no independent safety net between a mistake and it being live on `main`. Revisit under S01-07/S02-12 once the team grows beyond just the founder and Claude Code, or sooner if the founder wants it back.
+
 **2026-09-12 — Correction: `main` does have some branch protection, discovered live**
 Owner: Claude Code. Reason: the Stage 1 write-up initially said branch protection status was unverifiable and assumed it wasn't set up. The very next push proved that wrong: GitHub returned `Bypassed rule violations for refs/heads/main: Cannot update this protected ref.` — a rule exists, and the push succeeded only because it was logged as an admin bypass. Impact: corrected both Stage 1 documents rather than leaving the wrong assumption on record. Still open: what the rule actually requires, and whether the founder wants to keep it bypassable for direct pushes or tighten it now that the gap is known.
 

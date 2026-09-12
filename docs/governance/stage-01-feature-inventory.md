@@ -8,7 +8,7 @@ Legend: 🟢 Exists and looks substantially complete · 🟡 Partially built · 
 
 - 🟡 CI runs lint, unit tests and a production build automatically on every push, for both the Next.js app and the backend API (`.github/workflows/ci.yml`).
 - 🔴 No separate staging environment. No seed data. No disposable end-to-end test database. No documented local setup walkthrough beyond scattered README notes.
-- 🟡 Some branch protection exists on `main` (confirmed live: a push was accepted only as a logged "bypass" of a protected-ref rule) — but its actual requirements (reviews, checks, who can bypass) aren't confirmed, see S01-07.
+- 🔴 No branch protection on `main` as of 2026-09-12 — a rule existed and every push was going through as a bypass; the founder removed it after learning that, so now there's no rule at all, see S01-07.
 
 ## Stage 3 — Data, backups and observability
 
