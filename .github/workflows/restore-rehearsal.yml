@@ -18,12 +18,17 @@ name: Restore rehearsal (test project only)
 # alone, pg_dump still captures database-wide event triggers Supabase
 # owns as a superuser that a non-superuser restoring role can never
 # recreate in any project (687 errors, "extensions.pgrst_drop_watch");
-# and pg_restore's --disable-triggers itself needs superuser to disable
+# pg_restore's --disable-triggers itself needs superuser to disable
 # Postgres's internal FK-check triggers, which Supabase's connection
 # role deliberately isn't (115 errors, "RI_ConstraintTrigger_... is a
-# system trigger"). Fixed by dropping foreign key constraints (normal
+# system trigger") — fixed by dropping foreign key constraints (normal
 # owner-level DDL, not privileged) before the data load and recreating
-# them after — see the workflow steps below.
+# them after; and this schema's own business-rule guard triggers (e.g.
+# guard_talent_profiles_insert) fired during the restore and rejected
+# already-valid production rows (4 errors) — fixed with `ALTER TABLE
+# ... DISABLE/ENABLE TRIGGER USER` (only ever touches regular
+# user-defined triggers, never the protected system ones, so it needs
+# no special privilege either). See the workflow steps below.
 #
 # IMPORTANT: running this OVERWRITES the test project's public-schema
 # data (its own application tables — talent profiles, organisations,
@@ -113,7 +118,7 @@ jobs:
           END \$\$;
           "
 
-      - name: Empty the test project's public tables
+      - name: Empty the test project's public tables and disable custom triggers
         env:
           TEST_SUPABASE_DB_URL: ${{ secrets.TEST_SUPABASE_DB_URL }}
         run: |
@@ -131,6 +136,26 @@ jobs:
             END LOOP;
           END \$\$;
           "
+          # DISABLE TRIGGER USER (not ALL) — only ever touches regular,
+          # user-defined triggers, never the protected system ones, so
+          # it needs no special privilege (table owner is enough).
+          # Confirmed live this is needed: this schema's own business-
+          # rule guard triggers (e.g. guard_talent_profiles_insert,
+          # which blocks a non-staff session from setting a
+          # verification tier directly) fire normally during a plain
+          # data-only restore's COPY and reject rows that are already
+          # valid, already-committed production data — they exist to
+          # protect the live app from invalid writes, not to re-validate
+          # a restore of data that already passed those checks once.
+          psql "$TEST_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -c "
+          DO \$\$
+          DECLARE r RECORD;
+          BEGIN
+            FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+              EXECUTE 'ALTER TABLE public.' || quote_ident(r.tablename) || ' DISABLE TRIGGER USER';
+            END LOOP;
+          END \$\$;
+          "
 
       - name: Restore data into the TEST project
         env:
@@ -138,6 +163,21 @@ jobs:
         run: |
           set -euo pipefail
           pg_restore --data-only --no-owner --no-acl --dbname="$TEST_SUPABASE_DB_URL" rehearsal.dump
+
+      - name: Re-enable custom triggers
+        env:
+          TEST_SUPABASE_DB_URL: ${{ secrets.TEST_SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          psql "$TEST_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -c "
+          DO \$\$
+          DECLARE r RECORD;
+          BEGIN
+            FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+              EXECUTE 'ALTER TABLE public.' || quote_ident(r.tablename) || ' ENABLE TRIGGER USER';
+            END LOOP;
+          END \$\$;
+          "
 
       - name: Recreate foreign key constraints
         env:
