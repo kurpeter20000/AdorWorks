@@ -233,10 +233,10 @@ export async function finishAssistanceSession(sessionId: string): Promise<{ erro
   return {};
 }
 
-export async function revokeAssistanceSession(
-  sessionId: string,
-  _prevState: FormState
-): Promise<FormState> {
+// Bound to sessionId via .bind(null, sessionId) in assistance-consent-widget.tsx,
+// then called by useActionState as (prevState, formData) — both silently
+// ignored here since this action needs neither, only the bound sessionId.
+export async function revokeAssistanceSession(sessionId: string): Promise<FormState> {
   const session = await requireSession();
   const supabase = await createClient();
   const now = new Date().toISOString();

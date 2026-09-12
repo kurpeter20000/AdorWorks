@@ -61,7 +61,7 @@ app.use((req, res) => {
 
 // Centralized error handler — every route uses asyncRoute() to funnel
 // thrown errors here instead of leaking a raw stack trace to the client.
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   if (err?.name === "ZodError") {
     return res.status(422).json({ error: "Invalid request.", details: err.issues });
   }

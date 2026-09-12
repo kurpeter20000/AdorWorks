@@ -35,7 +35,7 @@ jobs:
           SUPABASE_SECRET_KEY: ci-placeholder-secret-key
 
   backend-api:
-    name: backend/api (unit tests)
+    name: backend/api (lint, unit tests)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -48,4 +48,5 @@ jobs:
           cache: npm
           cache-dependency-path: backend/api/package-lock.json
       - run: npm ci
+      - run: npm run lint
       - run: npm run test
