@@ -4,6 +4,12 @@ Add a new entry for every important decision. Keep entries even if a later decis
 
 ---
 
+**2026-09-12 — Staging reuses the test Supabase project, not a third one**
+Owner: Founder. Reason: Supabase's free plan only allows 2 active projects per organization; production + the test project already use both. A third project would need pausing another one manually, or a paid plan upgrade. Impact: staging and the automated e2e test database are the same Supabase project. Trade-off accepted: don't run the e2e suite at the same time someone's manually reviewing staging, since the suite creates/deletes real records there.
+
+**2026-09-12 — Corrected the migration-automation approach after finding it broken live**
+Owner: Claude Code. Reason: the first version of `apply-migrations.js` re-ran every migration file unconditionally on every invocation, reasoning that each file's own DDL is individually safe to re-apply. That's true per-file but not true of the sequence as a whole — confirmed live: migration 0003 defines a view that 0034 later redefines with a different column set, and Postgres's `CREATE OR REPLACE VIEW` can't drop existing columns, so replaying 0003 after 0034 has run fails outright. Impact: rebuilt using a `_schema_migrations` tracking table so a file is only ever applied once, which is the standard/correct approach and doesn't have this failure mode. Verified both code paths (nothing pending, and exactly-one-thing pending) directly against the live test project before considering this done.
+
 **2026-09-12 — First dedicated test Supabase project created (S02-07)**
 Owner: Founder + Claude Code. Reason: needed to actually verify the seed script and run the e2e suite for real instead of leaving them "looks right, untested." Impact: a real, separate Supabase project (`adorworks-test`) now exists, all 60 migrations applied cleanly to it. Running the seed script against it for real found two genuine bugs (a bad `onConflict` column, and an old `budget_min`/`budget_max` field name that the current schema replaced with `compensation_*`) — both fixed. The existing end-to-end test suite also ran successfully for the first time in this project's history: 11/12 passed, 1 flaky on a heavier test (passed on retry, looks like timing rather than a real bug). Credentials live in `platform/.env.e2e.local`, git-ignored, never committed.
 
