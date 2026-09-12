@@ -1,21 +1,24 @@
 # Stage 3 — Data, backups and observability
 
-Status: **10 of 12 steps complete and verified live.** S03-09 and S03-10
-are both blocked on a founder decision that changed this stage's
-picture significantly — see the correction below and
-`docs/governance/backups-and-restore.md`.
+Status: **10 of 12 steps complete and verified live.** S03-09 is built
+and just needs its one-time secret added; S03-10 is blocked on that.
 
 **Correction (2026-09-12), found while attempting S03-10**: S03-09 was
 originally marked "already implemented" on the belief that Supabase's
 free plan includes automatic daily backups. That's wrong — confirmed
-against Supabase's current docs. **Free-tier projects (both of
+against Supabase's current docs. Free-tier projects (both of
 AdorWorks's Supabase projects, including production) get no automatic
-backup at all**; that requires the Pro plan ($25/month+). This means
-production currently has zero backup protection — a real gap, not the
-"already covered" status this doc previously gave it. S03-09 is
-downgraded to **Missing, founder decision needed**, and S03-10 is
-blocked on whatever S03-09 resolves to (nothing to rehearse restoring
-from until there's a real backup to restore from).
+backup at all; that requires the Pro plan ($25/month+). This meant
+production had zero backup protection — a real gap, not the "already
+covered" status this doc previously gave it.
+
+**Founder decision, same day**: build a free scheduled backup ourselves
+rather than pay for Supabase Pro. Built and pushed:
+`.github/workflows/backup-production-db.yml`, a daily GitHub Actions
+job that runs `pg_dump` against production and uploads the result as a
+verified workflow artifact (30-day retention). Full detail, the one
+remaining setup step (a GitHub secret only the founder should add), and
+restore instructions: `docs/governance/backups-and-restore.md`.
 
 Most of this stage's ground truth was already gathered by an earlier
 internal security review
@@ -37,8 +40,8 @@ closed part, not all, of what it flagged).
 | S03-06 | Application error monitoring | **Missing** | No Sentry/Datadog/Bugsnag/equivalent in `platform/package.json` or `backend/api/package.json`. Backend errors go to stdout only. **Needs a founder decision** — this means signing up for a third-party vendor, even on a free tier. |
 | S03-07 | Uptime monitoring | **Missing** | `backend/api` has a real `/health` endpoint (`render.yaml`'s `healthCheckPath`, used by Render itself for its own restarts) but nothing external polls it and alerts a human. No UptimeRobot/equivalent. **Needs a founder decision** — another vendor signup. |
 | S03-08 | Structured logs with correlation IDs | **Missing** | Only 4 raw `console.*` calls exist in `backend/api/src/*.js` — no structured (JSON) log format, no request/correlation ID threaded through a request's lifecycle. Doable with no new paid dependency. |
-| S03-09 | Automated database backups | **Missing — corrected 2026-09-12, founder decision needed** | Free-tier Supabase projects (what both AdorWorks projects are on) get no automatic backup at all — that's a Pro-plan feature ($25/month+). Production has no backup today. See `docs/governance/backups-and-restore.md` for the three options put to the founder. |
-| S03-10 | Database restore rehearsal | **Blocked on S03-09** | Nothing to rehearse restoring from until there's an actual backup being taken — depends entirely on which option is chosen for S03-09. |
+| S03-09 | Automated database backups | **Built, needs one founder step** | `.github/workflows/backup-production-db.yml` — daily `pg_dump` of production to a verified GitHub Actions artifact (30-day retention). Founder chose this over Supabase Pro ($25/month+). Needs a `PROD_SUPABASE_DB_URL` repo secret added directly in GitHub (never through chat) before it can run. |
+| S03-10 | Database restore rehearsal | **Blocked on S03-09's secret** | Nothing to rehearse restoring from until the backup workflow has actually run once. Full restore steps already documented and ready to follow once a real backup artifact exists. |
 | S03-11 | Incident response/escalation docs | **Missing** | No dedicated doc. Stage 10 §8 already has real content for rollback triggers/procedure (reusable) but nothing on who to actually contact or how a human incident gets escalated — that part needs the founder's real contact chain, which I don't have. |
 | S03-12 | Release rollback rehearsal | **Partial** | Stage 10 §8 documents the procedure in detail (Vercel/Render dashboard one-click rollback as the fast path, `git revert` as the fallback, and the real limits of database-layer rollback — only migrations 0031+ have executable rollback SQL). It's never actually been rehearsed live. Doable safely on the `staging` branch now that it exists (it didn't when Stage 10 was written). |
 
@@ -76,7 +79,7 @@ directly under the standing build authorization:
 
 S03-09/S03-10 turned out not to be a documentation-only item — see the
 correction at the top of this doc and `docs/governance/backups-and-restore.md`
-for the real, cost-bearing decision this actually requires.
+for what actually got built once the founder chose a direction.
 
 ## S03-12 — rollback rehearsal, done and verified live
 
@@ -96,9 +99,10 @@ procedure documented in
 just documented as a plan. The temporary worktree used for this is
 already cleaned up; `staging` is back to its pre-rehearsal state.
 
-**Status**: 10 of 12 addressed. S03-09/S03-10 are blocked on the
-founder's backup-plan decision (`docs/governance/backups-and-restore.md`)
-— everything else is complete and verified.
+**Status**: 10 of 12 complete and verified live. S03-09 is built and
+waiting on one founder step (adding a secret in GitHub, never through
+chat); S03-10 follows right after — see
+`docs/governance/backups-and-restore.md` for both.
 
 ## S03-06 — error monitoring (Sentry), wired and verified live
 

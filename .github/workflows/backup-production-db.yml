@@ -1,0 +1,65 @@
+name: Backup production database
+
+# S03-09 — Supabase's free plan (what both AdorWorks projects are on)
+# includes no automatic backups at all; that's a Pro-plan feature
+# ($25/month+). The founder chose to build a free scheduled backup
+# instead of upgrading — see docs/governance/backups-and-restore.md for
+# the full decision and restore instructions.
+#
+# Needs a repository secret named PROD_SUPABASE_DB_URL — the production
+# project's direct Postgres connection string (Supabase dashboard ->
+# Project Settings -> Database -> Connection string). Add it directly
+# via GitHub's own Settings -> Secrets and variables -> Actions UI;
+# never paste this value into a chat with Claude Code or commit it
+# anywhere — it's a full-access production database credential.
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # 02:00 UTC daily
+  workflow_dispatch: {} # lets you trigger a backup on demand from the Actions tab
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the secret is configured
+        env:
+          SUPABASE_DB_URL: ${{ secrets.PROD_SUPABASE_DB_URL }}
+        run: |
+          # Passed via env, not interpolated directly into this script,
+          # since a real connection string could contain characters
+          # (quotes, $, backticks) that would otherwise be parsed as
+          # shell syntax rather than literal text.
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::PROD_SUPABASE_DB_URL secret is not set — add it under Settings -> Secrets and variables -> Actions before this workflow can back anything up."
+            exit 1
+          fi
+
+      - name: Install postgresql-client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Dump production database
+        env:
+          SUPABASE_DB_URL: ${{ secrets.PROD_SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          FILENAME="adorworks-production-$(date -u +%Y%m%dT%H%M%SZ).dump"
+          echo "FILENAME=$FILENAME" >> "$GITHUB_ENV"
+          pg_dump "$SUPABASE_DB_URL" --format=custom --no-owner --no-acl --file="$FILENAME"
+
+      - name: Verify the dump is a valid, readable archive
+        run: |
+          set -euo pipefail
+          pg_restore --list "$FILENAME" > /dev/null
+          echo "Dump verified as a valid pg_dump archive: $FILENAME"
+          ls -lh "$FILENAME"
+
+      # 30 days of retention here (vs. Supabase Pro's 7) since a small
+      # pilot database's dumps are tiny relative to the free plan's
+      # 500MB artifact-storage quota — cheap to keep more history.
+      - name: Upload backup as a workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.FILENAME }}
+          path: ${{ env.FILENAME }}
+          retention-days: 30
