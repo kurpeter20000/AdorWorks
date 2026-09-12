@@ -4,6 +4,9 @@ Add a new entry for every important decision. Keep entries even if a later decis
 
 ---
 
+**2026-09-12 — Stage 3 founder decisions: retention policy, error monitoring, uptime monitoring (S03-02, S03-06, S03-07)**
+Owner: Founder. Reason: Stage 3's audit flagged three items needing a founder call before proceeding (`docs/governance/stage-03-data-backups-observability.md`). Decided: (1) data retention — keep indefinitely for now, deletion is staff-assisted only, no self-service delete flow yet (`docs/governance/data-retention-policy.md`); (2) error monitoring — proceed with Sentry's free tier; (3) uptime monitoring — proceed with UptimeRobot's free tier. Impact: (1) is fully documented and in effect immediately, no code change needed. (2) and (3) need the founder to actually create the vendor accounts (email signup, no payment) before the wiring/configuration work can happen — flagged as the next founder-side step, not yet done.
+
 **2026-09-12 — Branch protection recreated on `main` with owner bypass (S02-12) — Stage 2 fully complete**
 Owner: Founder. Reason: re-add the protection removed in Stage 1, without disrupting the founder+Claude Code direct-push workflow discussed beforehand. Impact: `main` is protected again; a push without bypass rights would now be blocked. Verified live immediately: the next push after this was recreated returned the same `Bypassed rule violations for refs/heads/main: Cannot update this protected ref.` message seen before the ruleset was deleted, confirming the rule is genuinely active and the bypass genuinely works — nothing about how this project is built day to day changes. All 14 Stage 2 steps are now complete.
 

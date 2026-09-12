@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 
+import { requestLog } from "./requestLog.js";
 import { intakeRouter } from "./routes/intake.js";
 import { talentRouter } from "./routes/talent.js";
 import { organisationsRouter } from "./routes/organisations.js";
@@ -25,6 +26,7 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
   .map((s) => s.trim())
   .filter(Boolean);
 
+app.use(requestLog);
 app.use(helmet());
 app.use(
   cors({
@@ -63,11 +65,11 @@ app.use((req, res) => {
 // thrown errors here instead of leaking a raw stack trace to the client.
 app.use((err, req, res, _next) => {
   if (err?.name === "ZodError") {
-    return res.status(422).json({ error: "Invalid request.", details: err.issues });
+    return res.status(422).json({ error: "Invalid request.", details: err.issues, requestId: req.id });
   }
   const status = err?.status || 500;
-  if (status >= 500) console.error(err);
-  res.status(status).json({ error: err?.message || "Internal server error." });
+  if (status >= 500) console.error(JSON.stringify({ level: "error", requestId: req.id, message: err?.message, stack: err?.stack }));
+  res.status(status).json({ error: err?.message || "Internal server error.", requestId: req.id });
 });
 
 const port = process.env.PORT || 8787;

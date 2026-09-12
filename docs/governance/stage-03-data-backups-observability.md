@@ -1,0 +1,67 @@
+# Stage 3 — Data, backups and observability
+
+Status: **Phase A audit complete.** Phase B (bounded batch) starting on the
+items that need no founder decision; three items are blocked on founder
+choices (see "Needs a founder decision" below).
+
+Most of this stage's ground truth was already gathered by an earlier
+internal security review
+(`docs/stage-10-security-accessibility-performance-and-controlled-release.md`,
+2026-09-11) — its §2, §6 and §8 map almost exactly onto this stage's scope.
+Rather than re-deriving it, this audit reuses that evidence and adds a
+live re-check of what's changed since (the 2026-09-11 audit-logging fixes
+closed part, not all, of what it flagged).
+
+## Phase A audit
+
+| Step ID | What it means | Status | Evidence |
+|---|---|---|---|
+| S03-01 | Publish a schema/ownership map | **Missing** | No `docs/*schema*` file exists. 60 migrations, no single current-state reference. |
+| S03-02 | Data retention/deletion rules (Founder-owned) | **Missing** | Stage 10 §6: "No stated retention policy anywhere in the repo, no scheduled deletion/anonymization job... no account-deletion flow of any kind." Still true — no change since. **Needs a founder decision**, not something I can set unilaterally. |
+| S03-03 | Review indexes | **Partial** | 59 `create index` statements exist across migrations, but never reviewed as a set against actual query/RLS-policy access patterns. |
+| S03-04 | Require review for destructive migrations | **Missing** | No written policy. Branch protection (S02-12) covers `main` generally but says nothing DB-specific; nothing stops a destructive migration file from being merged and applied without a deliberate second look. |
+| S03-05 | Complete audit events for high-risk actions | **Partial** | The 2026-09-11 fix closed dispute resolution, refund issuance, manual finance-record changes, opportunity moderation, and onboarding-agent role grants (16 `logAuditEvent()` call sites now exist in `backend/api/src/routes/`, across 7 files). Just re-checked live: `platform/src/lib/actions/contracts.ts` has **no** `logAuditEvent` call for contract creation, and no verification-decision call site exists anywhere either. Stage 10's defect #5 (contract creation, milestone/payment status changes, dispute raise, verification decisions) is only partly closed. |
+| S03-06 | Application error monitoring | **Missing** | No Sentry/Datadog/Bugsnag/equivalent in `platform/package.json` or `backend/api/package.json`. Backend errors go to stdout only. **Needs a founder decision** — this means signing up for a third-party vendor, even on a free tier. |
+| S03-07 | Uptime monitoring | **Missing** | `backend/api` has a real `/health` endpoint (`render.yaml`'s `healthCheckPath`, used by Render itself for its own restarts) but nothing external polls it and alerts a human. No UptimeRobot/equivalent. **Needs a founder decision** — another vendor signup. |
+| S03-08 | Structured logs with correlation IDs | **Missing** | Only 4 raw `console.*` calls exist in `backend/api/src/*.js` — no structured (JSON) log format, no request/correlation ID threaded through a request's lifecycle. Doable with no new paid dependency. |
+| S03-09 | Automated database backups | **Already implemented (platform-provided)** | Supabase provides automatic daily backups with 7-day retention on all plans, including free — this isn't something AdorWorks configures, it's inherent to the hosting. Point-in-time recovery (finer-grained than daily) is a paid-plan feature, not enabled today. Worth documenting explicitly rather than leaving as tribal knowledge. |
+| S03-10 | Database restore rehearsal | **Missing** | Never actually tested. Doable safely against the existing test Supabase project (no cost, no production risk) — but triggering a restore happens in Supabase's own web dashboard, which needs the founder's login, not something I can drive from here alone. |
+| S03-11 | Incident response/escalation docs | **Missing** | No dedicated doc. Stage 10 §8 already has real content for rollback triggers/procedure (reusable) but nothing on who to actually contact or how a human incident gets escalated — that part needs the founder's real contact chain, which I don't have. |
+| S03-12 | Release rollback rehearsal | **Partial** | Stage 10 §8 documents the procedure in detail (Vercel/Render dashboard one-click rollback as the fast path, `git revert` as the fallback, and the real limits of database-layer rollback — only migrations 0031+ have executable rollback SQL). It's never actually been rehearsed live. Doable safely on the `staging` branch now that it exists (it didn't when Stage 10 was written). |
+
+## Needs a founder decision
+
+Three items can't proceed without you, consistent with the standing rule
+that anything with a cost or an external-vendor signup gets flagged first:
+
+- **S03-02** — a real retention/deletion policy: how long talent/employer
+  data is kept, and whether account deletion is self-service or
+  staff-assisted only. This is a policy call, not an engineering one.
+- **S03-06** — application error monitoring needs a vendor (Sentry is the
+  standard free-tier-friendly choice, but it's still a third-party signup
+  that will receive application error data).
+- **S03-07** — uptime monitoring needs a vendor (UptimeRobot is the usual
+  free choice) polling the public health endpoints and alerting someone
+  when they go down.
+
+## Phase B — bounded batch starting now (no founder decision needed)
+
+Everything else in the table above is either pure documentation or code
+following an already-established, already-approved pattern (the same
+audit-logging approach used on 2026-09-11), so I'm proceeding with these
+directly under the standing build authorization:
+
+- S03-01 — schema/ownership map
+- S03-03 — index review
+- S03-04 — destructive-migration review policy
+- S03-05 — close the remaining audit-event gaps (contract creation,
+  milestone/payment status changes, verification decisions)
+- S03-08 — structured logs with correlation IDs
+- S03-09 — document Supabase's built-in backup behavior
+- S03-11 — draft the incident-response doc (contact chain left as a
+  placeholder for you to fill in)
+- S03-12 — rehearse a real rollback on the `staging` branch
+
+S03-10 (restore rehearsal) needs your hands in the Supabase dashboard —
+I'll prepare the exact steps and ask you to run through them once the
+rest of this batch is done.

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff } from "../middleware/auth.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
+import { logAuditEvent } from "../audit.js";
 
 export const talentRouter = Router();
 talentRouter.use(requireAuth, requireStaff);
@@ -170,6 +171,18 @@ talentRouter.post(
       .select()
       .single();
     if (eventError) throw new HttpError(500, eventError.message);
+
+    await logAuditEvent(supabaseAdmin, {
+      name: "trust.verification.decided",
+      actorId: req.user.id,
+      subjectId: req.params.id,
+      entityType: "talent_profiles",
+      entityId: req.params.id,
+      reason: notes || null,
+      before: { verification_tier: current.verification_tier },
+      after: { verification_tier: new_tier },
+      metadata: { verificationEventId: event.id },
+    });
 
     res.json({ data: event });
   })

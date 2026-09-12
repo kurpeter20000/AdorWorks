@@ -8,6 +8,8 @@ import { calculateFee } from "@/lib/domain/fees";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import { isFeatureEnabled, FEATURE_FLAGS } from "@/lib/domain/featureFlags";
 import { sendEmailSafely, getUserEmail } from "@/lib/email";
+import { logAuditEvent } from "@/lib/domain/audit";
+import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import type { FormState } from "./auth";
 
 /** Looks up the talent and the org representative for a contract — the two people every contract-scoped notification/message goes between. */
@@ -155,6 +157,17 @@ export async function approveDeliverable(deliverableId: string): Promise<{ error
 
   await admin.from("deliverables").update({ status: "approved" }).eq("id", deliverableId);
   await admin.from("milestones").update({ status: "approved" }).eq("id", deliverable.milestone_id);
+
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.MILESTONE_STATUS_CHANGED,
+    actorId: session.userId,
+    entityType: "milestones",
+    entityId: deliverable.milestone_id,
+    source: "platform",
+    before: { status: "submitted" },
+    after: { status: "approved" },
+    metadata: { contractId: check.contract!.id, deliverableId },
+  });
 
   // An approved milestone is money now owed — raise the invoice for it.
   // "Invoice" here means the same thing finance_records has always meant
@@ -418,6 +431,26 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     console.error(`payMilestone: payment succeeded for milestone ${milestoneId} but marking it 'paid' failed:`, milestoneError.message);
   }
 
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.PAYMENT_STATUS_CHANGED,
+    actorId: session.userId,
+    entityType: "payment_events",
+    entityId: intention.id,
+    source: "platform",
+    after: { status: "succeeded", receiptNumber, amount: milestone.amount, currency: milestone.currency, isSimulated },
+    metadata: { contractId: check.contract!.id, milestoneId, provider: v.provider },
+  });
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.MILESTONE_STATUS_CHANGED,
+    actorId: session.userId,
+    entityType: "milestones",
+    entityId: milestoneId,
+    source: "platform",
+    before: { status: "approved" },
+    after: { status: "paid" },
+    metadata: { contractId: check.contract!.id, receiptNumber },
+  });
+
   const paidNoticeBody = `${milestone.currency} ${fee.netAmount.toLocaleString()} net (${milestone.currency} ${milestone.amount.toLocaleString()} gross${fee.feeAmount > 0 ? `, ${milestone.currency} ${fee.feeAmount.toLocaleString()} platform fee` : ""}). Receipt ${receiptNumber}.`;
   await notifyUser(admin, {
     userId: check.contract!.talent_id,
@@ -603,6 +636,17 @@ export async function raiseDispute(contractId: string, _prevState: FormState, fo
   await admin.from("contracts").update({ status: "disputed" }).eq("id", contractId);
   await postSystemMessage(admin, contractId, session.userId, "A dispute was raised on this contract — AdorWorks staff will review it.");
 
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.DISPUTE_RAISED,
+    actorId: session.userId,
+    entityType: "contracts",
+    entityId: contractId,
+    source: "platform",
+    reason: validated.data.description,
+    before: { status: contract.status },
+    after: { status: "disputed" },
+  });
+
   const otherPartyId = session.userId === contract.talent_id ? org?.representative_id : contract.talent_id;
   if (otherPartyId) {
     await notifyUser(admin, {
@@ -666,6 +710,17 @@ export async function cancelContract(contractId: string, _prevState: FormState, 
   if (error) return { message: error.message };
 
   await postSystemMessage(admin, contractId, session.userId, `This contract was cancelled: ${validated.data.reason}`);
+
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.CONTRACT_STATUS_CHANGED,
+    actorId: session.userId,
+    entityType: "contracts",
+    entityId: contractId,
+    source: "platform",
+    reason: validated.data.reason,
+    before: { status: contract.status },
+    after: { status: "cancelled" },
+  });
 
   return {};
 }

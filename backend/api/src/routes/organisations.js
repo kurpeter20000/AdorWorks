@@ -196,6 +196,13 @@ organisationsRouter.patch(
   "/:id/verify",
   asyncRoute(async (req, res) => {
     const body = verifySchema.parse(req.body);
+
+    const { data: before } = await supabaseAdmin
+      .from("organisations")
+      .select("verification_status")
+      .eq("id", req.params.id)
+      .maybeSingle();
+
     const { data, error } = await supabaseAdmin
       .from("organisations")
       .update(body)
@@ -203,6 +210,19 @@ organisationsRouter.patch(
       .select()
       .single();
     if (error) throw new HttpError(400, error.message);
+
+    await logAuditEvent(supabaseAdmin, {
+      name: "trust.verification.decided",
+      actorId: req.user.id,
+      subjectId: null,
+      entityType: "organisations",
+      entityId: req.params.id,
+      reason: body.risk_notes ?? null,
+      before: before ? { verification_status: before.verification_status } : null,
+      after: { verification_status: body.verification_status },
+      metadata: {},
+    });
+
     res.json({ data });
   })
 );
