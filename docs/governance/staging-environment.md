@@ -1,5 +1,11 @@
 # Staging environment (S02-01, S02-05, S02-08, S02-13)
 
+Status: **Live and verified**, 2026-09-12.
+
+- **Platform app**: `https://ador-works-git-staging-kurpeter20000s-projects.vercel.app` — auto-deploys from the dedicated `staging` branch (push to it whenever you want to update what's there).
+- **Backend API**: `https://adorworks-api-staging.onrender.com` — a real second free Render service (`adorworks-api-staging`).
+- Both verified with real end-to-end checks, not just "deployed successfully" — see `docs/governance/stage-02-environments-ci-and-test-data.md`'s batch 3 for exactly what was tested.
+
 ## What "staging" means for this project
 
 Given the founder's decision (2026-09-12, see the decision log), staging **reuses the dedicated test Supabase project** rather than a third project — the free plan only allows 2 active projects, and this project already has production + the test project.
@@ -30,22 +36,14 @@ Safe to run repeatedly — it reuses existing seed records rather than duplicati
 
 **Full wipe and rebuild (only if staging data has gotten into a genuinely weird state)**: delete all rows from every table via the Supabase dashboard's Table Editor (or ask me to script it), then re-run the seed command above. There's deliberately no one-command "nuke everything" script yet — building one safely enough that it can never be pointed at the wrong project by mistake is worth its own dedicated review, not a quick addition here.
 
-## The platform app + backend/api pointed at staging (S02-01, S02-05)
+## The platform app + backend/api pointed at staging (S02-01, S02-05) — done
 
-This part needs your Vercel and Render dashboard access — I can't do it myself. Concretely:
+**Vercel**: production's `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SECRET_KEY` had been saved as "Secret" type since before this project (Aug 24) — turned out that locks the environment scope too, not just the type, so narrowing them to Production-only required deleting and recreating each (production's real values were recovered from the Supabase dashboard first, never from Vercel — a saved Secret can never be read back). Separate Preview-scoped entries were then added pointing at the test project, and a dedicated `staging` branch created so the preview URL is stable rather than changing per branch.
 
-**Vercel (the platform app)**:
-1. Vercel dashboard → this project → **Settings → Environment Variables**.
-2. Add the test project's `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SECRET_KEY` — but scope them to the **Preview** environment only (Vercel lets you pick Production / Preview / Development per variable), not Production.
-3. Vercel already auto-deploys a **Preview** URL for every branch/PR pushed to this repo, separate from your production deployment — once the above env vars are set, any preview deployment automatically becomes a working staging environment for the platform app, with no separate service to manage.
+**Render**: a second free web service, `adorworks-api-staging`, root directory `backend/api`, `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` pointed at the test project, `ALLOWED_ORIGINS` set to the staging Vercel URL above.
 
-**Render (backend/api)**:
-Render's free tier doesn't give branch-based preview deployments the way Vercel does, so this needs an actual second service:
-1. Render dashboard → **New → Web Service**, same repo, root directory `backend/api`.
-2. Environment variables: same as production's `backend/api` service, but `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` pointed at the test project instead.
-3. Give it a clearly different name (e.g. `adorworks-api-staging`) so it's never confused with production in the Render dashboard.
+**How this was verified** (not just "it deployed"): pushed to the `staging` branch, waited for the Vercel preview build, logged in with a seeded test account and saw the exact seeded talent/opportunity data. Separately, created a temporary staff account directly in the test database, signed in for a real token, and called the live Render staging URL's `GET /api/organisations` — got back `["Nile Youth Foundation"]`, the exact seeded organisation. Temporary account deleted immediately after.
 
 ## Still open
 
-- **S02-12** (required checks in branch protection) — depends on you re-adding a branch protection ruleset on `main` (you removed the only one that existed, back in Stage 1) and configuring it to require CI passing before merge. Your call whether/when.
-- The Vercel/Render staging setup above — tell me once it's done and I'll verify it actually works end to end, the same way I verified the seed script and migrations.
+- **S02-12** (required checks in branch protection) — depends on you re-adding a branch protection ruleset on `main` (you removed the only one that existed, back in Stage 1) and configuring it to require CI passing before merge. Your call whether/when. Nothing else in this stage is blocked on it.

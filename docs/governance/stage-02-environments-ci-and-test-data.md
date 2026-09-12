@@ -1,6 +1,6 @@
 # Stage 2 — Environments, CI and test data
 
-Status: **In progress.** First three batches complete. Two items remain, both needing the founder's Vercel/Render/GitHub dashboard access.
+Status: **All 14 steps addressed.** 13 complete and verified live. 1 open (S02-12), a founder decision, not blocked on any work.
 
 ## Completion report — batch 1
 
@@ -31,9 +31,8 @@ Founder decision (2026-09-12): staging reuses the test Supabase project rather t
 | S02-13 | Complete | `docs/governance/staging-environment.md` — how to apply new migrations to staging, how to reset its data (re-seed, or full wipe), and the Vercel/Render steps for the deploy side | N/A (documentation) | No |
 | S02-01 (Vercel half) | **Complete, verified live** | Vercel env vars needed real back-and-forth to get right — the production `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY`/`SUPABASE_SECRET_KEY` had been saved as Secret type since Aug 24 (before this project), which turned out to block editing their environment scope at all, not just their type. Fixed by deleting and recreating each as Config (the two `NEXT_PUBLIC_` ones) scoped to Production only, then adding separate Preview-scoped entries pointed at the test project. Production's real values were recovered from the Supabase dashboard first (not from Vercel, since a Secret-type variable can never be read back once saved) — nothing about production was ever at risk of being lost. | Pushed a disposable branch to trigger a real Vercel preview deployment, then logged into it with a seeded test account (`seed.talent1@example.com`). It showed "Amara Deng," "AdorVerified," and the exact seeded opportunity ("Design a new brand identity...", SSP 800) — proof the preview deployment is genuinely reading the test database, not production. Branch deleted afterward. | No |
 | S02-05 (Vercel half) | Complete, verified live | Same evidence as above — a real Vercel Preview deployment now points at the test/staging database | Same as above | No |
-| S02-01 / S02-05 (Render half) | Not yet done | `docs/governance/staging-environment.md`'s Render section — needs a genuine second free service (Render's free tier has no per-branch preview equivalent) | Can't test until it's created | **Yes — needs your Render access, I can't do this part myself** |
+| S02-01 / S02-05 (Render half) | **Complete, verified live** | New free Render service `adorworks-api-staging`, root directory `backend/api`, pointed at the test project. Also introduced a dedicated, persistent `staging` git branch so the Vercel preview URL for staging is stable/permanent (`https://ador-works-git-staging-kurpeter20000s-projects.vercel.app`) instead of a different URL per ad-hoc branch — that URL is what `ALLOWED_ORIGINS` on the Render staging service points at. | `/health` returned `{"ok":true}`. Then a real end-to-end check: created a temporary staff test account directly in the test database, signed in for a real auth token, called `GET /api/organisations` on the live staging URL with it, and got back `["Nile Youth Foundation"]` — the exact seeded organisation. Proves the deployed staging API is genuinely querying the test database through real authentication, not just that the server process started. Temporary account deleted immediately after. | No |
 
 ## Still open
 
-- **S02-12** (required CI checks in branch protection) — you removed the only ruleset that existed (Stage 1). Your call whether/when to re-add one with required checks.
-- **Render's half of S02-01/S02-05** — the backend/api staging service, per `docs/governance/staging-environment.md`.
+- **S02-12** (required CI checks in branch protection) — you removed the only ruleset that existed (Stage 1). Your call whether/when to re-add one with required checks. Nothing else in this stage depends on it.
