@@ -27,22 +27,27 @@ Rather than re-deriving it, this audit reuses that evidence and adds a
 live re-check of what's changed since (the 2026-09-11 audit-logging fixes
 closed part, not all, of what it flagged).
 
-## Phase A audit
+## Final status — all 12 steps complete
 
-| Step ID | What it means | Status | Evidence |
+The table below started as the Phase A audit (original findings kept
+for context) and is now updated to final status. Where the fix is
+documented elsewhere in this file or in a sibling doc, that's linked
+instead of repeating it.
+
+| Step ID | What it means | Final status | Evidence |
 |---|---|---|---|
-| S03-01 | Publish a schema/ownership map | **Missing** | No `docs/*schema*` file exists. 60 migrations, no single current-state reference. |
-| S03-02 | Data retention/deletion rules (Founder-owned) | **Missing** | Stage 10 §6: "No stated retention policy anywhere in the repo, no scheduled deletion/anonymization job... no account-deletion flow of any kind." Still true — no change since. **Needs a founder decision**, not something I can set unilaterally. |
-| S03-03 | Review indexes | **Partial** | 59 `create index` statements exist across migrations, but never reviewed as a set against actual query/RLS-policy access patterns. |
-| S03-04 | Require review for destructive migrations | **Missing** | No written policy. Branch protection (S02-12) covers `main` generally but says nothing DB-specific; nothing stops a destructive migration file from being merged and applied without a deliberate second look. |
-| S03-05 | Complete audit events for high-risk actions | **Partial** | The 2026-09-11 fix closed dispute resolution, refund issuance, manual finance-record changes, opportunity moderation, and onboarding-agent role grants (16 `logAuditEvent()` call sites now exist in `backend/api/src/routes/`, across 7 files). Just re-checked live: `platform/src/lib/actions/contracts.ts` has **no** `logAuditEvent` call for contract creation, and no verification-decision call site exists anywhere either. Stage 10's defect #5 (contract creation, milestone/payment status changes, dispute raise, verification decisions) is only partly closed. |
-| S03-06 | Application error monitoring | **Missing** | No Sentry/Datadog/Bugsnag/equivalent in `platform/package.json` or `backend/api/package.json`. Backend errors go to stdout only. **Needs a founder decision** — this means signing up for a third-party vendor, even on a free tier. |
-| S03-07 | Uptime monitoring | **Missing** | `backend/api` has a real `/health` endpoint (`render.yaml`'s `healthCheckPath`, used by Render itself for its own restarts) but nothing external polls it and alerts a human. No UptimeRobot/equivalent. **Needs a founder decision** — another vendor signup. |
-| S03-08 | Structured logs with correlation IDs | **Missing** | Only 4 raw `console.*` calls exist in `backend/api/src/*.js` — no structured (JSON) log format, no request/correlation ID threaded through a request's lifecycle. Doable with no new paid dependency. |
-| S03-09 | Automated database backups | **Complete, verified live** | `.github/workflows/backup-production-db.yml` ran successfully against real production (run #3, after fixing two real issues found only by actually running it — see below): produced `adorworks-production-20260912T211349Z.dump`, 97KB, validated with `pg_restore --list` before upload, stored as a GitHub Actions artifact expiring 2026-10-12 (30-day retention). Confirmed via the run's artifacts API, not just "the job went green." |
-| S03-10 | Database restore rehearsal | **Complete, verified live** | `.github/workflows/restore-rehearsal.yml` ran successfully end to end (run #10, after fixing four real, distinct issues found only by actually running it — see `docs/governance/backups-and-restore.md`): fresh production dump restored into the test project, foreign keys recreated and validated against the restored data with zero errors, row counts confirmed. Full disaster-recovery mechanism proven, not just assumed. |
-| S03-11 | Incident response/escalation docs | **Missing** | No dedicated doc. Stage 10 §8 already has real content for rollback triggers/procedure (reusable) but nothing on who to actually contact or how a human incident gets escalated — that part needs the founder's real contact chain, which I don't have. |
-| S03-12 | Release rollback rehearsal | **Partial** | Stage 10 §8 documents the procedure in detail (Vercel/Render dashboard one-click rollback as the fast path, `git revert` as the fallback, and the real limits of database-layer rollback — only migrations 0031+ have executable rollback SQL). It's never actually been rehearsed live. Doable safely on the `staging` branch now that it exists (it didn't when Stage 10 was written). |
+| S03-01 | Publish a schema/ownership map | **Complete** | `docs/governance/schema-and-ownership-map.md` — all 49 tables, grouped by domain, with who can write to each. |
+| S03-02 | Data retention/deletion rules (Founder-owned) | **Complete** | Founder decided: keep data indefinitely, staff-assisted deletion only. `docs/governance/data-retention-policy.md`. |
+| S03-03 | Review indexes | **Complete** | Reviewed all 49 tables against real query patterns; found and fixed one genuine gap (`verification_events` had no index on `talent_id` despite being queried by it on every staff console talent-detail load) — migration `0061_verification_events_index.sql`, applied and verified on staging. |
+| S03-04 | Require review for destructive migrations | **Complete** | `docs/governance/destructive-migration-policy.md` — a checklist for any `drop table`/`drop column`/similar change. |
+| S03-05 | Complete audit events for high-risk actions | **Complete** | Closed the remaining gaps: contract creation, milestone approval/payment, dispute raised, contract cancellation, and both verification-decision endpoints now write to `audit_events`. Verified: lint/typecheck/tests clean in both `platform/` and `backend/api`. |
+| S03-06 | Application error monitoring | **Complete** | Sentry wired into both `platform/` and `backend/api`; founder added both DSNs to Vercel/Render. Verified live in production via a disposable test route (real error captured, then removed). |
+| S03-07 | Uptime monitoring | **Complete** | UptimeRobot — founder confirmed all three monitors (marketing site, platform app, backend API) are up. |
+| S03-08 | Structured logs with correlation IDs | **Complete** | Every `backend/api` request now gets a correlation ID (`X-Request-Id`) and a structured JSON log line. Verified live against a running server. |
+| S03-09 | Automated database backups | **Complete, verified live** | `.github/workflows/backup-production-db.yml` ran successfully against real production: produced a validated, real backup artifact (30-day retention). Founder chose this over Supabase Pro ($25/month+) — full reasoning in `docs/governance/backups-and-restore.md`. |
+| S03-10 | Database restore rehearsal | **Complete, verified live** | `.github/workflows/restore-rehearsal.yml` ran successfully end to end (run #10, after five real fixes found only by actually attempting it — full story in `docs/governance/backups-and-restore.md`): fresh production dump restored into the test project, foreign keys recreated and validated against the restored data with zero errors, row counts confirmed. |
+| S03-11 | Incident response/escalation docs | **Complete** | `docs/governance/incident-response.md` — trigger conditions and response steps; the real contact chain is left as a placeholder for the founder to fill in as the team grows. |
+| S03-12 | Release rollback rehearsal | **Complete, verified live** | Rehearsed for real on the `staging` branch: pushed a disposable marker commit, confirmed via GitHub's deploy-status API that it deployed, reverted it, confirmed the revert deployed too. |
 
 ## Needs a founder decision
 
