@@ -3,31 +3,38 @@
 # Netlify -> Cloudflare Pages migration; once Netlify is fully retired,
 # netlify.toml can go and this becomes the only copy.
 #
-# Confirmed live (not just from docs, which turned out to be misleading on
-# this) that a Cloudflare Pages redirect does NOT reliably override a
-# request whose path matches a real uploaded file — /render.yaml kept
-# serving the real file instead of hitting its /404.html redirect below,
-# same for /backend/*, /platform/*, /docs/*, /.github/*. Netlify's own
-# default has the same limitation (a non-forced redirect is skipped when a
-# real file matches, which is why netlify.toml needed force = true), so
-# this isn't actually a regression versus Netlify's *documented* default —
-# it just means the rules below were never a complete fix on their own.
+# CORRECTION (confirmed from the actual Cloudflare Pages build log, not
+# docs or guesswork): every /backend/*, /platform/*, /docs/*, /.github/*,
+# /.git/*, /render.yaml and catch-all rule below was silently REJECTED at
+# deploy time — "Valid status codes are 200, 301, 302 (default), 303,
+# 307, or 308. Got 404." Cloudflare's _redirects has no true "return 404"
+# status; only 200 (rewrite: serve the target's content, keep the
+# original URL and status) or a real 3xx redirect. An earlier version of
+# this comment blamed "redirects don't override a real file" instead —
+# that was the wrong diagnosis, reached before the build log was checked.
 #
-# The real fix is build-cf-pages.mjs: it copies only the files this site
-# needs to serve into _site/ (the actual deploy output), so backend/,
-# platform/, docs/, .github/, render.yaml etc. are never uploaded as
-# deployable assets in the first place — nothing here for a redirect to
-# lose a race against. The rules below stay as defense in depth (in case
-# a stray file with one of these names ever ends up in the real output)
-# rather than as the primary protection.
+# None of this ever mattered for actual protection, confirmed by testing
+# a fresh per-deployment *.adorworks.pages.dev URL directly (bypassing
+# any cache): /backend/*, /platform/*, /docs/*, /.github/*, /render.yaml
+# all correctly 404 with zero working rules here, because build-cf-
+# pages.mjs never uploads them as deployable assets in the first place —
+# these rules are pure defense in depth (a stray file with one of these
+# names ending up in the real output), not the actual protection.
+#
+# Fixed to use 200 (rewrite to /404.html's content, valid per the log
+# above) so this now actually parses and does something, however minor.
+#
+# No catch-all rule: it had the same invalid-404 problem, and unlike the
+# rules above it isn't even needed — Cloudflare Pages serves 404.html
+# with a genuine 404 status for any unmatched path by default, which is
+# what the old catch-all was trying to force explicitly. Confirmed live:
+# a nonexistent path 404s correctly with no rule for it at all.
 
 /find-talent.html  /for-employers.html#categories  301
 
-/backend/*   /404.html  404
-/platform/*  /404.html  404
-/docs/*      /404.html  404
-/.github/*   /404.html  404
-/.git/*      /404.html  404
-/render.yaml /404.html  404
-
-/*  /404.html  404
+/backend/*   /404.html  200
+/platform/*  /404.html  200
+/docs/*      /404.html  200
+/.github/*   /404.html  200
+/.git/*      /404.html  200
+/render.yaml /404.html  200
