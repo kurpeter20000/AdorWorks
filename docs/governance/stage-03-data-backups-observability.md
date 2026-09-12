@@ -65,3 +65,25 @@ directly under the standing build authorization:
 S03-10 (restore rehearsal) needs your hands in the Supabase dashboard —
 I'll prepare the exact steps and ask you to run through them once the
 rest of this batch is done.
+
+## S03-12 — rollback rehearsal, done and verified live
+
+Pushed a disposable, clearly-labeled marker commit (`8c91b3d`, a single
+harmless `data-` attribute on the root layout) to the `staging` branch,
+confirmed via GitHub's commit-status API that Vercel actually deployed it
+(`"state": "success"`, `"Deployment has completed"`) — couldn't verify by
+directly viewing the rendered page, since the staging URL has Vercel
+Deployment Protection (SSO) enabled and returns a 302 to Vercel's login
+for an unauthenticated request; the commit-status check is real proof
+the deploy happened, just not a visual one. Then ran the actual rollback:
+`git revert` (`fe605c5`) + push, and confirmed via the same API that the
+revert also deployed successfully. This is the exact git-layer rollback
+procedure documented in
+`docs/stage-10-security-accessibility-performance-and-controlled-release.md`
+§8 — now proven to actually work end-to-end on a real deployment, not
+just documented as a plan. The temporary worktree used for this is
+already cleaned up; `staging` is back to its pre-rehearsal state.
+
+**Status**: all 12 Stage 3 steps addressed. S03-10 (restore rehearsal)
+is the one remaining item needing the founder's hands (Supabase dashboard
+login) — everything else is complete and verified.
