@@ -7,13 +7,17 @@ name: Restore rehearsal (test project only)
 # reusing an old artifact, and needs no run-id lookups from whoever
 # triggers it.
 #
-# IMPORTANT: running this OVERWRITES the test project's current data
-# with a full copy of production's real data (pg_restore --clean drops
-# and recreates everything first). That's intentional — it's what
-# actually proves a restore works — but re-seed the test project
-# afterward (cd backend/api && SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=...
+# IMPORTANT: running this OVERWRITES the test project's public-schema
+# data (its own application tables — talent profiles, organisations,
+# contracts, etc.) with a copy of production's real data for those same
+# tables (pg_restore --clean drops and recreates them first). Scoped to
+# --schema=public only, so this never touches the test project's own
+# Supabase-managed auth/storage/etc. — see the dump step's comment.
+# That's intentional — it's what actually proves a restore works — but
+# re-seed the test project afterward (cd backend/api &&
+# SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=...
 # SEED_CONFIRM=yes-seed-this-database npm run seed) so it doesn't sit
-# holding a copy of production data indefinitely.
+# holding a copy of production's application data indefinitely.
 #
 # Needs a second repository secret beyond the backup workflow's:
 # TEST_SUPABASE_DB_URL — the TEST project's Session pooler connection
@@ -49,7 +53,14 @@ jobs:
           SUPABASE_DB_URL: ${{ secrets.PROD_SUPABASE_DB_URL }}
         run: |
           set -euo pipefail
-          pg_dump "$SUPABASE_DB_URL" --format=custom --no-owner --no-acl --file=rehearsal.dump
+          # --schema=public only — see backup-production-db.yml's comment
+          # for why: dumping Supabase's own internal schemas (auth,
+          # storage, realtime, extensions, etc.) causes hundreds of
+          # restore-time conflicts against a different project's own
+          # copies of those same platform-managed schemas. Confirmed
+          # live: the first rehearsal attempt hit exactly this (575
+          # errors) before this fix.
+          pg_dump "$SUPABASE_DB_URL" --format=custom --no-owner --no-acl --schema=public --file=rehearsal.dump
 
       - name: Verify the fresh dump is valid
         run: |
