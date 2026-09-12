@@ -4,6 +4,9 @@ Add a new entry for every important decision. Keep entries even if a later decis
 
 ---
 
+**2026-09-12 — Branch protection recreated on `main` with owner bypass (S02-12) — Stage 2 fully complete**
+Owner: Founder. Reason: re-add the protection removed in Stage 1, without disrupting the founder+Claude Code direct-push workflow discussed beforehand. Impact: `main` is protected again; a push without bypass rights would now be blocked. Verified live immediately: the next push after this was recreated returned the same `Bypassed rule violations for refs/heads/main: Cannot update this protected ref.` message seen before the ruleset was deleted, confirming the rule is genuinely active and the bypass genuinely works — nothing about how this project is built day to day changes. All 14 Stage 2 steps are now complete.
+
 **2026-09-12 — Staging environment fully live: Stage 2 done except S02-12**
 Owner: Founder + Claude Code. Reason: completed the Render half of staging (Vercel's half landed earlier the same day). Impact: a dedicated `staging` git branch now exists so the platform app's staging URL is permanent (`https://ador-works-git-staging-kurpeter20000s-projects.vercel.app`) rather than changing per branch; a second free Render service (`adorworks-api-staging`, `https://adorworks-api-staging.onrender.com`) runs backend/api against the test database. Verified live, not just deployed: created a temporary staff account directly in the test database, signed in for a real token, and called the staging API's `GET /api/organisations` — got back the exact seeded organisation ("Nile Youth Foundation"), proving genuine database connectivity through real authentication. Temporary account deleted immediately after. All 14 Stage 2 steps are now addressed; only S02-12 (branch protection) remains, and it's a founder decision, not blocked on any further work.
 
