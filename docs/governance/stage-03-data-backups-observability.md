@@ -1,7 +1,6 @@
 # Stage 3 — Data, backups and observability
 
-Status: **11 of 12 steps complete and verified live.** Only S03-10
-(restore rehearsal) remains.
+Status: **12 of 12 steps complete and verified live. Stage 3 is done.**
 
 **Correction (2026-09-12), found while attempting S03-10**: S03-09 was
 originally marked "already implemented" on the belief that Supabase's
@@ -41,7 +40,7 @@ closed part, not all, of what it flagged).
 | S03-07 | Uptime monitoring | **Missing** | `backend/api` has a real `/health` endpoint (`render.yaml`'s `healthCheckPath`, used by Render itself for its own restarts) but nothing external polls it and alerts a human. No UptimeRobot/equivalent. **Needs a founder decision** — another vendor signup. |
 | S03-08 | Structured logs with correlation IDs | **Missing** | Only 4 raw `console.*` calls exist in `backend/api/src/*.js` — no structured (JSON) log format, no request/correlation ID threaded through a request's lifecycle. Doable with no new paid dependency. |
 | S03-09 | Automated database backups | **Complete, verified live** | `.github/workflows/backup-production-db.yml` ran successfully against real production (run #3, after fixing two real issues found only by actually running it — see below): produced `adorworks-production-20260912T211349Z.dump`, 97KB, validated with `pg_restore --list` before upload, stored as a GitHub Actions artifact expiring 2026-10-12 (30-day retention). Confirmed via the run's artifacts API, not just "the job went green." |
-| S03-10 | Database restore rehearsal | **Not yet performed** | A real backup now exists to restore from. Next step: download the artifact and restore it into the test project per `docs/governance/backups-and-restore.md`'s instructions. |
+| S03-10 | Database restore rehearsal | **Complete, verified live** | `.github/workflows/restore-rehearsal.yml` ran successfully end to end (run #10, after fixing four real, distinct issues found only by actually running it — see `docs/governance/backups-and-restore.md`): fresh production dump restored into the test project, foreign keys recreated and validated against the restored data with zero errors, row counts confirmed. Full disaster-recovery mechanism proven, not just assumed. |
 | S03-11 | Incident response/escalation docs | **Missing** | No dedicated doc. Stage 10 §8 already has real content for rollback triggers/procedure (reusable) but nothing on who to actually contact or how a human incident gets escalated — that part needs the founder's real contact chain, which I don't have. |
 | S03-12 | Release rollback rehearsal | **Partial** | Stage 10 §8 documents the procedure in detail (Vercel/Render dashboard one-click rollback as the fast path, `git revert` as the fallback, and the real limits of database-layer rollback — only migrations 0031+ have executable rollback SQL). It's never actually been rehearsed live. Doable safely on the `staging` branch now that it exists (it didn't when Stage 10 was written). |
 

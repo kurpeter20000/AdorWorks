@@ -67,40 +67,84 @@ on how much real data exists. The workflow already runs `pg_restore
 --list` on it before uploading, so if the run shows green, the dump is
 confirmed to be a valid, readable archive — not just a file that exists.
 
-## Restoring from a backup (rehearse this against the test project, never production)
+## Restoring from a backup — S03-10, done and verified live
 
-1. Download the artifact from the Actions run (a `.zip` containing the
-   `.dump` file) and unzip it.
-2. Get the **target** database's connection string — for a rehearsal,
-   the test project's (never production's, unless this is a real
-   disaster recovery).
-3. Restore:
-   ```
-   pg_restore --clean --if-exists --no-owner --no-acl --dbname="<target connection string>" adorworks-production-<timestamp>.dump
-   ```
-   `--no-owner --no-acl` matters here since the dump's original
-   ownership/grants belong to the production project specifically and
-   won't resolve correctly against a different project. `--clean
-   --if-exists` drops existing objects first so the restore doesn't
-   fail on "already exists" conflicts.
-4. Verify: check row counts on a few key tables, and ideally run the
-   e2e suite (`platform/e2e/`) against the restored database to confirm
-   it's not just present but actually working.
+`.github/workflows/restore-rehearsal.yml` (manually triggered only, via
+the Actions tab) does the whole thing automatically: takes a fresh
+production dump and restores it into the **test project**, verified
+successful end to end on 2026-09-13 (run #10) — foreign keys recreated
+and validated against the restored data with zero errors, real row
+counts confirmed. Nothing manual needed for a rehearsal; just run that
+workflow.
 
-**S03-10 status**: rehearsal not yet performed — needs the founder to
-add the `PROD_SUPABASE_DB_URL` secret first (nothing to restore from
-until a backup has actually run), then either wait for the first
-scheduled run or trigger one manually, then walk through the restore
-steps above against the test project.
+**Getting here took five real, live-only-discoverable fixes** (each one
+found by actually attempting the restore, not by reasoning about it in
+advance — worth recording, since the naive approach anyone would
+reach for first doesn't work against Supabase specifically):
+
+1. A full pg_dump also captures Supabase's own platform-managed schemas
+   (`auth`, `storage`, `extensions`, `realtime`, etc.), which already
+   exist — differently — in any other Supabase project. Restoring them
+   collides badly (575 errors). **Fix**: `pg_dump --schema=public` only.
+2. Even scoped to `public`, pg_dump still captures database-wide event
+   triggers; one (`extensions.pgrst_drop_watch`, PostgREST's own
+   schema-cache-invalidation trigger) is owned by a superuser in
+   production, and the restoring role is never a superuser in any
+   Supabase project (687 errors). **Fix**: since AdorWorks's schema is
+   already fully reproducible from `backend/supabase/migrations/`
+   (applied identically to every environment), a backup only ever needs
+   to carry **data**, never schema — `pg_dump --data-only`.
+3. `pg_restore --disable-triggers` needs superuser to disable Postgres's
+   own internal foreign-key-check triggers, which Supabase's connection
+   role deliberately isn't (115 errors, `RI_ConstraintTrigger_... is a
+   system trigger`). **Fix**: capture every `public`-schema foreign key's
+   definition, drop them all first (normal owner-level DDL, no special
+   privilege needed), restore data in any order, then recreate every
+   constraint — which validates the data at that point, once everything
+   is present.
+4. This schema's own business-rule guard triggers (e.g.
+   `guard_talent_profiles_insert`, which blocks a non-staff session from
+   setting a verification tier directly) fired during the restore and
+   rejected already-valid, already-committed production rows (4 errors)
+   — they exist to protect the live app from invalid writes, not to
+   re-validate a restore. **Fix**: `ALTER TABLE ... DISABLE/ENABLE
+   TRIGGER USER` around the data load — this only touches regular
+   user-defined triggers, never the protected system ones, so (like the
+   FK fix above) it needs no special privilege either.
+5. A data-only restore doesn't remove existing rows on its own, so every
+   `public` table is explicitly truncated first — otherwise a second run
+   would collide with the first run's data on primary keys.
+
+**Known, accepted limitation**: none of this backs up `auth.users`
+(Supabase Auth's own account records — emails, password hashes).
+Restoring that across projects is meaningfully riskier still (tied to
+each project's own Auth service internals), and free-tier Supabase has
+no backup of that layer regardless. A real disaster recovery would
+still recover every application record (profiles, contracts, payments,
+etc.), just not existing accounts' ability to log back in with
+unchanged credentials. Worth revisiting deliberately later.
+
+**After running a rehearsal**: the test project's `public` tables now
+hold a copy of production's data, not the known seed state — re-seed it
+back:
+```
+cd backend/api
+SUPABASE_URL=<test project URL> SUPABASE_SERVICE_ROLE_KEY=<test project service_role key> SEED_CONFIRM=yes-seed-this-database npm run seed
+```
 
 ## If production ever needs a real restore
 
-Same restore command as above, pointed at production's own connection
-string instead of the test project's — but only after exhausting the
-faster options first: Vercel/Render's own one-click deployment rollback
-for anything code-level, and confirming the issue is actually data loss,
-not something else. A full database restore is a last resort, and per
-Supabase's normal daily-granularity limits (this backup runs once a
-day too), expect to lose up to a day of data doing it — exactly why the
-destructive-migration policy (`docs/governance/destructive-migration-policy.md`)
-matters as much as the backup itself.
+The same `restore-rehearsal.yml` steps apply, but pointed at production
+instead of the test project as the *target* — which this workflow
+doesn't currently support directly (it's hardcoded to restore into
+`TEST_SUPABASE_DB_URL` specifically, deliberately, so an accidental
+trigger can never touch production). A genuine disaster-recovery restore
+would need a new, explicitly-production-scoped workflow built at the
+time, reusing these exact same fixes. Exhaust faster options first
+either way: Vercel/Render's own one-click deployment rollback for
+anything code-level, and confirm the issue is actually data loss, not
+something else. A full database restore is a last resort, and since this
+backup runs once a day, expect to lose up to a day of data doing it —
+exactly why the destructive-migration policy
+(`docs/governance/destructive-migration-policy.md`) matters as much as
+the backup itself.
