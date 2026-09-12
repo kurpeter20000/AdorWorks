@@ -1,6 +1,6 @@
 # Stage 2 — Environments, CI and test data
 
-Status: **All 14 steps addressed.** 13 complete and verified live. 1 open (S02-12), a founder decision, not blocked on any work.
+Status: **All 14 steps complete.** S02-12: the founder recreated the branch protection ruleset on `main`, with owner bypass enabled so this session's workflow is unaffected. This exact commit is the live test of that — see the decision log for what actually happened when it was pushed.
 
 ## Completion report — batch 1
 
