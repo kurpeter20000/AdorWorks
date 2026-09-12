@@ -11,15 +11,19 @@ name: Restore rehearsal (test project only)
 # AdorWorks's schema is already fully reproducible from
 # backend/supabase/migrations/, applied identically to both projects —
 # a real restore only ever needs to bring the DATA back, never recreate
-# schema/triggers/extensions. Two earlier attempts at a full
-# schema+data restore both failed for real, live reasons: dumping
-# Supabase's own platform-managed schemas (auth, storage, extensions,
-# etc.) collides with the different copies already in the test project
-# (575 errors), and even scoped to public alone, pg_dump still captures
-# database-wide event triggers Supabase owns as a superuser that a
-# non-superuser restoring role can never recreate in any project (687
-# errors, "extensions.pgrst_drop_watch"). A data-only dump contains
-# none of that.
+# schema/triggers/extensions. Three earlier attempts each failed for a
+# real, live reason: dumping Supabase's own platform-managed schemas
+# (auth, storage, extensions, etc.) collides with the different copies
+# already in the test project (575 errors); even scoped to public
+# alone, pg_dump still captures database-wide event triggers Supabase
+# owns as a superuser that a non-superuser restoring role can never
+# recreate in any project (687 errors, "extensions.pgrst_drop_watch");
+# and pg_restore's --disable-triggers itself needs superuser to disable
+# Postgres's internal FK-check triggers, which Supabase's connection
+# role deliberately isn't (115 errors, "RI_ConstraintTrigger_... is a
+# system trigger"). Fixed by dropping foreign key constraints (normal
+# owner-level DDL, not privileged) before the data load and recreating
+# them after — see the workflow steps below.
 #
 # IMPORTANT: running this OVERWRITES the test project's public-schema
 # data (its own application tables — talent profiles, organisations,
@@ -74,21 +78,56 @@ jobs:
           echo "Fresh dump verified as valid."
           ls -lh rehearsal.dump
 
-      - name: Empty the test project's public tables first
+      - name: Capture and drop foreign key constraints
+        env:
+          TEST_SUPABASE_DB_URL: ${{ secrets.TEST_SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          # pg_restore's --disable-triggers needs superuser to disable
+          # Postgres's own internal FK-check triggers — confirmed live,
+          # Supabase's connection role deliberately isn't superuser
+          # ("permission denied: RI_ConstraintTrigger_... is a system
+          # trigger"). Without it, tables can load in an order where a
+          # child row's foreign key points at a parent row that hasn't
+          # loaded yet ("Key (organisation_id)=(...) is not present").
+          # Fix: drop every public-schema foreign key first (normal
+          # owner-level DDL, no special privilege needed), restore data
+          # in any order, then recreate every constraint afterward — at
+          # which point all the data is already present, so it validates
+          # cleanly. Definitions are saved to restore_fks.sql before
+          # dropping so the next step can recreate them exactly.
+          psql "$TEST_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -t -A -c "
+            SELECT format('ALTER TABLE %s ADD CONSTRAINT %I %s;', conrelid::regclass, conname, pg_get_constraintdef(oid))
+            FROM pg_constraint
+            WHERE contype = 'f' AND connamespace = 'public'::regnamespace;
+          " > restore_fks.sql
+          echo "Captured $(wc -l < restore_fks.sql) foreign key definition(s) to reapply after data load."
+
+          psql "$TEST_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -c "
+          DO \$\$
+          DECLARE r RECORD;
+          BEGIN
+            FOR r IN (SELECT conrelid::regclass AS tbl, conname FROM pg_constraint WHERE contype = 'f' AND connamespace = 'public'::regnamespace) LOOP
+              EXECUTE format('ALTER TABLE %s DROP CONSTRAINT %I', r.tbl, r.conname);
+            END LOOP;
+          END \$\$;
+          "
+
+      - name: Empty the test project's public tables
         env:
           TEST_SUPABASE_DB_URL: ${{ secrets.TEST_SUPABASE_DB_URL }}
         run: |
           set -euo pipefail
           # A data-only restore doesn't remove existing rows on its own —
-          # truncate every public table first so this is a clean
-          # replace, not an append that would collide on primary keys.
-          # CASCADE handles the foreign-key dependency order automatically.
+          # empty every public table first so this is a clean replace,
+          # not an append that would collide on primary keys. No CASCADE
+          # needed now that foreign keys are temporarily gone.
           psql "$TEST_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -c "
           DO \$\$
           DECLARE r RECORD;
           BEGIN
             FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
-              EXECUTE 'TRUNCATE TABLE public.' || quote_ident(r.tablename) || ' CASCADE';
+              EXECUTE 'TRUNCATE TABLE public.' || quote_ident(r.tablename);
             END LOOP;
           END \$\$;
           "
@@ -98,12 +137,18 @@ jobs:
           TEST_SUPABASE_DB_URL: ${{ secrets.TEST_SUPABASE_DB_URL }}
         run: |
           set -euo pipefail
-          # --disable-triggers: standard practice for a data-only restore
-          # of tables with foreign keys between them — avoids constraint
-          # checks firing mid-load before every table's data has arrived.
-          # Safe here since the restoring role owns these tables (it's
-          # the same role the migrations created them with).
-          pg_restore --data-only --disable-triggers --no-owner --no-acl --dbname="$TEST_SUPABASE_DB_URL" rehearsal.dump
+          pg_restore --data-only --no-owner --no-acl --dbname="$TEST_SUPABASE_DB_URL" rehearsal.dump
+
+      - name: Recreate foreign key constraints
+        env:
+          TEST_SUPABASE_DB_URL: ${{ secrets.TEST_SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          # Validates every row against its constraint as it's added —
+          # if this fails, the restored data itself has a genuine
+          # inconsistency, not just a load-order artifact.
+          psql "$TEST_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f restore_fks.sql
+          echo "Foreign keys recreated and validated against the restored data."
 
       - name: Confirm real data landed
         env:
