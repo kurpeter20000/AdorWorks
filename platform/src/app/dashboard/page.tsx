@@ -338,20 +338,28 @@ export default async function DashboardPage({
 
           {experience.actions.length > 0 ? (
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {experience.actions.map((action) => (
-                <Link
-                  key={action.href}
-                  href={action.href}
-                  className={`rounded-xl border p-4 transition-colors ${
-                    action.primary
-                      ? "border-teal bg-teal text-midnight hover:bg-teal/80"
-                      : "border-slate/20 bg-white hover:border-teal/50"
-                  }`}
-                >
-                  <span className="block font-bold">{action.label}</span>
-                  <span className="mt-1 block text-xs text-slate">{action.description}</span>
-                </Link>
-              ))}
+              {experience.actions.map((action) => {
+                const className = `rounded-xl border p-4 transition-colors ${
+                  action.primary
+                    ? "border-teal bg-teal text-midnight hover:bg-teal/80"
+                    : "border-slate/20 bg-white hover:border-teal/50"
+                }`;
+                const content = (
+                  <>
+                    <span className="block font-bold">{action.label}</span>
+                    <span className="mt-1 block text-xs text-slate">{action.description}</span>
+                  </>
+                );
+                return action.external ? (
+                  <a key={action.href} href={action.href} target="_blank" rel="noopener noreferrer" className={className}>
+                    {content}
+                  </a>
+                ) : (
+                  <Link key={action.href} href={action.href} className={className}>
+                    {content}
+                  </Link>
+                );
+              })}
             </div>
           ) : (
             <div className="mt-4">

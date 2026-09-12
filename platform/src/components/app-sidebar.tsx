@@ -8,6 +8,7 @@ import {
   Building2,
   Circle,
   ClipboardList,
+  ExternalLink,
   FileCheck2,
   FilePlus2,
   FileSignature,
@@ -24,6 +25,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import { STAFF_CONSOLE_URL } from "@/lib/domain/marketingSite";
 import type { DashboardAction } from "@/lib/domain/navigation";
 
 const ICONS: Record<string, LucideIcon> = {
@@ -46,6 +48,7 @@ const ICONS: Record<string, LucideIcon> = {
   "/trust-safety": ShieldCheck,
   "/assist": LifeBuoy,
   "/operations": Inbox,
+  [STAFF_CONSOLE_URL]: ExternalLink,
 };
 
 export function AppSidebar({
@@ -57,7 +60,10 @@ export function AppSidebar({
 }) {
   const pathname = usePathname();
 
-  const items = [{ href: "/dashboard", label: "Dashboard" }, ...actions.map((a) => ({ href: a.href, label: a.label }))];
+  const items = [
+    { href: "/dashboard", label: "Dashboard", external: false },
+    ...actions.map((a) => ({ href: a.href, label: a.label, external: Boolean(a.external) })),
+  ];
 
   function isActive(href: string) {
     return pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`));
@@ -67,16 +73,25 @@ export function AppSidebar({
     <nav aria-label="Primary" className="flex flex-col gap-0.5 p-3">
       {items.map((item) => {
         const Icon = ICONS[item.href] ?? Circle;
-        const active = isActive(item.href);
+        const active = !item.external && isActive(item.href);
+        const className = `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+          active ? "bg-teal/10 text-teal-ink" : "text-slate hover:bg-cloud hover:text-midnight"
+        }`;
+        if (item.external) {
+          return (
+            <a key={item.href} href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
+              <Icon className="size-4 shrink-0" aria-hidden="true" />
+              {item.label}
+            </a>
+          );
+        }
         return (
           <Link
             key={item.href}
             href={item.href}
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-              active ? "bg-teal/10 text-teal-ink" : "text-slate hover:bg-cloud hover:text-midnight"
-            }`}
+            className={className}
           >
             <Icon className="size-4 shrink-0" aria-hidden="true" />
             {item.label}

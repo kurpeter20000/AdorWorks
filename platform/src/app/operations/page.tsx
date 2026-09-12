@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireRole, STAFF_ROLES } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { StatePanel } from "@/components/state-panel";
+import { STAFF_CONSOLE_URL } from "@/lib/domain/marketingSite";
 
 export const metadata: Metadata = { title: "Operations" };
 
@@ -67,8 +68,16 @@ export default async function OperationsPage() {
         <Link href="/contracts" className="font-semibold text-teal-ink underline">
           Contracts
         </Link>{" "}
-        are browsable above. Disputes and finance oversight still live in the existing staff console during this
-        staged rollout.
+        are browsable above. Disputes and finance oversight still live in the{" "}
+        <a
+          href={STAFF_CONSOLE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-teal-ink underline"
+        >
+          existing staff console
+        </a>{" "}
+        during this staged rollout.
       </p>
     </main>
   );

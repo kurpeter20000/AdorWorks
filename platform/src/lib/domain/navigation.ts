@@ -1,4 +1,5 @@
 import type { UserRole } from "@/lib/database.types";
+import { STAFF_CONSOLE_URL } from "./marketingSite";
 import { getDashboardKind, type DashboardKind } from "./roles";
 
 export interface DashboardAction {
@@ -6,6 +7,8 @@ export interface DashboardAction {
   label: string;
   description: string;
   primary?: boolean;
+  /** Opens in a new tab instead of client-side routing — for links to a different deployment (e.g. the staff console) rather than a route in this app. */
+  external?: boolean;
 }
 
 export interface DashboardExperience {
@@ -61,6 +64,12 @@ const experiences: Record<DashboardKind, Omit<DashboardExperience, "kind">> = {
     actions: [
       { href: "/operations", label: "Operations", description: "Review queue counts and open the opportunity review queue.", primary: true },
       { href: "/contracts", label: "Contracts", description: "Browse contracts across every organisation." },
+      {
+        href: STAFF_CONSOLE_URL,
+        label: "Staff console",
+        description: "Full staff tools — people, disputes, finance and more — in the existing staff console.",
+        external: true,
+      },
     ],
   },
   partner: {
