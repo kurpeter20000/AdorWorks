@@ -176,24 +176,33 @@ export function WorkExperienceManager({ items }: { items: TalentWorkExperienceRo
           onChange={(e) => setRoleTitle(e.target.value)}
           className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
-        <div className="flex gap-2">
-          <label className="flex-1 text-xs text-slate">
+        {/* Stacked below `sm`, side by side above it: a native
+            <input type="date"> has a real, non-trivial minimum rendered
+            width (~140px in Chromium) that no wrapper CSS can shrink
+            further — two of them side by side don't fit a 360px mobile
+            viewport once the surrounding page chrome is accounted for,
+            which forced horizontal overflow on the *whole page*, not just
+            this row (confirmed live via e2e/mobile-responsive.spec.ts;
+            min-w-0 alone, tried first, does not fix this — it only relaxes
+            the flex wrapper's floor, not the native control's own). */}
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <label className="min-w-0 flex-1 text-xs text-slate">
             Start date
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
+              className="mt-1 w-full min-w-0 rounded-lg border border-slate/25 px-3 py-2 text-sm"
             />
           </label>
-          <label className="flex-1 text-xs text-slate">
+          <label className="min-w-0 flex-1 text-xs text-slate">
             End date
             <input
               type="date"
               value={endDate}
               disabled={isCurrent}
               onChange={(e) => setEndDate(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm disabled:opacity-50"
+              className="mt-1 w-full min-w-0 rounded-lg border border-slate/25 px-3 py-2 text-sm disabled:opacity-50"
             />
           </label>
         </div>

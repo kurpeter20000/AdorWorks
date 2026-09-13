@@ -1,12 +1,17 @@
 # Stage 5 — Talent dashboard and passport
 
-Status: **Phase A audit complete.** Much of this is already solid
-(portfolio CRUD, RLS-backed privacy, matching off real profile data),
-but two real gaps stand out: two entire features (work experience,
-education) don't exist yet despite work experience being P0, and
-portfolio/CV files sit in a **public** storage bucket regardless of
-whether a profile is published — worth your attention before Phase B
-starts.
+Status: **Phase B complete.** 11 of 13 tracker items are done and
+verified live. The remaining two are deliberately deferred, not
+forgotten: **S05-04** (education) and **S05-10** (job/service
+preferences) both need a founder scoping conversation before any code,
+since neither has an existing table/UI/infrastructure to extend and
+guessing the shape risks building the wrong thing. S05-10 was
+explicitly deferred per your decision (see the decision log). Every
+other item — work experience, a private CV/portfolio bucket, evidence
+rejection reasons, an owner-preview mode, consistent empty/loading/error
+states, and a real mobile-overflow check — was built, verified against
+the live staging Supabase project and/or a real running server, and is
+described in detail in the table below.
 
 ## Phase A audit
 
@@ -24,7 +29,7 @@ starts.
 | S05-10 | Job/service preference settings | **Missing — scope unclear** | No preferences table/column anywhere. Matching already runs directly off `talent_profiles.category`/`skills` from onboarding — there's no separate preferences layer, and no existing notification-preference infrastructure to hook a new setting into. What this should actually control isn't self-evident from the tracker wording alone. |
 | S05-11 | Profile preview | **Missing** | `/passport/[id]` reads from `public_talent_profiles`, gated on `public_visible = true` — since a talent can't set that themselves (blocked by the 0008 self-escalation trigger), visiting their own passport before staff publish it just shows "This profile isn't available." No owner-bypass/preview mode exists. |
 | S05-12 | Empty/loading/error states | **Inconsistent** | Root-level handling is genuinely good and reused via `platform/src/components/state-panel.tsx` (`app/error.tsx`, `dashboard/loading.tsx`, `talent-today.tsx`'s real query-driven empty states). But `onboarding/` and `passport/` have **no `loading.tsx`/`error.tsx` of their own** and don't use `StatePanel` at all — `passport/page.tsx`'s "no profile yet" state is a bespoke, inconsistent `<p>`. |
-| S05-13 | Low-bandwidth/mobile | **Partial, can't fully verify from code** | Responsive Tailwind classes used throughout (`basics-form.tsx`, `passport/page.tsx`). Avatar upload is properly optimized (`next/image`, explicit `sizes`); portfolio file links are plain, unoptimized `<a>` tags. A global `ConnectivityBanner` (`components/connectivity-banner.tsx`) shows an offline state app-wide. Live breakpoint/throttled-network testing needs an actual browser, not just code review — planned via Playwright at a narrow viewport as the closest available substitute. |
+| S05-13 | Low-bandwidth/mobile | **Complete, verified live** | New `e2e/mobile-responsive.spec.ts` checks real horizontal overflow (`document.documentElement.scrollWidth` vs `window.innerWidth`) at a 360×740 viewport across login, signup, onboarding/basics and passport (own) — a genuine live signal code review alone can't give. This caught a real, previously-undetected bug: two native `<input type="date">` elements side by side in the new `WorkExperienceManager` (S05-05) each have a ~140px hard floor Chromium won't shrink below regardless of wrapper CSS; combined, they forced the *entire* authenticated app shell (every page using it, not just Passport) 24px wider than a 360px viewport. `min-w-0` alone (the first fix attempted) did not resolve it — confirmed by re-running the failing test unchanged — because `min-w-0` only relaxes the flex wrapper's own floor, not the native control's. Fixed by stacking the two date fields vertically below `sm` instead of forcing them side by side on narrow screens. Also hardened `avatar-upload.tsx`'s file-input wrapper with `min-w-0` as a preventative measure against the same class of issue. All 4 tests verified passing live against the real dev server and test Supabase project after the fix. |
 
 ## Needs a founder decision
 

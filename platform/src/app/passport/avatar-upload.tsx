@@ -65,12 +65,17 @@ export function AvatarUpload({ existingUrl }: { existingUrl: string | null }) {
       <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-cloud">
         {existingUrl && <Image src={existingUrl} alt="" fill sizes="64px" className="object-cover" />}
       </div>
-      <div className="flex-1 space-y-2">
+      <div className="min-w-0 flex-1 space-y-2">
+        {/* min-w-0: a native <input type="file"> has a real, non-trivial
+            minimum rendered width (the browser's own "Choose File" button)
+            that a flex-1 child won't shrink below without this, forcing
+            horizontal overflow on a narrow viewport — confirmed live via
+            e2e/mobile-responsive.spec.ts. */}
         <input
           type="file"
           accept="image/jpeg,image/png,image/webp"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          className="w-full text-sm"
+          className="w-full min-w-0 text-sm"
         />
         {status && (
           <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`}>{status.message}</p>
