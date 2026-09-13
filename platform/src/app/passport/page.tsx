@@ -8,6 +8,7 @@ import { PortfolioManager } from "./portfolio-manager";
 import { EvidenceManager } from "./evidence-manager";
 import { AvatarUpload } from "./avatar-upload";
 import { IntroductionVideoManager } from "./introduction-video-manager";
+import { CvUpload } from "./cv-upload";
 
 export const metadata: Metadata = { title: "Your Passport" };
 
@@ -114,6 +115,14 @@ export default async function PassportPage() {
         {profile.languages.length > 0 && (
           <p className="mt-2 text-xs text-slate">Languages: {profile.languages.join(", ")}</p>
         )}
+      </div>
+
+      <div className="mt-6">
+        <h2 className="font-bold text-midnight">CV</h2>
+        <p className="mt-1 text-xs text-slate">A PDF employers can download — upload replaces your existing one.</p>
+        <div className="mt-2">
+          <CvUpload existingPath={profile.cv_path} />
+        </div>
       </div>
 
       <div className="mt-6">

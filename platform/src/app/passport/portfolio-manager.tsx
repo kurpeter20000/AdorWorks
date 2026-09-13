@@ -8,10 +8,6 @@ import type { TalentPortfolioItemRow } from "@/lib/database.types";
 const MAX_SIZE_BYTES = 8 * 1024 * 1024; // 8MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 
-function getPortfolioFileUrl(path: string) {
-  return createClient().storage.from("talent-portfolio").getPublicUrl(path).data.publicUrl;
-}
-
 export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] }) {
   const router = useRouter();
   const [title, setTitle] = useState("");
@@ -32,7 +28,7 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
       return;
     }
     if (file && !ALLOWED_TYPES.includes(file.type)) {
-      setStatus({ kind: "error", message: "Please upload a JPG, PNG, WebP image, or a PDF (e.g. your CV)." });
+      setStatus({ kind: "error", message: "Please upload a JPG, PNG, WebP image, or a PDF." });
       return;
     }
     if (file && file.size > MAX_SIZE_BYTES) {
@@ -85,6 +81,21 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
     setBusy(false);
     setStatus({ kind: "success", message: "Added." });
     router.refresh();
+  }
+
+  // S05-07 — talent-portfolio is now a private bucket (migration 0065);
+  // getPublicUrl() no longer works. Signed on click, not pre-fetched for
+  // every item on render — this is the owner's own management view, so
+  // the authenticated client's own session already has read access via
+  // RLS (talent_portfolio_owner_write covers select too, being `for all`).
+  async function handleViewFile(path: string) {
+    const supabase = createClient();
+    const { data, error } = await supabase.storage.from("talent-portfolio").createSignedUrl(path, 300);
+    if (error || !data) {
+      setStatus({ kind: "error", message: "Couldn't open this file — try again." });
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   }
 
   async function handleDelete(id: string) {
@@ -170,14 +181,13 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
                   </a>
                 )}
                 {item.file_path && (
-                  <a
-                    href={getPortfolioFileUrl(item.file_path)}
-                    target="_blank"
-                    rel="noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => handleViewFile(item.file_path!)}
                     className="text-xs font-semibold text-teal-ink underline"
                   >
                     View file
-                  </a>
+                  </button>
                 )}
               </div>
               <button

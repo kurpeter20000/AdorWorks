@@ -16,17 +16,18 @@ const TIER_LABEL: Record<string, string> = {
   team_lead: "Team lead",
 };
 
-// S05-11 — the exact same column list as public_talent_profiles (0034),
-// reproduced here so an owner's preview reads the base table (their own
-// row is always readable regardless of public_visible — talent_profiles_
-// select, 0002) while still only ever seeing what the public view would
-// expose. Keep this in sync with 0034 if that view's column list changes.
-// One literal string, not built via concatenation — supabase-js infers
-// the returned row shape from this as a template-literal type, which
-// only works when the argument is a literal at the call site, not a
-// runtime-concatenated string (that widens to plain `string`).
+// S05-11 — the exact same column list as public_talent_profiles (0034,
+// extended with cv_path by 0065), reproduced here so an owner's preview
+// reads the base table (their own row is always readable regardless of
+// public_visible — talent_profiles_select, 0002) while still only ever
+// seeing what the public view would expose. Keep this in sync with
+// 0034/0065 if that view's column list changes. One literal string, not
+// built via concatenation — supabase-js infers the returned row shape
+// from this as a template-literal type, which only works when the
+// argument is a literal at the call site, not a runtime-concatenated
+// string (that widens to plain `string`).
 const PREVIEW_SAFE_COLUMNS =
-  "id, headline, category, skills, languages, location, work_mode, availability, years_experience, portfolio_url, verification_tier, display_name, bio, linkedin_url, github_url, website_url, avatar_path, public_visible";
+  "id, headline, category, skills, languages, location, work_mode, availability, years_experience, portfolio_url, verification_tier, display_name, bio, linkedin_url, github_url, website_url, avatar_path, cv_path, public_visible";
 
 export default async function PublicPassportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -61,6 +62,30 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
     .select("*")
     .eq("talent_id", id)
     .order("sort_order", { ascending: true });
+
+  // S05-07 — talent-portfolio is now a private bucket (migration 0065).
+  // Signed server-side with the admin client, same reasoning as the
+  // introduction video below: this page is public/anonymous-reachable,
+  // and by the time this runs `profile` already proves the viewer is
+  // authorized to see this content (either a genuinely published
+  // profile, or the owner's own preview) — no further per-item check
+  // needed. Never persisted, recomputed fresh on every render.
+  const adminForFiles = createAdminClient();
+  const portfolioFileUrls = new Map(
+    await Promise.all(
+      (items ?? [])
+        .filter((item) => item.file_path)
+        .map(async (item) => {
+          const { data } = await adminForFiles.storage.from("talent-portfolio").createSignedUrl(item.file_path!, 3600);
+          return [item.id, data?.signedUrl ?? null] as const;
+        })
+    )
+  );
+
+  // S05-06 — same pattern, for the CV slot.
+  const cvUrl = profile.cv_path
+    ? (await adminForFiles.storage.from("talent-cv").createSignedUrl(profile.cv_path, 3600)).data?.signedUrl ?? null
+    : null;
 
   // Signed URL generated server-side with the admin client, not the
   // viewer's own session — this page is public/anonymous-reachable, and
@@ -172,6 +197,16 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
             )}
           </div>
         )}
+        {cvUrl && (
+          <a
+            href={cvUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-block text-xs font-semibold text-teal-ink underline"
+          >
+            Download CV
+          </a>
+        )}
         {session && (
           <div className="mt-4 border-t border-slate/10 pt-3">
             <ReportButton targetType="talent_profile" targetId={profile.id} />
@@ -229,9 +264,7 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
           <h2 className="font-bold text-midnight">Portfolio</h2>
           <ul className="mt-3 space-y-3">
             {items.map((item) => {
-              const fileUrl = item.file_path
-                ? supabase.storage.from("talent-portfolio").getPublicUrl(item.file_path).data.publicUrl
-                : null;
+              const fileUrl = item.file_path ? portfolioFileUrls.get(item.id) ?? null : null;
               const isPdf = item.file_path?.toLowerCase().endsWith(".pdf") ?? false;
               return (
                 <li key={item.id} className="rounded-xl border border-slate/15 bg-white p-4">

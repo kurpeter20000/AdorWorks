@@ -65,6 +65,30 @@ export async function setTalentAvatar(filePath: string): Promise<FormState> {
 }
 
 /**
+ * S05-06 — CV upload/replacement. Same upload-client-side-then-record
+ * pattern as setTalentAvatar. A single slot (cv_path, migration 0065),
+ * not a portfolio-gallery entry — a new upload genuinely replaces the
+ * old one here, matching what "replacement" in the tracker item's own
+ * wording means. The old file itself isn't deleted from storage (same
+ * as avatar_path never has been) — an accepted, already-established
+ * tradeoff in this codebase, not something new to this action.
+ */
+export async function setTalentCv(filePath: string): Promise<FormState> {
+  const session = await requireRole("talent");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("talent_profiles").update({ cv_path: filePath }).eq("id", session.userId);
+
+  if (error) {
+    return { message: `Could not save your CV: ${error.message}` };
+  }
+
+  revalidatePath("/passport");
+  revalidatePath(`/passport/${session.userId}`);
+  return {};
+}
+
+/**
  * Free Trust & Safety orientation (0040/master doc §22). Deliberately not
  * gated behind any plan or fee — see the master document's own explicit
  * rule that essential safety learning must never be paywalled.

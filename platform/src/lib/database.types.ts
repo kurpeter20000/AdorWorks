@@ -125,6 +125,7 @@ export type TalentProfileRow = {
   github_url: string | null;
   website_url: string | null;
   avatar_path: string | null;
+  cv_path: string | null;
   readiness: Record<string, unknown>;
   verification_tier: VerificationTier;
   public_visible: boolean;
@@ -664,6 +665,7 @@ export type PublicTalentProfileRow = {
   github_url: string | null;
   website_url: string | null;
   avatar_path: string | null;
+  cv_path: string | null;
   verification_tier: VerificationTier;
   created_at: string;
 }
