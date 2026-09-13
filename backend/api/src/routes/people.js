@@ -233,6 +233,37 @@ peopleRouter.patch(
   })
 );
 
+// POST /api/people/:id/force-reauth — S04-12. There is no admin API to
+// instantly revoke an already-issued access token (Supabase's are
+// stateless JWTs, valid until they naturally expire regardless of
+// anything an admin does — confirmed against Supabase's own docs
+// before building this; supabase.auth.admin.signOut() takes a JWT, not
+// a user ID, so it can't target someone else's session). What IS real:
+// setting a fresh random password invalidates their refresh tokens, so
+// once their current access token expires (≤1 hour) they can't
+// silently renew it and must log in again. The generated password is
+// never returned — the point is to end their access, not to hand the
+// admin a way to sign in as them.
+peopleRouter.post(
+  "/:id/force-reauth",
+  asyncRoute(async (req, res) => {
+    const newPassword = generateTemporaryPassword(24);
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(req.params.id, { password: newPassword });
+    if (error) throw new HttpError(400, error.message);
+
+    await logAuditEvent(supabaseAdmin, {
+      name: "identity.account.sessions_revoked",
+      actorId: req.user.id,
+      subjectId: req.params.id,
+      entityType: "profiles",
+      entityId: req.params.id,
+      metadata: { via: "staff_people_force_reauth" },
+    });
+
+    res.json({ message: "Done — this account's active sessions will end within an hour as their access token expires." });
+  })
+);
+
 // GET /api/people/role-requests — pending admin/finance promotions
 // awaiting a second admin's decision (0036).
 peopleRouter.get(

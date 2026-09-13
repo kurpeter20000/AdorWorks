@@ -107,6 +107,7 @@ function render() {
         '<div class="action-row">' +
         '<select id="role-input-' + row.id + '">' + roleOptions.replace('value="' + row.role + '"', 'value="' + row.role + '" selected') + "</select>" +
         '<button type="button" class="btn btn-secondary" data-save="' + row.id + '">Save</button>' +
+        '<button type="button" class="btn btn-secondary" data-force-reauth="' + row.id + '" title="Ends this account\'s active sessions within an hour, e.g. if it may be compromised">Force re-auth</button>' +
         "</div>" +
         "</td>" +
         "</tr>"
@@ -127,6 +128,18 @@ function render() {
         await load();
         await loadAuditEvents();
         await loadRoleRequests();
+      } catch (err) {
+        setPageStatus("error", err.message);
+      }
+    });
+
+    tbody.querySelector('[data-force-reauth="' + row.id + '"]').addEventListener("click", async function () {
+      var who = row.full_name || row.email || row.id;
+      if (!confirm("End " + who + "'s active sessions? They'll need to log in again within about an hour.")) return;
+      try {
+        var res = await apiFetch("/api/people/" + row.id + "/force-reauth", { method: "POST", body: {} });
+        setPageStatus("success", res.message);
+        await loadAuditEvents();
       } catch (err) {
         setPageStatus("error", err.message);
       }
