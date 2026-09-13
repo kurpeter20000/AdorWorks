@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Set up two-factor authentication — AdorWorks Staff</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="../img/adorworks-mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/themes.css">
+<link rel="stylesheet" href="../css/styles.css">
+<link rel="stylesheet" href="css/staff.css">
+</head>
+<body>
+<div class="login-shell">
+  <div class="login-card">
+    <a class="brand" href="../index.html">
+      <img src="../img/adorworks-mark.svg" alt="AdorWorks" width="34" height="34">
+      <span>AdorWorks Staff</span>
+    </a>
+    <h1 style="font-size:1.25rem;">Set up two-factor authentication</h1>
+    <p class="text-sm muted">
+      Staff accounts require an authenticator app before you can continue — this protects the sensitive data
+      staff can see across every AdorWorks user.
+    </p>
+    <ol class="text-sm">
+      <li>
+        Scan this code with an authenticator app (Google Authenticator, Authy, 1Password, etc.):
+        <div><img id="mfa-qr" alt="Scan this QR code with your authenticator app" width="160" height="160"></div>
+      </li>
+      <li>Can&#39;t scan it? Enter this code manually instead: <code id="mfa-secret"></code></li>
+      <li>Enter the 6-digit code your app shows below.</li>
+    </ol>
+    <form id="mfa-setup-form">
+      <div class="form-grid">
+        <div>
+          <label for="mfa-code">6-digit code</label>
+          <input type="text" id="mfa-code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" style="margin-top:1.25rem;">Verify and continue</button>
+      <div id="mfa-status" class="form-status" role="status"></div>
+    </form>
+  </div>
+</div>
+
+<script type="module" src="js/config.js"></script>
+<script type="module" src="js/mfa-setup.js"></script>
+</body>
+</html>

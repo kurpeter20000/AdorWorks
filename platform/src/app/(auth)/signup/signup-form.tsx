@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { signup, type FormState } from "@/lib/actions/auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { MARKETING_SITE_URL } from "@/lib/domain/marketingSite";
 
 const initialState: FormState = {};
 
@@ -53,6 +54,24 @@ export function SignupForm({ defaultIntent = "talent" }: { defaultIntent?: "tale
             ))}
           </ul>
         )}
+      </div>
+
+      <div>
+        <label className="flex items-start gap-2 text-sm text-slate">
+          <input type="checkbox" name="policyConsent" value="on" className="mt-0.5 accent-teal" />
+          <span>
+            I agree to AdorWorks&apos;s{" "}
+            <a href={`${MARKETING_SITE_URL}/terms.html`} target="_blank" rel="noopener noreferrer" className="font-semibold text-teal-ink underline">
+              Terms of Use
+            </a>{" "}
+            and{" "}
+            <a href={`${MARKETING_SITE_URL}/privacy.html`} target="_blank" rel="noopener noreferrer" className="font-semibold text-teal-ink underline">
+              Privacy Policy
+            </a>
+            .
+          </span>
+        </label>
+        {state.errors?.policyConsent && <p className="mt-1 text-sm text-coral-ink">{state.errors.policyConsent[0]}</p>}
       </div>
 
       {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}

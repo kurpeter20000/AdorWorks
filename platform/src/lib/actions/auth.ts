@@ -5,11 +5,17 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
+import { checkAndRecordAttempt, getClientIp } from "@/lib/domain/rateLimit";
 
 export interface FormState {
   errors?: Record<string, string[]>;
   message?: string;
 }
+
+// S04-09 — bump this whenever terms.html/privacy.html's own "Version"
+// line changes, so newly-recorded consent always reflects what was
+// actually shown at signup, not a stale value.
+const CURRENT_POLICY_VERSION = "1.0";
 
 const SignupSchema = z.object({
   fullName: z.string().trim().min(2, "Enter your full name."),
@@ -20,6 +26,7 @@ const SignupSchema = z.object({
     .regex(/[a-zA-Z]/, "Include at least one letter.")
     .regex(/[0-9]/, "Include at least one number."),
   intent: z.enum(["talent", "hire"], { message: "Choose one." }),
+  policyConsent: z.literal("on", { message: "You must agree to the Terms of Use and Privacy Policy to continue." }),
 });
 
 /**
@@ -39,6 +46,7 @@ export async function signup(_prevState: FormState, formData: FormData): Promise
     email: formData.get("email"),
     password: formData.get("password"),
     intent: formData.get("intent"),
+    policyConsent: formData.get("policyConsent"),
   });
 
   if (!validated.success) {
@@ -46,6 +54,17 @@ export async function signup(_prevState: FormState, formData: FormData): Promise
   }
 
   const { fullName, email, password, intent } = validated.data;
+
+  // S04-05 — by IP, not email: the thing worth limiting here is one
+  // source creating many accounts, not repeated attempts for one
+  // specific email (Supabase's own signUp already rejects a
+  // already-registered email regardless).
+  const ip = await getClientIp();
+  const { allowed } = await checkAndRecordAttempt(createAdminClient(), "signup", ip);
+  if (!allowed) {
+    return { message: "Too many signup attempts. Please try again later." };
+  }
+
   const supabase = await createClient();
 
   // The intended role travels in signUp's user_metadata, not a
@@ -66,7 +85,14 @@ export async function signup(_prevState: FormState, formData: FormData): Promise
     email,
     password,
     options: {
-      data: { full_name: fullName, intended_role: targetRole },
+      // S04-09 — policy_version travels the same way intended_role does
+      // and for the same reason (no session yet to run a follow-up
+      // update as this user); migration 0062's handle_new_auth_user
+      // reads it at profiles-row-creation time. Reaching this line at
+      // all already means the checkbox was checked (Zod rejects the
+      // submission otherwise), so there's no separate "did they
+      // consent" branch here — only which version they saw.
+      data: { full_name: fullName, intended_role: targetRole, policy_version: CURRENT_POLICY_VERSION },
       emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(safeNextPath)}`,
     },
   });
@@ -106,6 +132,14 @@ export async function login(_prevState: FormState, formData: FormData): Promise<
     return { errors: validated.error.flatten().fieldErrors };
   }
 
+  // S04-05 — by email, not IP: the thing worth limiting here is
+  // repeated guesses against one specific account.
+  const normalizedEmail = validated.data.email.toLowerCase();
+  const { allowed } = await checkAndRecordAttempt(createAdminClient(), "login", normalizedEmail);
+  if (!allowed) {
+    return { message: "Too many login attempts. Please wait a few minutes and try again." };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(validated.data);
   if (error) {
@@ -132,6 +166,15 @@ export async function requestPasswordReset(_prevState: FormState, formData: Form
   const validated = ForgotPasswordSchema.safeParse({ email: formData.get("email") });
   if (!validated.success) {
     return { errors: validated.error.flatten().fieldErrors };
+  }
+
+  // S04-05 — by email. Doesn't weaken the enumeration-safety above: the
+  // limit applies the same way regardless of whether the email is
+  // actually registered, so hitting it reveals nothing either way.
+  const normalizedEmail = validated.data.email.toLowerCase();
+  const { allowed } = await checkAndRecordAttempt(createAdminClient(), "password_reset_request", normalizedEmail);
+  if (!allowed) {
+    return { message: "Too many reset requests for this email. Please wait a few minutes and try again." };
   }
 
   const supabase = await createClient();

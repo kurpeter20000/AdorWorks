@@ -45,6 +45,32 @@ export async function requireStaffSession() {
     return null;
   }
 
+  // S04-08 — every staff role requires TOTP MFA before reaching
+  // anything else. getAuthenticatorAssuranceLevel() is a local read of
+  // the current session's claims (not a network call), so an error
+  // here is treated as exceptional and fails OPEN rather than locking
+  // out every staff member over a check that should essentially never
+  // fail — same reasoning as the platform app's equivalent gate
+  // (platform/src/lib/dal/session.ts).
+  // Cloudflare Pages canonicalizes URLs by stripping ".html" (confirmed
+  // live: /staff/login.html redirects to /staff/login) — normalize
+  // before comparing so this works in both production and any
+  // environment that keeps the extension.
+  var page = location.pathname.split("/").pop().replace(/\.html$/, "");
+  if (page !== "mfa-setup" && page !== "mfa-challenge") {
+    var { data: aal, error: aalError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (!aalError) {
+      if (aal.nextLevel === "aal1") {
+        window.location.href = "mfa-setup.html?next=" + encodeURIComponent(location.pathname + location.search);
+        return null;
+      }
+      if (aal.nextLevel === "aal2" && aal.currentLevel !== aal.nextLevel) {
+        window.location.href = "mfa-challenge.html?next=" + encodeURIComponent(location.pathname + location.search);
+        return null;
+      }
+    }
+  }
+
   var whoEl = document.getElementById("staff-who");
   if (whoEl) whoEl.textContent = (profile.full_name || session.user.email) + " · " + profile.role;
 

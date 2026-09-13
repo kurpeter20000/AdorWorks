@@ -74,6 +74,15 @@ export async function proxy(request: NextRequest) {
     path: "/",
   });
 
+  // S04-03 — explicit defense-in-depth: every response for a signed-in
+  // request tells any cache (browser, CDN, shared proxy) never to store
+  // or reuse it. Today this is already effectively true because reading
+  // cookies via requireSession() forces Next's dynamic rendering, but
+  // that's an implicit side effect of how pages are written, not a
+  // guarantee — this header makes it one, independent of any single
+  // page's implementation.
+  response.headers.set("Cache-Control", "no-store");
+
   return response;
 }
 

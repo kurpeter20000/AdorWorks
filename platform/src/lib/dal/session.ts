@@ -3,7 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { UserRole } from "@/lib/database.types";
-import { EMPLOYER_ACCOUNT_ROLES, STAFF_ACCOUNT_ROLES } from "@/lib/domain/roles";
+import { EMPLOYER_ACCOUNT_ROLES, STAFF_ACCOUNT_ROLES, isStaffAccountRole } from "@/lib/domain/roles";
 
 export interface VerifiedSession {
   userId: string;
@@ -52,11 +52,49 @@ export const verifySession = cache(async (): Promise<VerifiedSession | null> => 
 
 /** For pages that require any signed-in, active account. Redirects to /login if not. */
 export async function requireSession(): Promise<VerifiedSession> {
+  const session = await requireSessionWithoutMfaGate();
+  if (isStaffAccountRole(session.role)) {
+    await requireStaffMfa();
+  }
+  return session;
+}
+
+/**
+ * Same base check as requireSession, without the MFA gate — used only
+ * by /mfa-setup and /mfa-challenge themselves (src/lib/actions/mfa.ts),
+ * since those pages ARE the gate and would otherwise redirect to
+ * themselves forever.
+ */
+export async function requireSessionWithoutMfaGate(): Promise<VerifiedSession> {
   const session = await verifySession();
   if (!session || session.status !== "active") {
     redirect("/login");
   }
   return session;
+}
+
+/**
+ * S04-08 — every staff role (reviewer/matcher/finance/admin) must
+ * enroll and verify TOTP MFA before reaching anything else.
+ * getAuthenticatorAssuranceLevel() is a local read of the current
+ * session's claims, not a network call, so an error here is treated as
+ * exceptional and fails OPEN (lets the request through) rather than
+ * locking out every staff member over a transient issue with a check
+ * that should essentially never fail.
+ */
+async function requireStaffMfa() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (error) return;
+
+  if (data.nextLevel === "aal1") {
+    // Never enrolled a factor at all.
+    redirect("/mfa-setup");
+  }
+  if (data.nextLevel === "aal2" && data.currentLevel !== data.nextLevel) {
+    // Enrolled already, just hasn't verified for this session yet.
+    redirect("/mfa-challenge");
+  }
 }
 
 /** For pages restricted to specific roles (e.g. staff-only admin queues). Redirects to /dashboard if the role doesn't match — never silently renders nothing (see the auth guide's warning against that SPA pattern). */

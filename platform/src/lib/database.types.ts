@@ -79,8 +79,18 @@ export type ProfileRow = {
   email_verified: boolean;
   status: "active" | "suspended" | "deleted";
   consent_terms_at: string | null;
+  policy_consent_at: string | null;
+  policy_version: string | null;
+  policy_consent_source: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export type AuthRateLimitAttemptRow = {
+  id: string;
+  action: "login" | "signup" | "password_reset_request";
+  identifier: string;
+  created_at: string;
 }
 
 export type PhoneVerificationCodeRow = {
@@ -726,6 +736,12 @@ export type Database = {
         Row: PhoneVerificationCodeRow;
         Insert: Partial<PhoneVerificationCodeRow> & { user_id: string; phone: string; code_hash: string; expires_at: string };
         Update: Partial<PhoneVerificationCodeRow>;
+        Relationships: [];
+      };
+      auth_rate_limit_attempts: {
+        Row: AuthRateLimitAttemptRow;
+        Insert: Partial<AuthRateLimitAttemptRow> & { action: AuthRateLimitAttemptRow["action"]; identifier: string };
+        Update: Partial<AuthRateLimitAttemptRow>;
         Relationships: [];
       };
       organisations: {
