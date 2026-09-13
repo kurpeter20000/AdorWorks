@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { createTestUser, deleteTestUser, seedContract, loginAs } from "./helpers";
+import { createTestUser, deleteTestUser, seedContract, loginAs, createTestOrganisation, seedOpportunity } from "./helpers";
 
 /**
  * Security-focused: this exercises the DAL/RLS authorization boundary
@@ -52,6 +52,26 @@ test.describe("authorization boundaries", () => {
       await expect(page).not.toHaveURL(/\/organisation\/opportunities\/new/);
     } finally {
       await deleteTestUser(talent.id);
+    }
+  });
+
+  test("an employer cannot edit another organisation's opportunity", async ({ page }) => {
+    const owner = await createTestOrganisation("ownerorg");
+    const intruder = await createTestOrganisation("intruderorg");
+    const opportunity = await seedOpportunity(owner.id);
+
+    try {
+      await loginAs(page, intruder.rep.email);
+      // The edit page scopes its lookup by .eq("organisation_id", org.id)
+      // (defense in depth beyond RLS alone) — a different org's
+      // opportunity ID must come back not-found, never someone else's
+      // draft.
+      const response = await page.goto(`/organisation/opportunities/${opportunity.id}/edit`);
+      expect(response?.status()).toBe(404);
+    } finally {
+      await opportunity.cleanup();
+      await owner.cleanup();
+      await intruder.cleanup();
     }
   });
 });
