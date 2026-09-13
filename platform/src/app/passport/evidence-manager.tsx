@@ -98,6 +98,9 @@ export function EvidenceManager({
               <div>
                 {item.notes && <p className="text-sm text-midnight">{item.notes}</p>}
                 {item.file_path && <p className="text-xs text-slate">File attached</p>}
+                {item.status === "rejected" && item.rejection_reason && (
+                  <p className="mt-1 text-xs text-coral-ink">{item.rejection_reason}</p>
+                )}
               </div>
               <span className="whitespace-nowrap rounded-full bg-cloud px-2.5 py-1 text-xs font-semibold text-slate">
                 {STATUS_LABEL[item.status] ?? item.status}

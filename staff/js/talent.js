@@ -155,6 +155,7 @@ function renderDetail(d) {
         .map(function (e) {
           var actions = e.status === "pending"
             ? '<button type="button" class="btn btn-secondary" data-evidence-approve="' + e.id + '">Approve</button>' +
+              '<input type="text" id="evidence-reject-reason-' + e.id + '" placeholder="Reason for rejecting (required)">' +
               '<button type="button" class="btn btn-secondary" data-evidence-reject="' + e.id + '">Reject</button>'
             : "";
           var viewButton = e.file_path
@@ -163,6 +164,7 @@ function renderDetail(d) {
           return (
             '<li><strong>' + escapeHtml(e.evidence_type) + "</strong> — " + statusBadge(e.status) +
             (e.notes ? "<br>" + escapeHtml(e.notes) : "") +
+            (e.status === "rejected" && e.rejection_reason ? "<br><em>" + escapeHtml(e.rejection_reason) + "</em>" : "") +
             '<div class="action-row">' + viewButton + actions + "</div></li>"
           );
         })
@@ -302,7 +304,12 @@ function wireDetailActions(id, d, detailRow) {
   detailRow.querySelectorAll("[data-evidence-reject]").forEach(function (btn) {
     btn.addEventListener("click", function () {
       var evidenceId = btn.getAttribute("data-evidence-reject");
-      run(apiFetch("/api/talent/" + id + "/evidence/" + evidenceId + "/review", { method: "POST", body: { status: "rejected" } }));
+      var reason = detailRow.querySelector("#evidence-reject-reason-" + evidenceId).value.trim();
+      if (!reason) {
+        showStatus("error", "Enter a reason before rejecting.");
+        return;
+      }
+      run(apiFetch("/api/talent/" + id + "/evidence/" + evidenceId + "/review", { method: "POST", body: { status: "rejected", rejection_reason: reason } }));
     });
   });
 }

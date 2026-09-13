@@ -13,6 +13,7 @@ export const NOTIFICATION_TYPES = {
   INVITATION_RECEIVED: "invitation_received",
   APPLICATION_STAGE_CHANGED: "application_stage_changed",
   INTRODUCTION_VIDEO_REVIEWED: "introduction_video_reviewed",
+  EVIDENCE_REVIEWED: "evidence_reviewed",
   MESSAGE_RECEIVED: "message_received",
   PHONE_VERIFICATION_REMINDER: "phone_verification_reminder",
   OPPORTUNITY_PUBLISHED: "opportunity_published",

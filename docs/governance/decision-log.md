@@ -4,6 +4,11 @@ Add a new entry for every important decision. Keep entries even if a later decis
 
 ---
 
+**2026-09-14 — S05-10 (job/service preferences) deferred, not built**
+Owner: Founder. Reason: the tracker item asks for preferences that "influence the intended discovery or notification flows," but no discovery-ranking or notification-preference system exists yet for a setting to actually change — matching already runs directly off onboarding's skills/category data. Building a preferences UI now would control nothing real. Impact: skipped for this pass; revisit once there's an actual discovery/notification system it would meaningfully affect. S05-04 (education) held back alongside it in Stage 5's Phase A audit, but is a separate, simpler question — proceeding with Phase B without resolving education's shape yet.
+
+---
+
 **2026-09-14 — Test project's migration-tracking table found wiped; reconciled, not replayed blind**
 Owner: Claude Code. Reason: applying Stage 4's two new migrations (0062, 0063) to staging failed with the exact "cannot drop columns from view" conflict the project had already solved once before (`_schema_migrations` showed only 2 rows instead of 60+, so `apply-migrations.js` tried to replay the whole history from 0001). Investigated before acting: direct queries confirmed the actual schema was intact through migration 0060 (checked several specific tables/indexes/functions spanning 0050-0060, all present) — only the tracking table's bookkeeping was lost, not the real schema. Root cause unconfirmed (possibly related to the database password being reset twice in the same session investigating an unrelated connectivity issue), but this is the test project only, never production. Fixed by manually inserting tracking rows for 0001-0060 (matching confirmed reality, not blind trust) so the normal script could then correctly apply just 0061-0063 for real. Re-seeded afterward; some leftover extra rows exist from earlier testing sessions (harmless test-data cruft, not a correctness issue). Flagged to the founder and given an explicit go-ahead before touching the database directly, per the standing approach of confirming before hand-editing shared state rather than assuming.
 

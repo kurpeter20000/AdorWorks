@@ -197,6 +197,7 @@ export type TalentEvidenceRow = {
   file_path: string | null;
   notes: string | null;
   status: EvidenceStatus;
+  rejection_reason: string | null;
   reviewer_id: string | null;
   reviewed_at: string | null;
   created_at: string;

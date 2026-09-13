@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifySession } from "@/lib/dal/session";
 import { ReportButton } from "@/components/report-button";
+import { StatePanel } from "@/components/state-panel";
 
 export const metadata: Metadata = { title: "AdorWorks Passport" };
 
@@ -15,20 +16,37 @@ const TIER_LABEL: Record<string, string> = {
   team_lead: "Team lead",
 };
 
+// S05-11 — the exact same column list as public_talent_profiles (0034),
+// reproduced here so an owner's preview reads the base table (their own
+// row is always readable regardless of public_visible — talent_profiles_
+// select, 0002) while still only ever seeing what the public view would
+// expose. Keep this in sync with 0034 if that view's column list changes.
+// One literal string, not built via concatenation — supabase-js infers
+// the returned row shape from this as a template-literal type, which
+// only works when the argument is a literal at the call site, not a
+// runtime-concatenated string (that widens to plain `string`).
+const PREVIEW_SAFE_COLUMNS =
+  "id, headline, category, skills, languages, location, work_mode, availability, years_experience, portfolio_url, verification_tier, display_name, bio, linkedin_url, github_url, website_url, avatar_path, public_visible";
+
 export default async function PublicPassportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
   const session = await verifySession();
+  const isOwnerPreview = session?.userId === id;
 
   // No requireSession/requireRole here on purpose — this page must be
-  // readable by a signed-out visitor. Reads the column-limited
-  // public_talent_profiles view (0034), not the base table with
-  // select("*") — the view can never expose a column this page doesn't
-  // already render, regardless of what gets added to talent_profiles
-  // later. RLS's public_visible = true branch is still what actually
-  // gates the read: an unpublished or nonexistent profile just comes
-  // back as no row.
-  const { data: profile } = await supabase.from("public_talent_profiles").select("*").eq("id", id).maybeSingle();
+  // readable by a signed-out visitor. For everyone else, reads the
+  // column-limited public_talent_profiles view (0034), not the base
+  // table with select("*") — the view can never expose a column this
+  // page doesn't already render, regardless of what gets added to
+  // talent_profiles later. RLS's public_visible = true branch is what
+  // actually gates the read: an unpublished or nonexistent profile just
+  // comes back as no row. The owner previewing their own (possibly
+  // not-yet-published) profile is the one exception — see
+  // PREVIEW_SAFE_COLUMNS above for how that stays column-equivalent.
+  const { data: profile } = isOwnerPreview
+    ? await supabase.from("talent_profiles").select(PREVIEW_SAFE_COLUMNS).eq("id", id).maybeSingle()
+    : await supabase.from("public_talent_profiles").select("*").eq("id", id).maybeSingle();
 
   if (!profile) {
     return (
@@ -89,6 +107,13 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
 
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
+      {isOwnerPreview && "public_visible" in profile && !profile.public_visible && (
+        <div className="mb-4">
+          <StatePanel title="Preview" tone="info">
+            This is how your Passport will look once AdorWorks publishes it — not visible to employers yet.
+          </StatePanel>
+        </div>
+      )}
       <div className="rounded-xl border border-slate/15 bg-white p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4">

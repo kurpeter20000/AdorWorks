@@ -191,21 +191,42 @@ talentRouter.post(
 const evidenceReviewSchema = z.object({
   status: z.enum(["approved", "rejected"]),
   notes: z.string().max(2000).optional(),
+  rejection_reason: z.string().max(2000).optional(),
 });
 
-// POST /api/talent/:id/evidence/:evidenceId/review
+// POST /api/talent/:id/evidence/:evidenceId/review — S05-09: added
+// rejection_reason (previously the only feedback field was `notes`,
+// which is also where the TALENT's own submission notes live — no
+// distinct place to record reviewer feedback, unlike the introduction-
+// video review below). `notes` stays optional/untouched-if-omitted so
+// this doesn't overwrite what the talent originally wrote.
 talentRouter.post(
   "/:id/evidence/:evidenceId/review",
   asyncRoute(async (req, res) => {
-    const { status, notes } = evidenceReviewSchema.parse(req.body);
+    const { status, notes, rejection_reason } = evidenceReviewSchema.parse(req.body);
     const { data, error } = await supabaseAdmin
       .from("talent_evidence")
-      .update({ status, notes, reviewer_id: req.user.id, reviewed_at: new Date().toISOString() })
+      .update({
+        status,
+        notes,
+        rejection_reason: status === "rejected" ? rejection_reason || "Not approved." : null,
+        reviewer_id: req.user.id,
+        reviewed_at: new Date().toISOString(),
+      })
       .eq("id", req.params.evidenceId)
       .eq("talent_id", req.params.id)
       .select()
       .single();
     if (error) throw new HttpError(400, error.message);
+
+    await supabaseAdmin.from("notifications").insert({
+      user_id: req.params.id,
+      type: "evidence_reviewed",
+      title: status === "approved" ? "One of your references/credentials was approved" : "One of your references/credentials wasn't approved",
+      body: status === "rejected" ? data.rejection_reason : null,
+      link: "/passport",
+    });
+
     res.json({ data });
   })
 );

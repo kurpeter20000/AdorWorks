@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { StatePanel } from "@/components/state-panel";
 
-export default function ErrorPage({
+export default function PassportError({
   error,
   reset,
 }: {
@@ -15,9 +15,9 @@ export default function ErrorPage({
   }, [error]);
 
   return (
-    <main className="mx-auto max-w-2xl p-8">
-      <StatePanel title="Something went wrong" tone="danger" role="alert">
-        <p>We could not load this screen. Your existing data has not been changed.</p>
+    <main className="mx-auto max-w-2xl p-6 sm:p-8">
+      <StatePanel title="Couldn't load your Passport" tone="danger" role="alert">
+        <p>Your saved information hasn&apos;t been changed. Try again, or come back later.</p>
         <button
           type="button"
           onClick={reset}

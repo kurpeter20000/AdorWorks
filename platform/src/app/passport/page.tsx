@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireRole } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
+import { StatePanel } from "@/components/state-panel";
 import { ProfessionalLinksForm } from "./professional-links-form";
 import { PortfolioManager } from "./portfolio-manager";
 import { EvidenceManager } from "./evidence-manager";
@@ -48,13 +49,15 @@ export default async function PassportPage() {
     return (
       <main className="mx-auto max-w-2xl p-6 sm:p-8">
         <h1 className="text-2xl font-extrabold text-midnight">Your Passport</h1>
-        <p className="mt-4 text-sm text-slate">
-          Finish{" "}
-          <Link href="/onboarding" className="font-semibold text-teal-ink underline">
-            onboarding
-          </Link>{" "}
-          first — your Passport is built from your profile basics.
-        </p>
+        <div className="mt-4">
+          <StatePanel title="Not built yet" tone="info">
+            Finish{" "}
+            <Link href="/onboarding" className="font-semibold text-teal-ink underline">
+              onboarding
+            </Link>{" "}
+            first — your Passport is built from your profile basics.
+          </StatePanel>
+        </div>
       </main>
     );
   }
@@ -65,7 +68,10 @@ export default async function PassportPage() {
       <p className="mt-1 text-sm text-slate">
         {profile.public_visible
           ? "Visible to employers on AdorWorks."
-          : "Not public yet — AdorWorks staff publish your Passport once your verification is complete."}
+          : "Not public yet — AdorWorks staff publish your Passport once your verification is complete."}{" "}
+        <Link href={`/passport/${session.userId}`} className="font-semibold text-teal-ink underline">
+          {profile.public_visible ? "View your public profile" : "Preview how it will look"}
+        </Link>
       </p>
 
       <div className="mt-6 rounded-xl border border-slate/15 bg-white p-5">
@@ -78,6 +84,17 @@ export default async function PassportPage() {
             {TIER_LABEL[profile.verification_tier] ?? profile.verification_tier}
           </span>
         </div>
+        {/* S05-02/03/08 — these fields (name, headline, bio, skills,
+            location, work mode, availability) already validate and save
+            correctly via saveBasics; the only real gap was that nothing
+            in the app ever linked back here after the first onboarding
+            pass. */}
+        <Link
+          href="/onboarding/basics"
+          className="mt-3 inline-block text-xs font-semibold text-teal-ink underline"
+        >
+          Edit your basics, skills and availability
+        </Link>
         <div className="mt-4">
           <AvatarUpload existingUrl={avatarUrl} />
         </div>
