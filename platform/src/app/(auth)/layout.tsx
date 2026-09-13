@@ -21,6 +21,27 @@ const VALUE_PROPS = [
   },
 ];
 
+// Same "Explore" language and icon as Explore Mode in the authenticated
+// app's mode switcher (see mode-switcher.tsx), so a signed-out visitor and
+// a signed-in user leaving the app both reach for the same affordance.
+// A plain inline link now, not an absolutely-positioned pill — it used to
+// be fixed to the viewport's top-right corner regardless of where the
+// card ended up underneath it, which is exactly why it read as
+// "misplaced" sitting right on top of the card at most viewport sizes.
+// Paired with the brand wordmark like a real header instead, in normal
+// document flow on both the desktop panel and the mobile top bar.
+function ExploreLink({ className }: { className?: string }) {
+  return (
+    <a
+      href={MARKETING_SITE_URL}
+      className={`inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/20 ${className ?? ""}`}
+    >
+      <Compass className="size-4" aria-hidden="true" />
+      Explore AdorWorks
+    </a>
+  );
+}
+
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative isolate flex flex-1 flex-col overflow-hidden">
@@ -33,28 +54,17 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <HeroVideoBackground className="absolute inset-0 -z-20 h-full w-full object-cover" />
       <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-midnight/80 to-midnight/90" />
 
-      {/* One clean, standard way back to the marketing site — same
-          "Explore" language and icon as Explore Mode in the authenticated
-          app's mode switcher (see mode-switcher.tsx), so a signed-out
-          visitor and a signed-in user leaving the app both reach for the
-          same affordance. Fixed in the corner rather than buried at the
-          end of the value-prop list, and shared by mobile and desktop
-          instead of two different back links. */}
-      <a
-        href={MARKETING_SITE_URL}
-        className="absolute top-4 right-4 z-10 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/20 sm:top-6 sm:right-6"
-      >
-        <Compass className="size-4" aria-hidden="true" />
-        Explore AdorWorks
-      </a>
-
-      <div className="relative z-0 flex items-center px-6 py-4 text-white lg:hidden">
+      <div className="relative z-0 flex items-center justify-between gap-3 px-6 py-4 text-white lg:hidden">
         <span className="text-lg font-extrabold">AdorWorks</span>
+        <ExploreLink className="px-3 py-1.5 text-xs" />
       </div>
 
       <div className="relative z-0 flex flex-1 flex-col lg:flex-row">
         <div className="hidden flex-col justify-center py-16 text-white lg:flex lg:w-1/2 lg:px-16 xl:px-24">
-          <span className="text-lg font-extrabold">AdorWorks</span>
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-extrabold">AdorWorks</span>
+            <ExploreLink />
+          </div>
 
           <div className="mt-10">
             <p className="text-4xl leading-snug font-extrabold">
@@ -74,7 +84,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
 
         <div className="flex flex-1 flex-col items-center justify-center px-6 pb-10 sm:px-10 lg:w-1/2 lg:px-16 lg:py-16">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-10 shadow-xl">{children}</div>
+          <div className="w-full max-w-lg rounded-2xl bg-white p-10 shadow-2xl ring-1 ring-black/5">{children}</div>
         </div>
       </div>
     </div>

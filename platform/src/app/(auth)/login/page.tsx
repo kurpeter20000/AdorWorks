@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Briefcase, LogIn, Search } from "lucide-react";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Sign in" };
@@ -23,35 +24,40 @@ export default async function LoginPage({
 
   return (
     <div>
-      <div className="mb-5 flex gap-1 rounded-lg bg-cloud p-1 text-sm font-semibold" role="tablist" aria-label="Signing in as">
+      <div className="mb-6 flex gap-1 rounded-lg bg-cloud p-1 text-sm font-semibold" role="tablist" aria-label="Signing in as">
         <Link
           href="/login?as=talent"
           role="tab"
           aria-selected={intent === "talent"}
-          className={`flex-1 rounded-md py-1.5 text-center transition-colors ${
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-center transition-all ${
             intent === "talent" ? "bg-white text-midnight shadow-sm" : "text-slate hover:text-midnight"
           }`}
         >
+          <Search className="size-3.5" aria-hidden="true" />
           Find work
         </Link>
         <Link
           href="/login?as=hire"
           role="tab"
           aria-selected={intent === "hire"}
-          className={`flex-1 rounded-md py-1.5 text-center transition-colors ${
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-center transition-all ${
             intent === "hire" ? "bg-white text-midnight shadow-sm" : "text-slate hover:text-midnight"
           }`}
         >
+          <Briefcase className="size-3.5" aria-hidden="true" />
           Hire talent
         </Link>
       </div>
 
-      <h1 className="text-2xl font-bold text-midnight">Sign in</h1>
+      <span className="inline-flex size-10 items-center justify-center rounded-full bg-teal/15 text-teal-ink">
+        <LogIn className="size-5" aria-hidden="true" />
+      </span>
+      <h1 className="mt-3 text-2xl font-bold text-midnight">Sign in</h1>
       {intent && <p className="mt-1 text-sm text-slate">{INTENT_COPY[intent]}</p>}
       <LoginForm />
       <p className="mt-4 text-center text-sm text-slate">
         New to AdorWorks?{" "}
-        <Link href={intent ? `/signup?intent=${intent}` : "/signup"} className="font-semibold text-teal-ink">
+        <Link href={intent ? `/signup?intent=${intent}` : "/signup"} className="font-semibold text-teal-ink hover:underline">
           Create an account
         </Link>
       </p>
