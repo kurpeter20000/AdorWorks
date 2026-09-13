@@ -9,6 +9,7 @@ import { EvidenceManager } from "./evidence-manager";
 import { AvatarUpload } from "./avatar-upload";
 import { IntroductionVideoManager } from "./introduction-video-manager";
 import { CvUpload } from "./cv-upload";
+import { WorkExperienceManager } from "./work-experience-manager";
 
 export const metadata: Metadata = { title: "Your Passport" };
 
@@ -24,21 +25,27 @@ export default async function PassportPage() {
   const session = await requireRole("talent");
   const supabase = await createClient();
 
-  const [{ data: profile }, { data: items }, { data: evidence }, { data: introVideo }] = await Promise.all([
-    supabase.from("talent_profiles").select("*").eq("id", session.userId).maybeSingle(),
-    supabase
-      .from("talent_portfolio_items")
-      .select("*")
-      .eq("talent_id", session.userId)
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("talent_evidence")
-      .select("*")
-      .eq("talent_id", session.userId)
-      .in("evidence_type", ["reference", "assessment"])
-      .order("created_at", { ascending: false }),
-    supabase.from("talent_introduction_videos").select("*").eq("talent_id", session.userId).maybeSingle(),
-  ]);
+  const [{ data: profile }, { data: items }, { data: evidence }, { data: introVideo }, { data: workExperience }] =
+    await Promise.all([
+      supabase.from("talent_profiles").select("*").eq("id", session.userId).maybeSingle(),
+      supabase
+        .from("talent_portfolio_items")
+        .select("*")
+        .eq("talent_id", session.userId)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("talent_evidence")
+        .select("*")
+        .eq("talent_id", session.userId)
+        .in("evidence_type", ["reference", "assessment"])
+        .order("created_at", { ascending: false }),
+      supabase.from("talent_introduction_videos").select("*").eq("talent_id", session.userId).maybeSingle(),
+      supabase
+        .from("talent_work_experience")
+        .select("*")
+        .eq("talent_id", session.userId)
+        .order("sort_order", { ascending: true }),
+    ]);
 
   const references = (evidence ?? []).filter((e) => e.evidence_type === "reference");
   const credentials = (evidence ?? []).filter((e) => e.evidence_type === "assessment");
@@ -123,6 +130,11 @@ export default async function PassportPage() {
         <div className="mt-2">
           <CvUpload existingPath={profile.cv_path} />
         </div>
+      </div>
+
+      <div className="mt-6">
+        <h2 className="font-bold text-midnight">Work experience</h2>
+        <WorkExperienceManager items={workExperience ?? []} />
       </div>
 
       <div className="mt-6">

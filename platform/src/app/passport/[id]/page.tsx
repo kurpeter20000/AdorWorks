@@ -122,6 +122,16 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
     .select("id, title, summary, organisation_id, completed_at")
     .eq("talent_id", id)
     .order("completed_at", { ascending: false });
+
+  // S05-05 — self-reported, unlike work_history above (which only
+  // records AdorWorks contracts that actually completed) — shown as a
+  // clearly separate, distinctly-labeled section for exactly that
+  // reason: this is the talent's own claim, not a verified record.
+  const { data: workExperience } = await supabase
+    .from("talent_work_experience")
+    .select("*")
+    .eq("talent_id", id)
+    .order("sort_order", { ascending: true });
   const orgIds = [...new Set((workHistory ?? []).map((w) => w.organisation_id))];
   const { data: orgs } =
     orgIds.length > 0 ? await supabase.from("organisations").select("id, name").in("id", orgIds) : { data: [] };
@@ -233,6 +243,27 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
               <ReportButton targetType="talent_video" targetId={id} />
             </div>
           )}
+        </div>
+      )}
+
+      {workExperience && workExperience.length > 0 && (
+        <div className="mt-6">
+          <h2 className="font-bold text-midnight">Work experience</h2>
+          <ul className="mt-3 space-y-3">
+            {workExperience.map((w) => (
+              <li key={w.id} className="rounded-xl border border-slate/15 bg-white p-4">
+                <p className="text-sm font-semibold text-midnight">{w.role_title}</p>
+                <p className="text-xs text-slate">{w.employer_name}</p>
+                <p className="text-xs text-slate">
+                  {new Date(w.start_date).toLocaleDateString(undefined, { year: "numeric", month: "short" })} –{" "}
+                  {w.end_date
+                    ? new Date(w.end_date).toLocaleDateString(undefined, { year: "numeric", month: "short" })
+                    : "Present"}
+                </p>
+                {w.description && <p className="mt-2 text-xs text-slate">{w.description}</p>}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

@@ -145,6 +145,18 @@ export type TalentPortfolioItemRow = {
   created_at: string;
 }
 
+export type TalentWorkExperienceRow = {
+  id: string;
+  talent_id: string;
+  employer_name: string;
+  role_title: string;
+  start_date: string;
+  end_date: string | null;
+  description: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
 export type TalentVideoStatus = "pending" | "approved" | "rejected";
 
 export type TalentIntroductionVideoRow = {
@@ -727,6 +739,12 @@ export type Database = {
         Row: TalentPortfolioItemRow;
         Insert: Partial<TalentPortfolioItemRow> & { talent_id: string; title: string };
         Update: Partial<TalentPortfolioItemRow>;
+        Relationships: [];
+      };
+      talent_work_experience: {
+        Row: TalentWorkExperienceRow;
+        Insert: Partial<TalentWorkExperienceRow> & { talent_id: string; employer_name: string; role_title: string; start_date: string };
+        Update: Partial<TalentWorkExperienceRow>;
         Relationships: [];
       };
       talent_introduction_videos: {
