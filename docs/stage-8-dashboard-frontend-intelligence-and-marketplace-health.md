@@ -163,7 +163,24 @@ The six Today-widget links (three per role) point at existing,
 unfiltered list pages rather than a pre-filtered view of just the
 relevant state — documented above as a scope decision, but worth
 revisiting if these dashboards see real use and the extra click becomes
-a genuine friction point. No independent gap-check has yet re-verified
-the corrected employer pipeline count against real, populated
-staff_assisted vs self_service opportunity data (this environment
-currently has neither contracts nor applications to test against live).
+a genuine friction point.
+
+~~No independent gap-check has yet re-verified the corrected employer
+pipeline count against real, populated staff_assisted vs self_service
+opportunity data~~ — resolved 2026-09-14, and it surfaced something far
+more significant than the count itself. See the decision log's
+"RLS drift" entry: seeding real staff_assisted and self_service
+opportunities/applications and reading the pipeline count as the
+employer (not the admin client) initially came back **3, not the
+expected 4** — the self-service opportunity's `submitted` application
+was invisible to the employer even though 0046's `applications_select`
+is explicitly written to allow it. Direct inspection of the live
+database's actual RLS policy text found the fix's own policy (and 11
+others across 8 unrelated migrations) was still word-for-word an
+earlier version, despite `_schema_migrations` recording all of them as
+applied — a real drift between the tracked migration history and the
+database's actual state, unrelated to any Stage 8 application code.
+Fixed via a new repair migration (`0070`) re-applying each policy's
+true final text; re-ran this exact live test afterward and the
+dashboard correctly showed 4. Stage 8's own application code was never
+the problem — the fix underneath it just wasn't actually live.
