@@ -81,5 +81,9 @@ Platform: 52/52. Backend: 24/24. Full production build passes.
 
 ## Known gap
 
-No independent gap-check pass has been run yet against this doc — the
-pattern used for Stages 2-5, which found real issues every single time.
+~~No independent gap-check pass has been run yet against this doc~~ —
+done: see `docs/governance/stage-06-portfolio-video-and-media-trust.md`.
+It confirmed everything above and found two real gaps (both fixed
+there): the `talent-evidence` storage bucket had no server-side size/
+type enforcement, and the backend's report-filtering endpoint hadn't
+been updated for this stage's two new report target types.

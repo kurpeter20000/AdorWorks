@@ -132,6 +132,13 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
     .select("*")
     .eq("talent_id", id)
     .order("sort_order", { ascending: true });
+
+  // S05-04 — same self-reported reasoning as work experience above.
+  const { data: education } = await supabase
+    .from("talent_education")
+    .select("*")
+    .eq("talent_id", id)
+    .order("sort_order", { ascending: true });
   const orgIds = [...new Set((workHistory ?? []).map((w) => w.organisation_id))];
   const { data: orgs } =
     orgIds.length > 0 ? await supabase.from("organisations").select("id, name").in("id", orgIds) : { data: [] };
@@ -261,6 +268,30 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
                     : "Present"}
                 </p>
                 {w.description && <p className="mt-2 text-xs text-slate">{w.description}</p>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {education && education.length > 0 && (
+        <div className="mt-6">
+          <h2 className="font-bold text-midnight">Education</h2>
+          <ul className="mt-3 space-y-3">
+            {education.map((e) => (
+              <li key={e.id} className="rounded-xl border border-slate/15 bg-white p-4">
+                <p className="text-sm font-semibold text-midnight">{e.qualification}</p>
+                <p className="text-xs text-slate">
+                  {e.institution_name}
+                  {e.field_of_study ? ` · ${e.field_of_study}` : ""}
+                </p>
+                <p className="text-xs text-slate">
+                  {new Date(e.start_date).toLocaleDateString(undefined, { year: "numeric", month: "short" })} –{" "}
+                  {e.end_date
+                    ? new Date(e.end_date).toLocaleDateString(undefined, { year: "numeric", month: "short" })
+                    : "Present"}
+                </p>
+                {e.description && <p className="mt-2 text-xs text-slate">{e.description}</p>}
               </li>
             ))}
           </ul>

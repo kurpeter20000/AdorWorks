@@ -128,8 +128,31 @@ Platform: 52/52. Backend: 24/24. Full production build passes.
 
 ## Known gap
 
-The payment-idempotency index and the finance_records refund path were
-verified against the live schema (columns exist, backfilled correctly,
-notifications CRUD/RLS confirmed) but not exercised end-to-end with real
-data, since this environment currently has no contracts/milestones to
-attach test rows to. Re-verify both once real contracts exist.
+~~The payment-idempotency index and the finance_records refund path
+were verified against the live schema... but not exercised end-to-end
+with real data~~ — resolved 2026-09-14: exercised end-to-end against a
+real seeded contract/milestone on the test Supabase project, driven
+through the actual UI (not scripted DB writes standing in for it):
+
+- **Real payment via the live checkout form** — `payment_events` row
+  created with `fee_percent: 0, fee_amount: 0, net_amount: 500`
+  (matching the milestone's gross amount, `PLATFORM_FEE_PERCENT = 0`),
+  `is_simulated: true`, milestone flips to `paid`, `payment_intentions`
+  resolves to `succeeded`.
+- **Partial-failure self-heal (gap-check fix #1)** — reproduced the
+  exact scenario the fix targets: manually reset the milestone back to
+  `approved` after a real successful payment (simulating the
+  finalization write failing), then paid again through the UI. No
+  second `payment_events` row was created and the milestone
+  self-healed back to `paid`, confirmed via direct DB state.
+- **Concurrent double-charge protection (0057's partial unique
+  index)** — fired two truly concurrent inserts into
+  `payment_intentions` for the same fresh milestone; exactly one
+  succeeded, the other failed with `23505` as designed.
+- **Dispute-to-payment refund** — raised a real dispute against the
+  paid milestone and called `POST /api/disputes/:id/refund` as a real
+  authenticated staff user: `payment_events` flipped to `refunded`, a
+  `finance_records` `refund` row was created for the correct amount.
+
+All test data (users, org, opportunity, contract, milestones, payment
+rows, dispute) was seeded and torn down cleanly; nothing left behind.

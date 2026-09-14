@@ -10,6 +10,7 @@ import { AvatarUpload } from "./avatar-upload";
 import { IntroductionVideoManager } from "./introduction-video-manager";
 import { CvUpload } from "./cv-upload";
 import { WorkExperienceManager } from "./work-experience-manager";
+import { EducationManager } from "./education-manager";
 
 export const metadata: Metadata = { title: "Your Passport" };
 
@@ -25,7 +26,7 @@ export default async function PassportPage() {
   const session = await requireRole("talent");
   const supabase = await createClient();
 
-  const [{ data: profile }, { data: items }, { data: evidence }, { data: introVideo }, { data: workExperience }] =
+  const [{ data: profile }, { data: items }, { data: evidence }, { data: introVideo }, { data: workExperience }, { data: education }] =
     await Promise.all([
       supabase.from("talent_profiles").select("*").eq("id", session.userId).maybeSingle(),
       supabase
@@ -42,6 +43,11 @@ export default async function PassportPage() {
       supabase.from("talent_introduction_videos").select("*").eq("talent_id", session.userId).maybeSingle(),
       supabase
         .from("talent_work_experience")
+        .select("*")
+        .eq("talent_id", session.userId)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("talent_education")
         .select("*")
         .eq("talent_id", session.userId)
         .order("sort_order", { ascending: true }),
@@ -135,6 +141,11 @@ export default async function PassportPage() {
       <div className="mt-6">
         <h2 className="font-bold text-midnight">Work experience</h2>
         <WorkExperienceManager items={workExperience ?? []} />
+      </div>
+
+      <div className="mt-6">
+        <h2 className="font-bold text-midnight">Education</h2>
+        <EducationManager items={education ?? []} />
       </div>
 
       <div className="mt-6">

@@ -126,6 +126,7 @@ export type TalentProfileRow = {
   website_url: string | null;
   avatar_path: string | null;
   cv_path: string | null;
+  preferred_engagement_type: "full_time" | "freelance_contract" | null;
   readiness: Record<string, unknown>;
   verification_tier: VerificationTier;
   public_visible: boolean;
@@ -150,6 +151,19 @@ export type TalentWorkExperienceRow = {
   talent_id: string;
   employer_name: string;
   role_title: string;
+  start_date: string;
+  end_date: string | null;
+  description: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export type TalentEducationRow = {
+  id: string;
+  talent_id: string;
+  institution_name: string;
+  qualification: string;
+  field_of_study: string | null;
   start_date: string;
   end_date: string | null;
   description: string | null;
@@ -745,6 +759,12 @@ export type Database = {
         Row: TalentWorkExperienceRow;
         Insert: Partial<TalentWorkExperienceRow> & { talent_id: string; employer_name: string; role_title: string; start_date: string };
         Update: Partial<TalentWorkExperienceRow>;
+        Relationships: [];
+      };
+      talent_education: {
+        Row: TalentEducationRow;
+        Insert: Partial<TalentEducationRow> & { talent_id: string; institution_name: string; qualification: string; start_date: string };
+        Update: Partial<TalentEducationRow>;
         Relationships: [];
       };
       talent_introduction_videos: {

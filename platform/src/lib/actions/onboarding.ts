@@ -20,6 +20,7 @@ const BasicsSchema = z.object({
   languages: z.string().trim().optional(),
   workMode: z.enum(["remote", "on_site", "hybrid", "any"]),
   availability: z.string().trim().optional(),
+  preferredEngagementType: z.enum(["full_time", "freelance_contract", ""]).optional(),
 });
 
 function splitList(value: string | undefined) {
@@ -46,6 +47,7 @@ export async function saveBasics(_prevState: FormState, formData: FormData): Pro
     languages: formData.get("languages") || undefined,
     workMode: formData.get("workMode"),
     availability: formData.get("availability") || undefined,
+    preferredEngagementType: formData.get("preferredEngagementType") || undefined,
   });
   if (!validated.success) {
     return { errors: validated.error.flatten().fieldErrors };
@@ -66,6 +68,7 @@ export async function saveBasics(_prevState: FormState, formData: FormData): Pro
     languages: splitList(v.languages),
     work_mode: v.workMode,
     availability: v.availability || null,
+    preferred_engagement_type: v.preferredEngagementType || null,
   });
 
   if (error) {
