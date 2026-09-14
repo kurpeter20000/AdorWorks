@@ -4,6 +4,13 @@ Add a new entry for every important decision. Keep entries even if a later decis
 
 ---
 
+**2026-09-14 — Stage 9 re-verified live post-Netlify-outage; found and fixed a soft-404 regression and stale docs**
+Owner: Claude Code. Starting Stage 9's audit, checked the live production site (`adorworks.netlify.app` per that stage's own doc) directly and found it fully down — every page returning Netlify's own `"usage_exceeded"` 503. Founder confirmed the site had already moved to Cloudflare Pages. Found the actual migration work (`build-cf-pages.mjs`'s allowlisted build output, `_headers`/`_redirects`, the domain swap to `adorworks.pages.dev` across all 20 pages) had already been done in earlier commits and was live and working — confirmed directly: homepage 200, all security headers present, `/staff/*`'s `X-Robots-Tag` present, source-exposure paths (`/docs/*`, `/backend/*`) correctly inaccessible, and — the part that actually matters for the business — the lead-capture forms' production Supabase endpoint (`intake_submissions`) live and responding, confirming form submissions aren't silently broken.
+
+Found two things the migration had left behind: (1) `_redirects`' rules blocking source paths were rewriting to a 200-status page (Cloudflare's `_redirects` can't express a real 404 status), which is a "soft 404" — worse for SEO than doing nothing, and unnecessary since those paths already 404 correctly on their own (confirmed live) because the build step never uploads them at all. Removed the six now-redundant rules. (2) `netlify.toml` and several docs (`README.md`, `backend/api/README.md`) still described Netlify as the current host rather than retired history. Removed `netlify.toml`, updated the docs, and updated Stage 9's own governance doc to record the full migration and re-verification.
+
+---
+
 **2026-09-14 — RLS drift found and repaired: 12 policies across 8 migrations were tracked as applied but never actually took effect on staging**
 Owner: Claude Code. Found while re-verifying Stage 8's own known gap (the employer applicant-pipeline count against real staff_assisted/self_service data — see that stage's doc). Seeding real data and reading the pipeline count *as the employer* (not the admin client) came back 3 instead of the expected 4: a self-service opportunity's `submitted` application, which migration `0046`'s `applications_select` policy is explicitly written to make visible to the employer, wasn't visible at all.
 

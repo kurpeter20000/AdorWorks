@@ -1,7 +1,5 @@
-# Cloudflare Pages equivalent of netlify.toml's [[headers]] blocks — see
-# that file's comments for the reasoning behind each rule. Kept in sync by
-# hand during the Netlify -> Cloudflare Pages migration; once Netlify is
-# fully retired, netlify.toml can go and this becomes the only copy.
+# Cloudflare Pages security headers. Netlify (and netlify.toml, which this
+# was translated from) are fully retired — this is the only copy now.
 #
 # Rule blocks are kept comment-free and blank-line-separated below (no
 # comments between a path pattern and its header lines, or between two

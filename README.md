@@ -23,10 +23,8 @@ Four parts now:
   moderate and oversee everything above.
 
 This is a separate product from Adormedia and is meant to be deployed as its
-**own** site — not merged into `../site/`'s Netlify deploy. `netlify.toml`
-in this folder is set up for the public site's own deploy (base directory
-`adorworks-site`, publish `.`); `platform/` deploys separately (see its own
-README) since it's a Next.js app, not a static site.
+**own** Cloudflare Pages site — see "Deploy" below; `platform/` deploys
+separately (see its own README) since it's a Next.js app, not a static site.
 
 ## What's here vs. what isn't
 
@@ -39,9 +37,10 @@ Built:
 - Six public forms (employer brief, talent application, shortlist
   request, service request, general contact, insights-launch subscribe)
   that submit to **Supabase** directly with the anon key once
-  `js/supabase-config.js` is filled in (see `backend/supabase/README.md`),
-  falling back to **Netlify Forms** automatically if it isn't — so the
-  site works either way.
+  `js/supabase-config.js` is filled in (see `backend/supabase/README.md`)
+  — already the case in production. A Netlify Forms fallback still exists
+  in the code for completeness but is unreachable now that Netlify itself
+  is retired (see "Deploy" below).
 - The full backend schema + RLS (`backend/supabase/`) and a staff-console
   API (`backend/api/`) for verification, shortlisting, engagement
   tracking and manual finance records — see `backend/README.md`.
@@ -97,8 +96,9 @@ Not built yet:
   page — remove both once clearance is confirmed.
 - **Domain.** `robots.txt`, `sitemap.xml`, canonical/OG/Twitter tags and the
   JSON-LD on `index.html` now point at the real live domain,
-  `adorworks.netlify.app` (Stage 9) — update all of these again once a
-  custom domain is cleared and live.
+  `adorworks.pages.dev` (moved from `adorworks.netlify.app` after Netlify's
+  free-tier usage limit took the site down — see "Deploy" below) — update
+  all of these again once a custom domain is cleared and live.
 - **Compliance.** Do not accept real client funds or run full-time/
   cross-border placements through this site before the recruitment-agency
   licensing, contracts, tax and payment-partner questions in Blueprint
@@ -130,14 +130,16 @@ Not built yet:
    the public URL/key committed. Forms submit directly to Supabase
    client-side; there's no server-side form handling to configure.
 
-**Netlify** (being retired — kept here until DNS/references are fully
-migrated): a **new** Netlify site connected to this repo, base/build/
-functions/publish directories all left blank (`netlify.toml` already
-declares `publish = "."`). Its `[[redirects]]`/`[[headers]]` are the
-source `_headers`/`_redirects` were translated from. Netlify auto-detects
-the six `data-netlify="true"` forms, but that path is already dead code
-in production since Supabase is configured — see `js/main.js`'s
-`submitToSupabase`/`submitToNetlify` fallback logic.
+**Netlify** (retired): the site was originally deployed there, but its
+free-tier usage limit took the whole site down for real visitors — every
+page returned Netlify's own `"usage_exceeded"` 503 — which is what
+prompted the move to Cloudflare Pages above. `netlify.toml` is gone;
+`_headers`/`_redirects` are what its `[[headers]]`/`[[redirects]]` were
+translated from, and are now the only copy. The six forms still carry
+`data-netlify="true"` markup (harmless no-op on Cloudflare) and
+`js/main.js` still has a `submitToNetlify` fallback for completeness, but
+that path is dead code in production — Supabase is configured, so
+`submitToSupabase` is what actually runs.
 
 ## Local preview
 
@@ -172,7 +174,7 @@ sw.js                     Service worker (offline shell caching)
 offline.html              Shown when a page isn't cached and there's no connection
 404.html
 robots.txt, sitemap.xml
-netlify.toml
+_headers, _redirects     Cloudflare Pages security headers + redirects
 backend/supabase/         Database schema, RLS policies, storage buckets (see backend/README.md)
 backend/api/               Staff-console Node/Express API
 staff/                     Staff console web UI (see staff/README.md) — noindex'd, login-gated

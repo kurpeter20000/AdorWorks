@@ -1,17 +1,24 @@
 # Stage 9 — Public Landing Pages, Content and SEO
 
 Status: **implemented, gap-checked and corrected, verified against the
-literal approval gate** (commits `973722a`, `53b19c1`, `b60ce63`). This
-stage worked against an existing, already-largely-honest static public
-site at the repo root (12 pages, predating the staged process) rather
-than building marketing pages from scratch — the pre-work audit found
-most of the copy already reflected real product capability (verification
-tiers, escrow disclaimers, "content pending" placeholders instead of
-fabricated stats/testimonials). Two direct product decisions: production
-domain (`adorworks.netlify.app`, the real live domain — "AdorWorks" is
-still pending trademark/domain clearance, so the site's placeholder
+literal approval gate, and re-verified live after a hosting migration**
+(commits `973722a`, `53b19c1`, `b60ce63`; hosting moved Netlify →
+Cloudflare Pages in `fda135e`/`c2f565c`/`97e0dc9`, re-verified and
+cleaned up 2026-09-14). This stage originally worked against an
+existing, already-largely-honest static public site at the repo root
+(12 pages, predating the staged process) rather than building marketing
+pages from scratch — the pre-work audit found most of the copy already
+reflected real product capability (verification tiers, escrow
+disclaimers, "content pending" placeholders instead of fabricated
+stats/testimonials). Two direct product decisions from the original
+pass: production domain (at the time, `adorworks.netlify.app` — "AdorWorks"
+is still pending trademark/domain clearance, so the site's placeholder
 `adorworks.com` wasn't real) and analytics provider (Google Analytics 4,
-consent-gated).
+consent-gated). The production domain is now `adorworks.pages.dev` —
+Netlify's free-tier usage limit took the whole site down (every page
+returning a `"usage_exceeded"` 503), which is what prompted the move;
+see "Known gap" below for the live re-verification and cleanup this
+prompted.
 
 ## What this delivered
 
@@ -139,7 +146,43 @@ count, missing `alt`) and leftover placeholder-domain references.
 
 Analytics is fully scaffolded but inert until a real GA4 Measurement ID
 is created and set in `js/analytics-config.js` — see the README's
-"Analytics" section for the exact steps. The Netlify plan's billing
-limit (noted separately, as of 2026-08-22) may still be blocking
-production deploys of this and future pushes; confirm that's cleared
-before expecting any of this to be visible on `adorworks.netlify.app`.
+"Analytics" section for the exact steps.
+
+~~The Netlify plan's billing limit... may still be blocking production
+deploys~~ — this is exactly what happened, confirmed 2026-09-14: every
+page on `adorworks.netlify.app` was returning Netlify's own
+`"usage_exceeded"` 503, not a code problem. The site has since moved to
+**Cloudflare Pages** (`adorworks.pages.dev`) — most of that migration
+(`build-cf-pages.mjs`'s allowlisted build output, `_headers`/
+`_redirects` as the Netlify-config translation, the domain swap across
+all 20 pages) was already done in earlier commits (`fda135e`, `c2f565c`,
+`97e0dc9`) before this pass. This pass re-verified the live result and
+found + fixed two remaining issues:
+
+1. **`_redirects` had a real, if minor, regression.** Cloudflare's
+   `_redirects` can't express a true "return 404" status (confirmed from
+   the actual build log: "Valid status codes are 200, 301, 302, 303,
+   307, or 308. Got 404."), so the rules blocking `/backend/*`,
+   `/platform/*`, `/docs/*`, `/.github/*`, `/.git/*` and `/render.yaml`
+   were rewritten to a 200-status page instead — a "soft 404" that's
+   worse for SEO than doing nothing, and entirely unnecessary: confirmed
+   live that a path with no matching rule and no uploaded file (which
+   all of these already are, via `build-cf-pages.mjs`'s allowlist) 404s
+   correctly on its own. Removed the six rules; `_redirects` now only
+   carries the one real redirect (`find-talent.html`).
+2. **Leftover Netlify references across the repo were stale**, describing
+   the old domain/deploy as current rather than retired:
+   `netlify.toml` itself (genuinely dead — removed), `README.md` (domain,
+   deploy section, forms description, structure list) and
+   `backend/api/README.md`'s `ALLOWED_ORIGINS` example. Corrected to
+   describe Cloudflare Pages as current and Netlify as retired history.
+
+Also verified live: the security fix (no source exposure), all security
+headers, `/staff/*`'s `X-Robots-Tag`, and — the thing that actually
+matters for the business — that the lead-capture path still works.
+`js/supabase-config.js` has real (non-placeholder) production
+credentials, `supabaseConfigured()` is true in production so
+`submitToSupabase` is what actually runs (the Netlify-forms fallback in
+`js/main.js` is dead code, kept only for completeness), and the
+production Supabase project's `intake_submissions` endpoint responds
+live (confirmed via a real OPTIONS request, not just reading the code).

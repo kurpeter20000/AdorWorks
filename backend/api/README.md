@@ -84,8 +84,8 @@ GitHub-connected auto-deploy on every push to `main`.
      credential in this whole project that should never appear in chat,
      a repo, or anywhere public.
    - `ALLOWED_ORIGINS` — your deployed site's real origin, e.g.
-     `https://adorworks.netlify.app` (check your Netlify site's actual
-     URL) — comma-separate more than one if needed, e.g. add
+     `https://adorworks.pages.dev` (check your Cloudflare Pages site's
+     actual URL) — comma-separate more than one if needed, e.g. add
      `http://localhost:4321` while you're still testing locally.
 4. **Apply** / **Create**. First deploy takes a few minutes.
 5. Once live, `https://adorworks-api.onrender.com/health` (or whatever
