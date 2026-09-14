@@ -7,7 +7,14 @@ import { asyncRoute, HttpError } from "../asyncRoute.js";
 export const reportsRouter = Router();
 reportsRouter.use(requireAuth, requireStaff);
 
-const TARGET_TYPES = ["opportunity", "talent_service", "talent_profile", "organisation"];
+// Stage 6 gap-check (0056) widened reports.target_type at the DB layer
+// to also allow 'talent_video'/'portfolio_item', but this list — used
+// only to validate the optional ?target_type= filter below, not to gate
+// creation (platform/src/lib/actions/reports.ts inserts directly via
+// RLS, unaffected by this file) — was never updated to match, so
+// filtering the staff queue by either new type would 400 even though
+// the report itself saves fine.
+const TARGET_TYPES = ["opportunity", "talent_service", "talent_profile", "organisation", "talent_video", "portfolio_item"];
 const STATUSES = ["open", "reviewed", "dismissed", "actioned"];
 
 const listQuerySchema = z.object({
