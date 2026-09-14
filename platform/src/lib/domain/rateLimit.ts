@@ -45,26 +45,40 @@ export async function checkAndRecordAttempt(
   const windowStart = new Date(Date.now() - windowMinutes * 60_000).toISOString();
 
   try {
-    // Opportunistic cleanup — self-maintaining, no separate cron needed.
-    await admin
-      .from("auth_rate_limit_attempts")
-      .delete()
-      .eq("action", action)
-      .eq("identifier", identifier)
-      .lt("created_at", windowStart);
-
-    const { count, error: countError } = await admin
-      .from("auth_rate_limit_attempts")
-      .select("*", { count: "exact", head: true })
-      .eq("action", action)
-      .eq("identifier", identifier)
-      .gte("created_at", windowStart);
+    // Cleanup (rows strictly before the window) and the count (rows
+    // inside the window) touch disjoint row sets, so they're safe to run
+    // concurrently instead of two stacked round trips — every one of
+    // these adds real latency on top of the login/reset call that
+    // follows, and login/signup/password-reset were all paying for both
+    // sequentially on every single attempt.
+    const [, { count, error: countError }] = await Promise.all([
+      admin
+        .from("auth_rate_limit_attempts")
+        .delete()
+        .eq("action", action)
+        .eq("identifier", identifier)
+        .lt("created_at", windowStart),
+      admin
+        .from("auth_rate_limit_attempts")
+        .select("*", { count: "exact", head: true })
+        .eq("action", action)
+        .eq("identifier", identifier)
+        .gte("created_at", windowStart),
+    ]);
     if (countError) throw countError;
 
     const allowed = (count ?? 0) < maxAttempts;
 
-    const { error: insertError } = await admin.from("auth_rate_limit_attempts").insert({ action, identifier });
-    if (insertError) throw insertError;
+    // Recording this attempt is bookkeeping for future calls, not part of
+    // this call's gating decision (already computed above) — same
+    // fire-and-forget contract as logAuditEvent, so the caller isn't
+    // held up for a third round trip.
+    admin
+      .from("auth_rate_limit_attempts")
+      .insert({ action, identifier })
+      .then(({ error }) => {
+        if (error) console.error(`rate limit insert failed for ${action}/${identifier}:`, error.message);
+      });
 
     return { allowed };
   } catch (err) {
