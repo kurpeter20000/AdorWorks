@@ -68,15 +68,39 @@ export default async function OpportunitiesPage({
     engagementType?: string;
     workMode?: string;
     workType?: string;
+    all?: string;
     sort?: string;
     page?: string;
   }>;
 }) {
   const session = await requireRole("talent");
-  const { q, category, engagementType, workMode, workType, sort, page } = await searchParams;
+  const rawParams = await searchParams;
+  const { q, category, engagementType, workMode, workType, all, sort, page } = rawParams;
   const supabase = await createClient();
   const sortMode = sort === "relevant" ? "relevant" : "recent";
   const currentPage = Math.max(1, Number(page) || 1);
+
+  const { data: myProfile } = await supabase
+    .from("talent_profiles")
+    .select("skills, category, work_mode, preferred_engagement_type")
+    .eq("id", session.userId)
+    .maybeSingle();
+
+  // S05-10 — job/service preferences: per the founder's 2026-09-14
+  // decision, these pre-filter/prioritize the feed rather than sit as an
+  // inert settings page. Applied only on a genuinely untouched landing
+  // (none of these keys present in the URL at all, not even as an empty
+  // value from a submitted-but-blank search) — any explicit filter
+  // choice, including an intentionally blank one, always wins over a
+  // stored preference. `all=1` is the explicit escape hatch so a
+  // preference is never a dead end.
+  const noExplicitFilters = !("q" in rawParams || "category" in rawParams || "engagementType" in rawParams || "workMode" in rawParams || "workType" in rawParams || "all" in rawParams);
+  const usingPreferenceDefaults =
+    noExplicitFilters && !!myProfile && !!(myProfile.category || (myProfile.work_mode && myProfile.work_mode !== "any") || myProfile.preferred_engagement_type);
+  const effectiveCategory = category ?? (noExplicitFilters ? myProfile?.category ?? undefined : undefined);
+  const effectiveWorkMode =
+    workMode ?? (noExplicitFilters && myProfile?.work_mode && myProfile.work_mode !== "any" ? myProfile.work_mode : undefined);
+  const effectiveWorkType = workType ?? (noExplicitFilters ? myProfile?.preferred_engagement_type ?? undefined : undefined);
 
   let query = supabase
     .from("opportunities")
@@ -93,26 +117,25 @@ export default async function OpportunitiesPage({
   // extra filter clauses.
   const safeQ = q?.replace(/[,()]/g, " ").trim();
   if (safeQ) query = query.or(`title.ilike.%${safeQ}%,brief.ilike.%${safeQ}%`);
-  if (category && category in CATEGORY_LABEL) query = query.eq("category", category as Category);
+  if (effectiveCategory && effectiveCategory in CATEGORY_LABEL) query = query.eq("category", effectiveCategory as Category);
   if (engagementType && engagementType in ENGAGEMENT_LABEL) query = query.eq("engagement_type", engagementType as EngagementType);
-  if (workMode && workMode in WORK_MODE_LABEL) query = query.eq("work_mode", workMode as WorkMode);
-  if (workType && workType in WORK_TYPE_ENGAGEMENT_TYPES) query = query.in("engagement_type", WORK_TYPE_ENGAGEMENT_TYPES[workType]);
+  if (effectiveWorkMode && effectiveWorkMode in WORK_MODE_LABEL) query = query.eq("work_mode", effectiveWorkMode as WorkMode);
+  if (effectiveWorkType && effectiveWorkType in WORK_TYPE_ENGAGEMENT_TYPES)
+    query = query.in("engagement_type", WORK_TYPE_ENGAGEMENT_TYPES[effectiveWorkType]);
 
-  const [{ data: opportunities }, { data: orgs }, { data: myApplications }, { data: saved }, { data: dismissed }, { data: myProfile }] =
-    await Promise.all([
-      query,
-      supabase.from("organisations").select("id, name"),
-      supabase.from("applications").select("opportunity_id").eq("talent_id", session.userId),
-      supabase.from("saved_opportunities").select("opportunity_id").eq("talent_id", session.userId),
-      supabase.from("dismissed_opportunities").select("opportunity_id").eq("talent_id", session.userId),
-      supabase.from("talent_profiles").select("skills").eq("id", session.userId).maybeSingle(),
-    ]);
+  const [{ data: opportunities }, { data: orgs }, { data: myApplications }, { data: saved }, { data: dismissed }] = await Promise.all([
+    query,
+    supabase.from("organisations").select("id, name"),
+    supabase.from("applications").select("opportunity_id").eq("talent_id", session.userId),
+    supabase.from("saved_opportunities").select("opportunity_id").eq("talent_id", session.userId),
+    supabase.from("dismissed_opportunities").select("opportunity_id").eq("talent_id", session.userId),
+  ]);
 
   const orgNames = new Map((orgs ?? []).map((o) => [o.id, o.name]));
   const appliedIds = new Set((myApplications ?? []).map((a) => a.opportunity_id));
   const savedIds = new Set((saved ?? []).map((s) => s.opportunity_id));
   const dismissedIds = new Set((dismissed ?? []).map((d) => d.opportunity_id));
-  const hasFilters = !!(q || category || engagementType || workMode || workType);
+  const hasFilters = !!(q || category || engagementType || workMode || workType || all);
 
   const visible = (opportunities ?? []).filter((o) => !dismissedIds.has(o.id));
 
@@ -127,7 +150,7 @@ export default async function OpportunitiesPage({
 
   function pageHref(overrides: Record<string, string | undefined>) {
     const params = new URLSearchParams();
-    const merged = { q, category, engagementType, workMode, workType, sort: sortMode, page: String(currentPage), ...overrides };
+    const merged = { q, category, engagementType, workMode, workType, all, sort: sortMode, page: String(currentPage), ...overrides };
     for (const [key, value] of Object.entries(merged)) {
       if (value) params.set(key, value);
     }
@@ -155,6 +178,15 @@ export default async function OpportunitiesPage({
           Showing {WORK_TYPE_LABEL[workType]} work
           <Link href={pageHref({ workType: undefined, page: "1" })} className="underline">
             Clear
+          </Link>
+        </p>
+      )}
+
+      {usingPreferenceDefaults && (
+        <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-violet/10 px-3 py-1 text-xs font-semibold text-violet">
+          Showing opportunities matching your job preferences
+          <Link href={pageHref({ all: "1", page: "1" })} className="underline">
+            See everything
           </Link>
         </p>
       )}
@@ -255,7 +287,7 @@ export default async function OpportunitiesPage({
             Search
           </button>
           {hasFilters && (
-            <Link href={pageHref({ q: undefined, category: undefined, engagementType: undefined, workMode: undefined, workType: undefined, page: "1" })} className="text-xs font-semibold text-slate underline">
+            <Link href={pageHref({ q: undefined, category: undefined, engagementType: undefined, workMode: undefined, workType: undefined, all: undefined, page: "1" })} className="text-xs font-semibold text-slate underline">
               Clear filters
             </Link>
           )}
@@ -267,7 +299,7 @@ export default async function OpportunitiesPage({
           {hasFilters ? (
             <>
               <p>No opportunities match these filters.</p>
-              <Link href={pageHref({ q: undefined, category: undefined, engagementType: undefined, workMode: undefined, workType: undefined, page: "1" })} className="mt-1 inline-block font-semibold text-teal-ink underline">
+              <Link href={pageHref({ q: undefined, category: undefined, engagementType: undefined, workMode: undefined, workType: undefined, all: undefined, page: "1" })} className="mt-1 inline-block font-semibold text-teal-ink underline">
                 Clear filters and see everything open
               </Link>
             </>

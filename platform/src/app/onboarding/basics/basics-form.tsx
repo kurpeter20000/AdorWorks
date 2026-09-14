@@ -186,6 +186,23 @@ export function BasicsForm({
         </div>
       </div>
 
+      <div>
+        <label htmlFor="preferredEngagementType" className="text-sm font-semibold text-midnight">
+          Preferred work type
+        </label>
+        <select
+          id="preferredEngagementType"
+          name="preferredEngagementType"
+          defaultValue={initial?.preferred_engagement_type ?? ""}
+          className="mt-1 w-full rounded-lg border border-slate/25 px-2 py-2 text-sm"
+        >
+          <option value="">No preference</option>
+          <option value="full_time">Full-time</option>
+          <option value="freelance_contract">Freelancing/Contract</option>
+        </select>
+        <p className="mt-1 text-xs text-slate">Used to prioritize matching opportunities in Find work.</p>
+      </div>
+
       {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
 
       <button
