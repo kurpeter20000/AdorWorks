@@ -15,10 +15,11 @@ export default async function Home({
     // with redirectTo=/auth/callback, but land here with a bare ?code=
     // instead whenever that exact URL isn't in the Supabase project's
     // Redirect URLs allowlist — GoTrue silently falls back to the
-    // project's bare Site URL rather than erroring. Forward the code to
-    // the real handler instead of stranding the user on this marketing
-    // page with their one-time code sitting unused in the URL.
-    redirect(`/auth/callback?code=${encodeURIComponent(code)}&next=%2Freset-password`);
+    // project's bare Site URL rather than erroring, dropping the
+    // original ?next= along with it. Forward just the code and let
+    // /auth/callback's own fallback figure out where this particular
+    // user actually belongs, rather than assuming reset-password here.
+    redirect(`/auth/callback?code=${encodeURIComponent(code)}`);
   }
 
   const session = await verifySession();
