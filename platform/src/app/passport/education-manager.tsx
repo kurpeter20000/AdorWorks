@@ -219,7 +219,7 @@ export function EducationManager({ items }: { items: TalentEducationRow[] }) {
             }}
             className="accent-teal"
           />
-          I'm currently studying here
+          I&apos;m currently studying here
         </label>
         <textarea
           placeholder="Anything else worth noting? (optional)"

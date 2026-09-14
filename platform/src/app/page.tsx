@@ -4,7 +4,23 @@ import { verifySession } from "@/lib/dal/session";
 import { MARKETING_SITE_URL } from "@/lib/domain/marketingSite";
 import { HeroVideoBackground } from "@/components/hero-video-background";
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ code?: string }>;
+}) {
+  const { code } = await searchParams;
+  if (code) {
+    // Supabase's password-reset and signup-confirmation emails are sent
+    // with redirectTo=/auth/callback, but land here with a bare ?code=
+    // instead whenever that exact URL isn't in the Supabase project's
+    // Redirect URLs allowlist — GoTrue silently falls back to the
+    // project's bare Site URL rather than erroring. Forward the code to
+    // the real handler instead of stranding the user on this marketing
+    // page with their one-time code sitting unused in the URL.
+    redirect(`/auth/callback?code=${encodeURIComponent(code)}&next=%2Freset-password`);
+  }
+
   const session = await verifySession();
   if (session && session.status === "active") {
     redirect("/dashboard");
