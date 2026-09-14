@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
+import { sendEmailSafely, getUserEmail } from "@/lib/email";
 import type { FormState } from "./auth";
 
 const PitchSchema = z.object({
@@ -151,6 +152,21 @@ export async function setApplicationStage(
     title: stage === "shortlisted" ? "You've been shortlisted" : "Application update",
     link: "/applications",
   });
+
+  // The in-app notification above only reaches someone who happens to
+  // log back in — an approval is exactly the moment they're not
+  // already sitting in the app, so it also needs an email (same
+  // fail-open contract as the notification itself: never blocks the
+  // real stage change above if the send fails).
+  if (stage === "shortlisted") {
+    const { data: opportunity } = await supabase.from("opportunities").select("title").eq("id", opportunityId).single();
+    const talentEmail = await getUserEmail(admin, application.talent_id);
+    await sendEmailSafely(
+      talentEmail,
+      "You've been shortlisted on AdorWorks",
+      `<p>Good news — you've been shortlisted for${opportunity?.title ? ` <strong>${opportunity.title}</strong>` : " an opportunity"} on AdorWorks.</p><p><a href="${process.env.NEXT_PUBLIC_SITE_URL}/applications">View your applications</a></p>`
+    );
+  }
 
   revalidatePath(`/organisation/opportunities/${opportunityId}`);
   return {};
