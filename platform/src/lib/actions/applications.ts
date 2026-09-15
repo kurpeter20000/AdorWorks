@@ -23,6 +23,29 @@ const PitchSchema = z.object({
 const MAX_APPLICATIONS_PER_DAY = 15;
 
 /**
+ * S08-02: saves a resumable draft — a separate table from `applications`
+ * (application_drafts, 0078), so it's invisible to the employer and can't
+ * collide with the real submission's uniqueness/deadline/status checks.
+ * Silent no-op on failure by design: this fires from a "Save draft" click
+ * mid-form, and a transient failure shouldn't block the applicant from
+ * continuing to type or submitting for real.
+ */
+export async function saveApplicationDraft(
+  opportunityId: string,
+  pitch: string,
+  answers: Record<string, string>
+): Promise<{ error?: string }> {
+  const session = await requireRole("talent");
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("application_drafts")
+    .upsert({ opportunity_id: opportunityId, talent_id: session.userId, pitch, answers }, { onConflict: "opportunity_id,talent_id" });
+  if (error) return { error: error.message };
+  return {};
+}
+
+/**
  * Handles both the pitch and any screening-question answers in one submit.
  * Screening answers arrive as answer-{questionId} fields — the set of
  * questions is re-fetched server-side (never trusted from the form) so a
@@ -115,6 +138,9 @@ export async function applyToOpportunity(
       }))
     );
   }
+
+  // S08-02: the draft's job is done once the real submission exists.
+  await supabase.from("application_drafts").delete().eq("opportunity_id", opportunityId).eq("talent_id", session.userId);
 
   const admin = createAdminClient();
   await logAuditEvent(admin, {

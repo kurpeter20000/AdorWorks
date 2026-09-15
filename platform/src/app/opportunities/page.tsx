@@ -8,6 +8,7 @@ import { formatCompensation } from "@/lib/domain/format";
 import { ApplyButton } from "./apply-button";
 import { SaveButton } from "./save-button";
 import { DismissButton } from "./dismiss-button";
+import { ShareButton } from "./share-button";
 import type { Category, EngagementType, WorkMode } from "@/lib/database.types";
 
 export const metadata: Metadata = { title: "Find work" };
@@ -68,6 +69,8 @@ export default async function OpportunitiesPage({
     engagementType?: string;
     workMode?: string;
     workType?: string;
+    location?: string;
+    deadlineBefore?: string;
     all?: string;
     sort?: string;
     page?: string;
@@ -75,7 +78,7 @@ export default async function OpportunitiesPage({
 }) {
   const session = await requireRole("talent");
   const rawParams = await searchParams;
-  const { q, category, engagementType, workMode, workType, all, sort, page } = rawParams;
+  const { q, category, engagementType, workMode, workType, location, deadlineBefore, all, sort, page } = rawParams;
   const supabase = await createClient();
   const sortMode = sort === "relevant" ? "relevant" : "recent";
   const currentPage = Math.max(1, Number(page) || 1);
@@ -122,6 +125,10 @@ export default async function OpportunitiesPage({
   if (effectiveWorkMode && effectiveWorkMode in WORK_MODE_LABEL) query = query.eq("work_mode", effectiveWorkMode as WorkMode);
   if (effectiveWorkType && effectiveWorkType in WORK_TYPE_ENGAGEMENT_TYPES)
     query = query.in("engagement_type", WORK_TYPE_ENGAGEMENT_TYPES[effectiveWorkType]);
+  // S07-08: location was a stored column with no filter at all; deadline
+  // similarly had no way to narrow to opportunities closing soon.
+  if (location?.trim()) query = query.ilike("location", `%${location.trim().replace(/[%_]/g, "")}%`);
+  if (deadlineBefore) query = query.not("application_deadline", "is", null).lte("application_deadline", deadlineBefore);
 
   const [{ data: opportunities }, { data: orgs }, { data: myApplications }, { data: saved }, { data: dismissed }] = await Promise.all([
     query,
@@ -141,7 +148,7 @@ export default async function OpportunitiesPage({
   const appliedIds = new Set((myApplications ?? []).map((a) => a.opportunity_id));
   const savedIds = new Set((saved ?? []).map((s) => s.opportunity_id));
   const dismissedIds = new Set((dismissed ?? []).map((d) => d.opportunity_id));
-  const hasFilters = !!(q || category || engagementType || workMode || workType || all);
+  const hasFilters = !!(q || category || engagementType || workMode || workType || location || deadlineBefore || all);
 
   const visible = (opportunities ?? []).filter((o) => !dismissedIds.has(o.id));
 
@@ -156,7 +163,7 @@ export default async function OpportunitiesPage({
 
   function pageHref(overrides: Record<string, string | undefined>) {
     const params = new URLSearchParams();
-    const merged = { q, category, engagementType, workMode, workType, all, sort: sortMode, page: String(currentPage), ...overrides };
+    const merged = { q, category, engagementType, workMode, workType, location, deadlineBefore, all, sort: sortMode, page: String(currentPage), ...overrides };
     for (const [key, value] of Object.entries(merged)) {
       if (value) params.set(key, value);
     }
@@ -288,12 +295,39 @@ export default async function OpportunitiesPage({
             </select>
           </div>
         </div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div>
+            <label htmlFor="opportunities-location" className="sr-only">
+              Filter by location
+            </label>
+            <input
+              id="opportunities-location"
+              type="text"
+              name="location"
+              defaultValue={location ?? ""}
+              placeholder="Location (e.g. Juba, Remote)"
+              className="w-full rounded-lg border border-slate/25 px-2 py-2 text-xs"
+            />
+          </div>
+          <div>
+            <label htmlFor="opportunities-deadline-before" className="block text-[11px] text-slate">
+              Closing on or before
+            </label>
+            <input
+              id="opportunities-deadline-before"
+              type="date"
+              name="deadlineBefore"
+              defaultValue={deadlineBefore ?? ""}
+              className="w-full rounded-lg border border-slate/25 px-2 py-2 text-xs"
+            />
+          </div>
+        </div>
         <div className="flex items-center gap-3">
           <button type="submit" className="rounded-lg bg-teal px-4 py-2 text-sm font-bold text-midnight">
             Search
           </button>
           {hasFilters && (
-            <Link href={pageHref({ q: undefined, category: undefined, engagementType: undefined, workMode: undefined, workType: undefined, all: undefined, page: "1" })} className="text-xs font-semibold text-slate underline">
+            <Link href={pageHref({ q: undefined, category: undefined, engagementType: undefined, workMode: undefined, workType: undefined, location: undefined, deadlineBefore: undefined, all: undefined, page: "1" })} className="text-xs font-semibold text-slate underline">
               Clear filters
             </Link>
           )}
@@ -305,7 +339,7 @@ export default async function OpportunitiesPage({
           {hasFilters ? (
             <>
               <p>No opportunities match these filters.</p>
-              <Link href={pageHref({ q: undefined, category: undefined, engagementType: undefined, workMode: undefined, workType: undefined, all: undefined, page: "1" })} className="mt-1 inline-block font-semibold text-teal-ink underline">
+              <Link href={pageHref({ q: undefined, category: undefined, engagementType: undefined, workMode: undefined, workType: undefined, location: undefined, deadlineBefore: undefined, all: undefined, page: "1" })} className="mt-1 inline-block font-semibold text-teal-ink underline">
                 Clear filters and see everything open
               </Link>
             </>
@@ -357,7 +391,10 @@ export default async function OpportunitiesPage({
                 </div>
                 <div className="mt-2 flex items-center justify-between">
                   <DismissButton opportunityId={o.id} />
-                  <ReportButton targetType="opportunity" targetId={o.id} />
+                  <div className="flex items-center gap-3">
+                    <ShareButton opportunityId={o.id} />
+                    <ReportButton targetType="opportunity" targetId={o.id} />
+                  </div>
                 </div>
               </li>
             ))}

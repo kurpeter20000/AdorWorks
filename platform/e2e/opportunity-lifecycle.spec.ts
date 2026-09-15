@@ -5,6 +5,7 @@ import {
   createTestUser,
   createUserClient,
   deleteTestUser,
+  loginAs,
   seedOpportunity,
   seedTalentService,
 } from "./helpers";
@@ -103,6 +104,38 @@ test.describe("opportunity and service status transitions", () => {
     } finally {
       await service.cleanup();
       await deleteTestUser(talent.id);
+    }
+  });
+});
+
+/**
+ * S07-15 gap-check (2026-09-15): the tests above only ever exercise
+ * illegal transitions and tenant isolation directly against the database
+ * — no test drove a published opportunity through the actual UI a talent
+ * uses to discover work, or confirmed it actually disappears once closed.
+ * This is that missing happy-path proof: a real signed-in browser session
+ * on /opportunities, not a direct Supabase client call.
+ */
+test.describe("opportunity discovery reflects real publish/close state", () => {
+  test("a published opportunity appears in search and disappears once closed", async ({ page }) => {
+    const org = await createTestOrganisation("discoverylifecycle");
+    await admin.from("organisations").update({ verification_status: "verified" }).eq("id", org.id);
+    const talent = await createTestUser("discoverytalent", "talent");
+    const title = `E2E Discoverable Role ${Date.now()}`;
+    const opportunity = await seedOpportunity(org.id, { status: "open", title });
+
+    try {
+      await loginAs(page, talent.email);
+      await page.goto(`/opportunities?q=${encodeURIComponent(title)}`);
+      await expect(page.getByText(title)).toBeVisible();
+
+      await admin.from("opportunities").update({ status: "closed" }).eq("id", opportunity.id);
+      await page.reload();
+      await expect(page.getByText(title)).toHaveCount(0);
+    } finally {
+      await opportunity.cleanup();
+      await deleteTestUser(talent.id);
+      await org.cleanup();
     }
   });
 });

@@ -623,3 +623,69 @@ export async function closeOpportunity(
   revalidatePath(`/organisation/opportunities/${opportunityId}`);
   return {};
 }
+
+const REOPENABLE_STATUSES = ["filled", "closed", "cancelled", "expired"] as const;
+
+/**
+ * S07-06: no path back to 'open' existed once an opportunity reached a
+ * terminal status. guard_opportunities_update() (0076) allows this exact
+ * transition from an org write-member without requiring fresh staff
+ * review — the completeness and verified-organisation checks still apply
+ * unconditionally, so this can still fail if either isn't met.
+ */
+/**
+ * S07-11: records an already-uploaded opportunity-attachments file's
+ * metadata. opportunity_attachments_insert RLS (0077) is the real gate —
+ * this just gives the UI a typed entry point and revalidates the page.
+ */
+export async function addOpportunityAttachment(
+  opportunityId: string,
+  file: { path: string; filename: string; contentType: string; sizeBytes: number }
+): Promise<FormState> {
+  const session = await requireRole(...CLIENT_ROLES);
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("opportunity_attachments").insert({
+    opportunity_id: opportunityId,
+    path: file.path,
+    filename: file.filename,
+    content_type: file.contentType,
+    size_bytes: file.sizeBytes,
+    uploaded_by: session.userId,
+  });
+  if (error) return { message: `Could not save this file: ${error.message}` };
+
+  revalidatePath(`/organisation/opportunities/${opportunityId}`);
+  return {};
+}
+
+export async function removeOpportunityAttachment(attachmentId: string, opportunityId: string): Promise<FormState> {
+  await requireRole(...CLIENT_ROLES);
+
+  const supabase = await createClient();
+  const { data: attachment } = await supabase.from("opportunity_attachments").select("path").eq("id", attachmentId).maybeSingle();
+  if (!attachment) return { message: "That file could not be found." };
+
+  await supabase.storage.from("opportunity-attachments").remove([attachment.path]);
+  const { error } = await supabase.from("opportunity_attachments").delete().eq("id", attachmentId);
+  if (error) return { message: `Could not remove this file: ${error.message}` };
+
+  revalidatePath(`/organisation/opportunities/${opportunityId}`);
+  return {};
+}
+
+export async function reopenOpportunity(opportunityId: string): Promise<FormState> {
+  await requireRole(...CLIENT_ROLES);
+
+  const supabase = await createClient();
+  const { data: current } = await supabase.from("opportunities").select("status").eq("id", opportunityId).maybeSingle();
+  if (!current || !REOPENABLE_STATUSES.includes(current.status as (typeof REOPENABLE_STATUSES)[number])) {
+    return { message: "This opportunity can't be reopened from its current status." };
+  }
+
+  const { error } = await supabase.from("opportunities").update({ status: "open" }).eq("id", opportunityId);
+  if (error) return { message: `Could not reopen this: ${error.message}` };
+
+  revalidatePath(`/organisation/opportunities/${opportunityId}`);
+  return {};
+}

@@ -8,10 +8,12 @@ import { createClient } from "@/lib/supabase/server";
 import { AppealRejectionForm } from "./appeal-rejection-form";
 import { ApplicantEvaluationPanel } from "./applicant-evaluation-panel";
 import { CloseOpportunityActions } from "./close-opportunity-actions";
+import { ReopenOpportunityButton } from "./reopen-opportunity-button";
 import { SendOfferForm } from "./send-offer-form";
 import { ShortlistingModeForm } from "./shortlisting-mode-form";
 import { ShortlistActions } from "./shortlist-actions";
 import { RemoveFromShortlistButton } from "./remove-from-shortlist-button";
+import { OpportunityAttachments } from "./opportunity-attachments";
 
 export const metadata: Metadata = { title: "Opportunity" };
 
@@ -36,6 +38,12 @@ export default async function OpportunityDetailPage({
   if (!opportunity) {
     notFound();
   }
+
+  const { data: attachments } = await supabase
+    .from("opportunity_attachments")
+    .select("id, filename, size_bytes, created_at")
+    .eq("opportunity_id", opportunity.id)
+    .order("created_at", { ascending: false });
 
   const { data: applications } = await supabase
     .from("applications")
@@ -144,6 +152,8 @@ export default async function OpportunityDetailPage({
 
       <ShortlistingModeForm opportunityId={opportunity.id} mode={opportunity.shortlisting_mode} />
 
+      <OpportunityAttachments opportunityId={opportunity.id} attachments={attachments ?? []} />
+
       {opportunity.status === "rejected" && opportunity.rejection_reason && (
         <div className="mt-4 rounded-lg bg-coral/10 px-4 py-3 text-sm text-coral-ink">
           <p>Not approved: {opportunity.rejection_reason}</p>
@@ -162,6 +172,10 @@ export default async function OpportunityDetailPage({
       )}
 
       {opportunity.status === "open" && <CloseOpportunityActions opportunityId={opportunity.id} />}
+
+      {["filled", "closed", "cancelled", "expired"].includes(opportunity.status) && (
+        <ReopenOpportunityButton opportunityId={opportunity.id} />
+      )}
 
       {opportunity.status === "changes_required" && (
         <div className="mt-4 rounded-lg bg-violet/10 px-4 py-3 text-sm text-midnight">

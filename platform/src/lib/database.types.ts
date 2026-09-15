@@ -366,6 +366,26 @@ export type ApplicationNoteRow = {
   created_at: string;
 }
 
+export type OpportunityAttachmentRow = {
+  id: string;
+  opportunity_id: string;
+  path: string;
+  filename: string;
+  content_type: string;
+  size_bytes: number;
+  uploaded_by: string;
+  created_at: string;
+}
+
+export type ApplicationDraftRow = {
+  id: string;
+  opportunity_id: string;
+  talent_id: string;
+  pitch: string | null;
+  answers: Record<string, string>;
+  updated_at: string;
+}
+
 export type ScreeningQuestionRow = {
   id: string;
   opportunity_id: string;
@@ -881,6 +901,18 @@ export type Database = {
         Row: ScreeningQuestionRow;
         Insert: Partial<ScreeningQuestionRow> & { opportunity_id: string; question: string };
         Update: Partial<ScreeningQuestionRow>;
+        Relationships: [];
+      };
+      application_drafts: {
+        Row: ApplicationDraftRow;
+        Insert: Partial<ApplicationDraftRow> & { opportunity_id: string; talent_id: string };
+        Update: Partial<ApplicationDraftRow>;
+        Relationships: [];
+      };
+      opportunity_attachments: {
+        Row: OpportunityAttachmentRow;
+        Insert: Partial<OpportunityAttachmentRow> & { opportunity_id: string; path: string; filename: string; content_type: string; size_bytes: number; uploaded_by: string };
+        Update: Partial<OpportunityAttachmentRow>;
         Relationships: [];
       };
       screening_answers: {
