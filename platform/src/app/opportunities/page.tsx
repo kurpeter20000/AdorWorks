@@ -105,7 +105,7 @@ export default async function OpportunitiesPage({
   let query = supabase
     .from("opportunities")
     .select(
-      "id, title, brief, category, skills, location, work_mode, engagement_type, payment_basis, compensation_amount, compensation_min, compensation_max, currency, organisation_id, created_at"
+      "id, title, brief, category, skills, location, work_mode, engagement_type, payment_basis, compensation_amount, compensation_min, compensation_max, currency, organisation_id, application_deadline, created_at"
     )
     .eq("status", "open")
     .eq("visibility", "public")
@@ -125,13 +125,19 @@ export default async function OpportunitiesPage({
 
   const [{ data: opportunities }, { data: orgs }, { data: myApplications }, { data: saved }, { data: dismissed }] = await Promise.all([
     query,
-    supabase.from("organisations").select("id, name"),
+    // The RLS-gated per-session client can't read the organisations table
+    // as a browsing talent (organisations_select requires membership/
+    // staff/representative) — public_organisation_names (0072) is a
+    // narrow, pre-filtered view (id/name/verification_status only) built
+    // specifically to fix this: real employer names were silently falling
+    // back to a generic placeholder for effectively every listing.
+    supabase.from("public_organisation_names").select("id, name, verification_status"),
     supabase.from("applications").select("opportunity_id").eq("talent_id", session.userId),
     supabase.from("saved_opportunities").select("opportunity_id").eq("talent_id", session.userId),
     supabase.from("dismissed_opportunities").select("opportunity_id").eq("talent_id", session.userId),
   ]);
 
-  const orgNames = new Map((orgs ?? []).map((o) => [o.id, o.name]));
+  const orgInfo = new Map((orgs ?? []).map((o) => [o.id, { name: o.name, verified: o.verification_status === "verified" }]));
   const appliedIds = new Set((myApplications ?? []).map((a) => a.opportunity_id));
   const savedIds = new Set((saved ?? []).map((s) => s.opportunity_id));
   const dismissedIds = new Set((dismissed ?? []).map((d) => d.opportunity_id));
@@ -315,7 +321,17 @@ export default async function OpportunitiesPage({
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="font-bold text-midnight">{o.title}</p>
-                    <p className="text-xs text-slate">{orgNames.get(o.organisation_id) ?? "AdorWorks employer"}</p>
+                    <p className="flex items-center gap-1.5 text-xs text-slate">
+                      {orgInfo.get(o.organisation_id)?.name ?? "AdorWorks employer"}
+                      {orgInfo.get(o.organisation_id)?.verified && (
+                        <span
+                          className="inline-flex items-center rounded-full bg-teal-ink/10 px-1.5 py-0.5 text-[10px] font-semibold text-teal-ink"
+                          title="This organisation has completed AdorWorks verification."
+                        >
+                          Verified
+                        </span>
+                      )}
+                    </p>
                   </div>
                   <span className="whitespace-nowrap text-sm font-semibold text-teal-ink">
                     {formatCompensation(o)}
@@ -332,6 +348,7 @@ export default async function OpportunitiesPage({
                 <div className="mt-3 flex items-center justify-between">
                   <p className="text-xs text-slate">
                     {[o.location, o.work_mode, o.engagement_type?.replace("_", " ")].filter(Boolean).join(" · ")}
+                    {o.application_deadline && ` · Apply by ${new Date(o.application_deadline).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`}
                   </p>
                   <div className="flex items-center gap-3">
                     <SaveButton opportunityId={o.id} initialSaved={savedIds.has(o.id)} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { inviteTeamMember, type InviteState } from "@/lib/actions/organisationTeam";
 
 const initialState: InviteState = {};
@@ -8,6 +8,9 @@ const initialState: InviteState = {};
 export function InviteForm({ organisationId }: { organisationId: string }) {
   const boundAction = inviteTeamMember.bind(null, organisationId);
   const [state, formAction, pending] = useActionState(boundAction, initialState);
+  const [copied, setCopied] = useState(false);
+
+  const inviteLink = state.inviteToken && typeof window !== "undefined" ? `${window.location.origin}/organisation/invite/${state.inviteToken}` : null;
 
   return (
     <form action={formAction} className="mt-3 space-y-2 rounded-lg border border-slate/15 bg-white p-4">
@@ -36,21 +39,40 @@ export function InviteForm({ organisationId }: { organisationId: string }) {
         Recruiter, hiring manager, and finance behave like Member today — labels only, for now.
       </p>
       {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
-      {/* inviteTeamMember returns {} (or {temporaryPassword}) on success —
+      {/* inviteTeamMember returns {inviteToken, ...} on success —
           state !== initialState is what distinguishes "just succeeded"
           from "never submitted yet", same empty-success-object shape as
           the assistance-request form. */}
       {state !== initialState && !state.message && !state.errors && (
-        <p className="rounded-lg bg-teal/10 px-3 py-2 text-sm text-teal-ink">
-          {state.temporaryPassword ? (
-            <>
+        <div className="space-y-2 rounded-lg bg-teal/10 px-3 py-2 text-sm text-teal-ink">
+          {state.temporaryPassword && (
+            <p>
               Account created. Temporary password (give this to them, it won&rsquo;t be shown again):{" "}
               <strong>{state.temporaryPassword}</strong>
-            </>
-          ) : (
-            "Added to the team — they already had an account, so their existing password still works."
+            </p>
           )}
-        </p>
+          <p>
+            Invitation sent — it expires in 7 days. Share this link with them to accept it (nothing is delivered by
+            email automatically yet):
+          </p>
+          {inviteLink && (
+            <div className="flex items-center gap-2">
+              <code className="flex-1 overflow-x-auto rounded bg-white px-2 py-1 text-xs text-midnight">{inviteLink}</code>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(inviteLink).then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  });
+                }}
+                className="whitespace-nowrap text-xs font-semibold underline"
+              >
+                {copied ? "Copied!" : "Copy"}
+              </button>
+            </div>
+          )}
+        </div>
       )}
       <button
         type="submit"

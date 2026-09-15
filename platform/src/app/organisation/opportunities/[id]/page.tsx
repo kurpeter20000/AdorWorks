@@ -11,6 +11,7 @@ import { CloseOpportunityActions } from "./close-opportunity-actions";
 import { SendOfferForm } from "./send-offer-form";
 import { ShortlistingModeForm } from "./shortlisting-mode-form";
 import { ShortlistActions } from "./shortlist-actions";
+import { RemoveFromShortlistButton } from "./remove-from-shortlist-button";
 
 export const metadata: Metadata = { title: "Opportunity" };
 
@@ -38,7 +39,7 @@ export default async function OpportunityDetailPage({
 
   const { data: applications } = await supabase
     .from("applications")
-    .select("id, talent_id, stage, pitch, created_at")
+    .select("id, talent_id, stage, source, pitch, created_at")
     .eq("opportunity_id", opportunity.id)
     .order("created_at", { ascending: false });
 
@@ -284,6 +285,8 @@ export default async function OpportunityDetailPage({
                     <SendOfferForm applicationId={a.id} />
                   ) : a.stage === "submitted" && opportunity.shortlisting_mode === "self_service" ? (
                     <ShortlistActions applicationId={a.id} opportunityId={opportunity.id} />
+                  ) : a.stage === "shortlisted" && a.source === "matched" ? (
+                    <RemoveFromShortlistButton applicationId={a.id} opportunityId={opportunity.id} />
                   ) : null}
 
                   <ApplicantEvaluationPanel

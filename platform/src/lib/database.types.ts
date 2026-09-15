@@ -212,6 +212,20 @@ export type OrganisationMemberRow = {
   created_at: string;
 }
 
+export type OrganisationTeamInvitationRow = {
+  id: string;
+  organisation_id: string;
+  email: string;
+  role: OrganisationMemberRole;
+  token: string;
+  invited_by: string;
+  status: "pending" | "accepted" | "revoked";
+  expires_at: string;
+  accepted_by: string | null;
+  accepted_at: string | null;
+  created_at: string;
+}
+
 export type HonorificRow = {
   code: string;
   label: string;
@@ -674,6 +688,12 @@ export type AssistedFieldChangeRow = {
   changed_at: string;
 }
 
+export type PublicOrganisationNameRow = {
+  id: string;
+  name: string;
+  verification_status: "pending" | "verified" | "rejected" | "suspended";
+}
+
 export type PublicTalentProfileRow = {
   id: string;
   display_name: string | null;
@@ -795,6 +815,12 @@ export type Database = {
         Row: OrganisationMemberRow;
         Insert: Partial<OrganisationMemberRow> & { organisation_id: string; user_id: string };
         Update: Partial<OrganisationMemberRow>;
+        Relationships: [];
+      };
+      organisation_team_invitations: {
+        Row: OrganisationTeamInvitationRow;
+        Insert: Partial<OrganisationTeamInvitationRow> & { organisation_id: string; email: string; role: OrganisationMemberRole; invited_by: string };
+        Update: Partial<OrganisationTeamInvitationRow>;
         Relationships: [];
       };
       honorifics: {
@@ -1066,6 +1092,10 @@ export type Database = {
     Views: {
       public_talent_profiles: {
         Row: PublicTalentProfileRow;
+        Relationships: [];
+      };
+      public_organisation_names: {
+        Row: PublicOrganisationNameRow;
         Relationships: [];
       };
     };

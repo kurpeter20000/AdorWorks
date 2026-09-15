@@ -6,6 +6,8 @@ import { revalidatePath } from "next/cache";
 import { requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAuditEvent } from "@/lib/domain/audit";
+import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import type { FormState } from "./auth";
 
 const OrganisationSchema = z.object({
@@ -55,10 +57,9 @@ export async function createOrganisation(_prevState: FormState, formData: FormDa
 }
 
 /**
- * Edit counterpart to createOrganisation, for after setup. Only works for
- * the org's representative — organisations_update RLS (0002) is keyed to
- * representative_id, same limitation noted on setOrganisationEvidence/Logo
- * below (an invited org_admin teammate can't call this yet).
+ * Edit counterpart to createOrganisation, for after setup.
+ * organisations_update RLS (0002, widened by 0072) allows the
+ * representative, any org_admin teammate, or staff.
  */
 export async function updateOrganisation(
   organisationId: string,
@@ -449,12 +450,10 @@ export async function setShortlistingMode(
 }
 
 /**
- * Records the storage path of an uploaded registration document. Only
- * works for the org's representative — organisations_update RLS (0002)
- * and the org-documents storage policy (0004) are both keyed to
- * representative_id specifically, not is_org_admin(), so an invited admin
- * teammate can't call this successfully yet (left as-is deliberately, see
- * the Phase 3 team-permissions plan).
+ * Records the storage path of an uploaded registration document.
+ * organisations_update RLS and the org-documents storage policy (both
+ * widened by 0072) allow the representative, any org_admin teammate, or
+ * staff.
  */
 export async function setOrganisationEvidence(organisationId: string, filePath: string): Promise<FormState> {
   await requireRole(...CLIENT_ROLES);
@@ -471,7 +470,7 @@ export async function setOrganisationEvidence(organisationId: string, filePath: 
   return {};
 }
 
-/** Same representative_id-only pattern as setOrganisationEvidence above, for the org's logo instead. */
+/** Same pattern as setOrganisationEvidence above, for the org's logo instead. */
 export async function setOrganisationLogo(organisationId: string, filePath: string): Promise<FormState> {
   await requireRole(...CLIENT_ROLES);
 
@@ -492,6 +491,13 @@ export async function setOrganisationLogo(organisationId: string, filePath: stri
  * has no write policy for org reps at all, only staff — this is the one
  * sanctioned path for an org to affect their own check, gated by an
  * explicit ownership check here instead of RLS.
+ *
+ * S06-03: this was previously hard-restricted to the org's single original
+ * representative — an invited org_admin teammate could see verification
+ * status (once verification_checks_select was widened, 0072) but couldn't
+ * respond to an information request or appeal. Widened to any org admin,
+ * matching is_org_admin()'s own definition (representative OR
+ * organisation_members.role = 'admin').
  */
 export async function submitVerificationInfo(
   organisationId: string,
@@ -508,8 +514,15 @@ export async function submitVerificationInfo(
 
   const supabase = await createClient();
   const { data: org } = await supabase.from("organisations").select("representative_id").eq("id", organisationId).maybeSingle();
-  if (!org || org.representative_id !== session.userId) {
-    return { message: "Only the organisation's representative can do this." };
+  const { data: membership } = await supabase
+    .from("organisation_members")
+    .select("role")
+    .eq("organisation_id", organisationId)
+    .eq("user_id", session.userId)
+    .maybeSingle();
+  const isOrgAdmin = org?.representative_id === session.userId || membership?.role === "admin";
+  if (!org || !isOrgAdmin) {
+    return { message: "Only a team admin for this organisation can do this." };
   }
 
   const admin = createAdminClient();
@@ -530,6 +543,18 @@ export async function submitVerificationInfo(
     .update({ status: "submitted", applicant_note: note })
     .eq("id", checkId);
   if (error) return { message: `Could not submit this: ${error.message}` };
+
+  // S06-12: verification responses previously left no trace in
+  // audit_events at all.
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.VERIFICATION_SUBMITTED,
+    actorId: session.userId,
+    entityType: "verification_checks",
+    entityId: checkId,
+    source: "platform",
+    after: { status: "submitted" },
+    metadata: { organisationId },
+  });
 
   revalidatePath("/organisation");
   return {};

@@ -52,6 +52,23 @@ export async function applyToOpportunity(
     return { message: `You've reached the daily limit of ${MAX_APPLICATIONS_PER_DAY} applications — try again tomorrow.` };
   }
 
+  // S08-04: the real enforcement is applications_insert RLS (0073), which
+  // rejects this same insert server-side regardless of client — this is
+  // just a friendlier message than a raw RLS-violation error, checked with
+  // the same client the insert itself uses (never trust a value read
+  // earlier on the page, which could be stale).
+  const { data: opportunityCheck } = await supabase
+    .from("opportunities")
+    .select("status, application_deadline")
+    .eq("id", opportunityId)
+    .maybeSingle();
+  if (!opportunityCheck || opportunityCheck.status !== "open") {
+    return { message: "This opportunity is no longer accepting applications." };
+  }
+  if (opportunityCheck.application_deadline && opportunityCheck.application_deadline < new Date().toISOString().slice(0, 10)) {
+    return { message: "The application deadline for this opportunity has passed." };
+  }
+
   const { data: questions } = await supabase
     .from("screening_questions")
     .select("id, required")
@@ -124,14 +141,18 @@ export async function applyToOpportunity(
 export async function setApplicationStage(
   applicationId: string,
   opportunityId: string,
-  stage: "shortlisted" | "rejected"
+  stage: "shortlisted" | "rejected",
+  reason?: string
 ): Promise<{ error?: string }> {
   const session = await requireRole(...CLIENT_ROLES);
 
   const supabase = await createClient();
   const { data: application, error } = await supabase
     .from("applications")
-    .update({ stage })
+    // S08-09: a manual reject previously left decision_reason untouched —
+    // only the automatic closure-cascade path (0053/0054) ever set one, so
+    // a manually rejected applicant got no explanation at all.
+    .update(stage === "rejected" ? { stage, decision_reason: reason || null } : { stage })
     .eq("id", applicationId)
     .select("talent_id")
     .single();
@@ -145,6 +166,7 @@ export async function setApplicationStage(
     entityId: applicationId,
     source: "platform",
     after: { stage },
+    metadata: stage === "rejected" ? { reason: reason || null } : undefined,
   });
   await notifyUser(admin, {
     userId: application.talent_id,
@@ -154,17 +176,23 @@ export async function setApplicationStage(
   });
 
   // The in-app notification above only reaches someone who happens to
-  // log back in — an approval is exactly the moment they're not
-  // already sitting in the app, so it also needs an email (same
+  // log back in — a decision is exactly the moment they're not already
+  // sitting in the app, so both outcomes also need an email (same
   // fail-open contract as the notification itself: never blocks the
   // real stage change above if the send fails).
+  const { data: opportunity } = await supabase.from("opportunities").select("title").eq("id", opportunityId).single();
+  const talentEmail = await getUserEmail(admin, application.talent_id);
   if (stage === "shortlisted") {
-    const { data: opportunity } = await supabase.from("opportunities").select("title").eq("id", opportunityId).single();
-    const talentEmail = await getUserEmail(admin, application.talent_id);
     await sendEmailSafely(
       talentEmail,
       "You've been shortlisted on AdorWorks",
       `<p>Good news — you've been shortlisted for${opportunity?.title ? ` <strong>${opportunity.title}</strong>` : " an opportunity"} on AdorWorks.</p><p><a href="${process.env.NEXT_PUBLIC_SITE_URL}/applications">View your applications</a></p>`
+    );
+  } else {
+    await sendEmailSafely(
+      talentEmail,
+      "An update on your AdorWorks application",
+      `<p>Thanks for applying${opportunity?.title ? ` to <strong>${opportunity.title}</strong>` : ""} on AdorWorks. The employer has decided not to move forward with your application this time.</p>${reason ? `<p>${reason}</p>` : ""}<p><a href="${process.env.NEXT_PUBLIC_SITE_URL}/applications">View your applications</a></p>`
     );
   }
 
@@ -185,16 +213,60 @@ export async function setApplicationStage(
  * constraint turns an accidental double-add into a friendly no-op error.
  */
 export async function addCandidateToShortlist(opportunityId: string, talentId: string): Promise<{ error?: string }> {
-  await requireRole(...CLIENT_ROLES);
+  const session = await requireRole(...CLIENT_ROLES);
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data: application, error } = await supabase
     .from("applications")
-    .insert({ opportunity_id: opportunityId, talent_id: talentId, source: "matched", stage: "shortlisted" });
+    .insert({ opportunity_id: opportunityId, talent_id: talentId, source: "matched", stage: "shortlisted" })
+    .select("id")
+    .single();
   if (error) {
     if (error.code === "23505") return { error: "Already added to this shortlist." };
     return { error: error.message };
   }
+
+  // S06-12: self-service candidate-access/shortlist-add was previously
+  // unaudited entirely.
+  const admin = createAdminClient();
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.APPLICATION_STAGE_CHANGED,
+    actorId: session.userId,
+    subjectId: talentId,
+    entityType: "applications",
+    entityId: application.id,
+    source: "platform",
+    after: { stage: "shortlisted" },
+    metadata: { reason: "employer_self_service_search" },
+  });
+
+  revalidatePath(`/organisation/opportunities/${opportunityId}`);
+  revalidatePath(`/organisation/opportunities/${opportunityId}/find-talent`);
+  return {};
+}
+
+/**
+ * S06-10: removes a candidate the employer added themselves via
+ * self-service search. applications_delete_employer_shortlist RLS (0074)
+ * is the real gate — scoped to source='matched' rows only, so a real
+ * applicant's own submission can never be deleted this way.
+ */
+export async function removeFromShortlist(applicationId: string, opportunityId: string): Promise<{ error?: string }> {
+  const session = await requireRole(...CLIENT_ROLES);
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("applications").delete().eq("id", applicationId);
+  if (error) return { error: error.message };
+
+  const admin = createAdminClient();
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.APPLICATION_STAGE_CHANGED,
+    actorId: session.userId,
+    entityType: "applications",
+    entityId: applicationId,
+    source: "platform",
+    after: { stage: "removed_from_shortlist" },
+  });
 
   revalidatePath(`/organisation/opportunities/${opportunityId}`);
   revalidatePath(`/organisation/opportunities/${opportunityId}/find-talent`);
@@ -231,11 +303,22 @@ export async function withdrawApplication(applicationId: string): Promise<{ erro
 }
 
 export async function reapplyToOpportunity(applicationId: string): Promise<{ error?: string }> {
-  await requireRole("talent");
+  const session = await requireRole("talent");
 
   const supabase = await createClient();
   const { error } = await supabase.from("applications").update({ stage: "submitted" }).eq("id", applicationId);
   if (error) return { error: error.message };
+
+  const admin = createAdminClient();
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.APPLICATION_STAGE_CHANGED,
+    actorId: session.userId,
+    entityType: "applications",
+    entityId: applicationId,
+    source: "platform",
+    after: { stage: "submitted" },
+    metadata: { reason: "talent_reapplied" },
+  });
 
   revalidatePath("/applications");
   return {};
@@ -297,7 +380,7 @@ export async function setInterviewDetails(
   opportunityId: string,
   formData: FormData
 ): Promise<{ error?: string }> {
-  await requireRole(...CLIENT_ROLES);
+  const session = await requireRole(...CLIENT_ROLES);
 
   const scheduledAt = (formData.get("interviewScheduledAt") as string | null) || null;
   const notes = (formData.get("interviewNotes") as string | null)?.trim() || null;
@@ -308,6 +391,17 @@ export async function setInterviewDetails(
     .update({ interview_scheduled_at: scheduledAt, interview_notes: notes })
     .eq("id", applicationId);
   if (error) return { error: error.message };
+
+  // S08-10/S08-12: interview-detail edits previously left no trace at all.
+  const admin = createAdminClient();
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.APPLICATION_STAGE_CHANGED,
+    actorId: session.userId,
+    entityType: "applications",
+    entityId: applicationId,
+    source: "platform",
+    metadata: { reason: "interview_details_updated", interviewScheduledAt: scheduledAt },
+  });
 
   revalidatePath(`/organisation/opportunities/${opportunityId}`);
   return {};

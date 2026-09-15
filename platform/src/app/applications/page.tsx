@@ -11,8 +11,13 @@ export const metadata: Metadata = { title: "My applications" };
 
 const CLOSED_OPPORTUNITY_STATUSES = new Set(["closed", "cancelled", "expired", "filled"]);
 
-export default async function ApplicationsPage() {
+export default async function ApplicationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ applied?: string }>;
+}) {
   const session = await requireRole("talent");
+  const { applied } = await searchParams;
   const supabase = await createClient();
 
   const { data: applications } = await supabase
@@ -29,7 +34,12 @@ export default async function ApplicationsPage() {
 
   const orgIds = [...new Set((opportunities ?? []).map((o) => o.organisation_id))];
   const { data: orgs } =
-    orgIds.length > 0 ? await supabase.from("organisations").select("id, name").in("id", orgIds) : { data: [] };
+    // public_organisation_names (0072), not the RLS-gated organisations
+    // table — a talent isn't a member/representative/staff of the
+    // organisations they've applied to, so the base table's RLS returned
+    // nothing and this silently fell back to a generic placeholder for
+    // every single application (S08-05 gap-check finding).
+    orgIds.length > 0 ? await supabase.from("public_organisation_names").select("id, name").in("id", orgIds) : { data: [] };
 
   const opportunityById = new Map((opportunities ?? []).map((o) => [o.id, o]));
   const orgNameById = new Map((orgs ?? []).map((o) => [o.id, o.name]));
@@ -72,6 +82,12 @@ export default async function ApplicationsPage() {
           </Link>
         </div>
       </div>
+
+      {applied === "1" && (
+        <div className="mt-4 rounded-xl border border-teal-ink/20 bg-teal-ink/5 p-4 text-sm text-teal-ink" role="status">
+          Your application was submitted. You&apos;ll see it below, and the employer will be notified.
+        </div>
+      )}
 
       {!applications || applications.length === 0 ? (
         <p className="mt-8 text-sm text-slate">

@@ -3,6 +3,7 @@ import { requireOrganisationMembership } from "@/lib/dal/organisation";
 import { createClient } from "@/lib/supabase/server";
 import { InviteForm } from "./invite-form";
 import { MemberRow } from "./member-row";
+import { PendingInvitationRow } from "./pending-invitation-row";
 
 export const metadata: Metadata = { title: "Team" };
 
@@ -20,6 +21,16 @@ export default async function TeamPage() {
   const { data: profiles } =
     userIds.length > 0 ? await supabase.from("profiles").select("id, full_name").in("id", userIds) : { data: [] };
   const nameById = new Map((profiles ?? []).map((p) => [p.id, p.full_name]));
+
+  const { data: pendingInvitations } =
+    myRole === "admin"
+      ? await supabase
+          .from("organisation_team_invitations")
+          .select("id, email, role, token, expires_at, created_at")
+          .eq("organisation_id", org.id)
+          .eq("status", "pending")
+          .order("created_at", { ascending: false })
+      : { data: [] };
 
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
@@ -42,6 +53,28 @@ export default async function TeamPage() {
           />
         ))}
       </ul>
+
+      {myRole === "admin" && pendingInvitations && pendingInvitations.length > 0 && (
+        <div className="mt-8">
+          <h2 className="font-bold text-midnight">Pending invitations</h2>
+          <p className="mt-1 text-xs text-slate">
+            Not yet accepted — each expires 7 days after it was sent, and stops working automatically after that.
+          </p>
+          <ul className="mt-3 space-y-2">
+            {pendingInvitations.map((inv) => (
+              <PendingInvitationRow
+                key={inv.id}
+                organisationId={org.id}
+                invitationId={inv.id}
+                email={inv.email}
+                role={inv.role}
+                token={inv.token}
+                expiresAt={inv.expires_at}
+              />
+            ))}
+          </ul>
+        </div>
+      )}
 
       {myRole === "admin" && (
         <div className="mt-8">
