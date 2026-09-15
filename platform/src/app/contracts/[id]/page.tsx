@@ -35,9 +35,21 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
 
   const isTalent = contract.talent_id === session.userId;
   const [{ data: opportunity }, { data: org }] = await Promise.all([
-    supabase.from("opportunities").select("title").eq("id", contract.opportunity_id).maybeSingle(),
+    contract.opportunity_id
+      ? supabase.from("opportunities").select("title").eq("id", contract.opportunity_id).maybeSingle()
+      : Promise.resolve({ data: null }),
     supabase.from("organisations").select("id, name, representative_id").eq("id", contract.organisation_id).maybeSingle(),
   ]);
+  // S09-*: a service-originated contract has no opportunity — fall back to
+  // the talent's own service listing via service_requests.
+  let contractTitle = opportunity?.title ?? null;
+  if (!contractTitle && contract.service_request_id) {
+    const { data: request } = await supabase.from("service_requests").select("talent_service_id").eq("id", contract.service_request_id).maybeSingle();
+    if (request) {
+      const { data: service } = await supabase.from("talent_services").select("title").eq("id", request.talent_service_id).maybeSingle();
+      contractTitle = service?.title ?? null;
+    }
+  }
   const isEmployer = org?.representative_id === session.userId;
 
   // Gap-check fix: milestones/payment_events/disputes/deliverables RLS all
@@ -149,7 +161,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
 
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
-      <h1 className="text-2xl font-extrabold text-midnight">{opportunity?.title ?? "Contract"}</h1>
+      <h1 className="text-2xl font-extrabold text-midnight">{contractTitle ?? "Contract"}</h1>
       <p className="mt-1 text-sm text-slate">
         {isTalent ? `With ${org?.name ?? "your employer"}` : `With ${talent?.display_name ?? "your talent"}`} ·{" "}
         <StatusBadge state={CONTRACT_STATES[contract.status]} className="ml-1" />

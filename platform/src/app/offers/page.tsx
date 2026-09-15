@@ -12,13 +12,20 @@ export default async function OffersPage() {
   const session = await requireRole("talent");
   const supabase = await createClient();
 
+  // S09-04/S09-05: a talent's own sent service proposals also have
+  // talent_id = session.userId (same column, reversed direction — see
+  // submitServiceProposal) — this page is specifically "offers I
+  // received", so those are excluded here; they surface instead on
+  // /passport/services/requests, the page for responding to and tracking
+  // incoming service requests.
   const { data: offers } = await supabase
     .from("offers")
     .select("id, opportunity_id, payment_basis, compensation_amount, currency, message, status, created_at")
     .eq("talent_id", session.userId)
+    .not("opportunity_id", "is", null)
     .order("created_at", { ascending: false });
 
-  const opportunityIds = [...new Set((offers ?? []).map((o) => o.opportunity_id))];
+  const opportunityIds = [...new Set((offers ?? []).map((o) => o.opportunity_id).filter((id): id is string => id !== null))];
   const { data: opportunities } =
     opportunityIds.length > 0
       ? await supabase.from("opportunities").select("id, title, organisation_id").in("id", opportunityIds)

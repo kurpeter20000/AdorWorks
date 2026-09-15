@@ -3,9 +3,11 @@ import Link from "next/link";
 import { verifySession } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { CATEGORY_LABEL } from "@/lib/domain/taxonomy";
+import { EMPLOYER_ACCOUNT_ROLES } from "@/lib/domain/roles";
 import { ReportButton } from "@/components/report-button";
 import { SaveServiceButton } from "./save-button";
 import { DismissServiceButton } from "./dismiss-button";
+import { RequestServiceButton } from "./request-service-button";
 import type { Category } from "@/lib/database.types";
 
 export const metadata: Metadata = { title: "Browse services" };
@@ -37,6 +39,19 @@ export default async function BrowseServicesPage({
   const { q, category, page } = await searchParams;
   const supabase = await createClient();
   const currentPage = Math.max(1, Number(page) || 1);
+
+  // S09-03: "Request this service" is an employer-side action only —
+  // this page is open to any signed-in visitor (including talent
+  // browsing competitors' listings), so the membership lookup only runs
+  // for an employer-account-role session, and never redirects (unlike
+  // getMyOrganisationMembership()'s own default behaviour, which would
+  // incorrectly bounce a talent viewer away from a page they're allowed
+  // to browse).
+  let myOrganisationId: string | null = null;
+  if (session && (EMPLOYER_ACCOUNT_ROLES as readonly string[]).includes(session.role)) {
+    const { data: membership } = await supabase.from("organisation_members").select("organisation_id").eq("user_id", session.userId).maybeSingle();
+    myOrganisationId = membership?.organisation_id ?? null;
+  }
 
   const [{ data: saved }, { data: dismissed }] = await Promise.all([
     session ? supabase.from("saved_services").select("service_id").eq("saver_id", session.userId) : Promise.resolve({ data: [] }),
@@ -70,6 +85,20 @@ export default async function BrowseServicesPage({
       ? await supabase.from("public_talent_profiles").select("id, display_name, headline, verification_tier").in("id", talentIds)
       : { data: [] };
   const talentById = new Map((talents ?? []).map((t) => [t.id, t]));
+
+  let requestedServiceIds = new Set<string>();
+  if (myOrganisationId && visible.length > 0) {
+    const { data: myRequests } = await supabase
+      .from("service_requests")
+      .select("talent_service_id")
+      .eq("organisation_id", myOrganisationId)
+      .in("status", ["pending", "proposed"])
+      .in(
+        "talent_service_id",
+        visible.map((s) => s.id)
+      );
+    requestedServiceIds = new Set((myRequests ?? []).map((r) => r.talent_service_id));
+  }
 
   const hasFilters = !!(q || category);
   const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
@@ -188,6 +217,16 @@ export default async function BrowseServicesPage({
                         <DismissServiceButton serviceId={s.id} />
                       </div>
                       <ReportButton targetType="talent_service" targetId={s.id} />
+                    </div>
+                  )}
+                  {myOrganisationId && (
+                    <div className="mt-2 border-t border-slate/10 pt-2">
+                      <RequestServiceButton
+                        organisationId={myOrganisationId}
+                        talentServiceId={s.id}
+                        talentId={s.talent_id}
+                        alreadyRequested={requestedServiceIds.has(s.id)}
+                      />
                     </div>
                   )}
                 </li>

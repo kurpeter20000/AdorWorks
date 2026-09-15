@@ -16,7 +16,13 @@ import { StatusBadge } from "@/components/status-badge";
 import { TALENT_SERVICE_STATES } from "@/lib/domain/states";
 import { ServiceForm } from "./service-form";
 
-export function ServicesList({ services }: { services: TalentServiceRow[] }) {
+export function ServicesList({
+  services,
+  pricingGuidance,
+}: {
+  services: TalentServiceRow[];
+  pricingGuidance: Record<string, { min: number; max: number; count: number }>;
+}) {
   const router = useRouter();
   const [addingNew, setAddingNew] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -165,7 +171,7 @@ export function ServicesList({ services }: { services: TalentServiceRow[] }) {
                 </div>
               )}
               {editingId === service.id && (
-                <ServiceForm existing={service} onSaved={() => setEditingId(null)} />
+                <ServiceForm existing={service} onSaved={() => setEditingId(null)} pricingGuidance={pricingGuidance} />
               )}
             </li>
           ))}
@@ -175,7 +181,7 @@ export function ServicesList({ services }: { services: TalentServiceRow[] }) {
       {error && <p className="mt-2 text-sm text-coral-ink">{error}</p>}
 
       {addingNew ? (
-        <ServiceForm onSaved={() => setAddingNew(false)} />
+        <ServiceForm onSaved={() => setAddingNew(false)} pricingGuidance={pricingGuidance} />
       ) : (
         <button
           type="button"

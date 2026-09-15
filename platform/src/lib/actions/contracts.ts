@@ -111,7 +111,7 @@ async function maybeCompleteContract(admin: ReturnType<typeof createAdminClient>
 
   const { data: contract } = await admin
     .from("contracts")
-    .select("id, talent_id, organisation_id, status, opportunity_id")
+    .select("id, talent_id, organisation_id, status, opportunity_id, service_request_id")
     .eq("id", contractId)
     .maybeSingle();
   if (!contract || contract.status === "completed") return;
@@ -121,18 +121,29 @@ async function maybeCompleteContract(admin: ReturnType<typeof createAdminClient>
     .update({ status: "completed", completed_at: new Date().toISOString() })
     .eq("id", contractId);
 
-  const { data: opportunity } = await admin
-    .from("opportunities")
-    .select("title, brief")
-    .eq("id", contract.opportunity_id)
-    .maybeSingle();
+  // S09-*: a service-originated contract has no opportunity_id — fetch
+  // the talent's own service listing instead (via service_requests).
+  let title: string | null = null;
+  let summary: string | null = null;
+  if (contract.opportunity_id) {
+    const { data: opportunity } = await admin.from("opportunities").select("title, brief").eq("id", contract.opportunity_id).maybeSingle();
+    title = opportunity?.title ?? null;
+    summary = opportunity?.brief ?? null;
+  } else if (contract.service_request_id) {
+    const { data: request } = await admin.from("service_requests").select("talent_service_id").eq("id", contract.service_request_id).maybeSingle();
+    if (request) {
+      const { data: service } = await admin.from("talent_services").select("title, deliverables").eq("id", request.talent_service_id).maybeSingle();
+      title = service?.title ?? null;
+      summary = service?.deliverables ?? null;
+    }
+  }
 
   await admin.from("work_history").insert({
     talent_id: contract.talent_id,
     contract_id: contract.id,
     organisation_id: contract.organisation_id,
-    title: opportunity?.title ?? "AdorWorks engagement",
-    summary: opportunity?.brief ?? null,
+    title: title ?? "AdorWorks engagement",
+    summary,
     completed_at: new Date().toISOString(),
   });
 }

@@ -19,6 +19,7 @@ export const DOMAIN_EVENTS = {
   ASSISTANCE_CONSENTED: "assistance.session.consented",
   ASSISTANCE_REVOKED: "assistance.session.revoked",
   OPPORTUNITY_SUBMITTED: "opportunity.submitted",
+  SERVICE_REQUESTED: "service.requested",
   OPPORTUNITY_PUBLISHED: "opportunity.published",
   OPPORTUNITY_REJECTED: "opportunity.rejected",
   OPPORTUNITY_CHANGES_REQUESTED: "opportunity.changes_requested",

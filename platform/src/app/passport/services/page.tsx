@@ -21,6 +21,26 @@ export default async function ServicesPage() {
     .eq("talent_id", session.userId)
     .order("created_at", { ascending: false });
 
+  // S09-10: no staff-curated price list exists for talent-priced services
+  // (service_packages only has scope guidance, no numbers) — the honest,
+  // data-driven alternative is a live typical range computed from other
+  // published services in the same category, rather than fabricating
+  // numbers nobody approved.
+  const { data: peerPricing } = await supabase
+    .from("talent_services")
+    .select("category, price")
+    .eq("status", "published")
+    .not("price", "is", null);
+  const pricingGuidance: Record<string, { min: number; max: number; count: number }> = {};
+  for (const row of peerPricing ?? []) {
+    if (!row.category || row.price == null) continue;
+    const bucket = pricingGuidance[row.category] ?? { min: row.price, max: row.price, count: 0 };
+    bucket.min = Math.min(bucket.min, row.price);
+    bucket.max = Math.max(bucket.max, row.price);
+    bucket.count += 1;
+    pricingGuidance[row.category] = bucket;
+  }
+
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <Link href="/passport" className="text-xs font-semibold text-teal-ink underline">
@@ -32,7 +52,7 @@ export default async function ServicesPage() {
         review when it&rsquo;s ready; once published, employers can find it on Browse Services.
       </p>
 
-      <ServicesList services={services ?? []} />
+      <ServicesList services={services ?? []} pricingGuidance={pricingGuidance} />
     </main>
   );
 }

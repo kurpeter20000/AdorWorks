@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/domain/audit";
@@ -141,6 +142,13 @@ export async function acceptOffer(offerId: string): Promise<{ error?: string }> 
   if (!offer || offer.talent_id !== session.userId) {
     return { error: "Offer not found." };
   }
+  if (offer.service_request_id) {
+    // A service proposal is sent BY the talent — the organisation is who
+    // accepts it (acceptServiceProposal), not the talent themselves. Without
+    // this check, offer.talent_id === session.userId would incorrectly
+    // pass here too, since that column means the same thing in both flows.
+    return { error: "You can't accept your own service proposal — the employer accepts it." };
+  }
   if (offer.status !== "sent") {
     return { error: "This offer can no longer be accepted." };
   }
@@ -153,7 +161,11 @@ export async function acceptOffer(offerId: string): Promise<{ error?: string }> 
     return { error: offerUpdateError.message };
   }
 
-  await admin.from("applications").update({ stage: "accepted" }).eq("id", offer.application_id);
+  // Guaranteed non-null: the service_request_id check above already ruled
+  // out a service proposal reaching this point, and 0080's origin check
+  // constraint guarantees application_id is set whenever service_request_id
+  // isn't.
+  await admin.from("applications").update({ stage: "accepted" }).eq("id", offer.application_id!);
 
   const { data: contract, error: contractError } = await admin
     .from("contracts")
@@ -231,9 +243,16 @@ export async function declineOffer(offerId: string): Promise<{ error?: string }>
   const session = await requireRole("talent");
   const admin = createAdminClient();
 
-  const { data: offer } = await admin.from("offers").select("id, application_id, talent_id, status, created_by").eq("id", offerId).maybeSingle();
+  const { data: offer } = await admin
+    .from("offers")
+    .select("id, application_id, service_request_id, talent_id, status, created_by")
+    .eq("id", offerId)
+    .maybeSingle();
   if (!offer || offer.talent_id !== session.userId) {
     return { error: "Offer not found." };
+  }
+  if (offer.service_request_id) {
+    return { error: "You can't decline your own service proposal — the employer declines it." };
   }
   if (offer.status !== "sent") {
     return { error: "This offer can no longer be declined." };
@@ -247,7 +266,8 @@ export async function declineOffer(offerId: string): Promise<{ error?: string }>
     return { error: error.message };
   }
 
-  await admin.from("applications").update({ stage: "withdrawn" }).eq("id", offer.application_id);
+  // Guaranteed non-null — see the matching comment in acceptOffer above.
+  await admin.from("applications").update({ stage: "withdrawn" }).eq("id", offer.application_id!);
 
   await logAuditEvent(admin, {
     name: DOMAIN_EVENTS.OFFER_RESPONDED,
@@ -263,5 +283,142 @@ export async function declineOffer(offerId: string): Promise<{ error?: string }>
     title: "Your offer was declined",
   });
 
+  return {};
+}
+
+/**
+ * S09-05: the organisation accepting a talent's service proposal —
+ * mirrors acceptOffer above with the actor reversed (the talent sent
+ * this one; the organisation is who accepts it). Creates the contract
+ * with service_request_id set and opportunity_id left null (0080's
+ * origin check constraint requires exactly one of the two).
+ */
+export async function acceptServiceProposal(offerId: string): Promise<{ error?: string }> {
+  const session = await requireRole(...CLIENT_ROLES);
+  const admin = createAdminClient();
+
+  const { data: offer } = await admin.from("offers").select("*").eq("id", offerId).maybeSingle();
+  if (!offer || !offer.service_request_id) {
+    return { error: "Proposal not found." };
+  }
+  const { data: org } = await admin.from("organisations").select("representative_id").eq("id", offer.organisation_id).maybeSingle();
+  const { data: membership } = await admin
+    .from("organisation_members")
+    .select("role")
+    .eq("organisation_id", offer.organisation_id)
+    .eq("user_id", session.userId)
+    .maybeSingle();
+  const isOrgWriteMember = org?.representative_id === session.userId || (membership && membership.role !== "viewer");
+  if (!isOrgWriteMember) {
+    return { error: "You don't have permission to respond to this proposal." };
+  }
+  if (offer.status !== "sent") {
+    return { error: "This proposal can no longer be accepted." };
+  }
+
+  const { error: offerUpdateError } = await admin
+    .from("offers")
+    .update({ status: "accepted", responded_at: new Date().toISOString() })
+    .eq("id", offerId);
+  if (offerUpdateError) return { error: offerUpdateError.message };
+
+  await admin.from("service_requests").update({ status: "accepted" }).eq("id", offer.service_request_id);
+
+  const { data: contract, error: contractError } = await admin
+    .from("contracts")
+    .insert({
+      offer_id: offer.id,
+      service_request_id: offer.service_request_id,
+      talent_id: offer.talent_id,
+      organisation_id: offer.organisation_id,
+    })
+    .select("id")
+    .single();
+  if (contractError || !contract) {
+    return { error: contractError?.message ?? "Could not create the contract." };
+  }
+
+  await admin.from("milestones").insert({
+    contract_id: contract.id,
+    title: "Full payment",
+    amount: offer.compensation_amount ?? 0,
+    currency: offer.currency,
+    sequence: 0,
+  });
+
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.OFFER_RESPONDED,
+    actorId: session.userId,
+    entityType: "offers",
+    entityId: offer.id,
+    source: "platform",
+    after: { status: "accepted" },
+  });
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.CONTRACT_CREATED,
+    actorId: session.userId,
+    entityType: "contracts",
+    entityId: contract.id,
+    source: "platform",
+    metadata: { offerId: offer.id, serviceRequestId: offer.service_request_id },
+  });
+  await notifyUser(admin, {
+    userId: offer.talent_id,
+    type: NOTIFICATION_TYPES.OFFER_RESPONDED,
+    title: "Your service proposal was accepted",
+    link: `/contracts/${contract.id}`,
+  });
+
+  revalidatePath("/organisation/service-requests");
+  return {};
+}
+
+/** S09-05: the organisation declining a talent's service proposal. */
+export async function declineServiceProposal(offerId: string): Promise<{ error?: string }> {
+  const session = await requireRole(...CLIENT_ROLES);
+  const admin = createAdminClient();
+
+  const { data: offer } = await admin.from("offers").select("id, organisation_id, talent_id, status, service_request_id").eq("id", offerId).maybeSingle();
+  if (!offer || !offer.service_request_id) {
+    return { error: "Proposal not found." };
+  }
+  const { data: org } = await admin.from("organisations").select("representative_id").eq("id", offer.organisation_id).maybeSingle();
+  const { data: membership } = await admin
+    .from("organisation_members")
+    .select("role")
+    .eq("organisation_id", offer.organisation_id)
+    .eq("user_id", session.userId)
+    .maybeSingle();
+  const isOrgWriteMember = org?.representative_id === session.userId || (membership && membership.role !== "viewer");
+  if (!isOrgWriteMember) {
+    return { error: "You don't have permission to respond to this proposal." };
+  }
+  if (offer.status !== "sent") {
+    return { error: "This proposal can no longer be declined." };
+  }
+
+  const { error } = await admin
+    .from("offers")
+    .update({ status: "declined", responded_at: new Date().toISOString() })
+    .eq("id", offerId);
+  if (error) return { error: error.message };
+
+  await admin.from("service_requests").update({ status: "declined" }).eq("id", offer.service_request_id);
+
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.OFFER_RESPONDED,
+    actorId: session.userId,
+    entityType: "offers",
+    entityId: offer.id,
+    source: "platform",
+    after: { status: "declined" },
+  });
+  await notifyUser(admin, {
+    userId: offer.talent_id,
+    type: NOTIFICATION_TYPES.OFFER_RESPONDED,
+    title: "Your service proposal was declined",
+  });
+
+  revalidatePath("/organisation/service-requests");
   return {};
 }

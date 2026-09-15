@@ -405,8 +405,11 @@ export type ScreeningAnswerRow = {
 
 export type OfferRow = {
   id: string;
-  application_id: string;
-  opportunity_id: string;
+  // S09-04/0080: exactly one of (application_id + opportunity_id) or
+  // service_request_id is set — a job offer or a service proposal.
+  application_id: string | null;
+  opportunity_id: string | null;
+  service_request_id: string | null;
   talent_id: string;
   organisation_id: string;
   payment_basis: PaymentBasis;
@@ -423,7 +426,9 @@ export type OfferRow = {
 export type ContractRow = {
   id: string;
   offer_id: string;
-  opportunity_id: string;
+  // S09-05/0080: exactly one of opportunity_id or service_request_id is set.
+  opportunity_id: string | null;
+  service_request_id: string | null;
   talent_id: string;
   organisation_id: string;
   status: ContractStatus;
@@ -434,6 +439,20 @@ export type ContractRow = {
   cancellation_reason: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export type ServiceRequestStatus = "pending" | "proposed" | "accepted" | "declined" | "withdrawn";
+
+export type ServiceRequestRow = {
+  id: string;
+  talent_service_id: string;
+  organisation_id: string;
+  talent_id: string;
+  requested_by: string;
+  message: string | null;
+  status: ServiceRequestStatus;
+  created_at: string;
+  responded_at: string | null;
 }
 
 export type MilestoneRow = {
@@ -928,8 +947,6 @@ export type Database = {
       offers: {
         Row: OfferRow;
         Insert: Partial<OfferRow> & {
-          application_id: string;
-          opportunity_id: string;
           talent_id: string;
           organisation_id: string;
           payment_basis: PaymentBasis;
@@ -942,11 +959,21 @@ export type Database = {
         Row: ContractRow;
         Insert: Partial<ContractRow> & {
           offer_id: string;
-          opportunity_id: string;
           talent_id: string;
           organisation_id: string;
         };
         Update: Partial<ContractRow>;
+        Relationships: [];
+      };
+      service_requests: {
+        Row: ServiceRequestRow;
+        Insert: Partial<ServiceRequestRow> & {
+          talent_service_id: string;
+          organisation_id: string;
+          talent_id: string;
+          requested_by: string;
+        };
+        Update: Partial<ServiceRequestRow>;
         Relationships: [];
       };
       milestones: {

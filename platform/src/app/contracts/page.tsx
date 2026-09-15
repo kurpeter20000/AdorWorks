@@ -27,13 +27,13 @@ export default async function ContractsPage() {
   if (session.role === "talent") {
     ({ data: contracts } = await supabase
       .from("contracts")
-      .select("id, status, started_at, completed_at, organisation_id, opportunity_id")
+      .select("id, status, started_at, completed_at, organisation_id, opportunity_id, service_request_id")
       .eq("talent_id", session.userId)
       .order("started_at", { ascending: false }));
   } else if (isStaff) {
     ({ data: contracts } = await supabase
       .from("contracts")
-      .select("id, status, started_at, completed_at, organisation_id, opportunity_id")
+      .select("id, status, started_at, completed_at, organisation_id, opportunity_id, service_request_id")
       .order("started_at", { ascending: false })
       .limit(STAFF_CONTRACTS_LIMIT));
   } else {
@@ -48,18 +48,40 @@ export default async function ContractsPage() {
     ({ data: contracts } = membership
       ? await supabase
           .from("contracts")
-          .select("id, status, started_at, completed_at, organisation_id, opportunity_id")
+          .select("id, status, started_at, completed_at, organisation_id, opportunity_id, service_request_id")
           .eq("organisation_id", membership.org.id)
           .order("started_at", { ascending: false })
       : { data: [] });
   }
 
-  const opportunityIds = [...new Set((contracts ?? []).map((c) => c.opportunity_id))];
+  const opportunityIds = [...new Set((contracts ?? []).map((c) => c.opportunity_id).filter((id): id is string => id !== null))];
   const { data: opportunities } =
     opportunityIds.length > 0
       ? await supabase.from("opportunities").select("id, title").in("id", opportunityIds)
       : { data: [] };
   const titleById = new Map((opportunities ?? []).map((o) => [o.id, o.title]));
+
+  // S09-*: service-originated contracts have no opportunity — resolve
+  // their title via service_requests -> talent_services instead.
+  const serviceRequestIds = [...new Set((contracts ?? []).map((c) => c.service_request_id).filter((id): id is string => id !== null))];
+  const { data: serviceRequests } =
+    serviceRequestIds.length > 0
+      ? await supabase.from("service_requests").select("id, talent_service_id").in("id", serviceRequestIds)
+      : { data: [] };
+  const serviceIdByRequestId = new Map((serviceRequests ?? []).map((r) => [r.id, r.talent_service_id]));
+  const serviceIds = [...new Set([...serviceIdByRequestId.values()])];
+  const { data: services } =
+    serviceIds.length > 0 ? await supabase.from("talent_services").select("id, title").in("id", serviceIds) : { data: [] };
+  const serviceTitleById = new Map((services ?? []).map((s) => [s.id, s.title]));
+
+  function contractTitle(c: { opportunity_id: string | null; service_request_id: string | null }) {
+    if (c.opportunity_id) return titleById.get(c.opportunity_id) ?? "Contract";
+    if (c.service_request_id) {
+      const serviceId = serviceIdByRequestId.get(c.service_request_id);
+      return (serviceId && serviceTitleById.get(serviceId)) ?? "Contract";
+    }
+    return "Contract";
+  }
 
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
@@ -80,7 +102,7 @@ export default async function ContractsPage() {
                 href={`/contracts/${c.id}`}
                 className="flex items-center justify-between rounded-xl border border-slate/15 bg-white p-4 hover:border-violet/40"
               >
-                <p className="font-semibold text-midnight">{titleById.get(c.opportunity_id) ?? "Contract"}</p>
+                <p className="font-semibold text-midnight">{contractTitle(c)}</p>
                 <StatusBadge state={CONTRACT_STATES[c.status]} />
               </Link>
             </li>
