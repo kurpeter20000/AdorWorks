@@ -235,16 +235,11 @@ const CheckoutSchema = z
   .object({
     provider: z.enum(["mgurush", "mtn_momo", "visa_mastercard"], { message: "Choose a payment provider." }),
     phone: z.string().trim().optional(),
-    cardNumber: z.string().trim().optional(),
-    cardExpiry: z.string().trim().optional(),
-    cardCvv: z.string().trim().optional(),
   })
   .superRefine((v, ctx) => {
-    if (v.provider === "visa_mastercard") {
-      if (!v.cardNumber) ctx.addIssue({ code: "custom", path: ["cardNumber"], message: "Enter the card number." });
-      if (!v.cardExpiry) ctx.addIssue({ code: "custom", path: ["cardExpiry"], message: "Enter the expiry date." });
-      if (!v.cardCvv) ctx.addIssue({ code: "custom", path: ["cardCvv"], message: "Enter the CVV." });
-    } else if (!v.phone || v.phone.length < 9) {
+    // S09-12: no card fields are collected at all — a card "charge" is
+    // simulated the same way regardless of any input, see paymentProviders.ts.
+    if (v.provider !== "visa_mastercard" && (!v.phone || v.phone.length < 9)) {
       ctx.addIssue({ code: "custom", path: ["phone"], message: "Enter a valid phone number." });
     }
   });
@@ -272,9 +267,6 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
   const validated = CheckoutSchema.safeParse({
     provider: formData.get("provider"),
     phone: formData.get("phone") || undefined,
-    cardNumber: formData.get("cardNumber") || undefined,
-    cardExpiry: formData.get("cardExpiry") || undefined,
-    cardCvv: formData.get("cardCvv") || undefined,
   });
   if (!validated.success) {
     return { errors: validated.error.flatten().fieldErrors };
@@ -346,12 +338,7 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
 
   const provider = await getActivePaymentProvider(v.provider);
   const result = provider
-    ? await provider.charge({
-        phone: v.phone ?? "",
-        amount: milestone.amount,
-        currency: milestone.currency,
-        card: v.provider === "visa_mastercard" ? { number: v.cardNumber!, expiry: v.cardExpiry!, cvv: v.cardCvv! } : undefined,
-      })
+    ? await provider.charge({ phone: v.phone ?? "", amount: milestone.amount, currency: milestone.currency })
     : { success: false as const, reason: "Unknown payment provider." };
 
   if (!result.success) {

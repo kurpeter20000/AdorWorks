@@ -80,7 +80,11 @@ export async function seedContract(talentId: string) {
   const rep = await createTestUser("contractrep", "individual_client");
 
   const org = await mustInsert(
-    admin.from("organisations").insert({ name: `E2E Org ${stamp}`, representative_id: rep.id }).select("id").single(),
+    // S06-04 (0071): publishing an opportunity now requires a verified
+    // organisation, enforced unconditionally at the trigger level — this
+    // helper seeds one straight to 'open' below, so it must be verified
+    // up front.
+    admin.from("organisations").insert({ name: `E2E Org ${stamp}`, representative_id: rep.id, verification_status: "verified" }).select("id").single(),
     "organisation"
   );
 

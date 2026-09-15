@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+import { randomUUID, randomInt } from "crypto";
 
 /**
  * The swappable boundary for payment settlement. Every provider here is
@@ -6,23 +6,24 @@ import { randomUUID } from "crypto";
  * a real m-Gurush/MTN MoMo/card-processor integration needs their
  * official APIs, a signed agreement, and legal approval before this
  * interface gets a non-simulated implementation. Nothing outside this
- * file should know or care that charge() doesn't call a real network —
- * or, for cards, that no real processor ever sees a card number (a real
- * integration would tokenize client-side via the processor's own SDK
- * rather than ever passing a raw card number through this action at
- * all; this simulation accepts one directly only because there's no SDK
- * to integrate against yet).
+ * file should know or care that charge() doesn't call a real network.
+ *
+ * S09-12 gap-check (2026-09-15): this used to accept a raw card number/
+ * expiry/CVV and derive cardLast4/cardBrand from them — a real-looking
+ * card form with no real processor behind it is exactly the shape of
+ * thing a user might reflexively type a real card into. Since no real
+ * card processor exists to tokenize against yet, the honest simulation is
+ * to never ask for card digits at all — cardLast4/cardBrand are now
+ * synthetic, generated here, not derived from anything the user typed. A
+ * real integration replaces this whole file with one that tokenizes
+ * client-side via the processor's own SDK, never with one that accepts a
+ * raw card number through this action.
  */
 export interface PaymentProvider {
   id: "mgurush" | "mtn_momo" | "visa_mastercard";
   label: string;
   method: "mobile_money" | "card";
-  charge(args: {
-    phone: string;
-    amount: number;
-    currency: string;
-    card?: { number: string; expiry: string; cvv: string };
-  }): Promise<
+  charge(args: { phone: string; amount: number; currency: string }): Promise<
     | { success: true; reference: string; cardLast4?: string; cardBrand?: string }
     | { success: false; reason: string }
   >;
@@ -42,40 +43,18 @@ function mockMobileMoneyProvider(id: "mgurush" | "mtn_momo", label: string, refe
   };
 }
 
-function guessCardBrand(digits: string): string {
-  if (digits.startsWith("4")) return "Visa";
-  if (/^5[1-5]/.test(digits) || /^2[2-7]/.test(digits)) return "Mastercard";
-  return "Card";
-}
-
 const mockCardProvider: PaymentProvider = {
   id: "visa_mastercard",
   label: "Visa / Mastercard",
   method: "card",
-  async charge({ card }) {
-    if (!card) return { success: false, reason: "Enter card details." };
-    const digits = card.number.replace(/\s/g, "");
-    if (!/^[0-9]{13,19}$/.test(digits)) {
-      return { success: false, reason: "Enter a valid card number." };
-    }
-    const [month, year] = card.expiry.split("/").map((s) => s.trim());
-    const expMonth = Number(month);
-    const expYear = Number(year?.length === 2 ? `20${year}` : year);
-    if (!expMonth || !expYear || expMonth < 1 || expMonth > 12) {
-      return { success: false, reason: "Enter a valid expiry date (MM/YY)." };
-    }
-    const now = new Date();
-    if (expYear < now.getFullYear() || (expYear === now.getFullYear() && expMonth < now.getMonth() + 1)) {
-      return { success: false, reason: "This card has expired." };
-    }
-    if (!/^[0-9]{3,4}$/.test(card.cvv.trim())) {
-      return { success: false, reason: "Enter a valid CVV." };
-    }
+  async charge() {
+    // No card data is collected anywhere in this simulation (S09-12) — a
+    // synthetic last4/brand, not anything derived from user input.
     return {
       success: true,
       reference: `CARD-SIM-${randomUUID().slice(0, 8).toUpperCase()}`,
-      cardLast4: digits.slice(-4),
-      cardBrand: guessCardBrand(digits),
+      cardLast4: String(randomInt(1000, 10000)),
+      cardBrand: randomInt(2) === 0 ? "Visa" : "Mastercard",
     };
   },
 };

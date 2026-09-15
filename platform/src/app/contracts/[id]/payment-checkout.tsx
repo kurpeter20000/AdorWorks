@@ -86,48 +86,10 @@ export function PaymentCheckout({
       </div>
 
       {isCard ? (
-        <div className="mt-3 space-y-2">
-          <div>
-            <label htmlFor="cardNumber" className="block text-xs font-semibold text-midnight">
-              Card number
-            </label>
-            <input
-              id="cardNumber"
-              name="cardNumber"
-              inputMode="numeric"
-              placeholder="4242 4242 4242 4242"
-              className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-1.5 text-sm"
-            />
-            {state.errors?.cardNumber && <p className="mt-1 text-xs text-coral-ink">{state.errors.cardNumber[0]}</p>}
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label htmlFor="cardExpiry" className="block text-xs font-semibold text-midnight">
-                Expiry (MM/YY)
-              </label>
-              <input
-                id="cardExpiry"
-                name="cardExpiry"
-                placeholder="12/28"
-                className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-1.5 text-sm"
-              />
-              {state.errors?.cardExpiry && <p className="mt-1 text-xs text-coral-ink">{state.errors.cardExpiry[0]}</p>}
-            </div>
-            <div>
-              <label htmlFor="cardCvv" className="block text-xs font-semibold text-midnight">
-                CVV
-              </label>
-              <input
-                id="cardCvv"
-                name="cardCvv"
-                inputMode="numeric"
-                placeholder="123"
-                className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-1.5 text-sm"
-              />
-              {state.errors?.cardCvv && <p className="mt-1 text-xs text-coral-ink">{state.errors.cardCvv[0]}</p>}
-            </div>
-          </div>
-        </div>
+        <p className="mt-3 rounded-lg bg-slate/10 px-3 py-2 text-xs text-slate">
+          This simulation doesn&apos;t collect any real card details — no card number, expiry, or CVV field exists here on
+          purpose. Clicking Pay simulates a successful card charge.
+        </p>
       ) : (
         <div className="mt-3">
           <label htmlFor="phone" className="block text-xs font-semibold text-midnight">
