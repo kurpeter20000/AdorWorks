@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { verifySession } from "@/lib/dal/session";
 import { MARKETING_SITE_URL } from "@/lib/domain/marketingSite";
 import { HeroVideoBackground } from "@/components/hero-video-background";
+import { HashRedirectGuard } from "./hash-redirect-guard";
 
 export default async function Home({
   searchParams,
@@ -29,6 +30,7 @@ export default async function Home({
 
   return (
     <main className="relative isolate flex flex-1 flex-col items-center justify-center overflow-hidden p-8 text-center">
+      <HashRedirectGuard />
       <HeroVideoBackground className="absolute inset-0 -z-20 h-full w-full object-cover" />
       <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-midnight/80 to-midnight/90" />
 
