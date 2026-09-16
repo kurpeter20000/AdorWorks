@@ -4,6 +4,15 @@ Add a new entry for every important decision. Keep entries even if a later decis
 
 ---
 
+**2026-09-16 — Password reset and signup confirmation were completely broken for every user; fixed**
+Owner: Claude Code, reported by the founder ("why is it so hard for a user to reset their password"), clarified as "a user can receive a password reset link or magic link but cannot reset their password." Root cause, confirmed live against the real Supabase project rather than guessed: `resetPasswordForEmail` and signup confirmation both deliver the session as a URL fragment (`#access_token=...&refresh_token=...`), not a `?code=` query param — but `/auth/callback` was a server Route Handler, which can never see a URL fragment at all (browsers strip it before the request even reaches the server). `code` was always null, so every single reset/confirmation link silently redirected to `/login?error=confirmation_failed`. This had been true since the flow was built — S04-04 was marked Complete based on the request side's design (enumeration-safety, rate limiting) without ever actually clicking a real emailed link through to completion.
+
+Fixed by turning `/auth/callback` into a Client Component that reads `window.location.hash` directly and calls `supabase.auth.setSession()` deterministically — not via the SDK's own `detectSessionInUrl`, which turned out to race against itself in a way that also mattered for the fix: its hash-parsing runs inside the client constructor and clears the hash as a side effect once done, so React's dev-mode double-effect-invocation (a second client instance created before the first's effect torn down) found nothing left to parse. A stable, memoized client instance plus manual hash parsing avoids that race. Verified live end to end, not just diagnosed: a real recovery link (generated the same way `resetPasswordForEmail` does) driven through an actual browser lands on `/reset-password` with a working session, sets a new password, and that new password then works for a real login; same for signup confirmation. Both are now `e2e/password-reset.spec.ts`, a permanent regression test.
+
+**S04-04's tracker evidence needs correcting** — the Excel tracker's own row for this item should note that the original verification checked the request-side code pattern only, not a full live click-through, which is exactly how this went undetected until a real user hit it.
+
+---
+
 **2026-09-15 — Built out nearly every gap the Stage 6-9 audit found, across four commits**
 Owner: Claude Code, per the founder's explicit "build everything missing plus the growing list of the other stages." Followed directly from the audit logged below — rather than leaving the findings as a to-do list, built real fixes for almost all of them in dependency order (Stage 6 → Stage 7/8 gaps that depend on Stage 6's verification gate → Stage 9's services flow, the largest single piece). Four commits, summarized here; each commit's own message has the full detail:
 
