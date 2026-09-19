@@ -5,6 +5,9 @@ import { requireSession } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
+import { sendEmailSafely, getUserEmail } from "@/lib/email";
+import { renderEmail } from "@/lib/emailTemplate";
+import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
 import type { FormState } from "./auth";
 
 const ReviewSchema = z.object({
@@ -76,6 +79,19 @@ export async function submitReview(
         // guarantees one review per reviewer per contract.
         dedupeKey: `${contractId}:${reviewerRole}`,
       });
+      const reviewedEmail = await getUserEmail(admin, otherPartyId);
+      await sendEmailSafely(
+        reviewedEmail,
+        "You received a review on AdorWorks",
+        renderEmail({
+          heading: "You received a review",
+          paragraphs: ["You received a review on one of your completed contracts."],
+          ctaLabel: "View contract",
+          ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/contracts/${contractId}`,
+          unsubscribeUrl: buildUnsubscribeUrl(otherPartyId),
+        }),
+        { admin, recipientUserId: otherPartyId }
+      );
     }
   }
 

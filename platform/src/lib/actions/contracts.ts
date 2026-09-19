@@ -77,6 +77,19 @@ export async function recordDeliverableSubmission(milestoneId: string): Promise<
       // a fresh deliverable row that deserves its own notification.
       dedupeKey: latestDeliverable.id,
     });
+    const employerEmail = await getUserEmail(admin, parties.employerId);
+    await sendEmailSafely(
+      employerEmail,
+      "A deliverable is ready for your review on AdorWorks",
+      renderEmail({
+        heading: "A deliverable is ready for review",
+        paragraphs: ["A talent submitted a deliverable on one of your contracts and it's waiting for your review."],
+        ctaLabel: "Review deliverable",
+        ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/contracts/${milestone.contract_id}`,
+        unsubscribeUrl: buildUnsubscribeUrl(parties.employerId),
+      }),
+      { admin, recipientUserId: parties.employerId }
+    );
   }
 
   return {};
@@ -218,6 +231,19 @@ export async function approveDeliverable(deliverableId: string): Promise<{ error
     link: `/contracts/${check.contract!.id}`,
     dedupeKey: deliverableId,
   });
+  const talentEmailForApproval = await getUserEmail(admin, check.contract!.talent_id);
+  await sendEmailSafely(
+    talentEmailForApproval,
+    "Your milestone was approved on AdorWorks",
+    renderEmail({
+      heading: "Your milestone was approved",
+      paragraphs: ["Your milestone was approved. Payment should follow shortly."],
+      ctaLabel: "View contract",
+      ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/contracts/${check.contract!.id}`,
+      unsubscribeUrl: buildUnsubscribeUrl(check.contract!.talent_id),
+    }),
+    { admin, recipientUserId: check.contract!.talent_id }
+  );
 
   return {};
 }
@@ -602,6 +628,21 @@ export async function sendMessage(contractId: string, _prevState: FormState, for
       title: "New message on your contract",
       link: `/contracts/${contractId}`,
     });
+    // S11-04: was in-app only. Doesn't repeat the message text — same
+    // restraint as the dispute email (read it in the app, not an inbox).
+    const recipientEmail = await getUserEmail(admin, recipientId);
+    await sendEmailSafely(
+      recipientEmail,
+      "New message on your AdorWorks contract",
+      renderEmail({
+        heading: "New message",
+        paragraphs: ["You have a new message on one of your contracts."],
+        ctaLabel: "View contract",
+        ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/contracts/${contractId}`,
+        unsubscribeUrl: buildUnsubscribeUrl(recipientId),
+      }),
+      { admin, recipientUserId: recipientId }
+    );
   }
 
   return {};

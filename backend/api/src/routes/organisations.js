@@ -264,6 +264,15 @@ organisationsRouter.patch(
     // review decisions. Deliberately doesn't repeat risk_notes verbatim —
     // that field is staff-facing rationale (may reference internal risk
     // judgment), not something to surface to the subject organisation.
+    //
+    // S11-04: in-app only, not emailed — this Express app has no email
+    // capability at all (no Brevo client, no template, no opt-out check —
+    // everything platform/src/lib/email.ts and emailTemplate.ts provide).
+    // Building and maintaining a second, parallel email sender in this
+    // codebase for one low-frequency event (an org is verified once, not
+    // repeatedly) isn't proportionate; if this route's notifications need
+    // an email pair later, that's a real feature (a shared email service
+    // both apps call), not a quick add here.
     if (data.representative_id && before?.verification_status !== body.verification_status) {
       await supabaseAdmin.from("notifications").insert({
         user_id: data.representative_id,

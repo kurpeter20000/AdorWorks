@@ -109,6 +109,13 @@ export async function signup(_prevState: FormState, formData: FormData): Promise
   // No dashboard gate ever required a verified phone -- the reminder now
   // lives here instead, waiting in Notifications from the first login,
   // rather than as an interruption on the dashboard itself.
+  //
+  // S11-04: deliberately in-app only, not emailed — this fires at the
+  // exact same moment as Supabase's own signup-confirmation email, so a
+  // second email landing simultaneously would read as noise, not help.
+  // The reminder stays visible in Notifications indefinitely until it's
+  // resolved, unlike the other in-app-only exceptions in this codebase
+  // which fire once and are easy to miss.
   await notifyUser(createAdminClient(), {
     userId: data.user.id,
     type: NOTIFICATION_TYPES.PHONE_VERIFICATION_REMINDER,

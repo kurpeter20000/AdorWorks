@@ -8,6 +8,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
+import { sendEmailSafely, getUserEmail } from "@/lib/email";
+import { renderEmail, escapeHtml } from "@/lib/emailTemplate";
+import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
 import type { FormState } from "./auth";
 
 /**
@@ -55,6 +58,22 @@ export async function inviteTalent(
     // already guarantees this pair can only ever be invited once.
     dedupeKey: `${opportunityId}:${talentId}`,
   });
+  const { data: opportunity } = await supabase.from("opportunities").select("title").eq("id", opportunityId).maybeSingle();
+  const talentEmail = await getUserEmail(admin, talentId);
+  await sendEmailSafely(
+    talentEmail,
+    "You were invited to apply on AdorWorks",
+    renderEmail({
+      heading: "You were invited to apply",
+      paragraphs: [
+        `An employer invited you to apply${opportunity?.title ? ` for <strong>${escapeHtml(opportunity.title)}</strong>` : ""} on AdorWorks.`,
+      ],
+      ctaLabel: "View invitation",
+      ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/opportunities/invited`,
+      unsubscribeUrl: buildUnsubscribeUrl(talentId),
+    }),
+    { admin, recipientUserId: talentId }
+  );
 
   revalidatePath(`/organisation/opportunities/${opportunityId}`);
   return { success: true };

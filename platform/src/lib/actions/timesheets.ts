@@ -6,6 +6,9 @@ import { requireSession } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canReviewTimesheet, type TimesheetReviewStatus } from "@/lib/domain/timesheetPermissions";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
+import { sendEmailSafely, getUserEmail } from "@/lib/email";
+import { renderEmail } from "@/lib/emailTemplate";
+import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
 
 const ReviewTimesheetSchema = z.object({
   timesheetId: z.string().uuid(),
@@ -77,6 +80,23 @@ export async function reviewTimesheet(
     link: `/contracts/${contract.id}`,
     dedupeKey: timesheet.id,
   });
+  const timesheetEmail = await getUserEmail(admin, contract.talent_id);
+  await sendEmailSafely(
+    timesheetEmail,
+    input.data.status === "approved" ? "Your timesheet was approved on AdorWorks" : "Your timesheet was rejected on AdorWorks",
+    renderEmail({
+      heading: input.data.status === "approved" ? "Your timesheet was approved" : "Your timesheet was rejected",
+      paragraphs: [
+        input.data.status === "approved"
+          ? "Your submitted timesheet was approved."
+          : "Your submitted timesheet was rejected. Check the contract for details.",
+      ],
+      ctaLabel: "View contract",
+      ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/contracts/${contract.id}`,
+      unsubscribeUrl: buildUnsubscribeUrl(contract.talent_id),
+    }),
+    { admin, recipientUserId: contract.talent_id }
+  );
 
   revalidatePath(`/contracts/${contract.id}`);
   return {};
