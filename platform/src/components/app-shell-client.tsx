@@ -112,7 +112,7 @@ export function AppShellClient({
             >
               <Bell className="size-4 text-midnight" aria-hidden="true" />
               {unreadCount > 0 && (
-                <span className="absolute -right-1 -top-1 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-coral px-1 text-[10px] font-bold text-white">
+                <span className="absolute -right-1 -top-1 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-coral-ink px-1 text-[10px] font-bold text-white">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}

@@ -2,6 +2,11 @@
 
 body { background: var(--color-surface-alt); }
 
+/* S10-08: styles.css only defines .btn-primary/.btn-secondary — the
+   suspend action is destructive enough to warrant its own visual weight. */
+.btn-danger { background: #c8391a; border-color: #c8391a; color: #fff; }
+.btn-danger:hover { box-shadow: 0 4px 14px rgba(200,57,26,0.35); }
+
 .staff-header {
   background: var(--color-primary);
   color: #fff;

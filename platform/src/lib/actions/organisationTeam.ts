@@ -8,6 +8,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
+import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
+import { sendEmailSafely, getUserEmail } from "@/lib/email";
+import { renderEmail } from "@/lib/emailTemplate";
+import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
 import type { FormState } from "./auth";
 
 // Same "easy to read aloud" alphabet as backend/api's onboarding-agent
@@ -224,6 +228,32 @@ export async function changeTeamMemberRole(
     metadata: { organisationId },
   });
 
+  // S11-02: previously no notification at all — a member could have their
+  // role changed and only find out next time a permission behaved
+  // differently than expected.
+  if (before && before.role !== role) {
+    await notifyUser(admin, {
+      userId: memberId,
+      type: NOTIFICATION_TYPES.TEAM_ROLE_CHANGED,
+      title: "Your team role changed",
+      body: `Your role is now ${role.replace(/_/g, " ")}.`,
+      link: "/organisation/team",
+    });
+    const roleChangeEmail = await getUserEmail(admin, memberId);
+    await sendEmailSafely(
+      roleChangeEmail,
+      "Your AdorWorks team role changed",
+      renderEmail({
+        heading: "Your team role changed",
+        paragraphs: [`Your role on your organisation's team is now <strong>${role.replace(/_/g, " ")}</strong>.`],
+        ctaLabel: "View team",
+        ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/organisation/team`,
+        unsubscribeUrl: buildUnsubscribeUrl(memberId),
+      }),
+      { admin, recipientUserId: memberId }
+    );
+  }
+
   revalidatePath("/organisation/team");
 }
 
@@ -257,6 +287,27 @@ export async function removeTeamMember(organisationId: string, memberId: string)
     before: before ? { role: before.role } : null,
     metadata: { organisationId },
   });
+
+  // S11-02: removal itself previously had no notification — the member's
+  // next visit to /organisation would just 404/redirect with no
+  // explanation of what happened.
+  await notifyUser(admin, {
+    userId: memberId,
+    type: NOTIFICATION_TYPES.TEAM_MEMBER_REMOVED,
+    title: "You were removed from a team",
+    body: "You no longer have access to that organisation's workspace on AdorWorks.",
+  });
+  const removalEmail = await getUserEmail(admin, memberId);
+  await sendEmailSafely(
+    removalEmail,
+    "You were removed from an AdorWorks team",
+    renderEmail({
+      heading: "You were removed from a team",
+      paragraphs: ["You no longer have access to that organisation's workspace on AdorWorks."],
+      unsubscribeUrl: buildUnsubscribeUrl(memberId),
+    }),
+    { admin, recipientUserId: memberId }
+  );
 
   revalidatePath("/organisation/team");
 }

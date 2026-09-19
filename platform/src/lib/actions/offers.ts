@@ -8,6 +8,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
+import { sendEmailSafely, getUserEmail } from "@/lib/email";
+import { renderEmail } from "@/lib/emailTemplate";
+import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
 import type { FormState } from "./auth";
 
 const OfferSchema = z.object({
@@ -119,7 +122,21 @@ export async function sendOffer(
     type: NOTIFICATION_TYPES.OFFER_SENT,
     title: "You received an offer",
     link: "/offers",
+    dedupeKey: offer.id,
   });
+  const offerTalentEmail = await getUserEmail(admin, application.talent_id);
+  await sendEmailSafely(
+    offerTalentEmail,
+    "You received an offer on AdorWorks",
+    renderEmail({
+      heading: "You received an offer",
+      paragraphs: ["An employer sent you an offer on AdorWorks."],
+      ctaLabel: "View offer",
+      ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/offers`,
+      unsubscribeUrl: buildUnsubscribeUrl(application.talent_id),
+    }),
+    { admin, recipientUserId: application.talent_id }
+  );
 
   redirect(`/organisation/opportunities/${opportunity.id}?offered=1`);
 }
@@ -226,7 +243,21 @@ export async function acceptOffer(offerId: string): Promise<{ error?: string }> 
     type: NOTIFICATION_TYPES.OFFER_RESPONDED,
     title: "Your offer was accepted",
     link: `/contracts/${contract.id}`,
+    dedupeKey: offer.id,
   });
+  const accepterEmail = await getUserEmail(admin, offer.created_by);
+  await sendEmailSafely(
+    accepterEmail,
+    "Your offer was accepted on AdorWorks",
+    renderEmail({
+      heading: "Your offer was accepted",
+      paragraphs: ["Your offer was accepted and a contract was created."],
+      ctaLabel: "View contract",
+      ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/contracts/${contract.id}`,
+      unsubscribeUrl: buildUnsubscribeUrl(offer.created_by),
+    }),
+    { admin, recipientUserId: offer.created_by }
+  );
 
   return {};
 }
@@ -281,7 +312,21 @@ export async function declineOffer(offerId: string): Promise<{ error?: string }>
     userId: offer.created_by,
     type: NOTIFICATION_TYPES.OFFER_RESPONDED,
     title: "Your offer was declined",
+    dedupeKey: offer.id,
   });
+  const declinerNoticeEmail = await getUserEmail(admin, offer.created_by);
+  await sendEmailSafely(
+    declinerNoticeEmail,
+    "Your offer was declined on AdorWorks",
+    renderEmail({
+      heading: "Your offer was declined",
+      paragraphs: ["Your offer was declined."],
+      ctaLabel: "View offers",
+      ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/offers`,
+      unsubscribeUrl: buildUnsubscribeUrl(offer.created_by),
+    }),
+    { admin, recipientUserId: offer.created_by }
+  );
 
   return {};
 }
@@ -367,7 +412,21 @@ export async function acceptServiceProposal(offerId: string): Promise<{ error?: 
     type: NOTIFICATION_TYPES.OFFER_RESPONDED,
     title: "Your service proposal was accepted",
     link: `/contracts/${contract.id}`,
+    dedupeKey: offer.id,
   });
+  const proposalAcceptedEmail = await getUserEmail(admin, offer.talent_id);
+  await sendEmailSafely(
+    proposalAcceptedEmail,
+    "Your service proposal was accepted on AdorWorks",
+    renderEmail({
+      heading: "Your service proposal was accepted",
+      paragraphs: ["Your service proposal was accepted and a contract was created."],
+      ctaLabel: "View contract",
+      ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/contracts/${contract.id}`,
+      unsubscribeUrl: buildUnsubscribeUrl(offer.talent_id),
+    }),
+    { admin, recipientUserId: offer.talent_id }
+  );
 
   revalidatePath("/organisation/service-requests");
   return {};
@@ -417,7 +476,21 @@ export async function declineServiceProposal(offerId: string): Promise<{ error?:
     userId: offer.talent_id,
     type: NOTIFICATION_TYPES.OFFER_RESPONDED,
     title: "Your service proposal was declined",
+    dedupeKey: offer.id,
   });
+  const proposalDeclinedEmail = await getUserEmail(admin, offer.talent_id);
+  await sendEmailSafely(
+    proposalDeclinedEmail,
+    "Your service proposal was declined on AdorWorks",
+    renderEmail({
+      heading: "Your service proposal was declined",
+      paragraphs: ["Your service proposal was declined."],
+      ctaLabel: "View your services",
+      ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/passport/services/requests`,
+      unsubscribeUrl: buildUnsubscribeUrl(offer.talent_id),
+    }),
+    { admin, recipientUserId: offer.talent_id }
+  );
 
   revalidatePath("/organisation/service-requests");
   return {};

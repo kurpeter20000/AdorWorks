@@ -3,7 +3,7 @@ import Link from "next/link";
 import { requireRole, STAFF_ROLES } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { StatePanel } from "@/components/state-panel";
-import { formatCompensation } from "@/lib/domain/format";
+import { formatCompensation, formatDate } from "@/lib/domain/format";
 
 export const metadata: Metadata = { title: "Opportunities to review — Operations" };
 
@@ -69,7 +69,7 @@ export default async function OperationsOpportunitiesPage() {
                   <span className="shrink-0 text-xs font-semibold text-slate">{formatCompensation(o)}</span>
                 </div>
                 <span className="mt-2 block text-[11px] text-slate/70">
-                  Submitted {new Date(o.created_at).toLocaleDateString()}
+                  Submitted {formatDate(o.created_at)}
                 </span>
               </Link>
             </li>

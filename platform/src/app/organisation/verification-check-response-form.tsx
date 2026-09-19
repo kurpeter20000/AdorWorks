@@ -28,7 +28,7 @@ export function VerificationCheckResponseForm({
         className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
       />
       {state.errors?.note && <p className="text-xs text-coral-ink">{state.errors.note[0]}</p>}
-      {state.message && <p className="text-xs text-coral-ink">{state.message}</p>}
+      {state.message && <p className="text-xs text-coral-ink" role="alert">{state.message}</p>}
       <button
         type="submit"
         disabled={pending}

@@ -14,7 +14,7 @@ import type { FormState } from "./auth";
  */
 
 const ReportSchema = z.object({
-  reason: z.enum(["spam", "scam", "inappropriate", "misleading", "other"], { message: "Choose a reason." }),
+  reason: z.enum(["spam", "scam", "inappropriate", "misleading", "safeguarding", "other"], { message: "Choose a reason." }),
   note: z.string().trim().max(1000).optional(),
 });
 

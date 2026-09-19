@@ -69,7 +69,7 @@ export function OrgInfoForm({ organisationId, initial }: { organisationId: strin
         )}
       </div>
 
-      {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink" role="alert">{state.message}</p>}
 
       <button
         type="submit"

@@ -50,7 +50,7 @@ export function SearchBar({
         type="search"
         defaultValue={defaultValue}
         placeholder={placeholder}
-        className="h-10 min-w-0 flex-1 bg-transparent px-1 text-sm text-midnight placeholder:text-slate/70 focus:outline-none"
+        className="h-10 min-w-0 flex-1 rounded bg-transparent px-1 text-sm text-midnight placeholder:text-slate/70"
       />
       <Button type="submit" size="md" className="rounded-full">
         {submitLabel}

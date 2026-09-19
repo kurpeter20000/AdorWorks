@@ -120,12 +120,13 @@ export function EvidenceManager({
         />
         <input
           type="file"
+          aria-label={evidenceType === "reference" ? "Reference document" : "Credential document"}
           accept="image/jpeg,image/png,image/webp,application/pdf"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           className="w-full text-sm"
         />
         {status && (
-          <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`}>{status.message}</p>
+          <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`} role={status.kind === "error" ? "alert" : "status"}>{status.message}</p>
         )}
         <button
           type="button"

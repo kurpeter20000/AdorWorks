@@ -25,6 +25,7 @@ export function ModeSwitcher({ mode, marketingSiteUrl }: { mode: SwitchableMode;
   const [open, setOpen] = useState(false);
   const [showWorkTypes, setShowWorkTypes] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
@@ -36,12 +37,29 @@ export function ModeSwitcher({ mode, marketingSiteUrl }: { mode: SwitchableMode;
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, []);
 
+  // S12-04: a keyboard user could open this menu but had no way to close
+  // it without a pointer — clicking outside was the only path. Escape is
+  // the standard dismiss key for a menu/popup; closing returns focus to
+  // the trigger button rather than leaving it stranded on a now-hidden item.
+  useEffect(() => {
+    if (!open) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
   const meta = MODE_META[mode];
   const Icon = meta.icon;
 
   return (
     <div className="relative" ref={rootRef}>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}

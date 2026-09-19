@@ -97,13 +97,14 @@ function renderDetail(id, detailRow) {
     "<dt>Risk notes</dt><dd>" + escapeHtml(row.risk_notes || "—") + "</dd>" +
     "</dl>" +
     '<div class="staff-section" id="verification-checks-' + id + '"><h3>Verification</h3><p class="muted">Loading…</p></div>' +
+    '<div class="staff-section" id="risk-flags-' + id + '"><h3>Risk flags</h3><p class="muted">Loading…</p></div>' +
     '<div class="staff-section" id="engagement-' + id + '"><h3>Engagement</h3><p class="muted">Loading…</p></div>' +
     '<div class="staff-section">' +
     "<h3>Overall status override</h3>" +
-    '<p class="muted">Normally set automatically from the two checks above — use this only to force an outcome.</p>' +
+    '<p class="muted">Normally set automatically from the two checks above — use this only to force an outcome (e.g. verification done off-platform). Explaining why is required every time, since this bypasses the normal evidence check.</p>' +
     '<div class="form-grid form-grid-2 mt-1">' +
     '<select id="status-input-' + id + '">' + options + "</select>" +
-    '<input type="text" id="notes-input-' + id + '" placeholder="Risk notes (optional)" value="' + escapeHtml(row.risk_notes || "") + '">' +
+    '<input type="text" id="notes-input-' + id + '" placeholder="Why? (required, at least 10 characters)" value="' + escapeHtml(row.risk_notes || "") + '">' +
     "</div>" +
     '<div class="action-row"><button type="button" class="btn btn-secondary" data-save="' + id + '">Save override</button></div>' +
     "</div>" +
@@ -128,11 +129,16 @@ function renderDetail(id, detailRow) {
   detailRow.querySelector('[data-save="' + id + '"]').addEventListener("click", async function () {
     var statusEl = detailRow.querySelector("#detail-status-" + id);
     var newStatus = detailRow.querySelector("#status-input-" + id).value;
-    var notes = detailRow.querySelector("#notes-input-" + id).value;
+    var notes = detailRow.querySelector("#notes-input-" + id).value.trim();
+    if (notes.length < 10) {
+      statusEl.textContent = "Explain why (at least 10 characters) — this bypasses the normal evidence check.";
+      statusEl.className = "form-status is-visible error";
+      return;
+    }
     try {
       await apiFetch("/api/organisations/" + id + "/verify", {
         method: "PATCH",
-        body: { verification_status: newStatus, risk_notes: notes || undefined },
+        body: { verification_status: newStatus, risk_notes: notes },
       });
       statusEl.textContent = "Saved.";
       statusEl.className = "form-status is-visible success";
@@ -145,6 +151,74 @@ function renderDetail(id, detailRow) {
 
   loadRepresentativeEmail(id, detailRow);
   loadEngagement(id, detailRow);
+  loadRiskFlags(id, detailRow);
+}
+
+var RISK_INDICATOR_LABEL = {
+  fraud: "Fraud",
+  scam: "Scam",
+  fake_identity: "Fake identity",
+  payment_risk: "Payment risk",
+  other: "Other",
+};
+
+// S10-11: proactive fraud/scam indicators — separate from the reactive,
+// user-submitted reports queue (staff/reports.html).
+async function loadRiskFlags(id, detailRow) {
+  var el = detailRow.querySelector("#risk-flags-" + id);
+  if (!el) return;
+  try {
+    var res = await apiFetch("/api/risk-flags?target_type=organisation&target_id=" + id + "&limit=20");
+    var flags = res.data;
+    var openFlags = flags.filter(function (f) { return !f.resolved; });
+    var html = "<h3>Risk flags" + (openFlags.length ? " (" + openFlags.length + " open)" : "") + "</h3>";
+    if (!flags.length) {
+      html += '<p class="muted">No flags on this organisation.</p>';
+    } else {
+      html += '<ul class="kv-list">' + flags.map(function (f) {
+        return (
+          "<li>" +
+          (f.resolved ? '<span class="status-badge status-neutral">resolved</span>' : '<span class="status-badge status-danger">open</span>') +
+          " " + escapeHtml(RISK_INDICATOR_LABEL[f.indicator] || f.indicator) + " — " + escapeHtml(f.note) +
+          " <em>(" + escapeHtml((f.flagger && f.flagger.full_name) || "staff") + ", " + formatDate(f.created_at) + ")</em>" +
+          (f.resolved ? "" : ' <button type="button" class="btn btn-secondary" data-resolve-flag="' + f.id + '">Resolve</button>') +
+          "</li>"
+        );
+      }).join("") + "</ul>";
+    }
+    html += '<div class="action-row mt-1"><button type="button" class="btn btn-danger" data-add-flag="' + id + '">Flag as suspicious</button></div>';
+    el.innerHTML = html;
+
+    var addBtn = el.querySelector('[data-add-flag="' + id + '"]');
+    if (addBtn) {
+      addBtn.addEventListener("click", async function () {
+        var indicator = prompt("Indicator (fraud, scam, fake_identity, payment_risk, other):", "fraud");
+        if (!indicator) return;
+        var note = prompt("What's suspicious, and why?");
+        if (!note) return;
+        try {
+          await apiFetch("/api/risk-flags", { method: "POST", body: { target_type: "organisation", target_id: id, indicator: indicator, note: note } });
+          await loadRiskFlags(id, detailRow);
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+    }
+    el.querySelectorAll("[data-resolve-flag]").forEach(function (btn) {
+      btn.addEventListener("click", async function () {
+        var notes = prompt("What did you find, and what did you do?");
+        if (!notes) return;
+        try {
+          await apiFetch("/api/risk-flags/" + btn.getAttribute("data-resolve-flag") + "/resolve", { method: "POST", body: { resolution_notes: notes } });
+          await loadRiskFlags(id, detailRow);
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+    });
+  } catch (err) {
+    el.innerHTML = "<h3>Risk flags</h3><p class=\"muted\">" + escapeHtml(err.message) + "</p>";
+  }
 }
 
 async function loadRepresentativeEmail(id, detailRow) {

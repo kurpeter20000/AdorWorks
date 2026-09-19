@@ -82,6 +82,7 @@ export type ProfileRow = {
   policy_consent_at: string | null;
   policy_version: string | null;
   policy_consent_source: string | null;
+  email_notifications_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -643,7 +644,7 @@ export type ReportTargetType =
   | "organisation"
   | "talent_video"
   | "portfolio_item";
-export type ReportReason = "spam" | "scam" | "inappropriate" | "misleading" | "other";
+export type ReportReason = "spam" | "scam" | "inappropriate" | "misleading" | "safeguarding" | "other";
 export type ReportStatus = "open" | "reviewed" | "dismissed" | "actioned";
 
 export type ReportRow = {
@@ -668,6 +669,7 @@ export type NotificationRow = {
   link: string | null;
   read_at: string | null;
   created_at: string;
+  dedupe_key: string;
 }
 
 export type PartnerHubRow = {

@@ -227,11 +227,12 @@ export function IntroductionVideoManager({ existing }: { existing: TalentIntrodu
       )}
 
       <div className="rounded-lg border border-slate/15 bg-cloud/40 p-3">
-        <label className="text-xs font-semibold text-midnight">
+        <label htmlFor="intro-video-file" className="text-xs font-semibold text-midnight">
           {existing ? "Replace your video" : "Record or upload a short introduction"}{" "}
           <span className="font-normal text-slate">(optional, under 3 minutes)</span>
         </label>
         <input
+          id="intro-video-file"
           ref={fileInputRef}
           type="file"
           accept="video/mp4,video/webm,video/quicktime"

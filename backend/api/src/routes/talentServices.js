@@ -3,6 +3,7 @@ import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff } from "../middleware/auth.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
+import { logAuditEvent } from "../audit.js";
 
 export const talentServicesRouter = Router();
 talentServicesRouter.use(requireAuth, requireStaff);
@@ -56,6 +57,8 @@ talentServicesRouter.get(
 talentServicesRouter.post(
   "/:id/publish",
   asyncRoute(async (req, res) => {
+    const { data: before } = await supabaseAdmin.from("talent_services").select("status").eq("id", req.params.id).maybeSingle();
+
     const { data, error } = await supabaseAdmin
       .from("talent_services")
       .update({ status: "published", status_note: null, decided_by: req.user.id, decided_at: new Date().toISOString() })
@@ -63,6 +66,17 @@ talentServicesRouter.post(
       .select()
       .single();
     if (error) throw new HttpError(400, error.message);
+
+    await logAuditEvent(supabaseAdmin, {
+      name: "opportunity.published",
+      actorId: req.user.id,
+      subjectId: data.talent_id,
+      entityType: "talent_services",
+      entityId: req.params.id,
+      before: before ? { status: before.status } : null,
+      after: { status: "published" },
+    });
+
     res.json({ data });
   })
 );
@@ -77,6 +91,8 @@ talentServicesRouter.post(
   "/:id/reject",
   asyncRoute(async (req, res) => {
     const { reason } = rejectSchema.parse(req.body);
+    const { data: before } = await supabaseAdmin.from("talent_services").select("status").eq("id", req.params.id).maybeSingle();
+
     const { data, error } = await supabaseAdmin
       .from("talent_services")
       .update({ status: "rejected", status_note: reason, decided_by: req.user.id, decided_at: new Date().toISOString() })
@@ -84,6 +100,21 @@ talentServicesRouter.post(
       .select()
       .single();
     if (error) throw new HttpError(400, error.message);
+
+    // S10-14 gap-check (2026-09-19): this decision — reason required at
+    // the API layer since this route was first built — was never
+    // actually written to audit_events.
+    await logAuditEvent(supabaseAdmin, {
+      name: "opportunity.rejected",
+      actorId: req.user.id,
+      subjectId: data.talent_id,
+      entityType: "talent_services",
+      entityId: req.params.id,
+      reason,
+      before: before ? { status: before.status } : null,
+      after: { status: "rejected" },
+    });
+
     res.json({ data });
   })
 );
@@ -98,6 +129,8 @@ talentServicesRouter.post(
   "/:id/pause",
   asyncRoute(async (req, res) => {
     const { note } = pauseSchema.parse(req.body);
+    const { data: before } = await supabaseAdmin.from("talent_services").select("status").eq("id", req.params.id).maybeSingle();
+
     const { data, error } = await supabaseAdmin
       .from("talent_services")
       .update({ status: "paused", status_note: note || null, decided_by: req.user.id, decided_at: new Date().toISOString() })
@@ -105,6 +138,18 @@ talentServicesRouter.post(
       .select()
       .single();
     if (error) throw new HttpError(400, error.message);
+
+    await logAuditEvent(supabaseAdmin, {
+      name: "opportunity.paused",
+      actorId: req.user.id,
+      subjectId: data.talent_id,
+      entityType: "talent_services",
+      entityId: req.params.id,
+      reason: note ?? null,
+      before: before ? { status: before.status } : null,
+      after: { status: "paused" },
+    });
+
     res.json({ data });
   })
 );

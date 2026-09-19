@@ -8,6 +8,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
+import { sendEmailSafely, getUserEmail } from "@/lib/email";
+import { renderEmail } from "@/lib/emailTemplate";
+import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
 import type { FormState } from "./auth";
 
 /**
@@ -56,7 +59,21 @@ export async function requestService(
     type: NOTIFICATION_TYPES.APPLICATION_STAGE_CHANGED,
     title: "An employer requested one of your services",
     link: "/passport/services/requests",
+    dedupeKey: request.id,
   });
+  const requestedEmail = await getUserEmail(admin, talentId);
+  await sendEmailSafely(
+    requestedEmail,
+    "An employer requested one of your services on AdorWorks",
+    renderEmail({
+      heading: "You received a service request",
+      paragraphs: ["An employer requested one of your published services on AdorWorks."],
+      ctaLabel: "View request",
+      ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/passport/services/requests`,
+      unsubscribeUrl: buildUnsubscribeUrl(talentId),
+    }),
+    { admin, recipientUserId: talentId }
+  );
 
   revalidatePath("/services");
   return {};
@@ -152,7 +169,21 @@ export async function submitServiceProposal(
       type: NOTIFICATION_TYPES.OFFER_SENT,
       title: "You received a service proposal",
       link: "/organisation/service-requests",
+      dedupeKey: offer.id,
     });
+    const proposalEmail = await getUserEmail(admin, org.representative_id);
+    await sendEmailSafely(
+      proposalEmail,
+      "You received a service proposal on AdorWorks",
+      renderEmail({
+        heading: "You received a service proposal",
+        paragraphs: ["A talent sent a proposal in response to your service request."],
+        ctaLabel: "View proposal",
+        ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/organisation/service-requests`,
+        unsubscribeUrl: buildUnsubscribeUrl(org.representative_id),
+      }),
+      { admin, recipientUserId: org.representative_id }
+    );
   }
 
   revalidatePath("/passport/services/requests");
@@ -178,7 +209,21 @@ export async function declineServiceRequest(serviceRequestId: string): Promise<{
       userId: org.representative_id,
       type: NOTIFICATION_TYPES.OFFER_RESPONDED,
       title: "A service request was declined",
+      dedupeKey: request.id,
     });
+    const requestDeclinedEmail = await getUserEmail(admin, org.representative_id);
+    await sendEmailSafely(
+      requestDeclinedEmail,
+      "A service request was declined on AdorWorks",
+      renderEmail({
+        heading: "A service request was declined",
+        paragraphs: ["A talent declined your service request."],
+        ctaLabel: "View service requests",
+        ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/organisation/service-requests`,
+        unsubscribeUrl: buildUnsubscribeUrl(org.representative_id),
+      }),
+      { admin, recipientUserId: org.representative_id }
+    );
   }
 
   revalidatePath("/passport/services/requests");

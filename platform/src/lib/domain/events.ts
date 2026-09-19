@@ -40,6 +40,11 @@ export const DOMAIN_EVENTS = {
   FINANCE_RECORD_CREATED: "finance.record_created",
   FINANCE_RECORD_UPDATED: "finance.record_updated",
   ASSISTANCE_SESSION_STARTED: "assistance.session.started",
+  // S11-06: a failed send is no longer silent (console.error only) — it's
+  // also written here so it's staff-visible via the existing
+  // GET /api/people/audit-events activity log, not a second new surface.
+  NOTIFICATION_DELIVERY_FAILED: "communication.notification.delivery_failed",
+  EMAIL_DELIVERY_FAILED: "communication.email.delivery_failed",
 } as const;
 
 export type DomainEventName = (typeof DOMAIN_EVENTS)[keyof typeof DOMAIN_EVENTS];

@@ -25,7 +25,11 @@ export function RequestServiceButton({
   const sent = alreadyRequested || (state !== initialState && !state.message && !state.errors);
 
   if (sent) {
-    return <span className="text-xs font-semibold text-teal-ink">Requested — awaiting response</span>;
+    return (
+      <span className="text-xs font-semibold text-teal-ink" role="status">
+        Requested — awaiting response
+      </span>
+    );
   }
 
   if (!open) {
@@ -44,7 +48,7 @@ export function RequestServiceButton({
         placeholder="Tell them a bit about what you need (optional)"
         className="w-full rounded-lg border border-slate/25 px-2 py-1.5 text-xs"
       />
-      {state.message && <p className="text-xs text-coral-ink">{state.message}</p>}
+      {state.message && <p className="text-xs text-coral-ink" role="alert">{state.message}</p>}
       <div className="flex gap-2">
         <button
           type="submit"

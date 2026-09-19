@@ -40,7 +40,7 @@ export function ReviewActions({ deliverableId }: { deliverableId: string }) {
                 else router.refresh();
               })
             }
-            className="flex-1 rounded-lg bg-coral px-3 py-1.5 text-sm font-bold text-white disabled:opacity-60"
+            className="flex-1 rounded-lg bg-coral-ink px-3 py-1.5 text-sm font-bold text-white disabled:opacity-60"
           >
             {pending ? "Sending…" : "Request revision"}
           </button>

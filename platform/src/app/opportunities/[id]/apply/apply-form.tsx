@@ -80,7 +80,7 @@ export function ApplyForm({
         </div>
       )}
 
-      {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink" role="alert">{state.message}</p>}
 
       <div className="flex items-center gap-3">
         <button
@@ -99,7 +99,11 @@ export function ApplyForm({
           {draftPending ? "Saving…" : "Save draft"}
         </button>
       </div>
-      {draftSaved && <p className="text-xs text-teal-ink">Draft saved — come back any time before submitting.</p>}
+      {draftSaved && (
+        <p className="text-xs text-teal-ink" role="status">
+          Draft saved — come back any time before submitting.
+        </p>
+      )}
     </form>
   );
 }

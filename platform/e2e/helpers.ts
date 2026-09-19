@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Page } from "@playwright/test";
+import type { Browser, Page } from "@playwright/test";
 import fs from "fs";
 import path from "path";
 import { validateE2EEnvironment, type E2EEnvironment } from "../src/lib/testing/e2e-environment";
@@ -256,4 +256,29 @@ export async function loginAs(page: Page, email: string, password = TEST_PASSWOR
   await page.getByLabel(/password/i).fill(password);
   await page.getByRole("button", { name: /sign in|log in/i }).click();
   await page.waitForURL("**/dashboard", { timeout: 20000 });
+}
+
+/**
+ * Login is rate-limited by email — 5 attempts per 15 minutes
+ * (lib/domain/rateLimit.ts), on purpose, to slow down password
+ * guessing. A spec that calls loginAs() fresh for every single test
+ * against the same test user (e.g. one user, six pages, three
+ * viewports) blows straight through that limit and the later logins
+ * silently fail — found live running mobile-responsive.spec.ts's own
+ * expansion, not assumed.
+ *
+ * The fix: log in for real exactly once per user per file, capture the
+ * resulting session as Playwright storage state, and hand every other
+ * test an already-authenticated browser context built from it instead
+ * of resubmitting the login form again. One real login still proves the
+ * flow works (and auth.spec.ts covers that end to end already); this is
+ * for every OTHER test that just needs to already be signed in.
+ */
+export async function loginAndCaptureStorageState(browser: Browser, email: string, password = TEST_PASSWORD) {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await loginAs(page, email, password);
+  const storageState = await context.storageState();
+  await context.close();
+  return storageState;
 }

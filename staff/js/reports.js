@@ -11,11 +11,20 @@ function reportStatusBadge(value) {
   return '<span class="status-badge status-' + tone + '">' + escapeHtml(value) + "</span>";
 }
 
+var SEVERITY_TONE = { low: "neutral", medium: "info", high: "warning", critical: "danger" };
+function severityBadge(value) {
+  if (!value) return '<span class="status-badge status-neutral">unset</span>';
+  var tone = SEVERITY_TONE[value] || "neutral";
+  return '<span class="status-badge status-' + tone + '">' + escapeHtml(value) + "</span>";
+}
+
 var rows = [];
 var activeFilter = "open";
+var me = null;
 
 var auth = await requireStaffSession();
 if (auth) {
+  me = auth.profile;
   wireFilters();
   await load();
 }
@@ -33,21 +42,21 @@ function wireFilters() {
 
 async function load() {
   var tbody = document.getElementById("reports-body");
-  tbody.innerHTML = '<tr><td colspan="5" class="staff-empty">Loading…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6" class="staff-empty">Loading…</td></tr>';
   try {
     var qs = activeFilter ? "?status=" + activeFilter + "&limit=100" : "?limit=100";
     var res = await apiFetch("/api/reports" + qs);
     rows = res.data;
     render();
   } catch (err) {
-    tbody.innerHTML = '<tr><td colspan="5" class="staff-empty">' + escapeHtml(err.message) + "</td></tr>";
+    tbody.innerHTML = '<tr><td colspan="6" class="staff-empty">' + escapeHtml(err.message) + "</td></tr>";
   }
 }
 
 function render() {
   var tbody = document.getElementById("reports-body");
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="staff-empty">No reports match this filter.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="staff-empty">No reports match this filter.</td></tr>';
     return;
   }
   tbody.innerHTML = rows
@@ -56,11 +65,12 @@ function render() {
         '<tr class="is-clickable" data-row-id="' + row.id + '">' +
         "<td>" + escapeHtml(row.target_type.replace(/_/g, " ")) + " — " + escapeHtml(row.target_id) + "</td>" +
         "<td>" + escapeHtml(row.reason.replace(/_/g, " ")) + "</td>" +
-        "<td>" + escapeHtml(row.profiles?.full_name || "—") + "</td>" +
+        "<td>" + severityBadge(row.severity) + "</td>" +
+        "<td>" + escapeHtml(row.assigned_to === me.id ? "You" : row.assigned_to ? "Assigned" : "Unassigned") + "</td>" +
         "<td>" + reportStatusBadge(row.status) + "</td>" +
         "<td>" + formatDate(row.created_at) + "</td>" +
         "</tr>" +
-        '<tr class="detail-row" id="detail-' + row.id + '"><td colspan="5"></td></tr>'
+        '<tr class="detail-row" id="detail-' + row.id + '"><td colspan="6"></td></tr>'
       );
     })
     .join("");
@@ -78,37 +88,106 @@ async function toggleDetail(id) {
   detailRow.classList.add("is-open");
   var row = rows.find(function (r) { return r.id === id; });
   detailRow.querySelector("td").innerHTML = renderDetailShell(row);
-  wireDetailActions(id, detailRow);
+  wireDetailActions(id, detailRow, row);
 }
 
 function renderDetailShell(row) {
+  var severityOptions = ["low", "medium", "high", "critical"]
+    .map(function (s) { return '<option value="' + s + '"' + (row.severity === s ? " selected" : "") + ">" + s + "</option>"; })
+    .join("");
+
   return (
     '<dl class="kv-list">' +
     "<dt>Target type</dt><dd>" + escapeHtml(row.target_type.replace(/_/g, " ")) + "</dd>" +
     "<dt>Target ID</dt><dd>" + escapeHtml(row.target_id) + "</dd>" +
+    "<dt>Reported by</dt><dd>" + escapeHtml(row.profiles?.full_name || "—") + "</dd>" +
     "<dt>Note</dt><dd>" + escapeHtml(row.note || "—") + "</dd>" +
+    "<dt>Resolution notes</dt><dd>" + escapeHtml(row.resolution_notes || "—") + "</dd>" +
     "</dl>" +
+    '<div class="form-grid form-grid-2 mt-1">' +
+    '<div><label for="severity-input-' + row.id + '">Severity</label>' +
+    '<select id="severity-input-' + row.id + '"><option value="">— unset —</option>' + severityOptions + "</select></div>" +
+    '<div class="action-row">' +
+    '<button type="button" class="btn btn-secondary" data-set-severity="' + row.id + '">Set severity</button>' +
+    (row.assigned_to === me.id
+      ? '<button type="button" class="btn btn-secondary" data-unassign="' + row.id + '">Unassign</button>'
+      : '<button type="button" class="btn btn-secondary" data-assign-me="' + row.id + '">Assign to me</button>') +
+    "</div>" +
+    "</div>" +
     (row.status === "open"
-      ? '<div class="action-row">' +
+      ? '<div class="mt-1">' +
+        '<label for="resolution-notes-' + row.id + '">What did you do, and why? (required)</label>' +
+        '<textarea id="resolution-notes-' + row.id + '" rows="2"></textarea>' +
+        '<div class="action-row mt-1">' +
         '<button type="button" class="btn btn-secondary" data-report-status="' + row.id + '" data-status="reviewed">Mark reviewed</button>' +
         '<button type="button" class="btn btn-secondary" data-report-status="' + row.id + '" data-status="dismissed">Dismiss</button>' +
         '<button type="button" class="btn btn-primary" data-report-status="' + row.id + '" data-status="actioned">Mark actioned</button>' +
+        "</div>" +
         "</div>"
       : "") +
     '<div class="form-status" id="detail-status-' + row.id + '" role="status"></div>'
   );
 }
 
-function wireDetailActions(id, detailRow) {
+function wireDetailActions(id, detailRow, row) {
   function showStatus(kind, message) {
     var el = detailRow.querySelector("#detail-status-" + id);
     if (el) { el.textContent = message; el.className = "form-status is-visible " + kind; }
   }
 
+  var setSeverityBtn = detailRow.querySelector('[data-set-severity="' + id + '"]');
+  if (setSeverityBtn) {
+    setSeverityBtn.addEventListener("click", async function () {
+      var severity = detailRow.querySelector("#severity-input-" + id).value;
+      if (!severity) { showStatus("error", "Choose a severity first."); return; }
+      try {
+        await apiFetch("/api/reports/" + id + "/severity", { method: "PATCH", body: { severity: severity } });
+        showStatus("success", "Severity set.");
+        await load();
+      } catch (err) {
+        showStatus("error", err.message);
+      }
+    });
+  }
+
+  var assignMeBtn = detailRow.querySelector('[data-assign-me="' + id + '"]');
+  if (assignMeBtn) {
+    assignMeBtn.addEventListener("click", async function () {
+      try {
+        await apiFetch("/api/reports/" + id + "/assign", { method: "PATCH", body: { assigned_to: me.id } });
+        showStatus("success", "Assigned to you.");
+        await load();
+      } catch (err) {
+        showStatus("error", err.message);
+      }
+    });
+  }
+
+  var unassignBtn = detailRow.querySelector('[data-unassign="' + id + '"]');
+  if (unassignBtn) {
+    unassignBtn.addEventListener("click", async function () {
+      try {
+        await apiFetch("/api/reports/" + id + "/assign", { method: "PATCH", body: { assigned_to: null } });
+        showStatus("success", "Unassigned.");
+        await load();
+      } catch (err) {
+        showStatus("error", err.message);
+      }
+    });
+  }
+
   detailRow.querySelectorAll('[data-report-status="' + id + '"]').forEach(function (btn) {
     btn.addEventListener("click", async function () {
+      var notes = detailRow.querySelector("#resolution-notes-" + id).value.trim();
+      if (notes.length < 5) {
+        showStatus("error", "Say what you did and why before resolving this.");
+        return;
+      }
       try {
-        await apiFetch("/api/reports/" + id, { method: "PATCH", body: { status: btn.getAttribute("data-status") } });
+        await apiFetch("/api/reports/" + id, {
+          method: "PATCH",
+          body: { status: btn.getAttribute("data-status"), resolution_notes: notes },
+        });
         showStatus("success", "Updated.");
         await load();
       } catch (err) {

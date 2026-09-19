@@ -608,7 +608,7 @@ export function OpportunityForm({
             </ul>
           </div>
         )}
-        {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
+        {state.message && <p className="text-sm text-coral-ink" role="alert">{state.message}</p>}
       </div>
 
       <div className="flex items-center justify-between gap-3 pt-2">

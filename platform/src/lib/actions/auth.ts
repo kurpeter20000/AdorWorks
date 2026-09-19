@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import { checkAndRecordAttempt, getClientIp } from "@/lib/domain/rateLimit";
+import { sendEmailSafely } from "@/lib/email";
+import { renderEmail } from "@/lib/emailTemplate";
 
 export interface FormState {
   errors?: Record<string, string[]>;
@@ -107,12 +109,20 @@ export async function signup(_prevState: FormState, formData: FormData): Promise
   // No dashboard gate ever required a verified phone -- the reminder now
   // lives here instead, waiting in Notifications from the first login,
   // rather than as an interruption on the dashboard itself.
+  //
+  // S11-04: deliberately in-app only, not emailed — this fires at the
+  // exact same moment as Supabase's own signup-confirmation email, so a
+  // second email landing simultaneously would read as noise, not help.
+  // The reminder stays visible in Notifications indefinitely until it's
+  // resolved, unlike the other in-app-only exceptions in this codebase
+  // which fire once and are easy to miss.
   await notifyUser(createAdminClient(), {
     userId: data.user.id,
     type: NOTIFICATION_TYPES.PHONE_VERIFICATION_REMINDER,
     title: "Verify your phone number",
     body: "Add and verify a phone number so employers and AdorWorks can reach you about time-sensitive opportunities.",
     link: "/notifications",
+    dedupeKey: data.user.id,
   });
 
   redirect("/check-email");
@@ -205,6 +215,33 @@ export async function resetPassword(_prevState: FormState, formData: FormData): 
   const { error } = await supabase.auth.updateUser({ password: validated.data.password });
   if (error) {
     return { message: error.message };
+  }
+
+  // S11-02: a changed password previously had zero notification of any
+  // kind — a standard security practice missing entirely: the account
+  // owner should always hear about this, specifically so they'd notice if
+  // it wasn't them. bypassPreference: true — opting out of activity email
+  // was never meant to silence a "did you do this?" security notice.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    const admin = createAdminClient();
+    await notifyUser(admin, {
+      userId: user.id,
+      type: NOTIFICATION_TYPES.PASSWORD_CHANGED,
+      title: "Your password was changed",
+      body: "If this wasn't you, contact AdorWorks support immediately.",
+    });
+    await sendEmailSafely(
+      user.email ?? null,
+      "Your AdorWorks password was changed",
+      renderEmail({
+        heading: "Your password was changed",
+        paragraphs: ["Your AdorWorks account password was just changed. If this wasn't you, contact support immediately."],
+      }),
+      { admin, recipientUserId: user.id, bypassPreference: true }
+    );
   }
 
   redirect("/dashboard");

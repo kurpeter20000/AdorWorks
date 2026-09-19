@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { formatDate } from "@/lib/domain/format";
 import type { TalentWorkExperienceRow } from "@/lib/database.types";
 
 /**
@@ -111,7 +112,7 @@ export function WorkExperienceManager({ items }: { items: TalentWorkExperienceRo
   }
 
   function formatRange(start: string, end: string | null) {
-    const fmt = (d: string) => new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "short" });
+    const fmt = (d: string) => formatDate(d, { year: "numeric", month: "short" });
     return `${fmt(start)} – ${end ? fmt(end) : "Present"}`;
   }
 
@@ -226,7 +227,7 @@ export function WorkExperienceManager({ items }: { items: TalentWorkExperienceRo
           className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
         {status && (
-          <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`}>{status.message}</p>
+          <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`} role={status.kind === "error" ? "alert" : "status"}>{status.message}</p>
         )}
         <button
           type="button"

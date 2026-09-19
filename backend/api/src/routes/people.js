@@ -264,6 +264,110 @@ peopleRouter.post(
   })
 );
 
+const suspendSchema = z.object({
+  reason: z.string().trim().min(10, "Explain why — at least 10 characters."),
+});
+
+// POST /api/people/:id/suspend — S10-08. Requires a reason; also rotates
+// the account's password (same mechanism as force-reauth below) so a
+// suspension takes effect within the hour, not just on their next login
+// attempt after their current access token would otherwise still work.
+peopleRouter.post(
+  "/:id/suspend",
+  asyncRoute(async (req, res) => {
+    const { reason } = suspendSchema.parse(req.body);
+    if (req.params.id === req.user.id) {
+      throw new HttpError(400, "You can't suspend your own account.");
+    }
+
+    const { data: before } = await supabaseAdmin.from("profiles").select("status").eq("id", req.params.id).maybeSingle();
+    if (!before) throw new HttpError(404, "Account not found.");
+    if (before.status === "suspended") throw new HttpError(409, "This account is already suspended.");
+    if (before.status === "deleted") throw new HttpError(409, "This account has been deleted.");
+
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        status: "suspended",
+        suspended_reason: reason,
+        suspended_at: new Date().toISOString(),
+        suspended_by: req.user.id,
+        reinstated_at: null,
+        reinstated_by: null,
+      })
+      .eq("id", req.params.id)
+      .select("id, role, status, full_name, created_at")
+      .single();
+    if (error) throw new HttpError(400, error.message);
+
+    const { error: passwordError } = await supabaseAdmin.auth.admin.updateUserById(req.params.id, {
+      password: generateTemporaryPassword(24),
+    });
+    if (passwordError) {
+      // The status flip above already blocks every page/Server Action —
+      // log this but don't fail the whole request over the session-
+      // termination half, which is defense in depth, not the primary control.
+      console.error(`suspend: could not rotate password for ${req.params.id}: ${passwordError.message}`);
+    }
+
+    await logAuditEvent(supabaseAdmin, {
+      name: "identity.account.suspended",
+      actorId: req.user.id,
+      subjectId: req.params.id,
+      entityType: "profiles",
+      entityId: req.params.id,
+      reason,
+      before: { status: before.status },
+      after: { status: "suspended" },
+    });
+
+    res.json({ data });
+  })
+);
+
+const reinstateSchema = z.object({
+  reason: z.string().trim().min(10, "Explain why — at least 10 characters."),
+});
+
+// POST /api/people/:id/reinstate — the reverse of suspend. Only valid
+// from 'suspended' — reinstating a 'deleted' account isn't the same
+// decision and isn't offered here.
+peopleRouter.post(
+  "/:id/reinstate",
+  asyncRoute(async (req, res) => {
+    const { reason } = reinstateSchema.parse(req.body);
+
+    const { data: before } = await supabaseAdmin.from("profiles").select("status").eq("id", req.params.id).maybeSingle();
+    if (!before) throw new HttpError(404, "Account not found.");
+    if (before.status !== "suspended") throw new HttpError(409, "This account isn't currently suspended.");
+
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        status: "active",
+        reinstated_at: new Date().toISOString(),
+        reinstated_by: req.user.id,
+      })
+      .eq("id", req.params.id)
+      .select("id, role, status, full_name, created_at")
+      .single();
+    if (error) throw new HttpError(400, error.message);
+
+    await logAuditEvent(supabaseAdmin, {
+      name: "identity.account.reinstated",
+      actorId: req.user.id,
+      subjectId: req.params.id,
+      entityType: "profiles",
+      entityId: req.params.id,
+      reason,
+      before: { status: "suspended" },
+      after: { status: "active" },
+    });
+
+    res.json({ data });
+  })
+);
+
 // GET /api/people/role-requests — pending admin/finance promotions
 // awaiting a second admin's decision (0036).
 peopleRouter.get(

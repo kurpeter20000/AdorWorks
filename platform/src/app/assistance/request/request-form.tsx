@@ -16,7 +16,7 @@ export function RequestForm() {
 
   if (submitted) {
     return (
-      <p className="mt-6 rounded-lg bg-teal/10 px-4 py-3 text-sm font-semibold text-teal-ink">
+      <p className="mt-6 rounded-lg bg-teal/10 px-4 py-3 text-sm font-semibold text-teal-ink" role="status">
         Request sent — AdorWorks staff will be in touch to arrange help.
       </p>
     );
@@ -51,7 +51,7 @@ export function RequestForm() {
         />
       </div>
 
-      {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink" role="alert">{state.message}</p>}
 
       <button
         type="submit"
