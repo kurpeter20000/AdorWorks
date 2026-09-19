@@ -8,6 +8,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
+import { sendEmailSafely, getUserEmail } from "@/lib/email";
+import { renderEmail, escapeHtml } from "@/lib/emailTemplate";
+import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
 import type { FormState } from "./auth";
 
 /**
@@ -75,6 +78,12 @@ export async function approveOpportunity(opportunityId: string): Promise<FormSta
     entityId: opportunityId,
     source: "platform",
   });
+  // S11-05: deliberately no dedupeKey on any of the three review-decision
+  // notifications below — an opportunity can cycle pending_review ->
+  // changes_required -> (edited) -> pending_review -> rejected/published
+  // more than once, and a permanent per-opportunity key would silently
+  // swallow the second, later, genuinely different decision notice. See
+  // 0085_notification_dedup.sql.
   if (found.representativeId) {
     await notifyUser(admin, {
       userId: found.representativeId,
@@ -83,6 +92,22 @@ export async function approveOpportunity(opportunityId: string): Promise<FormSta
       body: `"${found.opportunity.title}" has been approved and published.`,
       link: `/organisation/opportunities/${opportunityId}`,
     });
+    // S11-04: this used to be in-app only — publish/reject/changes-requested
+    // are exactly the "you're not already sitting in the app" moments
+    // (same reasoning as applications.ts's shortlist/reject emails).
+    const repEmail = await getUserEmail(admin, found.representativeId);
+    await sendEmailSafely(
+      repEmail,
+      "Your opportunity is live on AdorWorks",
+      renderEmail({
+        heading: "Your opportunity is live",
+        paragraphs: [`"<strong>${escapeHtml(found.opportunity.title)}</strong>" has been approved and published.`],
+        ctaLabel: "View opportunity",
+        ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/organisation/opportunities/${opportunityId}`,
+        unsubscribeUrl: buildUnsubscribeUrl(found.representativeId),
+      }),
+      { admin, recipientUserId: found.representativeId }
+    );
   }
 
   revalidateOpportunity(opportunityId);
@@ -135,6 +160,22 @@ export async function rejectOpportunity(
       body: `"${found.opportunity.title}" was not approved: ${validated.data.reason}`,
       link: `/organisation/opportunities/${opportunityId}`,
     });
+    const repEmail = await getUserEmail(admin, found.representativeId);
+    await sendEmailSafely(
+      repEmail,
+      "An opportunity was not approved on AdorWorks",
+      renderEmail({
+        heading: "An opportunity was not approved",
+        paragraphs: [
+          `"<strong>${escapeHtml(found.opportunity.title)}</strong>" was not approved.`,
+          escapeHtml(validated.data.reason),
+        ],
+        ctaLabel: "View opportunity",
+        ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/organisation/opportunities/${opportunityId}`,
+        unsubscribeUrl: buildUnsubscribeUrl(found.representativeId),
+      }),
+      { admin, recipientUserId: found.representativeId }
+    );
   }
 
   revalidateOpportunity(opportunityId);
@@ -187,6 +228,22 @@ export async function requestOpportunityChanges(
       body: `"${found.opportunity.title}" needs changes before it can be published: ${validated.data.note}`,
       link: `/organisation/opportunities/${opportunityId}/edit`,
     });
+    const repEmail = await getUserEmail(admin, found.representativeId);
+    await sendEmailSafely(
+      repEmail,
+      "Changes requested on your AdorWorks opportunity",
+      renderEmail({
+        heading: "Changes requested",
+        paragraphs: [
+          `"<strong>${escapeHtml(found.opportunity.title)}</strong>" needs changes before it can be published.`,
+          escapeHtml(validated.data.note),
+        ],
+        ctaLabel: "Edit opportunity",
+        ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/organisation/opportunities/${opportunityId}/edit`,
+        unsubscribeUrl: buildUnsubscribeUrl(found.representativeId),
+      }),
+      { admin, recipientUserId: found.representativeId }
+    );
   }
 
   revalidateOpportunity(opportunityId);

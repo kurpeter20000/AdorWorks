@@ -54,7 +54,7 @@ export function ProfessionalLinksForm({ initial }: { initial: TalentProfileRow }
         {state.errors?.websiteUrl && <p className="mt-1 text-sm text-coral-ink">{state.errors.websiteUrl[0]}</p>}
       </div>
 
-      {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink" role="alert">{state.message}</p>}
 
       <button
         type="submit"

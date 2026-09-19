@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { markNotificationRead, markAllNotificationsRead } from "@/lib/actions/notifications";
+import { formatDateTime } from "@/lib/domain/format";
 import type { NotificationRow } from "@/lib/database.types";
 
 export function NotificationsPanel({ notifications, unreadCount }: { notifications: NotificationRow[]; unreadCount: number }) {
@@ -49,7 +50,7 @@ export function NotificationsPanel({ notifications, unreadCount }: { notificatio
             <div className={`rounded-lg border p-3 text-sm ${n.read_at ? "border-slate/10 bg-white" : "border-violet/20 bg-violet/5"}`}>
               <p className="font-semibold text-midnight">{n.title}</p>
               {n.body && <p className="mt-0.5 text-xs text-slate">{n.body}</p>}
-              <p className="mt-1 text-xs text-slate">{new Date(n.created_at).toLocaleString()}</p>
+              <p className="mt-1 text-xs text-slate">{formatDateTime(n.created_at)}</p>
             </div>
           );
           return (

@@ -53,12 +53,12 @@ export function PhoneVerificationWidget() {
             required
             className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm sm:w-64"
           />
-          {sendState.errors?.phone && <p className="text-sm text-coral-ink">{sendState.errors.phone[0]}</p>}
-          {sendState.message && <p className="text-sm text-coral-ink">{sendState.message}</p>}
+          {sendState.errors?.phone && <p className="text-sm text-coral-ink" role="alert">{sendState.errors.phone[0]}</p>}
+          {sendState.message && <p className="text-sm text-coral-ink" role="alert">{sendState.message}</p>}
           <button
             type="submit"
             disabled={sending}
-            className="rounded-lg bg-coral px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
+            className="rounded-lg bg-coral-ink px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
           >
             {sending ? "Sending…" : "Send code"}
           </button>
@@ -73,13 +73,13 @@ export function PhoneVerificationWidget() {
             required
             className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm sm:w-40"
           />
-          {verifyState.errors?.code && <p className="text-sm text-coral-ink">{verifyState.errors.code[0]}</p>}
-          {verifyState.message && <p className="text-sm text-coral-ink">{verifyState.message}</p>}
+          {verifyState.errors?.code && <p className="text-sm text-coral-ink" role="alert">{verifyState.errors.code[0]}</p>}
+          {verifyState.message && <p className="text-sm text-coral-ink" role="alert">{verifyState.message}</p>}
           <div className="flex items-center gap-3">
             <button
               type="submit"
               disabled={verifying}
-              className="rounded-lg bg-coral px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
+              className="rounded-lg bg-coral-ink px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
             >
               {verifying ? "Verifying…" : "Verify"}
             </button>

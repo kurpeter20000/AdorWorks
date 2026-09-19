@@ -41,7 +41,7 @@ export default async function OrganisationPage({
 
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           {logoUrl && (
             <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-slate/15 bg-cloud">

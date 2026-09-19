@@ -107,12 +107,12 @@ export function PaymentCheckout({
       )}
 
       {state.errors?.provider && <p className="mt-1 text-xs text-coral-ink">{state.errors.provider[0]}</p>}
-      {state.message && <p className="mt-1 text-xs text-coral-ink">{state.message}</p>}
+      {state.message && <p className="mt-1 text-xs text-coral-ink" role="alert">{state.message}</p>}
 
       <button
         type="submit"
         disabled={pending}
-        className="mt-3 w-full rounded-lg bg-coral px-3 py-1.5 text-sm font-bold text-white disabled:opacity-60"
+        className="mt-3 w-full rounded-lg bg-coral-ink px-3 py-1.5 text-sm font-bold text-white disabled:opacity-60"
       >
         {pending ? "Processing payment…" : "Pay now"}
       </button>

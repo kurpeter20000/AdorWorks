@@ -10,6 +10,8 @@ import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import { sendEmailSafely, getUserEmail } from "@/lib/email";
+import { renderEmail, escapeHtml } from "@/lib/emailTemplate";
+import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
 import type { FormState } from "./auth";
 
 const PitchSchema = z.object({
@@ -199,6 +201,7 @@ export async function setApplicationStage(
     type: NOTIFICATION_TYPES.APPLICATION_STAGE_CHANGED,
     title: stage === "shortlisted" ? "You've been shortlisted" : "Application update",
     link: "/applications",
+    dedupeKey: `${applicationId}:${stage}`,
   });
 
   // The in-app notification above only reaches someone who happens to
@@ -208,17 +211,39 @@ export async function setApplicationStage(
   // real stage change above if the send fails).
   const { data: opportunity } = await supabase.from("opportunities").select("title").eq("id", opportunityId).single();
   const talentEmail = await getUserEmail(admin, application.talent_id);
+  // S11-10: opportunity.title (employer-authored) and reason (employer's
+  // free-text rejection note) both used to land straight in the HTML with
+  // no escaping — an HTML-injection risk from either one. Both now go
+  // through escapeHtml() before interpolation.
+  const safeTitle = opportunity?.title ? escapeHtml(opportunity.title) : null;
   if (stage === "shortlisted") {
     await sendEmailSafely(
       talentEmail,
       "You've been shortlisted on AdorWorks",
-      `<p>Good news — you've been shortlisted for${opportunity?.title ? ` <strong>${opportunity.title}</strong>` : " an opportunity"} on AdorWorks.</p><p><a href="${process.env.NEXT_PUBLIC_SITE_URL}/applications">View your applications</a></p>`
+      renderEmail({
+        heading: "You've been shortlisted",
+        paragraphs: [`Good news — you've been shortlisted for${safeTitle ? ` <strong>${safeTitle}</strong>` : " an opportunity"} on AdorWorks.`],
+        ctaLabel: "View your applications",
+        ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/applications`,
+        unsubscribeUrl: buildUnsubscribeUrl(application.talent_id),
+      }),
+      { admin, recipientUserId: application.talent_id }
     );
   } else {
     await sendEmailSafely(
       talentEmail,
       "An update on your AdorWorks application",
-      `<p>Thanks for applying${opportunity?.title ? ` to <strong>${opportunity.title}</strong>` : ""} on AdorWorks. The employer has decided not to move forward with your application this time.</p>${reason ? `<p>${reason}</p>` : ""}<p><a href="${process.env.NEXT_PUBLIC_SITE_URL}/applications">View your applications</a></p>`
+      renderEmail({
+        heading: "An update on your application",
+        paragraphs: [
+          `Thanks for applying${safeTitle ? ` to <strong>${safeTitle}</strong>` : ""} on AdorWorks. The employer has decided not to move forward with your application this time.`,
+          ...(reason ? [escapeHtml(reason)] : []),
+        ],
+        ctaLabel: "View your applications",
+        ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/applications`,
+        unsubscribeUrl: buildUnsubscribeUrl(application.talent_id),
+      }),
+      { admin, recipientUserId: application.talent_id }
     );
   }
 

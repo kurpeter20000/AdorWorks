@@ -38,13 +38,13 @@ export function InviteForm({ organisationId }: { organisationId: string }) {
       <p className="text-xs text-slate">
         Recruiter, hiring manager, and finance behave like Member today — labels only, for now.
       </p>
-      {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink" role="alert">{state.message}</p>}
       {/* inviteTeamMember returns {inviteToken, ...} on success —
           state !== initialState is what distinguishes "just succeeded"
           from "never submitted yet", same empty-success-object shape as
           the assistance-request form. */}
       {state !== initialState && !state.message && !state.errors && (
-        <div className="space-y-2 rounded-lg bg-teal/10 px-3 py-2 text-sm text-teal-ink">
+        <div className="space-y-2 rounded-lg bg-teal/10 px-3 py-2 text-sm text-teal-ink" role="status">
           {state.temporaryPassword && (
             <p>
               Account created. Temporary password (give this to them, it won&rsquo;t be shown again):{" "}

@@ -5,6 +5,9 @@ import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
+import { sendEmailSafely, getUserEmail } from "@/lib/email";
+import { renderEmail } from "@/lib/emailTemplate";
+import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
 import type { FormState } from "./auth";
 
 /**
@@ -115,12 +118,28 @@ export async function sendApplicationMessage(
 
   const recipientId = session.userId === parties.talentId ? parties.employerId : parties.talentId;
   if (recipientId) {
+    const recipientLink = session.userId === parties.talentId ? `/organisation/opportunities/${parties.opportunityId}` : "/applications";
     await notifyUser(admin, {
       userId: recipientId,
       type: NOTIFICATION_TYPES.MESSAGE_RECEIVED,
       title: "New message about your application",
-      link: session.userId === parties.talentId ? `/organisation/opportunities/${parties.opportunityId}` : "/applications",
+      link: recipientLink,
     });
+    // S11-04: was in-app only. Doesn't repeat the message text — same
+    // restraint as the contract-message email (read it in the app).
+    const recipientEmail = await getUserEmail(admin, recipientId);
+    await sendEmailSafely(
+      recipientEmail,
+      "New message on AdorWorks",
+      renderEmail({
+        heading: "New message",
+        paragraphs: ["You have a new message about one of your applications."],
+        ctaLabel: "View message",
+        ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}${recipientLink}`,
+        unsubscribeUrl: buildUnsubscribeUrl(recipientId),
+      }),
+      { admin, recipientUserId: recipientId }
+    );
   }
 
   revalidatePath("/applications");

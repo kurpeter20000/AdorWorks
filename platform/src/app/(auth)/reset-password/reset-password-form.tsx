@@ -20,7 +20,7 @@ export function ResetPasswordForm() {
         {state.errors?.password && <p className="mt-1 text-sm text-coral-ink">{state.errors.password[0]}</p>}
       </div>
 
-      {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink" role="alert">{state.message}</p>}
 
       <Button type="submit" loading={pending} className="w-full">
         {pending ? "Saving…" : "Set new password"}

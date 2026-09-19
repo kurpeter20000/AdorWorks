@@ -188,11 +188,22 @@ talentRouter.post(
   })
 );
 
-const evidenceReviewSchema = z.object({
-  status: z.enum(["approved", "rejected"]),
-  notes: z.string().max(2000).optional(),
-  rejection_reason: z.string().max(2000).optional(),
-});
+const evidenceReviewSchema = z
+  .object({
+    status: z.enum(["approved", "rejected"]),
+    notes: z.string().max(2000).optional(),
+    rejection_reason: z.string().trim().max(2000).optional(),
+  })
+  // S10-03/S10-13/S10-14 gap-check (2026-09-19): rejection_reason was
+  // optional (silently defaulting to the unhelpful "Not approved.") and
+  // this decision was never written to audit_events at all — the one
+  // review endpoint that fed a rejection message straight to the talent
+  // with no record of who decided it or why, beyond the row itself.
+  .superRefine((v, ctx) => {
+    if (v.status === "rejected" && (!v.rejection_reason || v.rejection_reason.length < 5)) {
+      ctx.addIssue({ code: "custom", path: ["rejection_reason"], message: "Say why this wasn't approved." });
+    }
+  });
 
 // POST /api/talent/:id/evidence/:evidenceId/review — S05-09: added
 // rejection_reason (previously the only feedback field was `notes`,
@@ -204,12 +215,15 @@ talentRouter.post(
   "/:id/evidence/:evidenceId/review",
   asyncRoute(async (req, res) => {
     const { status, notes, rejection_reason } = evidenceReviewSchema.parse(req.body);
+
+    const { data: before } = await supabaseAdmin.from("talent_evidence").select("status").eq("id", req.params.evidenceId).maybeSingle();
+
     const { data, error } = await supabaseAdmin
       .from("talent_evidence")
       .update({
         status,
         notes,
-        rejection_reason: status === "rejected" ? rejection_reason || "Not approved." : null,
+        rejection_reason: status === "rejected" ? rejection_reason : null,
         reviewer_id: req.user.id,
         reviewed_at: new Date().toISOString(),
       })
@@ -218,6 +232,18 @@ talentRouter.post(
       .select()
       .single();
     if (error) throw new HttpError(400, error.message);
+
+    await logAuditEvent(supabaseAdmin, {
+      name: "trust.verification.decided",
+      actorId: req.user.id,
+      subjectId: req.params.id,
+      entityType: "talent_evidence",
+      entityId: req.params.evidenceId,
+      reason: status === "rejected" ? rejection_reason : null,
+      before: before ? { status: before.status } : null,
+      after: { status },
+      metadata: { kind: "evidence" },
+    });
 
     await supabaseAdmin.from("notifications").insert({
       user_id: req.params.id,
@@ -231,10 +257,17 @@ talentRouter.post(
   })
 );
 
-const videoReviewSchema = z.object({
-  status: z.enum(["approved", "rejected"]),
-  rejection_reason: z.string().max(2000).optional(),
-});
+const videoReviewSchema = z
+  .object({
+    status: z.enum(["approved", "rejected"]),
+    rejection_reason: z.string().trim().max(2000).optional(),
+  })
+  // Same S10-03/S10-13/S10-14 gap-check fix as the evidence review above.
+  .superRefine((v, ctx) => {
+    if (v.status === "rejected" && (!v.rejection_reason || v.rejection_reason.length < 5)) {
+      ctx.addIssue({ code: "custom", path: ["rejection_reason"], message: "Say why this wasn't approved." });
+    }
+  });
 
 // POST /api/talent/:id/introduction-video/review — Stage 6 (0055): the
 // same approve/reject shape as evidence review, for the introduction
@@ -246,11 +279,14 @@ talentRouter.post(
   "/:id/introduction-video/review",
   asyncRoute(async (req, res) => {
     const { status, rejection_reason } = videoReviewSchema.parse(req.body);
+
+    const { data: before } = await supabaseAdmin.from("talent_introduction_videos").select("status").eq("talent_id", req.params.id).maybeSingle();
+
     const { data, error } = await supabaseAdmin
       .from("talent_introduction_videos")
       .update({
         status,
-        rejection_reason: status === "rejected" ? rejection_reason || "Not approved." : null,
+        rejection_reason: status === "rejected" ? rejection_reason : null,
         reviewed_by: req.user.id,
         reviewed_at: new Date().toISOString(),
       })
@@ -258,6 +294,18 @@ talentRouter.post(
       .select()
       .single();
     if (error) throw new HttpError(400, error.message);
+
+    await logAuditEvent(supabaseAdmin, {
+      name: "trust.verification.decided",
+      actorId: req.user.id,
+      subjectId: req.params.id,
+      entityType: "talent_introduction_videos",
+      entityId: data.id,
+      reason: status === "rejected" ? rejection_reason : null,
+      before: before ? { status: before.status } : null,
+      after: { status },
+      metadata: { kind: "introduction_video" },
+    });
 
     await supabaseAdmin.from("notifications").insert({
       user_id: req.params.id,

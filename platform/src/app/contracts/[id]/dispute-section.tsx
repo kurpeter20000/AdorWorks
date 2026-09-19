@@ -67,11 +67,11 @@ export function DisputeSection({
             className="mt-2 w-full rounded-lg border border-slate/25 px-2 py-1.5 text-sm"
           />
           {state.errors?.description && <p className="mt-1 text-xs text-coral-ink">{state.errors.description[0]}</p>}
-          {state.message && <p className="mt-1 text-xs text-coral-ink">{state.message}</p>}
+          {state.message && <p className="mt-1 text-xs text-coral-ink" role="alert">{state.message}</p>}
           <button
             type="submit"
             disabled={pending}
-            className="mt-2 w-full rounded-lg bg-coral px-3 py-1.5 text-sm font-bold text-white disabled:opacity-60"
+            className="mt-2 w-full rounded-lg bg-coral-ink px-3 py-1.5 text-sm font-bold text-white disabled:opacity-60"
           >
             {pending ? "Submitting…" : "Raise dispute"}
           </button>

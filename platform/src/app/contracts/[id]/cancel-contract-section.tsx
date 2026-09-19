@@ -34,7 +34,7 @@ export function CancelContractSection({ contractId }: { contractId: string }) {
         className="mt-2 w-full rounded-lg border border-slate/25 px-2 py-1.5 text-sm"
       />
       {state.errors?.reason && <p className="mt-1 text-xs text-coral-ink">{state.errors.reason[0]}</p>}
-      {state.message && <p className="mt-1 text-xs text-coral-ink">{state.message}</p>}
+      {state.message && <p className="mt-1 text-xs text-coral-ink" role="alert">{state.message}</p>}
       <div className="mt-2 flex gap-2">
         <button
           type="button"
@@ -46,7 +46,7 @@ export function CancelContractSection({ contractId }: { contractId: string }) {
         <button
           type="submit"
           disabled={pending}
-          className="flex-1 rounded-lg bg-coral px-3 py-1.5 text-xs font-bold text-white disabled:opacity-60"
+          className="flex-1 rounded-lg bg-coral-ink px-3 py-1.5 text-xs font-bold text-white disabled:opacity-60"
         >
           {pending ? "Cancelling…" : "Confirm cancellation"}
         </button>

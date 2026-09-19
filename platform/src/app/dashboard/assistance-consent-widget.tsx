@@ -37,7 +37,7 @@ export function AssistanceConsentWidget({
             {revokePending ? "Revoking…" : "Revoke assisted access"}
           </button>
         </form>
-        {revokeState.message && <p className="mt-2 text-sm text-coral-ink">{revokeState.message}</p>}
+        {revokeState.message && <p className="mt-2 text-sm text-coral-ink" role="alert">{revokeState.message}</p>}
       </div>
     );
   }
@@ -83,7 +83,7 @@ export function AssistanceConsentWidget({
           {pending ? "Confirming…" : freshAccount ? "Set password and consent" : "I consent to being helped"}
         </button>
       </form>
-      {state.message && <p className="mt-2 text-sm text-coral-ink">{state.message}</p>}
+      {state.message && <p className="mt-2 text-sm text-coral-ink" role="alert">{state.message}</p>}
     </div>
   );
 }
