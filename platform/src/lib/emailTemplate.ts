@@ -18,7 +18,12 @@ export function escapeHtml(input: string): string {
 }
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || "support@adorworks.org";
+// S13-12: was defaulting to support@adorworks.org — a domain nobody
+// confirmed AdorWorks actually controls. The marketing site's real,
+// already-published contact (every policy page's footer, contact.html)
+// is info@adorworks.net — reusing it here instead of guessing a second,
+// unconfirmed address under a different domain.
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || "info@adorworks.net";
 
 /**
  * `paragraphs` are inserted as-is (already-built HTML fragments) — callers

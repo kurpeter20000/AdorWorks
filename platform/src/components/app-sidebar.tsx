@@ -25,7 +25,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { STAFF_CONSOLE_URL } from "@/lib/domain/marketingSite";
+import { STAFF_CONSOLE_URL, CONTACT_URL } from "@/lib/domain/marketingSite";
 import type { DashboardAction } from "@/lib/domain/navigation";
 
 const ICONS: Record<string, LucideIcon> = {
@@ -49,6 +49,7 @@ const ICONS: Record<string, LucideIcon> = {
   "/assist": LifeBuoy,
   "/operations": Inbox,
   [STAFF_CONSOLE_URL]: ExternalLink,
+  [CONTACT_URL]: LifeBuoy,
 };
 
 export function AppSidebar({
@@ -63,6 +64,10 @@ export function AppSidebar({
   const items = [
     { href: "/dashboard", label: "Dashboard", external: false },
     ...actions.map((a) => ({ href: a.href, label: a.label, external: Boolean(a.external) })),
+    // S13-12 — always visible regardless of role, unlike the per-role
+    // actions above: the platform app previously had no visible support
+    // contact anywhere at all.
+    { href: CONTACT_URL, label: "Help & Support", external: true },
   ];
 
   function isActive(href: string) {

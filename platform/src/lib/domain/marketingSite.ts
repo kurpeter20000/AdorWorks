@@ -20,3 +20,11 @@ export const MARKETING_SITE_URL = process.env.NEXT_PUBLIC_MARKETING_SITE_URL || 
 // staff account's session isn't transferred automatically, but the
 // login form there uses the same email/password.
 export const STAFF_CONSOLE_URL = `${MARKETING_SITE_URL}/staff/login`;
+
+// S13-12 — the platform app itself had no visible support/help contact
+// anywhere (confirmed by grepping the whole app for mailto:/support@/
+// contact.html — zero hits outside email-footer templates a user never
+// sees in-app). The marketing site's contact.html already exists, works,
+// and has a "Trust & Safety concern" topic option — reusing it here
+// rather than building a second, separate in-app contact form.
+export const CONTACT_URL = `${MARKETING_SITE_URL}/contact.html`;
