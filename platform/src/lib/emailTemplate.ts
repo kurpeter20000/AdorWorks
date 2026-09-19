@@ -61,11 +61,16 @@ export function renderEmail(input: {
             </tr>
             <tr>
               <td style="padding:16px 24px;background:#f4f2ee;border-top:1px solid #e4e0d8;">
-                <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">
+                <p style="margin:0 0 8px;color:#6b7280;font-size:12px;line-height:1.5;">
                   You're receiving this because of activity on your AdorWorks account
                   (${escapeHtml(SITE_URL.replace(/^https?:\/\//, ""))}). Need help? Contact
                   ${escapeHtml(SUPPORT_EMAIL)}.
                   ${input.unsubscribeUrl ? ` <a href="${escapeHtml(input.unsubscribeUrl)}" style="color:#6b7280;">Unsubscribe from activity emails</a>.` : ""}
+                </p>
+                <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">
+                  AdorWorks staff will never ask you for your password, a one-time code, or your payment PIN by
+                  email. If something in this message looks off, contact ${escapeHtml(SUPPORT_EMAIL)} before
+                  clicking anything.
                 </p>
               </td>
             </tr>
