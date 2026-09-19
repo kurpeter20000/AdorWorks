@@ -183,15 +183,38 @@ organisationsRouter.patch(
   })
 );
 
-const verifySchema = z.object({
-  verification_status: z.enum(["pending", "verified", "rejected", "suspended"]),
-  risk_notes: z.string().max(2000).optional(),
-});
+const verifySchema = z
+  .object({
+    verification_status: z.enum(["pending", "verified", "rejected", "suspended"]),
+    risk_notes: z.string().trim().max(2000).optional(),
+  })
+  .superRefine((v, ctx) => {
+    // S10-04/S10-13 gap-check (2026-09-19): this endpoint is a manual
+    // override for when the two-dimension evidence flow
+    // (verification-checks/:checkType, the intended default path) either
+    // isn't practical (no reliable formal registration record for this
+    // organisation) or was completed off-platform — a real, legitimate
+    // need for the pilot context, not something to remove. What was
+    // missing was any requirement to say why: a staff member could set
+    // 'verified' here with zero verification_checks rows and no
+    // explanation at all. risk_notes is now mandatory for every decision
+    // through this specific endpoint, since every one of them is either
+    // bypassing or overriding the normal evidence-gated flow.
+    if (!v.risk_notes || v.risk_notes.length < 10) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["risk_notes"],
+        message: "Explain the basis for this decision (at least 10 characters) — this endpoint bypasses the normal evidence-check flow, so the reason must be on record.",
+      });
+    }
+  });
 
-// PATCH /api/organisations/:id/verify — Blueprint §5.4 employer
-// verification checklist is followed manually by staff off-platform
-// (registration evidence, decision authority, etc.); this endpoint just
-// records the outcome once that review is done.
+// PATCH /api/organisations/:id/verify — a manual override for when the
+// two-dimension evidence flow (verification-checks/:checkType, the
+// intended default path) isn't practical or was completed off-platform.
+// risk_notes is mandatory (see verifySchema) — this bypasses the normal
+// evidence gate, so staff must record why every time, not just for
+// unusual cases.
 organisationsRouter.patch(
   "/:id/verify",
   asyncRoute(async (req, res) => {
@@ -202,6 +225,12 @@ organisationsRouter.patch(
       .select("verification_status")
       .eq("id", req.params.id)
       .maybeSingle();
+
+    const { data: existingChecks } = await supabaseAdmin
+      .from("verification_checks")
+      .select("check_type, status")
+      .eq("organisation_id", req.params.id);
+    const hasNoEvidenceOnFile = !existingChecks || existingChecks.length === 0;
 
     const { data, error } = await supabaseAdmin
       .from("organisations")
@@ -217,10 +246,15 @@ organisationsRouter.patch(
       subjectId: null,
       entityType: "organisations",
       entityId: req.params.id,
-      reason: body.risk_notes ?? null,
+      reason: body.risk_notes,
       before: before ? { verification_status: before.verification_status } : null,
       after: { verification_status: body.verification_status },
-      metadata: {},
+      // no_evidence_on_file flags a decision made via this override with
+      // zero verification_checks rows at all — a legitimate outcome for
+      // the pilot context (see verifySchema's comment), but one worth
+      // being able to find and spot-check later, not silently identical
+      // in the audit log to a decision backed by real evidence.
+      metadata: { no_evidence_on_file: hasNoEvidenceOnFile },
     });
 
     res.json({ data });

@@ -100,10 +100,10 @@ function renderDetail(id, detailRow) {
     '<div class="staff-section" id="engagement-' + id + '"><h3>Engagement</h3><p class="muted">Loading…</p></div>' +
     '<div class="staff-section">' +
     "<h3>Overall status override</h3>" +
-    '<p class="muted">Normally set automatically from the two checks above — use this only to force an outcome.</p>' +
+    '<p class="muted">Normally set automatically from the two checks above — use this only to force an outcome (e.g. verification done off-platform). Explaining why is required every time, since this bypasses the normal evidence check.</p>' +
     '<div class="form-grid form-grid-2 mt-1">' +
     '<select id="status-input-' + id + '">' + options + "</select>" +
-    '<input type="text" id="notes-input-' + id + '" placeholder="Risk notes (optional)" value="' + escapeHtml(row.risk_notes || "") + '">' +
+    '<input type="text" id="notes-input-' + id + '" placeholder="Why? (required, at least 10 characters)" value="' + escapeHtml(row.risk_notes || "") + '">' +
     "</div>" +
     '<div class="action-row"><button type="button" class="btn btn-secondary" data-save="' + id + '">Save override</button></div>' +
     "</div>" +
@@ -128,11 +128,16 @@ function renderDetail(id, detailRow) {
   detailRow.querySelector('[data-save="' + id + '"]').addEventListener("click", async function () {
     var statusEl = detailRow.querySelector("#detail-status-" + id);
     var newStatus = detailRow.querySelector("#status-input-" + id).value;
-    var notes = detailRow.querySelector("#notes-input-" + id).value;
+    var notes = detailRow.querySelector("#notes-input-" + id).value.trim();
+    if (notes.length < 10) {
+      statusEl.textContent = "Explain why (at least 10 characters) — this bypasses the normal evidence check.";
+      statusEl.className = "form-status is-visible error";
+      return;
+    }
     try {
       await apiFetch("/api/organisations/" + id + "/verify", {
         method: "PATCH",
-        body: { verification_status: newStatus, risk_notes: notes || undefined },
+        body: { verification_status: newStatus, risk_notes: notes },
       });
       statusEl.textContent = "Saved.";
       statusEl.className = "form-status is-visible success";

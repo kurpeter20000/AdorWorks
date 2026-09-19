@@ -108,6 +108,11 @@ function render() {
         '<select id="role-input-' + row.id + '">' + roleOptions.replace('value="' + row.role + '"', 'value="' + row.role + '" selected') + "</select>" +
         '<button type="button" class="btn btn-secondary" data-save="' + row.id + '">Save</button>' +
         '<button type="button" class="btn btn-secondary" data-force-reauth="' + row.id + '" title="Ends this account\'s active sessions within an hour, e.g. if it may be compromised">Force re-auth</button>' +
+        (row.status === "suspended"
+          ? '<button type="button" class="btn btn-secondary" data-reinstate="' + row.id + '">Reinstate</button>'
+          : row.status === "active"
+            ? '<button type="button" class="btn btn-danger" data-suspend="' + row.id + '">Suspend</button>'
+            : "") +
         "</div>" +
         "</td>" +
         "</tr>"
@@ -144,6 +149,40 @@ function render() {
         setPageStatus("error", err.message);
       }
     });
+
+    var suspendBtn = tbody.querySelector('[data-suspend="' + row.id + '"]');
+    if (suspendBtn) {
+      suspendBtn.addEventListener("click", async function () {
+        var who = row.full_name || row.email || row.id;
+        var reason = prompt("Why are you suspending " + who + "? (at least 10 characters — they'll be signed out within the hour)");
+        if (reason === null) return;
+        try {
+          await apiFetch("/api/people/" + row.id + "/suspend", { method: "POST", body: { reason: reason } });
+          setPageStatus("success", "Suspended " + who + ".");
+          await load();
+          await loadAuditEvents();
+        } catch (err) {
+          setPageStatus("error", err.message);
+        }
+      });
+    }
+
+    var reinstateBtn = tbody.querySelector('[data-reinstate="' + row.id + '"]');
+    if (reinstateBtn) {
+      reinstateBtn.addEventListener("click", async function () {
+        var who = row.full_name || row.email || row.id;
+        var reason = prompt("Why are you reinstating " + who + "? (at least 10 characters)");
+        if (reason === null) return;
+        try {
+          await apiFetch("/api/people/" + row.id + "/reinstate", { method: "POST", body: { reason: reason } });
+          setPageStatus("success", "Reinstated " + who + ".");
+          await load();
+          await loadAuditEvents();
+        } catch (err) {
+          setPageStatus("error", err.message);
+        }
+      });
+    }
   });
 }
 
