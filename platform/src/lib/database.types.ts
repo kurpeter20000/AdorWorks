@@ -643,7 +643,7 @@ export type ReportTargetType =
   | "organisation"
   | "talent_video"
   | "portfolio_item";
-export type ReportReason = "spam" | "scam" | "inappropriate" | "misleading" | "other";
+export type ReportReason = "spam" | "scam" | "inappropriate" | "misleading" | "safeguarding" | "other";
 export type ReportStatus = "open" | "reviewed" | "dismissed" | "actioned";
 
 export type ReportRow = {

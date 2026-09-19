@@ -10,6 +10,10 @@ const REASON_LABEL: Record<string, string> = {
   scam: "Scam or fraud",
   inappropriate: "Inappropriate content",
   misleading: "Misleading or false information",
+  // S10-10: routed to admin-only visibility server-side (0084) — a
+  // regular staff role literally can't see one of these, not just a UI
+  // choice not to show it to them.
+  safeguarding: "Safety concern — exploitation, abuse, or harassment",
   other: "Other",
 };
 

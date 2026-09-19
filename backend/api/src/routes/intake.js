@@ -4,6 +4,7 @@ import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff } from "../middleware/auth.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
 import { normalizeCategory, normalizeOpportunityType, splitList } from "../lookups.js";
+import { logAuditEvent } from "../audit.js";
 
 export const intakeRouter = Router();
 intakeRouter.use(requireAuth, requireStaff);
@@ -172,6 +173,18 @@ intakeRouter.post(
       })
       .eq("id", submission.id);
 
+    // S10-14 gap-check (2026-09-19): provisioning a real account on
+    // someone's behalf is exactly the kind of sensitive staff action this
+    // route file had zero audit trail for, at all.
+    await logAuditEvent(supabaseAdmin, {
+      name: "identity.account.created",
+      actorId: req.user.id,
+      subjectId: talentId,
+      entityType: "talent_profiles",
+      entityId: talentId,
+      metadata: { via: "intake_convert_talent", intake_submission_id: submission.id, email },
+    });
+
     res.json({ data: { talent_id: talentId, talent_profile: talentProfile } });
   })
 );
@@ -252,6 +265,15 @@ intakeRouter.post(
         converted_to_id: organisation.id,
       })
       .eq("id", submission.id);
+
+    await logAuditEvent(supabaseAdmin, {
+      name: "identity.account.created",
+      actorId: req.user.id,
+      subjectId: representativeId,
+      entityType: "organisations",
+      entityId: organisation.id,
+      metadata: { via: "intake_convert_employer", intake_submission_id: submission.id, email },
+    });
 
     res.json({ data: { organisation, opportunity } });
   })
