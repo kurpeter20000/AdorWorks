@@ -32,6 +32,7 @@ vi.mock("./supabaseAdmin.js", () => ({
       select: () => ({
         eq: () => ({
           single: (...args) => singleMock(...args),
+          maybeSingle: (...args) => singleMock(...args),
         }),
       }),
     }),
@@ -55,6 +56,15 @@ beforeAll(async () => {
 afterAll(() => {
   server.close();
 });
+
+// A real base64url-encoded payload segment (aal2 by default) so
+// requireAuth's own S14-02 MFA check passes for staff roles here —
+// otherwise every staff-role test below would get 403 mfa_required
+// instead of exercising the specific role gate each test names.
+function makeToken(claims = { aal: "aal2" }) {
+  const payload = Buffer.from(JSON.stringify(claims)).toString("base64url");
+  return `header.${payload}.sig`;
+}
 
 function mockSignedInAs(role) {
   getUserMock.mockResolvedValue({ data: { user: { id: "u1", email: "a@example.com" } }, error: null });
@@ -83,7 +93,7 @@ describe("authorization over real HTTP", () => {
 
     it(`${path} (${gate}) rejects role '${blockedRole}'`, async () => {
       mockSignedInAs(blockedRole);
-      const res = await fetch(`${baseUrl}${path}`, { headers: { Authorization: "Bearer goodtoken" } });
+      const res = await fetch(`${baseUrl}${path}`, { headers: { Authorization: `Bearer ${makeToken()}` } });
       expect(res.status).toBe(403);
     });
   }
@@ -91,5 +101,42 @@ describe("authorization over real HTTP", () => {
   it("an unknown path returns 404, not a stack trace", async () => {
     const res = await fetch(`${baseUrl}/api/does-not-exist`);
     expect(res.status).toBe(404);
+  });
+
+  // S14-04 gap-check finding: POST /api/disputes/:id/refund only had the
+  // router-level requireStaff gate, letting reviewer/matcher (no other
+  // financial authority anywhere else in the app) reverse a settled
+  // payment. Tested separately from GATED_ROUTES since it's POST-only —
+  // an unmatched GET would 404 before ever reaching the route-specific
+  // requireFinanceStaff gate, which would silently skip this check.
+  describe("POST /api/disputes/:id/refund (requireFinanceStaff, route-specific)", () => {
+    it("rejects a request with no token", async () => {
+      const res = await fetch(`${baseUrl}/api/disputes/d1/refund`, { method: "POST" });
+      expect(res.status).toBe(401);
+    });
+
+    it("rejects role 'reviewer' even though it passes the router's general requireStaff gate", async () => {
+      mockSignedInAs("reviewer");
+      const res = await fetch(`${baseUrl}/api/disputes/d1/refund`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${makeToken()}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ milestone_id: "00000000-0000-0000-0000-000000000000" }),
+      });
+      expect(res.status).toBe(403);
+    });
+
+    it("lets role 'finance' past the authorization gate (reaches route logic, not blocked)", async () => {
+      mockSignedInAs("finance");
+      const res = await fetch(`${baseUrl}/api/disputes/d1/refund`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${makeToken()}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ milestone_id: "00000000-0000-0000-0000-000000000000" }),
+      });
+      // Not 401/403 — the mocked DB has no matching dispute, so the route
+      // itself 404s. Reaching that (not an auth rejection) proves both
+      // requireStaff and requireFinanceStaff let 'finance' through.
+      expect(res.status).not.toBe(401);
+      expect(res.status).not.toBe(403);
+    });
   });
 });
