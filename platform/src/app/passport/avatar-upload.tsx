@@ -73,12 +73,13 @@ export function AvatarUpload({ existingUrl }: { existingUrl: string | null }) {
             e2e/mobile-responsive.spec.ts. */}
         <input
           type="file"
+          aria-label="Profile photo"
           accept="image/jpeg,image/png,image/webp"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           className="w-full min-w-0 text-sm"
         />
         {status && (
-          <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`}>{status.message}</p>
+          <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`} role={status.kind === "error" ? "alert" : "status"}>{status.message}</p>
         )}
         <button
           type="button"

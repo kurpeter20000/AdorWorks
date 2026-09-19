@@ -132,7 +132,7 @@ export function OpportunityReviewActions({ opportunityId }: { opportunityId: str
           <button
             type="submit"
             disabled={rejectPending}
-            className="rounded-lg bg-coral px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
+            className="rounded-lg bg-coral-ink px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
           >
             {rejectPending ? "Rejecting…" : "Reject opportunity"}
           </button>

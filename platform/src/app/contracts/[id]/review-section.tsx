@@ -70,7 +70,7 @@ export function ReviewSection({
               className="mt-2 w-full rounded-lg border border-slate/25 px-2 py-1.5 text-sm"
             />
             {state.errors?.rating && <p className="mt-1 text-xs text-coral-ink">{state.errors.rating[0]}</p>}
-            {state.message && <p className="mt-1 text-xs text-coral-ink">{state.message}</p>}
+            {state.message && <p className="mt-1 text-xs text-coral-ink" role="alert">{state.message}</p>}
             <button
               type="submit"
               disabled={pending}

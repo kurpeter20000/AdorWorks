@@ -1,0 +1,83 @@
+name: E2E (priority journeys)
+
+# S12-14 / S12-01 / S12-02 / S12-03 — runs the full Playwright suite
+# (platform/e2e) against a real, dedicated test Supabase project, across
+# chromium plus a scoped cross-browser pass on firefox/webkit (see
+# playwright.config.ts's comment for exactly what those two cover).
+#
+# Manually triggered only (workflow_dispatch), not on every push or PR:
+# this same test project also backs the staging environment (see the
+# 2026-09-12 decision-log entry "Staging reuses the test Supabase
+# project, not a third one"), and this suite creates and deletes real
+# records there. Running it automatically on every push would risk
+# colliding with someone reviewing staging at the same moment — run it
+# manually from the Actions tab (or "Run workflow") when that's not a
+# concern. A scheduled run could be added later once this has proven
+# stable, but that's a deliberate follow-up decision, not assumed here.
+#
+# Needs five repository secrets, all describing the TEST Supabase
+# project — never production. Add them directly via GitHub's own
+# Settings -> Secrets and variables -> Actions UI; never paste real
+# values into a chat with Claude Code (same handling as
+# PROD_SUPABASE_DB_URL in backup-production-db.yml). See
+# platform/.env.e2e.example for what each one means:
+#   E2E_SUPABASE_URL                    (NEXT_PUBLIC_SUPABASE_URL)
+#   E2E_SUPABASE_ANON_KEY                (NEXT_PUBLIC_SUPABASE_ANON_KEY)
+#   E2E_SUPABASE_SECRET_KEY              (SUPABASE_SECRET_KEY)
+#   E2E_ALLOW_MUTATIONS                  (must be exactly "true")
+#   E2E_EXPECTED_SUPABASE_PROJECT_REF    (the test project's ref)
+# lib/testing/e2e-environment.ts fails closed if any of these are wrong
+# or missing, or if the URL resolves to the known production project —
+# this workflow can't accidentally mutate production even if misconfigured.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  e2e:
+    name: e2e (chromium, firefox, webkit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: platform
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+      SUPABASE_SECRET_KEY: ${{ secrets.E2E_SUPABASE_SECRET_KEY }}
+      E2E_ALLOW_MUTATIONS: ${{ secrets.E2E_ALLOW_MUTATIONS }}
+      E2E_EXPECTED_SUPABASE_PROJECT_REF: ${{ secrets.E2E_EXPECTED_SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: platform/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium firefox webkit
+      # Real test-project values, not the placeholders ci.yml's build uses
+      # — NEXT_PUBLIC_* vars are inlined into the client bundle at build
+      # time, so the app actually served below needs the real ones baked in.
+      - run: npm run build
+      - name: Start the app and wait for it to respond
+        run: |
+          npm run start &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/login > /dev/null; then
+              echo "App is up."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "App did not become ready in time." >&2
+          exit 1
+      - run: npm run test:e2e
+        env:
+          E2E_BASE_URL: http://localhost:3000
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: platform/test-results
+          retention-days: 7

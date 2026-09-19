@@ -86,12 +86,13 @@ export function CvUpload({ existingPath }: { existingPath: string | null }) {
       )}
       <input
         type="file"
+        aria-label="CV or résumé file"
         accept="application/pdf"
         onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         className="w-full text-sm"
       />
       {status && (
-        <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`}>{status.message}</p>
+        <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`} role={status.kind === "error" ? "alert" : "status"}>{status.message}</p>
       )}
       <button
         type="button"

@@ -227,7 +227,7 @@ export function WorkExperienceManager({ items }: { items: TalentWorkExperienceRo
           className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
         {status && (
-          <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`}>{status.message}</p>
+          <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`} role={status.kind === "error" ? "alert" : "status"}>{status.message}</p>
         )}
         <button
           type="button"

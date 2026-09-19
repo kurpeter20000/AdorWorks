@@ -59,12 +59,13 @@ export function LogoUpload({ orgId, existingUrl }: { orgId: string; existingUrl:
       <div className="flex-1 space-y-2">
         <input
           type="file"
+          aria-label="Organisation logo"
           accept="image/jpeg,image/png,image/webp"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           className="w-full text-sm"
         />
         {status && (
-          <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`}>{status.message}</p>
+          <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`} role={status.kind === "error" ? "alert" : "status"}>{status.message}</p>
         )}
         <button
           type="button"

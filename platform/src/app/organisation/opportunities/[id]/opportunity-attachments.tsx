@@ -98,11 +98,16 @@ export function OpportunityAttachments({ opportunityId, attachments }: { opportu
       <div className="mt-2 space-y-2">
         <input
           type="file"
+          aria-label="Opportunity attachment"
           accept={ALLOWED_TYPES.join(",")}
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           className="w-full text-xs"
         />
-        {status && <p className={`text-xs ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`}>{status.message}</p>}
+        {status && (
+          <p className={`text-xs ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`} role={status.kind === "error" ? "alert" : "status"}>
+            {status.message}
+          </p>
+        )}
         <button
           type="button"
           onClick={handleUpload}

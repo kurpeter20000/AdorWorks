@@ -57,7 +57,7 @@ export function ProposalForm({ serviceRequestId }: { serviceRequestId: string })
           className="mt-1 w-full rounded-lg border border-slate/25 px-2 py-1.5 text-sm"
         />
       </div>
-      {state.message && <p className="text-xs text-coral-ink">{state.message}</p>}
+      {state.message && <p className="text-xs text-coral-ink" role="alert">{state.message}</p>}
       <button
         type="submit"
         disabled={pending}

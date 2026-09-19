@@ -27,6 +27,7 @@ export function EmailPreferenceToggle({ initialEnabled }: { initialEnabled: bool
         type="button"
         role="switch"
         aria-checked={enabled}
+        aria-label="Activity emails"
         disabled={pending}
         onClick={toggle}
         className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60 ${enabled ? "bg-teal-ink" : "bg-slate/30"}`}

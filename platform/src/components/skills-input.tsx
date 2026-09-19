@@ -89,7 +89,7 @@ export function SkillsInput({
             }
           }}
           placeholder={chips.length === 0 ? placeholder : undefined}
-          className="min-w-[8rem] flex-1 border-none py-1 text-sm outline-none"
+          className="min-w-[8rem] flex-1 rounded border-none py-1 text-sm"
         />
       </div>
 

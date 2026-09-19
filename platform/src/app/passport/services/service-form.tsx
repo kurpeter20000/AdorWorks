@@ -149,7 +149,7 @@ export function ServiceForm({
         />
       </div>
 
-      {state.message && <p className="text-xs text-coral-ink">{state.message}</p>}
+      {state.message && <p className="text-xs text-coral-ink" role="alert">{state.message}</p>}
 
       <button
         type="submit"

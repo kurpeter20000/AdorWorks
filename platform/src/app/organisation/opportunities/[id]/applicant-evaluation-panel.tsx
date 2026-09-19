@@ -187,7 +187,7 @@ export function ApplicantEvaluationPanel({
         >
           <textarea name="body" rows={2} placeholder="Add a note for your team" className="w-full rounded-lg border border-slate/25 px-2 py-1.5 text-xs" />
           {noteState.errors?.body && <p className="text-xs text-coral-ink">{noteState.errors.body[0]}</p>}
-          {noteState.message && <p className="text-xs text-coral-ink">{noteState.message}</p>}
+          {noteState.message && <p className="text-xs text-coral-ink" role="alert">{noteState.message}</p>}
           <button type="submit" className="rounded-lg border border-slate/25 px-3 py-1.5 text-xs font-semibold text-midnight">
             Add note
           </button>

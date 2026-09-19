@@ -347,7 +347,14 @@ export default async function DashboardPage({
                 const content = (
                   <>
                     <span className="block font-bold">{action.label}</span>
-                    <span className="mt-1 block text-xs text-slate">{action.description}</span>
+                    {/* S12-07: text-slate on white is fine (5.4:1+) but the same
+                        gray on this card's own bright teal background measures
+                        only 2.04:1 — fails WCAG AA's 4.5:1. text-midnight (the
+                        title's own color, already proven to work here) covers
+                        the primary/teal case instead. */}
+                    <span className={`mt-1 block text-xs ${action.primary ? "text-midnight" : "text-slate"}`}>
+                      {action.description}
+                    </span>
                   </>
                 );
                 return action.external ? (

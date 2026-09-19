@@ -32,7 +32,7 @@ export function UnsubscribeConfirmForm({ userId, token }: { userId: string; toke
             setResult(res);
           });
         }}
-        className="mt-4 rounded-lg bg-coral px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
+        className="mt-4 rounded-lg bg-coral-ink px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
       >
         {pending ? "Unsubscribing…" : "Yes, unsubscribe me"}
       </button>

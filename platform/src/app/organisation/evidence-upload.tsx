@@ -54,12 +54,13 @@ export function EvidenceUpload({ orgId, existingPath }: { orgId: string; existin
       {existingPath && <p className="text-xs text-slate">A document is already on file — you can replace it below.</p>}
       <input
         type="file"
+        aria-label="Verification document"
         accept="image/jpeg,image/png,image/webp,application/pdf"
         onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         className="w-full text-sm"
       />
       {status && (
-        <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`}>{status.message}</p>
+        <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`} role={status.kind === "error" ? "alert" : "status"}>{status.message}</p>
       )}
       <button
         type="button"

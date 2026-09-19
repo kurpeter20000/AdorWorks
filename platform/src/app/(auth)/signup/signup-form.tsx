@@ -74,7 +74,7 @@ export function SignupForm({ defaultIntent = "talent" }: { defaultIntent?: "tale
         {state.errors?.policyConsent && <p className="mt-1 text-sm text-coral-ink">{state.errors.policyConsent[0]}</p>}
       </div>
 
-      {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink" role="alert">{state.message}</p>}
 
       <Button type="submit" loading={pending} className="w-full">
         {pending ? "Creating account…" : "Create account"}

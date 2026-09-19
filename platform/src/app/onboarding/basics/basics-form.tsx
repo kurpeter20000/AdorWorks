@@ -203,7 +203,7 @@ export function BasicsForm({
         <p className="mt-1 text-xs text-slate">Used to prioritize matching opportunities in Find work.</p>
       </div>
 
-      {state.message && <p className="text-sm text-coral-ink">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink" role="alert">{state.message}</p>}
 
       <button
         type="submit"

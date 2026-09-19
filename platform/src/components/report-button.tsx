@@ -26,7 +26,11 @@ export function ReportButton({ targetType, targetId }: { targetType: ReportTarge
   const [state, formAction, pending] = useActionState(boundAction, initialState);
 
   if (state.success) {
-    return <p className="text-xs text-slate">Report submitted — thank you.</p>;
+    return (
+      <p className="text-xs text-slate" role="status">
+        Report submitted — thank you.
+      </p>
+    );
   }
 
   if (!open) {
@@ -56,7 +60,7 @@ export function ReportButton({ targetType, targetId }: { targetType: ReportTarge
         placeholder="Anything else staff should know? (optional)"
         className="w-full rounded-lg border border-slate/25 px-2 py-1.5 text-xs"
       />
-      {state.message && <p className="text-xs text-coral-ink">{state.message}</p>}
+      {state.message && <p className="text-xs text-coral-ink" role="alert">{state.message}</p>}
       <div className="flex gap-2">
         <button
           type="submit"

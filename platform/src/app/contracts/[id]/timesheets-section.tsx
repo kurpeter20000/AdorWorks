@@ -126,12 +126,14 @@ export function TimesheetsSection({
           <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
             <input
               type="date"
+              aria-label="Period start date"
               value={periodStart}
               onChange={(e) => setPeriodStart(e.target.value)}
               className="rounded-lg border border-slate/25 px-2 py-1.5 text-sm"
             />
             <input
               type="date"
+              aria-label="Period end date"
               value={periodEnd}
               onChange={(e) => setPeriodEnd(e.target.value)}
               className="rounded-lg border border-slate/25 px-2 py-1.5 text-sm"
@@ -141,12 +143,13 @@ export function TimesheetsSection({
               min="0"
               step="0.25"
               placeholder="Hours"
+              aria-label="Hours"
               value={hours}
               onChange={(e) => setHours(e.target.value)}
               className="rounded-lg border border-slate/25 px-2 py-1.5 text-sm"
             />
           </div>
-          {error && <p className="mt-2 text-xs text-coral-ink">{error}</p>}
+          {error && <p className="mt-2 text-xs text-coral-ink" role="alert">{error}</p>}
           <button
             type="button"
             disabled={pending}
