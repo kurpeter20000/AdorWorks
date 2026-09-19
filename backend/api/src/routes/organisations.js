@@ -257,6 +257,27 @@ organisationsRouter.patch(
       metadata: { no_evidence_on_file: hasNoEvidenceOnFile },
     });
 
+    // S11-02: this decision previously had zero user-facing notification —
+    // an org representative found out their verification status changed
+    // only by happening to reload the page. Mirrors the same direct-insert
+    // pattern talent.js already uses for evidence/introduction-video
+    // review decisions. Deliberately doesn't repeat risk_notes verbatim —
+    // that field is staff-facing rationale (may reference internal risk
+    // judgment), not something to surface to the subject organisation.
+    if (data.representative_id && before?.verification_status !== body.verification_status) {
+      await supabaseAdmin.from("notifications").insert({
+        user_id: data.representative_id,
+        type: "organisation_verification_decided",
+        title:
+          body.verification_status === "verified"
+            ? "Your organisation is verified"
+            : body.verification_status === "rejected"
+              ? "Your organisation's verification wasn't approved"
+              : "Your organisation's verification status changed",
+        link: "/organisation",
+      });
+    }
+
     res.json({ data });
   })
 );

@@ -82,6 +82,7 @@ export type ProfileRow = {
   policy_consent_at: string | null;
   policy_version: string | null;
   policy_consent_source: string | null;
+  email_notifications_enabled: boolean;
   created_at: string;
   updated_at: string;
 }

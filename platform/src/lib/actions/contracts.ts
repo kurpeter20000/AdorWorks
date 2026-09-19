@@ -9,6 +9,7 @@ import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import { isFeatureEnabled, FEATURE_FLAGS } from "@/lib/domain/featureFlags";
 import { sendEmailSafely, getUserEmail } from "@/lib/email";
 import { renderEmail } from "@/lib/emailTemplate";
+import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import type { FormState } from "./auth";
@@ -474,6 +475,7 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
       paragraphs: [paidNoticeBody],
       ctaLabel: "View contract",
       ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/contracts/${check.contract!.id}`,
+      unsubscribeUrl: buildUnsubscribeUrl(check.contract!.talent_id),
     }),
     { admin, recipientUserId: check.contract!.talent_id }
   );
@@ -676,6 +678,23 @@ export async function raiseDispute(contractId: string, _prevState: FormState, fo
       body: "AdorWorks staff will review it.",
       link: `/contracts/${contractId}`,
     });
+    // S11-04: was in-app only. Deliberately doesn't repeat the raising
+    // party's description text in the email — same restraint the in-app
+    // notification already shows (a dispute goes to staff review; the
+    // other party sees the full detail in-app, not blasted into an inbox).
+    const otherPartyEmail = await getUserEmail(admin, otherPartyId);
+    await sendEmailSafely(
+      otherPartyEmail,
+      "A dispute was raised on your AdorWorks contract",
+      renderEmail({
+        heading: "A dispute was raised",
+        paragraphs: ["A dispute was raised on one of your contracts. AdorWorks staff will review it."],
+        ctaLabel: "View contract",
+        ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/contracts/${contractId}`,
+        unsubscribeUrl: buildUnsubscribeUrl(otherPartyId),
+      }),
+      { admin, recipientUserId: otherPartyId }
+    );
   }
 
   return {};

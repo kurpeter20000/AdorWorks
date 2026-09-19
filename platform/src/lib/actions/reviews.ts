@@ -3,6 +3,8 @@
 import { z } from "zod";
 import { requireSession } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import type { FormState } from "./auth";
 
 const ReviewSchema = z.object({
@@ -55,6 +57,26 @@ export async function submitReview(
       return { message: "You've already reviewed this contract." };
     }
     return { message: `Could not submit your review: ${error.message}` };
+  }
+
+  // S11-02: review submission had no user-facing notification at all —
+  // the other party found out only by happening to open the contract.
+  const admin = createAdminClient();
+  const { data: contract } = await admin.from("contracts").select("talent_id, organisation_id").eq("id", contractId).maybeSingle();
+  if (contract) {
+    const { data: org } = await admin.from("organisations").select("representative_id").eq("id", contract.organisation_id).maybeSingle();
+    const otherPartyId = reviewerRole === "talent" ? org?.representative_id : contract.talent_id;
+    if (otherPartyId) {
+      await notifyUser(admin, {
+        userId: otherPartyId,
+        type: NOTIFICATION_TYPES.REVIEW_RECEIVED,
+        title: "You received a review on AdorWorks",
+        link: `/contracts/${contractId}`,
+        // reviews' own unique index on (contract_id, reviewer_id) already
+        // guarantees one review per reviewer per contract.
+        dedupeKey: `${contractId}:${reviewerRole}`,
+      });
+    }
   }
 
   return {};

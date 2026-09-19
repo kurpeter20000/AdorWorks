@@ -11,6 +11,7 @@ import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import { sendEmailSafely, getUserEmail } from "@/lib/email";
 import { renderEmail, escapeHtml } from "@/lib/emailTemplate";
+import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
 import type { FormState } from "./auth";
 
 const PitchSchema = z.object({
@@ -224,6 +225,7 @@ export async function setApplicationStage(
         paragraphs: [`Good news — you've been shortlisted for${safeTitle ? ` <strong>${safeTitle}</strong>` : " an opportunity"} on AdorWorks.`],
         ctaLabel: "View your applications",
         ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/applications`,
+        unsubscribeUrl: buildUnsubscribeUrl(application.talent_id),
       }),
       { admin, recipientUserId: application.talent_id }
     );
@@ -239,6 +241,7 @@ export async function setApplicationStage(
         ],
         ctaLabel: "View your applications",
         ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/applications`,
+        unsubscribeUrl: buildUnsubscribeUrl(application.talent_id),
       }),
       { admin, recipientUserId: application.talent_id }
     );

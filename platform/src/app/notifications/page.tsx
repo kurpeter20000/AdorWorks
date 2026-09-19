@@ -4,6 +4,7 @@ import { requireSession } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { PhoneVerificationWidget } from "@/components/phone-verification-widget";
 import { NotificationsList } from "./notifications-list";
+import { EmailPreferenceToggle } from "./email-preference-toggle";
 
 export const metadata: Metadata = { title: "Notifications" };
 
@@ -18,6 +19,12 @@ export default async function NotificationsPage() {
     .order("created_at", { ascending: false })
     .limit(100);
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("email_notifications_enabled")
+    .eq("id", session.userId)
+    .single();
+
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <div className="flex items-center justify-between">
@@ -28,6 +35,8 @@ export default async function NotificationsPage() {
       </div>
 
       {!session.phoneVerified && <PhoneVerificationWidget />}
+
+      <EmailPreferenceToggle initialEnabled={profile?.email_notifications_enabled ?? true} />
 
       {!notifications || notifications.length === 0 ? (
         <p className="mt-8 text-sm text-slate">Nothing yet — you&rsquo;ll see updates here as things happen.</p>

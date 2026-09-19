@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canReviewTimesheet, type TimesheetReviewStatus } from "@/lib/domain/timesheetPermissions";
+import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 
 const ReviewTimesheetSchema = z.object({
   timesheetId: z.string().uuid(),
@@ -66,6 +67,16 @@ export async function reviewTimesheet(
     .maybeSingle();
   if (updateError) return { error: updateError.message };
   if (!updated) return { error: "This timesheet was already reviewed. Refresh and try again." };
+
+  // S11-02: timesheet review previously had no user-facing notification at
+  // all — the talent found out only by opening the contract page.
+  await notifyUser(admin, {
+    userId: contract.talent_id,
+    type: NOTIFICATION_TYPES.TIMESHEET_REVIEWED,
+    title: input.data.status === "approved" ? "Your timesheet was approved" : "Your timesheet was rejected",
+    link: `/contracts/${contract.id}`,
+    dedupeKey: timesheet.id,
+  });
 
   revalidatePath(`/contracts/${contract.id}`);
   return {};

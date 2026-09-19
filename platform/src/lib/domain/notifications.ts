@@ -21,6 +21,17 @@ export const NOTIFICATION_TYPES = {
   OPPORTUNITY_PUBLISHED: "opportunity_published",
   OPPORTUNITY_REJECTED: "opportunity_rejected",
   OPPORTUNITY_CHANGES_REQUESTED: "opportunity_changes_requested",
+  // S11-02: written directly from backend/api (organisations.js's
+  // PATCH /:id/verify), same cross-codebase pattern already used by
+  // evidence_reviewed/introduction_video_reviewed in talent.js — listed
+  // here for a single source of truth on every notification type that
+  // exists, even though notifyUser() itself never emits this one.
+  ORGANISATION_VERIFICATION_DECIDED: "organisation_verification_decided",
+  TIMESHEET_REVIEWED: "timesheet_reviewed",
+  REVIEW_RECEIVED: "review_received",
+  PASSWORD_CHANGED: "password_changed",
+  TEAM_ROLE_CHANGED: "team_role_changed",
+  TEAM_MEMBER_REMOVED: "team_member_removed",
 } as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];

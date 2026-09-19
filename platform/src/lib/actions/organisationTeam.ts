@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
+import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import type { FormState } from "./auth";
 
 // Same "easy to read aloud" alphabet as backend/api's onboarding-agent
@@ -224,6 +225,19 @@ export async function changeTeamMemberRole(
     metadata: { organisationId },
   });
 
+  // S11-02: previously no notification at all — a member could have their
+  // role changed and only find out next time a permission behaved
+  // differently than expected.
+  if (before && before.role !== role) {
+    await notifyUser(admin, {
+      userId: memberId,
+      type: NOTIFICATION_TYPES.TEAM_ROLE_CHANGED,
+      title: "Your team role changed",
+      body: `Your role is now ${role.replace(/_/g, " ")}.`,
+      link: "/organisation/team",
+    });
+  }
+
   revalidatePath("/organisation/team");
 }
 
@@ -256,6 +270,16 @@ export async function removeTeamMember(organisationId: string, memberId: string)
     source: "platform",
     before: before ? { role: before.role } : null,
     metadata: { organisationId },
+  });
+
+  // S11-02: removal itself previously had no notification — the member's
+  // next visit to /organisation would just 404/redirect with no
+  // explanation of what happened.
+  await notifyUser(admin, {
+    userId: memberId,
+    type: NOTIFICATION_TYPES.TEAM_MEMBER_REMOVED,
+    title: "You were removed from a team",
+    body: "You no longer have access to that organisation's workspace on AdorWorks.",
   });
 
   revalidatePath("/organisation/team");

@@ -25,7 +25,14 @@ const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || "support@adorworks.org";
  * must run any user-supplied text through escapeHtml() themselves before
  * interpolating it into a paragraph, same as any other HTML string build.
  */
-export function renderEmail(input: { heading: string; paragraphs: string[]; ctaLabel?: string; ctaUrl?: string }): string {
+export function renderEmail(input: {
+  heading: string;
+  paragraphs: string[];
+  ctaLabel?: string;
+  ctaUrl?: string;
+  /** S11-08 — every email now carries one, built from unsubscribeToken.ts at the call site. */
+  unsubscribeUrl?: string;
+}): string {
   const cta =
     input.ctaLabel && input.ctaUrl
       ? `<p style="margin:24px 0 0;"><a href="${escapeHtml(input.ctaUrl)}" style="display:inline-block;background:#c8391a;color:#ffffff;padding:10px 22px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">${escapeHtml(input.ctaLabel)}</a></p>`
@@ -58,6 +65,7 @@ export function renderEmail(input: { heading: string; paragraphs: string[]; ctaL
                   You're receiving this because of activity on your AdorWorks account
                   (${escapeHtml(SITE_URL.replace(/^https?:\/\//, ""))}). Need help? Contact
                   ${escapeHtml(SUPPORT_EMAIL)}.
+                  ${input.unsubscribeUrl ? ` <a href="${escapeHtml(input.unsubscribeUrl)}" style="color:#6b7280;">Unsubscribe from activity emails</a>.` : ""}
                 </p>
               </td>
             </tr>
