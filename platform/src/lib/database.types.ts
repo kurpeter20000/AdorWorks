@@ -668,6 +668,7 @@ export type NotificationRow = {
   link: string | null;
   read_at: string | null;
   created_at: string;
+  dedupe_key: string;
 }
 
 export type PartnerHubRow = {

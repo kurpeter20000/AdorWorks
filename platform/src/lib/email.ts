@@ -1,6 +1,8 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
+import { logAuditEvent } from "@/lib/domain/audit";
+import { DOMAIN_EVENTS } from "@/lib/domain/events";
 
 /** profiles has no email column — it only ever lives on the auth.users record, reachable here via the admin API. */
 export async function getUserEmail(admin: SupabaseClient<Database>, userId: string): Promise<string | null> {
@@ -45,12 +47,41 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
   }
 }
 
-/** Wraps sendEmail so a failed/unconfigured send never blocks the caller's real action — logs instead of throwing. */
-export async function sendEmailSafely(to: string | null | undefined, subject: string, html: string): Promise<void> {
+/**
+ * Wraps sendEmail so a failed/unconfigured send never blocks the caller's
+ * real action — logs instead of throwing.
+ *
+ * S11-06: that log used to be console.error only — invisible to everyone
+ * but whoever happens to be tailing the server log at the right moment.
+ * Pass `admin` + `recipientUserId` (available at every real call site,
+ * since each already has the admin client and the user the email is for)
+ * to also record the failure to audit_events, already staff-visible via
+ * GET /api/people/audit-events — a systemic delivery problem now shows up
+ * somewhere a human can actually see it.
+ */
+export async function sendEmailSafely(
+  to: string | null | undefined,
+  subject: string,
+  html: string,
+  context?: { admin: SupabaseClient<Database>; recipientUserId: string }
+): Promise<void> {
   if (!to) return;
   try {
     await sendEmail(to, subject, html);
   } catch (err) {
-    console.error(`Email send failed to ${to} ("${subject}"):`, err instanceof Error ? err.message : err);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`Email send failed to ${to} ("${subject}"):`, message);
+    if (context) {
+      await logAuditEvent(context.admin, {
+        name: DOMAIN_EVENTS.EMAIL_DELIVERY_FAILED,
+        actorId: null,
+        subjectId: context.recipientUserId,
+        entityType: "email",
+        entityId: context.recipientUserId,
+        source: "platform",
+        reason: message,
+        metadata: { subject },
+      });
+    }
   }
 }

@@ -75,6 +75,12 @@ export async function approveOpportunity(opportunityId: string): Promise<FormSta
     entityId: opportunityId,
     source: "platform",
   });
+  // S11-05: deliberately no dedupeKey on any of the three review-decision
+  // notifications below — an opportunity can cycle pending_review ->
+  // changes_required -> (edited) -> pending_review -> rejected/published
+  // more than once, and a permanent per-opportunity key would silently
+  // swallow the second, later, genuinely different decision notice. See
+  // 0085_notification_dedup.sql.
   if (found.representativeId) {
     await notifyUser(admin, {
       userId: found.representativeId,

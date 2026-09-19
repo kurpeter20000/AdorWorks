@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { formatDate } from "@/lib/domain/format";
 import type { TalentEducationRow } from "@/lib/database.types";
 
 /**
@@ -114,7 +115,7 @@ export function EducationManager({ items }: { items: TalentEducationRow[] }) {
   }
 
   function formatRange(start: string, end: string | null) {
-    const fmt = (d: string) => new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "short" });
+    const fmt = (d: string) => formatDate(d, { year: "numeric", month: "short" });
     return `${fmt(start)} – ${end ? fmt(end) : "Present"}`;
   }
 

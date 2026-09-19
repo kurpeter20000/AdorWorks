@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { revokeTeamInvitation } from "@/lib/actions/organisationTeam";
+import { formatDate } from "@/lib/domain/format";
 import type { OrganisationMemberRole } from "@/lib/database.types";
 
 const ROLE_LABEL: Record<OrganisationMemberRole, string> = {
@@ -53,7 +54,7 @@ export function PendingInvitationRow({
         <div>
           <p className="text-sm font-semibold text-midnight">{email}</p>
           <p className="text-xs text-slate">
-            {ROLE_LABEL[role] ?? role} · expires {new Date(expiresAt).toLocaleDateString()}
+            {ROLE_LABEL[role] ?? role} · expires {formatDate(expiresAt)}
           </p>
         </div>
         <div className="flex items-center gap-2">

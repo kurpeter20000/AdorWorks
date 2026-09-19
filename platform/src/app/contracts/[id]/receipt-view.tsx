@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatDateTime } from "@/lib/domain/format";
 
 const PROVIDER_LABEL: Record<string, string> = {
   mgurush: "m-Gurush",
@@ -102,7 +103,7 @@ export function ReceiptView({
         </div>
         <div className="flex justify-between">
           <dt className="text-slate">Date</dt>
-          <dd>{new Date(createdAt).toLocaleString()}</dd>
+          <dd>{formatDateTime(createdAt)}</dd>
         </div>
       </dl>
       {isSimulated && <p className="mt-2 text-xs text-coral-ink">Simulated payment — no real money moved.</p>}

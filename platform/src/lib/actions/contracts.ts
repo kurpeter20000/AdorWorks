@@ -8,6 +8,7 @@ import { calculateFee } from "@/lib/domain/fees";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import { isFeatureEnabled, FEATURE_FLAGS } from "@/lib/domain/featureFlags";
 import { sendEmailSafely, getUserEmail } from "@/lib/email";
+import { renderEmail } from "@/lib/emailTemplate";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import type { FormState } from "./auth";
@@ -69,6 +70,11 @@ export async function recordDeliverableSubmission(milestoneId: string): Promise<
       type: NOTIFICATION_TYPES.MILESTONE_SUBMITTED,
       title: "A deliverable is ready for your review",
       link: `/contracts/${milestone.contract_id}`,
+      // Keyed by the deliverable, not the milestone — a milestone can
+      // legitimately go through submit -> revision_requested -> resubmit
+      // more than once (requestRevision below), and each resubmission is
+      // a fresh deliverable row that deserves its own notification.
+      dedupeKey: latestDeliverable.id,
     });
   }
 
@@ -209,6 +215,7 @@ export async function approveDeliverable(deliverableId: string): Promise<{ error
     title: "Your milestone was approved",
     body: "Payment should follow shortly.",
     link: `/contracts/${check.contract!.id}`,
+    dedupeKey: deliverableId,
   });
 
   return {};
@@ -456,9 +463,20 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     title: "You were paid",
     body: paidNoticeBody,
     link: `/contracts/${check.contract!.id}`,
+    dedupeKey: milestoneId,
   });
   const talentEmail = await getUserEmail(admin, check.contract!.talent_id);
-  await sendEmailSafely(talentEmail, "You were paid on AdorWorks", `<p>${paidNoticeBody}</p>`);
+  await sendEmailSafely(
+    talentEmail,
+    "You were paid on AdorWorks",
+    renderEmail({
+      heading: "You were paid",
+      paragraphs: [paidNoticeBody],
+      ctaLabel: "View contract",
+      ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/contracts/${check.contract!.id}`,
+    }),
+    { admin, recipientUserId: check.contract!.talent_id }
+  );
 
   return {};
 }
@@ -645,6 +663,10 @@ export async function raiseDispute(contractId: string, _prevState: FormState, fo
     after: { status: "disputed" },
   });
 
+  // S11-05: no dedupeKey — a contract can have more than one dispute
+  // raised against it over its lifetime (raised, resolved, raised again
+  // later), so a permanent per-contract key would wrongly suppress a real
+  // second dispute's notification.
   const otherPartyId = session.userId === contract.talent_id ? org?.representative_id : contract.talent_id;
   if (otherPartyId) {
     await notifyUser(admin, {

@@ -119,6 +119,7 @@ export async function sendOffer(
     type: NOTIFICATION_TYPES.OFFER_SENT,
     title: "You received an offer",
     link: "/offers",
+    dedupeKey: offer.id,
   });
 
   redirect(`/organisation/opportunities/${opportunity.id}?offered=1`);
@@ -226,6 +227,7 @@ export async function acceptOffer(offerId: string): Promise<{ error?: string }> 
     type: NOTIFICATION_TYPES.OFFER_RESPONDED,
     title: "Your offer was accepted",
     link: `/contracts/${contract.id}`,
+    dedupeKey: offer.id,
   });
 
   return {};
@@ -281,6 +283,7 @@ export async function declineOffer(offerId: string): Promise<{ error?: string }>
     userId: offer.created_by,
     type: NOTIFICATION_TYPES.OFFER_RESPONDED,
     title: "Your offer was declined",
+    dedupeKey: offer.id,
   });
 
   return {};
@@ -367,6 +370,7 @@ export async function acceptServiceProposal(offerId: string): Promise<{ error?: 
     type: NOTIFICATION_TYPES.OFFER_RESPONDED,
     title: "Your service proposal was accepted",
     link: `/contracts/${contract.id}`,
+    dedupeKey: offer.id,
   });
 
   revalidatePath("/organisation/service-requests");
@@ -417,6 +421,7 @@ export async function declineServiceProposal(offerId: string): Promise<{ error?:
     userId: offer.talent_id,
     type: NOTIFICATION_TYPES.OFFER_RESPONDED,
     title: "Your service proposal was declined",
+    dedupeKey: offer.id,
   });
 
   revalidatePath("/organisation/service-requests");

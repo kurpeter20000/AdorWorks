@@ -56,6 +56,7 @@ export async function requestService(
     type: NOTIFICATION_TYPES.APPLICATION_STAGE_CHANGED,
     title: "An employer requested one of your services",
     link: "/passport/services/requests",
+    dedupeKey: request.id,
   });
 
   revalidatePath("/services");
@@ -152,6 +153,7 @@ export async function submitServiceProposal(
       type: NOTIFICATION_TYPES.OFFER_SENT,
       title: "You received a service proposal",
       link: "/organisation/service-requests",
+      dedupeKey: offer.id,
     });
   }
 
@@ -178,6 +180,7 @@ export async function declineServiceRequest(serviceRequestId: string): Promise<{
       userId: org.representative_id,
       type: NOTIFICATION_TYPES.OFFER_RESPONDED,
       title: "A service request was declined",
+      dedupeKey: request.id,
     });
   }
 

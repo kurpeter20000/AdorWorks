@@ -113,6 +113,7 @@ export async function signup(_prevState: FormState, formData: FormData): Promise
     title: "Verify your phone number",
     body: "Add and verify a phone number so employers and AdorWorks can reach you about time-sensitive opportunities.",
     link: "/notifications",
+    dedupeKey: data.user.id,
   });
 
   redirect("/check-email");

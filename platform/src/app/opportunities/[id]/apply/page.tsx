@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ReportButton } from "@/components/report-button";
 import { ShareButton } from "../../share-button";
 import { ApplyForm } from "./apply-form";
+import { formatDate } from "@/lib/domain/format";
 
 export const metadata: Metadata = { title: "Apply" };
 
@@ -79,7 +80,7 @@ export default async function ApplyPage({ params }: { params: Promise<{ id: stri
       )}
       {opportunity.application_deadline && (
         <p className="mt-1 text-sm text-slate">
-          Apply by {new Date(opportunity.application_deadline).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+          Apply by {formatDate(opportunity.application_deadline, { day: "numeric", month: "short", year: "numeric" })}
         </p>
       )}
       {opportunity.brief && <p className="mt-2 text-sm text-slate">{opportunity.brief}</p>}

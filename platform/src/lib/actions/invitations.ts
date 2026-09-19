@@ -51,6 +51,9 @@ export async function inviteTalent(
     type: NOTIFICATION_TYPES.INVITATION_RECEIVED,
     title: "An employer invited you to apply",
     link: "/opportunities/invited",
+    // invitations' own unique constraint on (opportunity_id, talent_id)
+    // already guarantees this pair can only ever be invited once.
+    dedupeKey: `${opportunityId}:${talentId}`,
   });
 
   revalidatePath(`/organisation/opportunities/${opportunityId}`);

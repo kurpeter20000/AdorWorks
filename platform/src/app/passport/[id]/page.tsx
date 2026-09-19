@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { verifySession } from "@/lib/dal/session";
 import { ReportButton } from "@/components/report-button";
 import { StatePanel } from "@/components/state-panel";
+import { formatDate } from "@/lib/domain/format";
 
 export const metadata: Metadata = { title: "AdorWorks Passport" };
 
@@ -262,10 +263,8 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
                 <p className="text-sm font-semibold text-midnight">{w.role_title}</p>
                 <p className="text-xs text-slate">{w.employer_name}</p>
                 <p className="text-xs text-slate">
-                  {new Date(w.start_date).toLocaleDateString(undefined, { year: "numeric", month: "short" })} –{" "}
-                  {w.end_date
-                    ? new Date(w.end_date).toLocaleDateString(undefined, { year: "numeric", month: "short" })
-                    : "Present"}
+                  {formatDate(w.start_date, { year: "numeric", month: "short" })} –{" "}
+                  {w.end_date ? formatDate(w.end_date, { year: "numeric", month: "short" }) : "Present"}
                 </p>
                 {w.description && <p className="mt-2 text-xs text-slate">{w.description}</p>}
               </li>
@@ -286,10 +285,8 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
                   {e.field_of_study ? ` · ${e.field_of_study}` : ""}
                 </p>
                 <p className="text-xs text-slate">
-                  {new Date(e.start_date).toLocaleDateString(undefined, { year: "numeric", month: "short" })} –{" "}
-                  {e.end_date
-                    ? new Date(e.end_date).toLocaleDateString(undefined, { year: "numeric", month: "short" })
-                    : "Present"}
+                  {formatDate(e.start_date, { year: "numeric", month: "short" })} –{" "}
+                  {e.end_date ? formatDate(e.end_date, { year: "numeric", month: "short" }) : "Present"}
                 </p>
                 {e.description && <p className="mt-2 text-xs text-slate">{e.description}</p>}
               </li>
@@ -311,7 +308,7 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
                     <p className="text-xs text-slate">{orgNameById.get(w.organisation_id) ?? "AdorWorks employer"}</p>
                   </div>
                   <span className="whitespace-nowrap text-xs text-slate">
-                    {new Date(w.completed_at).toLocaleDateString(undefined, { year: "numeric", month: "short" })}
+                    {formatDate(w.completed_at, { year: "numeric", month: "short" })}
                   </span>
                 </div>
                 {w.summary && <p className="mt-2 text-xs text-slate">{w.summary}</p>}

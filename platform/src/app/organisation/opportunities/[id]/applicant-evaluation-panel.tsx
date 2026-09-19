@@ -6,6 +6,7 @@ import { submitScorecardScore } from "@/lib/actions/scorecards";
 import { setInterviewDetails, addApplicationNote } from "@/lib/actions/applications";
 import { SCORECARD_CRITERIA } from "@/lib/domain/scorecard";
 import { ApplicationMessageThread } from "@/components/application-message-thread";
+import { formatDate } from "@/lib/domain/format";
 import type { FormState } from "@/lib/actions/auth";
 
 const CRITERION_LABEL: Record<string, string> = {
@@ -172,7 +173,7 @@ export function ApplicantEvaluationPanel({
             <li key={n.id} className="rounded-lg bg-white p-2 text-xs">
               <p className="text-midnight">{n.body}</p>
               <p className="mt-1 text-slate">
-                {n.authorName} · {new Date(n.created_at).toLocaleDateString()}
+                {n.authorName} · {formatDate(n.created_at)}
               </p>
             </li>
           ))}

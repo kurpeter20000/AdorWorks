@@ -4,7 +4,7 @@ import { requireRole } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { ReportButton } from "@/components/report-button";
 import { rankBySkillOverlap } from "@/lib/domain/matching";
-import { formatCompensation } from "@/lib/domain/format";
+import { formatCompensation, formatDate } from "@/lib/domain/format";
 import { ApplyButton } from "./apply-button";
 import { SaveButton } from "./save-button";
 import { DismissButton } from "./dismiss-button";
@@ -382,7 +382,7 @@ export default async function OpportunitiesPage({
                 <div className="mt-3 flex items-center justify-between">
                   <p className="text-xs text-slate">
                     {[o.location, o.work_mode, o.engagement_type?.replace("_", " ")].filter(Boolean).join(" · ")}
-                    {o.application_deadline && ` · Apply by ${new Date(o.application_deadline).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`}
+                    {o.application_deadline && ` · Apply by ${formatDate(o.application_deadline, { day: "numeric", month: "short", year: "numeric" })}`}
                   </p>
                   <div className="flex items-center gap-3">
                     <SaveButton opportunityId={o.id} initialSaved={savedIds.has(o.id)} />
