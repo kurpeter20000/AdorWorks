@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
-import { requireAuth, requireStaff } from "../middleware/auth.js";
+import { requireAuth, requireStaff, requireFinanceStaff } from "../middleware/auth.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
 import { logAuditEvent } from "../audit.js";
 
@@ -137,8 +137,16 @@ const refundSchema = z.object({
 // itself stays 'paid' (delivery/payment history is a separate concern
 // from this financial correction; no milestone_status value for
 // "refunded" exists, by design, see 0026's own comments).
+//
+// S14-04 gap-check finding (2026-09-19): this route only had the
+// router-level requireStaff gate (reviewer/matcher/finance/admin),
+// unlike every other money-moving route in finance.js which requires
+// requireFinanceStaff (finance/admin only). A reviewer or matcher —
+// roles with no other financial authority anywhere in the app — could
+// reverse a settled payment. Gated to finance/admin specifically here.
 disputesRouter.post(
   "/:id/refund",
+  requireFinanceStaff,
   asyncRoute(async (req, res) => {
     const { milestone_id, notes } = refundSchema.parse(req.body);
 

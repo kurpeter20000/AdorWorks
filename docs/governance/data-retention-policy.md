@@ -1,4 +1,4 @@
-# Data retention, deletion and export policy (S03-02, S04-10, S04-11)
+# Data retention, deletion and export policy (S03-02, S04-10, S04-11, S13-10)
 
 **Founder decision, 2026-09-12**: keep data indefinitely for now; no
 automatic expiry or anonymization job. Deletion is staff-assisted only —
@@ -6,6 +6,36 @@ if someone asks to be removed, AdorWorks staff handle it manually rather
 than through a self-service "delete my account" feature. Revisit once
 the pilot has real users actually asking for this, rather than building
 a self-service flow speculatively before there's a real need.
+
+## Retention schedule by category (S13-10)
+
+The founder's "keep indefinitely, staff-assisted deletion" decision
+above is the retention rule for every category below except backups,
+which have a real technical limit already in place. This section exists
+so "what's our retention schedule" has one answer covering all five
+record types the tracker's own acceptance criteria names, rather than
+requiring someone to infer it from the general policy above. **This is a
+retention *schedule* (what's kept, for how long, where), not a legal
+sign-off** — S13-10's formal approval is Legal Counsel's to give; this
+document is what would be put in front of them for that review.
+
+| Category | Retention | Where it lives | Deletion path |
+|---|---|---|---|
+| User records (profiles, talent/org details, contact info) | Indefinite (no automatic expiry) | Supabase Postgres (`profiles`, `talent_profiles`, `organisations`, etc.) | Staff-assisted only, per the decision above |
+| Applications (job applications, service requests, offers) | Indefinite — these are the record of what actually happened on the platform (who applied to what, when, what was offered), not just standalone personal data | Supabase Postgres (`applications`, `service_requests`, `offers`, `contracts`) | Staff-assisted only; deleting a user's profile does not need to cascade-delete their application history, since the other party to that application/contract has a legitimate record-keeping interest in it too |
+| Files (portfolio items, CVs, verification/evidence documents, intro videos, org logos) | Indefinite, tied to the owning record | Supabase Storage (private buckets — `talent-portfolio`, verification/evidence buckets, `org-logos`, etc.) | Staff-assisted only, same as the owning record — no separate file-expiry job exists |
+| Logs (`audit_events`, `engagement_events`, and the other purpose-built audit tables) | Indefinite — this is the accountability trail for sensitive staff/system actions (Stage 10's S10-14 work), and the whole point of an audit log is that it doesn't get quietly deleted | Supabase Postgres | Not deleted in the ordinary course; would only be touched as part of a full account deletion, staff-assisted, same as above |
+| Backups (daily production database dumps) | **30 days**, not indefinite — this is a real, already-implemented technical limit (GitHub Actions artifact expiry), not a policy choice made here | GitHub Actions workflow artifacts (`.github/workflows/backup-production-db.yml`) | Automatic expiry after 30 days; no manual deletion path exists or is needed. Full detail: `docs/governance/backups-and-restore.md`, which this document intentionally does not duplicate |
+
+A deletion request therefore has to be handled in two places, not one:
+the live database/storage record (staff-assisted, per the general
+decision above) and — for up to 30 days afterward — that person's data
+may still exist in a backup artifact, since restoring a backup to purge
+one person's data from it isn't practical for a pilot at this scale. If
+this gap ever matters in practice (a deletion request during an active
+legal/compliance review, for instance), it needs its own handling — not
+something this document works around by promising a capability that
+doesn't exist yet.
 
 **Founder decision, 2026-09-13 (S04-10, personal data export)**: same
 approach — staff-assisted, not self-service. If someone asks for a copy

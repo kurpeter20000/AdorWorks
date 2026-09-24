@@ -45,6 +45,15 @@ function ExploreLink({ className }: { className?: string }) {
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative isolate flex flex-1 flex-col overflow-hidden">
+      {/* CI's Lighthouse run flagged LCP >2500ms on /login and /signup —
+          the video's poster frame is the LCP element (and, under 768px,
+          the PERMANENT background, since hero-video-background.tsx never
+          starts playback there), but as a <video poster> rather than an
+          <img>/next/image it got no priority hint and no early discovery.
+          React 19 hoists any <link> rendered in the tree up into <head>,
+          so this preload gets the browser fetching it before it would
+          otherwise notice the <video> tag at all. */}
+      <link rel="preload" as="image" href="/hero/hero-poster.jpg" fetchPriority="high" />
       {/* One shared background across the whole page — video on wider,
           motion-safe, non-Data-Saver connections (see hero-video-
           background.tsx), the poster frame everywhere else — with the

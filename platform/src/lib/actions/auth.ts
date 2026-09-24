@@ -106,6 +106,23 @@ export async function signup(_prevState: FormState, formData: FormData): Promise
     return { message: "Something went wrong creating your account. Please try again." };
   }
 
+  // S14-05 gap-check finding (2026-09-24): when the email already has a
+  // CONFIRMED account, Supabase deliberately returns no error at all —
+  // a fake-success response with a real user object but an empty
+  // `identities` array — its own built-in anti-enumeration behavior
+  // (confirmed live against the test project: error is null,
+  // data.user.id is the EXISTING user's real id). This code used to
+  // treat that identically to a genuine new signup, which meant an
+  // unauthenticated caller could trigger a real write — the
+  // notifyUser() call below — into an existing, unrelated account
+  // just by "signing up" with a known email. Since the response is
+  // already identical either way (redirect to /check-email, no
+  // observable difference), the safe fix is simply not running the
+  // new-account side effect for this case, not changing what's shown.
+  if (data.user.identities && data.user.identities.length === 0) {
+    redirect("/check-email");
+  }
+
   // No dashboard gate ever required a verified phone -- the reminder now
   // lives here instead, waiting in Notifications from the first login,
   // rather than as an interruption on the dashboard itself.

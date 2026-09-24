@@ -1,10 +1,10 @@
-# Schema and ownership map (S03-01)
+# Schema and ownership map (S03-01, S14-01)
 
 A reference for what tables exist, what each one is for, and who is
 allowed to write to it — not a full column-by-column reference (the
 migration files in `backend/supabase/migrations/` are the source of
-truth for exact columns/constraints). 49 tables exist today, defined
-across 61 migration files, applied in order.
+truth for exact columns/constraints). 58 tables exist today, defined
+across 88 migration files, applied in order.
 
 **How to read "who writes"**: most tables are protected by Postgres Row
 Level Security (RLS) — a person can only read/write rows RLS says they're
@@ -47,6 +47,9 @@ writes it — no RLS policy allows a direct client write at all.
 | `talent_services` | (Superseded naming for the above in early migrations — see `service_packages`.) | Self |
 | `saved_opportunities` / `dismissed_opportunities` | A talent's saved/hidden opportunities | Self |
 | `saved_services` / `dismissed_services` | A signed-in person's saved/hidden service listings | Self |
+| `organisation_team_invitations` (0075) | A pending invite for someone to join an org's team, with a token + expiry | Self (org admin, create), Public via token (accept — the token itself is the auth, see `platform/src/app/organisation/invite/[token]`), Staff |
+| `opportunity_attachments` (0077) | Files attached to an opportunity posting (briefs, specs) | Self (org owner/admin) |
+| `service_requests` (0079) | An employer requesting a specific published talent service — the counterpart flow to `invitations`, direction reversed | Self (org, create), Self (talent, respond) |
 
 ## Applications, offers and contracts
 
@@ -56,6 +59,7 @@ writes it — no RLS policy allows a direct client write at all.
 | `application_notes` | Private staff/employer notes on an application | Self (org), Staff |
 | `application_scorecards` | Structured interview scoring | Self (org) |
 | `screening_answers` | A talent's answers to an opportunity's screening questions | Self (talent) |
+| `application_drafts` (0078) | A talent's in-progress, not-yet-submitted application | Self (talent) |
 | `invitations` | An employer directly inviting a talent to apply | Self (org) |
 | `offers` | Formal terms proposed before a contract exists | Self (org, create), Self (talent, respond) |
 | `contracts` | An active/completed engagement between a talent and an organisation | System (created only when an offer is accepted — `offers.ts`), Self (participants, status changes like cancel — RLS blocks direct `UPDATE`, so this goes through the admin client from a participant-authenticated Server Action) |
@@ -82,19 +86,54 @@ writes it — no RLS policy allows a direct client write at all.
 | `messages` | Individual messages, optionally with a file attachment | Self (participant) |
 | `disputes` | A raised dispute on a contract | Self (participant, raise), Staff (resolve) |
 | `reviews` | Post-contract reviews between talent and employer | Self (participant) |
-| `reports` | Content moderation reports (e.g. flagging a listing) | Self (reporter), Staff (decide) |
+| `reports` | Content moderation reports (e.g. flagging a listing), now including a distinct `safeguarding` reason restricted to admin-only visibility (0084) | Self (reporter), Staff (decide) |
 
 ## Trust, notifications and audit
 
 | Table | What it holds | Who writes |
 |---|---|---|
-| `notifications` | In-app notifications for a user | System |
+| `notifications` | In-app notifications for a user, with `dedupe_key` (0085) to block duplicate sends and an opt-out flag on `profiles.email_notifications_enabled` (0086) governing the email channel | System |
 | `phone_verification_codes` | SMS OTP codes for phone verification | System |
 | `audit_events` | The general audit trail (0035) — every high-stakes action funnels here via `logAuditEvent()` | System-only (no RLS insert policy for regular users, by design) |
+| `auth_rate_limit_attempts` (0063) | Sliding-window rate-limit records for login/signup/password-reset attempts, keyed by email or IP | System-only |
+| `risk_flags` (0083) | A staff-raised "something looks off" signal on an organisation/opportunity/talent profile/service/file, distinct from the reactive user-submitted `reports` table | Staff-only |
+
+## Known RLS drift (S14-03 audit, 2026-09-19)
+
+A full table-by-table RLS read (86 migrations at the time) found the
+schema is sound overall — no cross-organisation leakage, no
+un-scoped `using (true)` on tenant/financial data, both historical
+recursion bugs (0017, 0060) confirmed not reintroduced. Two real,
+fixed-since findings and two accepted/documented ones are worth
+tracking here so they don't silently drift further:
+
+- **Fixed this session**: `risk_flags` allowed staff to INSERT/UPDATE/
+  DELETE directly via RLS instead of only through the audited
+  backend/api route — closed in `0088_risk_flags_tamper_resistance.sql`.
+- **Open, low severity**: `talent_profiles_select` (last touched 0070)
+  never got the `is_org_write_member()` upgrade its sibling policies
+  (`applications_select`, `opportunities_insert/update`) received in
+  0039 — an invited (non-representative) org teammate who legitimately
+  shortlists a self-service applicant may not be able to read that
+  talent's profile. A functional gap, not a leak; needs a live test to
+  confirm whether the app already works around it before deciding if
+  it's worth a migration.
+- **Open, low severity**: `notifications_update_owner` (0058) has no
+  column-level guard restricting a user's own UPDATE to `read_at` —
+  they could technically rewrite their own notification's title/body,
+  undermining but not breaking the "notification is a system record"
+  invariant. Self-scoped only, no cross-tenant exposure.
+- **Already accepted, documented in its own migration**: suspended
+  accounts retain RLS-governed read/write access until their session
+  token expires or `backend/api`'s password-rotation-on-suspend takes
+  effect (`0081_account_suspension.sql`'s own comment explains why RLS
+  wasn't retrofitted schema-wide for this).
 
 ## Where this can get stale
 
-This map reflects the schema as of migration `0061`. Whenever a new
-migration adds/removes/renames a table, update this doc as part of that
-same change — it isn't derived automatically, so it will drift if it's
+This map reflects the schema as of migration `0088` (2026-09-19). It had
+drifted to `0061` before this update — 25 migrations' worth of new
+tables and column additions were missing. Whenever a new migration
+adds/removes/renames a table, update this doc as part of that same
+change — it isn't derived automatically, so it will drift again if it's
 treated as a one-time snapshot rather than a living doc.

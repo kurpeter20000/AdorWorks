@@ -25,6 +25,14 @@ function mockRes() {
   return res;
 }
 
+// Builds a fake JWT with a real base64url-encoded payload segment so
+// decodeJwtPayload() (which reads the token's own claims, not its
+// signature) can be exercised without a real Supabase-signed token.
+function makeToken(claims) {
+  const payload = Buffer.from(JSON.stringify(claims)).toString("base64url");
+  return `header.${payload}.sig`;
+}
+
 beforeEach(() => {
   getUserMock.mockReset();
   singleMock.mockReset();
@@ -85,12 +93,61 @@ describe("requireAuth", () => {
     getUserMock.mockResolvedValue({ data: { user: { id: "u1", email: "a@example.com" } }, error: null });
     singleMock.mockResolvedValue({ data: { id: "u1", role: "admin", status: "active", full_name: "Admin A" }, error: null });
     // A client could send anything in the body/headers, e.g. claiming talent — requireAuth must ignore it and use the DB row.
-    const req = { headers: { authorization: "Bearer goodtoken" }, body: { role: "talent" } };
+    const token = makeToken({ aal: "aal2" });
+    const req = { headers: { authorization: `Bearer ${token}` }, body: { role: "talent" } };
     const res = mockRes();
     const next = vi.fn();
     await requireAuth(req, res, next);
     expect(next).toHaveBeenCalledOnce();
     expect(req.user).toEqual({ id: "u1", role: "admin", fullName: "Admin A", email: "a@example.com" });
+  });
+
+  it("rejects a staff account whose session hasn't completed MFA (aal1)", async () => {
+    getUserMock.mockResolvedValue({ data: { user: { id: "u1", email: "a@example.com" } }, error: null });
+    singleMock.mockResolvedValue({ data: { id: "u1", role: "finance", status: "active", full_name: "F" }, error: null });
+    const token = makeToken({ aal: "aal1" });
+    const req = { headers: { authorization: `Bearer ${token}` } };
+    const res = mockRes();
+    const next = vi.fn();
+    await requireAuth(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: "mfa_required" }));
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("rejects a staff account with an undecodable/malformed token", async () => {
+    getUserMock.mockResolvedValue({ data: { user: { id: "u1", email: "a@example.com" } }, error: null });
+    singleMock.mockResolvedValue({ data: { id: "u1", role: "reviewer", status: "active", full_name: "R" }, error: null });
+    const req = { headers: { authorization: "Bearer not.a.realjwt" } };
+    const res = mockRes();
+    const next = vi.fn();
+    await requireAuth(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: "mfa_required" }));
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("allows a staff account whose session has completed MFA (aal2)", async () => {
+    getUserMock.mockResolvedValue({ data: { user: { id: "u1", email: "a@example.com" } }, error: null });
+    singleMock.mockResolvedValue({ data: { id: "u1", role: "reviewer", status: "active", full_name: "R" }, error: null });
+    const token = makeToken({ aal: "aal2" });
+    const req = { headers: { authorization: `Bearer ${token}` } };
+    const res = mockRes();
+    const next = vi.fn();
+    await requireAuth(req, res, next);
+    expect(next).toHaveBeenCalledOnce();
+    expect(req.user.role).toBe("reviewer");
+  });
+
+  it("never checks MFA for a non-staff account, regardless of aal claim", async () => {
+    getUserMock.mockResolvedValue({ data: { user: { id: "u1", email: "a@example.com" } }, error: null });
+    singleMock.mockResolvedValue({ data: { id: "u1", role: "talent", status: "active", full_name: "T" }, error: null });
+    const req = { headers: { authorization: "Bearer not.a.realjwt" } };
+    const res = mockRes();
+    const next = vi.fn();
+    await requireAuth(req, res, next);
+    expect(next).toHaveBeenCalledOnce();
+    expect(req.user.role).toBe("talent");
   });
 });
 

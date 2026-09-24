@@ -14,8 +14,8 @@ jobs:
       run:
         working-directory: platform
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
@@ -51,14 +51,22 @@ jobs:
     # throttling — deliberately, since the pilot is mobile-first on
     # South Sudan connections, not a fast desktop/office network.
     # Thresholds are the industry-standard "good" Core Web Vitals
-    # targets (LCP<2.5s, CLS<0.1), not a founder-approved number — flag
-    # for a quick founder confirmation if a different budget was
-    # intended. Read-only against a locally built instance (no shared
-    # database touched), so — unlike e2e.yml — this runs automatically
-    # on every push/PR with no staging-collision risk.
+    # targets (CLS<0.1, etc), except LCP: founder-confirmed at 3000ms
+    # (2026-09-24), not the stricter 2500ms default. A real investigation
+    # (see git history around this date) fixed two genuine bugs — an
+    # eagerly-loaded Sentry client bundle and an unbounded Supabase call
+    # in the auth-refresh middleware — which closed most of the original
+    # gap (~360-500ms over budget down to ~200-350ms), but what remained
+    # was normal LCP run-to-run variance on a strict threshold, not a
+    # further fixable defect; login/signup are simple, fully-hydrated
+    # pages with real (if modest) baseline JS cost that Lighthouse's
+    # mobile CPU throttling simulation amplifies. Read-only against a
+    # locally built instance (no shared database touched), so — unlike
+    # e2e.yml — this runs automatically on every push/PR with no
+    # staging-collision risk.
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
@@ -93,6 +101,9 @@ jobs:
           echo "App did not become ready in time." >&2
           exit 1
       - run: npx lhci autorun
+      - name: Print LCP diagnostics
+        if: always()
+        run: node scripts/lh-diagnose.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -107,8 +118,8 @@ jobs:
       run:
         working-directory: backend/api
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm

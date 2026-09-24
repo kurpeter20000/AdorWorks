@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { fileReport } from "@/lib/actions/reports";
+import { CONTACT_URL } from "@/lib/domain/marketingSite";
 import type { ReportTargetType } from "@/lib/database.types";
 import type { FormState } from "@/lib/actions/auth";
 
@@ -28,7 +29,11 @@ export function ReportButton({ targetType, targetId }: { targetType: ReportTarge
   if (state.success) {
     return (
       <p className="text-xs text-slate" role="status">
-        Report submitted — thank you.
+        Report submitted — thank you. If this is urgent, you can also{" "}
+        <a href={CONTACT_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-teal-ink underline">
+          contact us directly
+        </a>
+        .
       </p>
     );
   }
@@ -65,7 +70,7 @@ export function ReportButton({ targetType, targetId }: { targetType: ReportTarge
         <button
           type="submit"
           disabled={pending}
-          className="rounded-lg bg-coral px-3 py-1.5 text-xs font-bold text-white disabled:opacity-60"
+          className="rounded-lg bg-coral-ink px-3 py-1.5 text-xs font-bold text-white disabled:opacity-60"
         >
           {pending ? "Submitting…" : "Submit report"}
         </button>
