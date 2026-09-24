@@ -27,9 +27,19 @@ export interface VerifiedSession {
  */
 export const verifySession = cache(async (): Promise<VerifiedSession | null> => {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+
+  let user;
+  try {
+    ({
+      data: { user },
+    } = await supabase.auth.getUser());
+  } catch {
+    // Timed out or otherwise unreachable (see the fetch timeout in
+    // lib/supabase/server.ts) — every page calls this unconditionally
+    // via AppShell, so a Supabase outage must degrade to "render as
+    // signed out" rather than hang or crash every single page.
+    return null;
+  }
   if (!user) return null;
 
   const { data: profile } = await supabase
