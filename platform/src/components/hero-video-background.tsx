@@ -35,6 +35,11 @@ export function HeroVideoBackground({ className }: { className?: string }) {
       ref={videoRef}
       className={className ?? "absolute inset-0 h-full w-full object-cover"}
       poster="/hero/hero-poster.jpg"
+      // The poster is this page's LCP element — on screens under 768px it's
+      // also the PERMANENT background, since the effect above never starts
+      // video playback there. See the matching <link rel="preload"> in
+      // (auth)/layout.tsx, which is what gets it discovered and fetched at
+      // high priority before the browser would otherwise notice this tag.
       muted
       loop
       playsInline
