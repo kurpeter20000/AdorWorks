@@ -79,7 +79,15 @@ jobs:
           SUPABASE_SECRET_KEY: ci-placeholder-secret-key
       - name: Start the app and wait for it to respond
         run: |
-          NEXT_PUBLIC_SUPABASE_URL=https://ci-placeholder.supabase.co \
+          # Unlike the build step above, this one IS on the request path —
+          # verifySession() (via AppShell) calls Supabase on every single
+          # page load. An unregistered hostname like the build step's
+          # ci-placeholder.supabase.co fails via a slow DNS/connection
+          # timeout (confirmed directly: 15+ seconds per request), which
+          # blew every page's Lighthouse LCP budget on nothing but a
+          # doomed auth check. 127.0.0.1:1 is loopback with nothing
+          # listening, so the connection is refused immediately instead.
+          NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:1 \
           NEXT_PUBLIC_SUPABASE_ANON_KEY=ci-placeholder-anon-key \
           SUPABASE_SECRET_KEY=ci-placeholder-secret-key \
           npm run start &
