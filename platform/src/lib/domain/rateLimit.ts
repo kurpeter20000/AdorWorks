@@ -16,12 +16,23 @@ import type { Database } from "@/lib/database.types";
  * succeeded; this one gates the action, so its failure mode matters
  * more and is a deliberate choice, not an oversight.
  */
-export type RateLimitAction = "login" | "signup" | "password_reset_request";
+// S14-05 gap-check finding (2026-09-24): mfa_challenge/report/invitation
+// were the confirmed rate-limiting gaps from Stage 14's security audit —
+// mfa_challenge is the most severe (a staff account with a stolen
+// password but no authenticator device could otherwise brute-force a
+// 6-digit TOTP code with no limit at all), report guards against
+// mass-reporting to harass a competitor or retaliate, invitation guards
+// against invite spam while still allowing a real employer to batch-
+// invite a large shortlist in one sitting.
+export type RateLimitAction = "login" | "signup" | "password_reset_request" | "mfa_challenge" | "report" | "invitation";
 
 const WINDOWS: Record<RateLimitAction, { windowMinutes: number; maxAttempts: number }> = {
   login: { windowMinutes: 15, maxAttempts: 5 },
   signup: { windowMinutes: 60, maxAttempts: 5 },
   password_reset_request: { windowMinutes: 15, maxAttempts: 3 },
+  mfa_challenge: { windowMinutes: 15, maxAttempts: 5 },
+  report: { windowMinutes: 60, maxAttempts: 10 },
+  invitation: { windowMinutes: 60, maxAttempts: 50 },
 };
 
 /** Best-effort client IP from the standard proxy header Vercel/Render set — used for signup, where the meaningful identifier is "one source creating many accounts," not any single email. */

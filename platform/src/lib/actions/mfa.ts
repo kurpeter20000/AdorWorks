@@ -3,6 +3,8 @@
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { checkAndRecordAttempt } from "@/lib/domain/rateLimit";
 import { requireSessionWithoutMfaGate } from "@/lib/dal/session";
 import type { FormState } from "./auth";
 
@@ -62,7 +64,16 @@ export async function verifyMfaEnrollment(_prevState: FormState, formData: FormD
 
   // Confirms a real, active session exists (redirects to /login otherwise)
   // without re-triggering the MFA gate itself — this page IS the gate.
-  await requireSessionWithoutMfaGate();
+  const session = await requireSessionWithoutMfaGate();
+
+  // S14-05 gap-check finding — no limit existed on TOTP code attempts.
+  // Lower severity here than verifyMfaChallenge (attacker would already
+  // need to control the account mid-enrollment), but still worth the
+  // same guard for consistency.
+  const { allowed } = await checkAndRecordAttempt(createAdminClient(), "mfa_challenge", session.userId);
+  if (!allowed) {
+    return { message: "Too many attempts. Please wait a few minutes and try again." };
+  }
 
   const supabase = await createClient();
   const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({
@@ -90,7 +101,16 @@ export async function verifyMfaChallenge(_prevState: FormState, formData: FormDa
     return { errors: validated.error.flatten().fieldErrors };
   }
 
-  await requireSessionWithoutMfaGate();
+  const session = await requireSessionWithoutMfaGate();
+
+  // S14-05 gap-check finding: a staff account with a stolen password but
+  // no authenticator device could otherwise brute-force a 6-digit TOTP
+  // code (1 in 1,000,000 per guess) with no limit at all — the most
+  // severe of the confirmed rate-limiting gaps.
+  const { allowed } = await checkAndRecordAttempt(createAdminClient(), "mfa_challenge", session.userId);
+  if (!allowed) {
+    return { message: "Too many attempts. Please wait a few minutes and try again." };
+  }
 
   const supabase = await createClient();
   const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({

@@ -89,7 +89,7 @@ export type ProfileRow = {
 
 export type AuthRateLimitAttemptRow = {
   id: string;
-  action: "login" | "signup" | "password_reset_request";
+  action: "login" | "signup" | "password_reset_request" | "mfa_challenge" | "report" | "invitation";
   identifier: string;
   created_at: string;
 }

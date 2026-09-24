@@ -3,6 +3,8 @@
 import { z } from "zod";
 import { requireSession } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { checkAndRecordAttempt } from "@/lib/domain/rateLimit";
 import type { ReportTargetType } from "@/lib/database.types";
 import type { FormState } from "./auth";
 
@@ -25,6 +27,14 @@ export async function fileReport(
   formData: FormData
 ): Promise<FormState & { success?: boolean }> {
   const session = await requireSession();
+
+  // S14-05 gap-check finding — no limit existed on filing reports, a
+  // real mass-reporting-to-harass-a-competitor vector the threat model
+  // (docs/governance/threat-model.md) already named as unmitigated.
+  const { allowed } = await checkAndRecordAttempt(createAdminClient(), "report", session.userId);
+  if (!allowed) {
+    return { message: "Too many reports submitted recently. Please wait a while and try again." };
+  }
 
   const validated = ReportSchema.safeParse({
     reason: formData.get("reason"),
