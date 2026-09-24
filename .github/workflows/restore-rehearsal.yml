@@ -199,7 +199,7 @@ jobs:
           psql "$TEST_SUPABASE_DB_URL" -c "select 'talent_profiles' as table_name, count(*) from talent_profiles union all select 'organisations', count(*) from organisations union all select 'opportunities', count(*) from opportunities;"
 
       - name: Upload the rehearsal dump for reference
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: restore-rehearsal-dump
           path: rehearsal.dump
