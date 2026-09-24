@@ -164,11 +164,27 @@ disputesRouter.post(
       .maybeSingle();
     if (!payment) throw new HttpError(404, "No settled payment found for this milestone on this contract.");
 
-    const { error: paymentError } = await supabaseAdmin
+    // Ultra-review finding (2026-09-25, High): this used to read
+    // status='succeeded' above, then update unconditionally — two
+    // concurrent refund requests for the same milestone could both
+    // pass the read and both insert a finance_records refund row,
+    // a real duplicate-refund bug (today it's bookkeeping only, since
+    // payments are simulated, but this is exactly the code path that
+    // moves real money once ADORWORKS_FF_REAL_PAYMENTS is on, so it's
+    // fixed now rather than left for that switch to turn it into an
+    // active financial bug). The update is now conditional on the row
+    // still being 'succeeded' at write time, not just read time — if a
+    // concurrent request already refunded it, this affects zero rows
+    // and .maybeSingle() returns null instead of throwing.
+    const { data: updatedPayment, error: paymentError } = await supabaseAdmin
       .from("payment_events")
       .update({ status: "refunded" })
-      .eq("id", payment.id);
+      .eq("id", payment.id)
+      .eq("status", "succeeded")
+      .select("id")
+      .maybeSingle();
     if (paymentError) throw new HttpError(500, paymentError.message);
+    if (!updatedPayment) throw new HttpError(409, "This payment was already refunded.");
 
     const { data: record, error: recordError } = await supabaseAdmin
       .from("finance_records")
