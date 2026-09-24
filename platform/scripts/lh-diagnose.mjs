@@ -20,11 +20,25 @@ for (const entry of representative) {
 
   const lcp = lhr.audits["largest-contentful-paint"];
   console.log("LCP:", lcp?.numericValue, "ms");
+  console.log("TBT:", lhr.audits["total-blocking-time"]?.numericValue, "ms");
+  console.log("CLS:", lhr.audits["cumulative-layout-shift"]?.numericValue);
 
-  const lcpElement = lhr.audits["largest-contentful-paint-element"]?.details?.items?.[0]?.node;
-  console.log("LCP element:", lcpElement?.nodeLabel, "|", lcpElement?.selector);
-
-  const phases = lhr.audits["largest-contentful-paint-element"]?.details?.items?.[1]?.items;
+  // Structure varies by Lighthouse version/build — don't assume item[0]
+  // is always the node table; scan every item for the first one that
+  // actually looks like an element-table entry.
+  const lcpDetailItems = lhr.audits["largest-contentful-paint-element"]?.details?.items ?? [];
+  let lcpElement;
+  let phases;
+  for (const item of lcpDetailItems) {
+    const node = item?.items?.[0]?.node;
+    if (node) lcpElement = node;
+    if (item?.items?.[0]?.phase) phases = item.items;
+  }
+  if (lcpElement) {
+    console.log("LCP element:", lcpElement.nodeLabel, "|", lcpElement.selector, "|", lcpElement.snippet);
+  } else {
+    console.log("LCP element: could not extract — raw details:", JSON.stringify(lcpDetailItems));
+  }
   console.log("LCP phases:", JSON.stringify(phases));
 
   const mainThread = lhr.audits["mainthread-work-breakdown"]?.details?.items;
@@ -45,4 +59,10 @@ for (const entry of representative) {
     "Latest-finishing requests:",
     JSON.stringify(topByEnd.map((r) => ({ url: r.url, end: r.networkEndTime, size: r.transferSize, priority: r.priority })))
   );
+
+  const poster = netRequests.find((r) => r.url?.includes("hero-poster"));
+  console.log("Poster request:", JSON.stringify(poster));
+
+  const totalTransfer = netRequests.reduce((sum, r) => sum + (r.transferSize || 0), 0);
+  console.log("Total requests:", netRequests.length, "| total transfer bytes:", totalTransfer);
 }
