@@ -21,7 +21,8 @@ export default async function SignupPage({
       <SignupForm defaultIntent={defaultIntent} />
       <p className="mt-4 text-center text-sm text-slate">
         Already have an account?{" "}
-        <Link href="/login" className="font-semibold text-teal-ink">
+        {/* prefetch off — see the matching comment in ../login/page.tsx (S12-12) */}
+        <Link href="/login" prefetch={false} className="font-semibold text-teal-ink">
           Sign in
         </Link>
       </p>

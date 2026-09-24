@@ -24,9 +24,20 @@ export default async function LoginPage({
 
   return (
     <div>
+      {/* S12-12 gap-check finding (2026-09-24): every Link below defaults to
+          Next.js's automatic prefetch, which fires a real server-side RSC
+          render for its target as soon as the link is in viewport — on
+          this page that's 4 links, all in viewport on load. Confirmed via
+          a captured CI-adjacent network trace that all 4 fire immediately.
+          Harmless on a normal server, but on CI's Lighthouse job the
+          Next.js server and the Lighthouse-launched Chrome share the same
+          constrained runner, so this competes for CPU with the actual
+          /login request during the exact window LCP is measured in —
+          disabled here since none of these need instant navigation. */}
       <div className="mb-6 flex gap-1 rounded-lg bg-cloud p-1 text-sm font-semibold" role="tablist" aria-label="Signing in as">
         <Link
           href="/login?as=talent"
+          prefetch={false}
           role="tab"
           aria-selected={intent === "talent"}
           className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-center transition-all ${
@@ -38,6 +49,7 @@ export default async function LoginPage({
         </Link>
         <Link
           href="/login?as=hire"
+          prefetch={false}
           role="tab"
           aria-selected={intent === "hire"}
           className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-center transition-all ${
@@ -57,7 +69,11 @@ export default async function LoginPage({
       <LoginForm />
       <p className="mt-4 text-center text-sm text-slate">
         New to AdorWorks?{" "}
-        <Link href={intent ? `/signup?intent=${intent}` : "/signup"} className="font-semibold text-teal-ink hover:underline">
+        <Link
+          href={intent ? `/signup?intent=${intent}` : "/signup"}
+          prefetch={false}
+          className="font-semibold text-teal-ink hover:underline"
+        >
           Create an account
         </Link>
       </p>
