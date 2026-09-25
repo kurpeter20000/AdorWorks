@@ -3,6 +3,23 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/lib/database.types";
 
+// Every request this client makes — the auth check on literally every
+// page render (verifySession, via AppShell) included — sits directly on
+// the critical rendering path with no fallback if it hangs. Confirmed
+// directly: pointed a local server at an unregistered Supabase host and
+// every page load stalled for 15+ seconds waiting on DNS/connection
+// failure, since the default fetch has no timeout of its own. A real
+// Supabase outage or network blip would do the same in production, not
+// just against a deliberately-fake CI URL. 8s is generous for a normal
+// round trip while still bounding the worst case to something a user
+// might plausibly wait out, rather than an indefinite hang.
+const SUPABASE_FETCH_TIMEOUT_MS = 8000;
+
+function timeoutFetch(...args: Parameters<typeof fetch>): ReturnType<typeof fetch> {
+  const [input, init] = args;
+  return fetch(input, { ...init, signal: AbortSignal.timeout(SUPABASE_FETCH_TIMEOUT_MS) });
+}
+
 /**
  * Server-side Supabase client — for use in Server Components, Server
  * Actions and Route Handlers only. Reads/writes the user's auth cookies
@@ -18,6 +35,7 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      global: { fetch: timeoutFetch },
       cookies: {
         getAll() {
           return cookieStore.getAll();
