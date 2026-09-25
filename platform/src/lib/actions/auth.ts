@@ -263,3 +263,54 @@ export async function resetPassword(_prevState: FormState, formData: FormData): 
 
   redirect("/dashboard");
 }
+
+// S16-01 — an intake_submission approved via backend/api's
+// POST /intake/:id/convert-talent gets a real Supabase Auth account, but
+// Supabase's invite flow only ever authenticates the click (an
+// access/refresh token pair, exchanged in /auth/callback the same way a
+// password-reset link is) — it never asks for a password, so without
+// this the account would sit there with no way to sign back in once
+// that session eventually expires. Deliberately its own action rather
+// than reusing resetPassword: a freshly-invited talent has never had a
+// password to "reset", the copy/notification here says "welcome" and
+// "activated" rather than "changed" and "if this wasn't you", and the
+// destination is /onboarding (an empty profile) rather than /dashboard.
+export async function activateAccount(_prevState: FormState, formData: FormData): Promise<FormState> {
+  const validated = ResetPasswordSchema.safeParse({ password: formData.get("password") });
+  if (!validated.success) {
+    return { errors: validated.error.flatten().fieldErrors };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password: validated.data.password });
+  if (error) {
+    return { message: error.message };
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    const admin = createAdminClient();
+    await notifyUser(admin, {
+      userId: user.id,
+      type: NOTIFICATION_TYPES.PASSWORD_CHANGED,
+      title: "Your account is active",
+      body: "Welcome to AdorWorks — your password is set. Next, finish your profile so we can start matching you to work.",
+    });
+    await sendEmailSafely(
+      user.email ?? null,
+      "Welcome to AdorWorks — your account is active",
+      renderEmail({
+        heading: "Your account is active",
+        paragraphs: [
+          "Welcome to AdorWorks. Your application was approved and your password is now set, so you can sign back in with it any time.",
+          "Next: finish your profile — a few details and any evidence of your work — so we can start matching you to real opportunities.",
+        ],
+      }),
+      { admin, recipientUserId: user.id, bypassPreference: true }
+    );
+  }
+
+  redirect("/onboarding");
+}
