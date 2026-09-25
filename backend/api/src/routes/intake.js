@@ -82,19 +82,57 @@ intakeRouter.patch(
 
 /**
  * Creates a Supabase Auth account WITHOUT sending an invite/magic-link
- * email. There's no talent/employer-facing dashboard yet (deliberately —
- * see staff/README.md), so an invite email would land someone on a
- * login page with nowhere to go. This still creates a real account (so
- * the talent_profiles/organisations foreign key to auth.users works,
- * and so switching to self-service later needs no data migration), just
- * silently — nobody is notified. When a real dashboard exists, change
- * this back to `supabaseAdmin.auth.admin.inviteUserByEmail(email, { data })`.
+ * email — nobody is notified, and the account has no password until
+ * someone sets one via the ordinary "forgot password" flow.
+ *
+ * Still used for convert-employer: an org rep is usually already in
+ * direct contact with staff (phone/email) about their brief, and once
+ * they sign in they land on the Project Brief they came in with, so a
+ * silent account plus staff following up directly is an acceptable
+ * interim. convert-talent below no longer uses this — see
+ * provisionTalentAccountWithInvite for why.
  */
 async function provisionAccountSilently(email, metadata) {
   return supabaseAdmin.auth.admin.createUser({
     email,
     email_confirm: true,
     user_metadata: metadata,
+  });
+}
+
+/**
+ * S16-01: a talent applicant approved via convert-talent used to get
+ * provisionAccountSilently — a real account, but with no password and
+ * nobody ever told them it existed. There was no way for them to
+ * discover their application had been approved, let alone log in: the
+ * account just sat there, waiting for someone who'd never be told to
+ * look for it. inviteUserByEmail sends Supabase's own invite email (an
+ * account-creation link, distinct from a magic-link sign-in) with a
+ * session embedded as a URL hash fragment — clicking it authenticates
+ * them immediately in the browser, same mechanism already proven for
+ * password-reset/signup-confirmation links (see platform's
+ * auth-callback-client.tsx). From there, resolveDefaultNextPath routes
+ * a talent profile with no headline yet to /activate-account, where
+ * they set the password Supabase's invite flow itself never asks for,
+ * then continue into the existing onboarding wizard (evidence upload,
+ * etc.) — so this one function call is what makes "approved but never
+ * told" become "approved, notified by email, and walked through setting
+ * up their account."
+ *
+ * redirectTo is best-effort — Supabase silently drops it if the exact
+ * URL isn't in the project's Redirect URLs allowlist, per
+ * auth-callback-client.tsx's own comment. resolveDefaultNextPath's
+ * profile-state check is what actually guarantees the right landing
+ * page either way, so this isn't relied on for correctness.
+ */
+async function provisionTalentAccountWithInvite(email, metadata) {
+  const siteUrl = process.env.PLATFORM_SITE_URL;
+  const redirectTo = siteUrl
+    ? `${siteUrl.replace(/\/$/, "")}/auth/callback?next=${encodeURIComponent("/activate-account")}`
+    : undefined;
+  return supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+    data: metadata,
+    ...(redirectTo ? { redirectTo } : {}),
   });
 }
 
@@ -115,11 +153,12 @@ async function loadSubmission(id, expectedType) {
 }
 
 // POST /api/intake/:id/convert-talent
-// Provisions a real Supabase Auth account (silently — see
-// provisionAccountSilently above) for a talent_application submission,
-// then creates the matching
-// talent_profiles row. Requires the submission to include an email —
-// staff should collect one before converting if it's missing.
+// Approves a talent_application submission: provisions a real Supabase
+// Auth account AND emails the applicant an invite to activate it (see
+// provisionTalentAccountWithInvite above), creates the matching
+// talent_profiles row, and leaves a notification waiting for them once
+// they do log in. Requires the submission to include an email — staff
+// should collect one before converting if it's missing.
 intakeRouter.post(
   "/:id/convert-talent",
   asyncRoute(async (req, res) => {
@@ -133,7 +172,7 @@ intakeRouter.post(
       );
     }
 
-    const { data: created, error: createError } = await provisionAccountSilently(email, {
+    const { data: created, error: createError } = await provisionTalentAccountWithInvite(email, {
       full_name: p.name || null,
       phone: p.phone || null,
     });
@@ -183,6 +222,23 @@ intakeRouter.post(
       entityType: "talent_profiles",
       entityId: talentId,
       metadata: { via: "intake_convert_talent", intake_submission_id: submission.id, email },
+    });
+
+    // S16-01: written directly from backend/api rather than through
+    // platform's notifyUser() helper — same cross-codebase pattern
+    // already used by introduction_video_reviewed (talent.js) and
+    // organisation_verification_decided (see notifications.ts's own
+    // comment on that type). The invite email is the notification that
+    // actually reaches them right now, since they have no account to
+    // sign into yet; this row is what's waiting inside the app the
+    // moment they do — so the "you were approved" moment isn't only a
+    // single email that could get missed or land in spam.
+    await supabaseAdmin.from("notifications").insert({
+      user_id: talentId,
+      type: "talent_application_approved",
+      title: "Your AdorWorks application has been approved",
+      body: "Check your email for a link to activate your account, set a password and finish your profile.",
+      link: "/onboarding",
     });
 
     res.json({ data: { talent_id: talentId, talent_profile: talentProfile } });

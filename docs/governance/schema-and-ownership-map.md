@@ -110,14 +110,57 @@ tracking here so they don't silently drift further:
 - **Fixed this session**: `risk_flags` allowed staff to INSERT/UPDATE/
   DELETE directly via RLS instead of only through the audited
   backend/api route — closed in `0088_risk_flags_tamper_resistance.sql`.
-- **Open, low severity**: `talent_profiles_select` (last touched 0070)
-  never got the `is_org_write_member()` upgrade its sibling policies
-  (`applications_select`, `opportunities_insert/update`) received in
-  0039 — an invited (non-representative) org teammate who legitimately
-  shortlists a self-service applicant may not be able to read that
-  talent's profile. A functional gap, not a leak; needs a live test to
-  confirm whether the app already works around it before deciding if
-  it's worth a migration.
+- **Fixed and live-verified 2026-09-25**: `talent_profiles_select`
+  (last touched 0070) never got the `is_org_write_member()` upgrade
+  its sibling policies received in 0039. Confirmed reachable before
+  fixing: `platform/src/app/organisation/opportunities/[id]/page.tsx`
+  gates on `requireOrganisationMembership()` (any member, not just the
+  representative) and reads `talent_profiles` with the plain
+  RLS-subject client for every applicant — an invited (non-
+  representative) teammate who legitimately shortlists a self-service
+  applicant got that candidate silently filtered out of the query,
+  rendering as a blank name/headline on a page they're otherwise fully
+  authorized to use. Closed in
+  `0092_talent_profiles_select_write_member.sql`.
+
+  **Fixing 0092 alone had no effect** — live-verified against the test
+  project (a real, disposable org/opportunity/application fixture,
+  RLS simulated as the actual non-representative teammate via
+  `set local role authenticated` + `request.jwt.claims`, wrapped in a
+  transaction that's always rolled back) and found the talent still
+  invisible. Root cause: `talent_profiles_select`'s EXISTS subquery
+  joins `applications`/`opportunities`, and RLS applies to those
+  tables independently even inside another table's policy. Both had
+  **silently drifted from `0070_rls_drift_repair.sql`'s own
+  "true final version"** — `opportunities_select` was live-running
+  `is_org_representative(organisation_id)` instead of 0070's
+  `is_org_member(organisation_id)`; `applications_select` was running
+  a simpler `is_org_representative(...)` check missing the
+  self-service `shortlisting_mode` branch 0070 specifies entirely. No
+  migration after 0070 touches either policy (checked directly), so
+  this wasn't explained by migration history — an out-of-band database
+  change, the same class of bug 0091 fixed for
+  `guard_opportunities_update`'s search_path, most likely a prior
+  Supabase-dashboard edit. Closed by forcibly re-applying 0070's own
+  already-committed definitions in
+  `0093_fix_opportunities_applications_select_drift.sql`. Re-ran the
+  same live fixture afterward: the non-representative teammate now
+  sees the talent profile (1 row, correct data); a negative fixture
+  (an admin of a completely unrelated organisation) still sees 0 rows,
+  confirming no cross-organisation leak was introduced.
+
+  **Production checked directly (2026-09-25, founder ran the read):**
+  `opportunities_select` and `applications_select` were **already
+  correct** on production, matching 0070 exactly — the out-of-band
+  drift above was isolated to the test project, not a wider pattern.
+  `talent_profiles_select` was still the pre-0092 version (simply
+  hadn't been migrated to production yet, a normal pending-migration
+  gap, not drift). Applied via SQL Editor (0092's DDL, plus 0093's as
+  a same-definition no-op, both recorded in `_schema_migrations` for
+  tracking consistency) — re-read the live policy afterward and
+  confirmed `is_org_write_member(o.organisation_id)` is now in place.
+  All three environments (test, staging — same Supabase project as
+  test — and production) are now on the correct, matching definitions.
 - **Open, low severity**: `notifications_update_owner` (0058) has no
   column-level guard restricting a user's own UPDATE to `read_at` —
   they could technically rewrite their own notification's title/body,
