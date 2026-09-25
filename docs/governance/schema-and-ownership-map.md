@@ -110,14 +110,25 @@ tracking here so they don't silently drift further:
 - **Fixed this session**: `risk_flags` allowed staff to INSERT/UPDATE/
   DELETE directly via RLS instead of only through the audited
   backend/api route — closed in `0088_risk_flags_tamper_resistance.sql`.
-- **Open, low severity**: `talent_profiles_select` (last touched 0070)
+- **Fixed 2026-09-25**: `talent_profiles_select` (last touched 0070)
   never got the `is_org_write_member()` upgrade its sibling policies
   (`applications_select`, `opportunities_insert/update`) received in
-  0039 — an invited (non-representative) org teammate who legitimately
-  shortlists a self-service applicant may not be able to read that
-  talent's profile. A functional gap, not a leak; needs a live test to
-  confirm whether the app already works around it before deciding if
-  it's worth a migration.
+  0039. Confirmed reachable, not just theoretical, before fixing:
+  `platform/src/app/organisation/opportunities/[id]/page.tsx` gates on
+  `requireOrganisationMembership()` (any member, not just the
+  representative) and reads `talent_profiles` with the plain
+  RLS-subject client for every applicant — an invited (non-
+  representative) teammate who legitimately shortlists a self-service
+  applicant got that candidate silently filtered out of the query,
+  rendering as a blank name/headline on a page they're otherwise fully
+  authorized to use. Closed in
+  `0092_talent_profiles_select_write_member.sql`, same
+  `is_org_write_member(o.organisation_id)` swap as 0039's siblings.
+  **Not yet applied to the test project from this session** — no
+  direct `SUPABASE_DB_URL` was available here to run it live, unlike
+  every other fix on this list; apply and re-verify the shortlist page
+  live before treating this as fully closed, the same standard S04-04
+  was held to after being marked complete on code review alone.
 - **Open, low severity**: `notifications_update_owner` (0058) has no
   column-level guard restricting a user's own UPDATE to `read_at` —
   they could technically rewrite their own notification's title/body,
