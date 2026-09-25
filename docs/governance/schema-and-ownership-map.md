@@ -147,10 +147,20 @@ tracking here so they don't silently drift further:
   same live fixture afterward: the non-representative teammate now
   sees the talent profile (1 row, correct data); a negative fixture
   (an admin of a completely unrelated organisation) still sees 0 rows,
-  confirming no cross-organisation leak was introduced. **Whether
-  staging/production have the same drift hasn't been checked from this
-  session** — worth a direct `pg_policy` read there before assuming
-  they're unaffected.
+  confirming no cross-organisation leak was introduced.
+
+  **Production checked directly (2026-09-25, founder ran the read):**
+  `opportunities_select` and `applications_select` were **already
+  correct** on production, matching 0070 exactly — the out-of-band
+  drift above was isolated to the test project, not a wider pattern.
+  `talent_profiles_select` was still the pre-0092 version (simply
+  hadn't been migrated to production yet, a normal pending-migration
+  gap, not drift). Applied via SQL Editor (0092's DDL, plus 0093's as
+  a same-definition no-op, both recorded in `_schema_migrations` for
+  tracking consistency) — re-read the live policy afterward and
+  confirmed `is_org_write_member(o.organisation_id)` is now in place.
+  All three environments (test, staging — same Supabase project as
+  test — and production) are now on the correct, matching definitions.
 - **Open, low severity**: `notifications_update_owner` (0058) has no
   column-level guard restricting a user's own UPDATE to `read_at` —
   they could technically rewrite their own notification's title/body,
