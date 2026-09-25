@@ -89,7 +89,7 @@ export type ProfileRow = {
 
 export type AuthRateLimitAttemptRow = {
   id: string;
-  action: "login" | "signup" | "password_reset_request";
+  action: "login" | "signup" | "password_reset_request" | "mfa_challenge" | "report" | "invitation";
   identifier: string;
   created_at: string;
 }
@@ -1160,6 +1160,16 @@ export type Database = {
         Relationships: [];
       };
     };
-    Functions: Record<string, never>;
+    Functions: {
+      check_rate_limit: {
+        Args: {
+          p_action: string;
+          p_identifier: string;
+          p_window_minutes: number;
+          p_max_attempts: number;
+        };
+        Returns: boolean;
+      };
+    };
   };
 }

@@ -48,8 +48,8 @@ jobs:
       E2E_ALLOW_MUTATIONS: ${{ secrets.E2E_ALLOW_MUTATIONS }}
       E2E_EXPECTED_SUPABASE_PROJECT_REF: ${{ secrets.E2E_EXPECTED_SUPABASE_PROJECT_REF }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
@@ -75,7 +75,7 @@ jobs:
       - run: npm run test:e2e
         env:
           E2E_BASE_URL: http://localhost:3000
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report

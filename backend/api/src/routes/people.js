@@ -38,9 +38,14 @@ peopleRouter.get(
   "/",
   asyncRoute(async (req, res) => {
     const query = listQuerySchema.parse(req.query);
+    // S13-09: policy_consent_at/policy_version/policy_consent_source are
+    // written at signup (0062_policy_consent.sql) but until now had no
+    // way to be read back — "did user X accept policy version Y, and
+    // when" required a raw database query. Selected here so the staff
+    // list can show it directly.
     let q = supabaseAdmin
       .from("profiles")
-      .select("id, role, status, full_name, phone, created_at", { count: "exact" })
+      .select("id, role, status, full_name, phone, created_at, policy_consent_at, policy_version, policy_consent_source", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(query.offset, query.offset + query.limit - 1);
 

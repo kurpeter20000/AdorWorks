@@ -33,7 +33,8 @@ export function LoginForm() {
           <label htmlFor="password" className="text-sm font-semibold text-midnight">
             Password
           </label>
-          <Link href="/forgot-password" className="text-xs font-semibold text-teal-ink hover:underline">
+          {/* prefetch off — see the matching comment in ../login/page.tsx (S12-12) */}
+          <Link href="/forgot-password" prefetch={false} className="text-xs font-semibold text-teal-ink hover:underline">
             Forgot password?
           </Link>
         </div>

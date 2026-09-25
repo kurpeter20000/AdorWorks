@@ -98,7 +98,7 @@ jobs:
       # pilot database's dumps are tiny relative to the free plan's
       # 500MB artifact-storage quota — cheap to keep more history.
       - name: Upload backup as a workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.FILENAME }}
           path: ${{ env.FILENAME }}

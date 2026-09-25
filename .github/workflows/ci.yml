@@ -14,8 +14,8 @@ jobs:
       run:
         working-directory: platform
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
@@ -51,14 +51,22 @@ jobs:
     # throttling — deliberately, since the pilot is mobile-first on
     # South Sudan connections, not a fast desktop/office network.
     # Thresholds are the industry-standard "good" Core Web Vitals
-    # targets (LCP<2.5s, CLS<0.1), not a founder-approved number — flag
-    # for a quick founder confirmation if a different budget was
-    # intended. Read-only against a locally built instance (no shared
-    # database touched), so — unlike e2e.yml — this runs automatically
-    # on every push/PR with no staging-collision risk.
+    # targets (CLS<0.1, etc), except LCP: founder-confirmed at 3000ms
+    # (2026-09-24), not the stricter 2500ms default. A real investigation
+    # (see git history around this date) fixed two genuine bugs — an
+    # eagerly-loaded Sentry client bundle and an unbounded Supabase call
+    # in the auth-refresh middleware — which closed most of the original
+    # gap (~360-500ms over budget down to ~200-350ms), but what remained
+    # was normal LCP run-to-run variance on a strict threshold, not a
+    # further fixable defect; login/signup are simple, fully-hydrated
+    # pages with real (if modest) baseline JS cost that Lighthouse's
+    # mobile CPU throttling simulation amplifies. Read-only against a
+    # locally built instance (no shared database touched), so — unlike
+    # e2e.yml — this runs automatically on every push/PR with no
+    # staging-collision risk.
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
@@ -71,7 +79,15 @@ jobs:
           SUPABASE_SECRET_KEY: ci-placeholder-secret-key
       - name: Start the app and wait for it to respond
         run: |
-          NEXT_PUBLIC_SUPABASE_URL=https://ci-placeholder.supabase.co \
+          # Unlike the build step above, this one IS on the request path —
+          # verifySession() (via AppShell) calls Supabase on every single
+          # page load. An unregistered hostname like the build step's
+          # ci-placeholder.supabase.co fails via a slow DNS/connection
+          # timeout (confirmed directly: 15+ seconds per request), which
+          # blew every page's Lighthouse LCP budget on nothing but a
+          # doomed auth check. 127.0.0.1:1 is loopback with nothing
+          # listening, so the connection is refused immediately instead.
+          NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:1 \
           NEXT_PUBLIC_SUPABASE_ANON_KEY=ci-placeholder-anon-key \
           SUPABASE_SECRET_KEY=ci-placeholder-secret-key \
           npm run start &
@@ -85,7 +101,10 @@ jobs:
           echo "App did not become ready in time." >&2
           exit 1
       - run: npx lhci autorun
-      - uses: actions/upload-artifact@v4
+      - name: Print LCP diagnostics
+        if: always()
+        run: node scripts/lh-diagnose.mjs
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: lighthouse-report
@@ -93,14 +112,14 @@ jobs:
           retention-days: 14
 
   backend-api:
-    name: backend/api (lint, unit tests)
+    name: backend/api (lint, unit tests, clean-migration check)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend/api
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
@@ -108,3 +127,9 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run test
+      # S15-04 — every migration, in order, against a genuinely fresh
+      # database (PGlite — no Docker/external Postgres needed), so a
+      # migration-ordering or dependency regression is caught here
+      # instead of the next time someone provisions a new environment.
+      # See the script's own header for what it does and doesn't cover.
+      - run: npm run verify:clean-migrations

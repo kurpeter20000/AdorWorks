@@ -78,10 +78,14 @@ Not built yet:
   every core action there has to reach the server to mean anything, so a
   full offline sync layer isn't the right trade for a marketplace app the
   way it is for the mostly-static public site.
-- Any real phone/WhatsApp number, privacy policy, terms of use or reporting
-  channel — all marked `Content pending` inline (same convention as the
-  Adormedia site) rather than filled with placeholder data. Fill these in
-  once the actual details exist.
+- **Update, 2026-09-19 (S13-04–S13-08):** privacy.html, terms.html,
+  community-standards.html and cancellation-refunds.html are now real,
+  dated, versioned policy documents (not placeholders) — see
+  `docs/governance/decision-log.md`'s Stage 13 entry. What's still
+  genuinely `Content pending`: a real phone/WhatsApp number, and
+  `trust-safety.html`'s dedicated safeguarding reporting channel — both
+  deliberately left unpublished until there's someone to actually staff
+  and monitor them, not an oversight.
 - Real payments — the simulated flow above never sets `is_simulated` to
   false anywhere in the codebase; no payment gateway is integrated, per
   the blueprint's compliance-first rule pending a licensed local payment
@@ -103,9 +107,12 @@ Not built yet:
   cross-border placements through this site before the recruitment-agency
   licensing, contracts, tax and payment-partner questions in Blueprint
   Part 5.8 and 11 are resolved with qualified counsel.
-- **Contact details, policies.** Fill in the `Content pending` blocks on
-  `contact.html` and `trust-safety.html` (WhatsApp/phone numbers, privacy
-  policy, terms, reporting channel) once they're real and monitored.
+- **Contact details.** privacy.html/terms.html/community-standards.html/
+  cancellation-refunds.html are done (see above) — what's left is
+  `contact.html`'s and `trust-safety.html`'s WhatsApp/phone number and
+  the dedicated Trust & Safety reporting channel, both still marked
+  `Content pending` until there's someone to actually staff and monitor
+  them.
 
 ## Deploy
 

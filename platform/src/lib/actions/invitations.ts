@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { checkAndRecordAttempt } from "@/lib/domain/rateLimit";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
@@ -30,6 +31,14 @@ export async function inviteTalent(
   formData: FormData
 ): Promise<FormState & { success?: boolean }> {
   const session = await requireRole(...CLIENT_ROLES);
+
+  // S14-05 gap-check finding — no limit existed on sending invitations,
+  // an unmitigated outreach-spam vector. 50/hour is generous enough for
+  // a real employer batch-inviting a large shortlist in one sitting.
+  const { allowed } = await checkAndRecordAttempt(createAdminClient(), "invitation", session.userId);
+  if (!allowed) {
+    return { message: "Too many invitations sent recently. Please wait a while and try again." };
+  }
 
   const validated = InviteSchema.safeParse({ message: formData.get("message") || undefined });
   if (!validated.success) {

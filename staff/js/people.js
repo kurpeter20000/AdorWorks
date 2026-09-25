@@ -71,7 +71,7 @@ function wireAddStaffForm() {
 
 async function load() {
   var tbody = document.getElementById("people-body");
-  tbody.innerHTML = '<tr><td colspan="6" class="staff-empty">Loading…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" class="staff-empty">Loading…</td></tr>';
   try {
     var role = document.getElementById("role-select").value;
     var q = document.getElementById("name-search").value.trim();
@@ -89,13 +89,20 @@ async function load() {
 function render() {
   var tbody = document.getElementById("people-body");
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="staff-empty">No accounts match this filter.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="staff-empty">No accounts match this filter.</td></tr>';
     return;
   }
   var roleOptions = ROLES.map(function (r) { return '<option value="' + r + '">' + r + "</option>"; }).join("");
 
   tbody.innerHTML = rows
     .map(function (row) {
+      // S13-09: consent evidence retrievable per user — version + when +
+      // source (always "signup_form" today, but the column exists for
+      // whenever a re-consent flow adds a second source).
+      var policyCell = row.policy_consent_at
+        ? "v" + escapeHtml(row.policy_version || "?") + " · " + formatDate(row.policy_consent_at) +
+          '<br><span class="muted">' + escapeHtml(row.policy_consent_source || "") + "</span>"
+        : '<span class="muted">Not recorded</span>';
       return (
         "<tr>" +
         "<td>" + escapeHtml(row.full_name || "—") + "</td>" +
@@ -103,6 +110,7 @@ function render() {
         "<td>" + statusBadge(row.role) + "</td>" +
         "<td>" + statusBadge(row.status) + "</td>" +
         "<td>" + formatDate(row.created_at) + "</td>" +
+        "<td>" + policyCell + "</td>" +
         "<td>" +
         '<div class="action-row">' +
         '<select id="role-input-' + row.id + '">' + roleOptions.replace('value="' + row.role + '"', 'value="' + row.role + '" selected') + "</select>" +

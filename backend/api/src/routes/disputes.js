@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
-import { requireAuth, requireStaff } from "../middleware/auth.js";
+import { requireAuth, requireStaff, requireFinanceStaff } from "../middleware/auth.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
 import { logAuditEvent } from "../audit.js";
 
@@ -137,8 +137,16 @@ const refundSchema = z.object({
 // itself stays 'paid' (delivery/payment history is a separate concern
 // from this financial correction; no milestone_status value for
 // "refunded" exists, by design, see 0026's own comments).
+//
+// S14-04 gap-check finding (2026-09-19): this route only had the
+// router-level requireStaff gate (reviewer/matcher/finance/admin),
+// unlike every other money-moving route in finance.js which requires
+// requireFinanceStaff (finance/admin only). A reviewer or matcher —
+// roles with no other financial authority anywhere in the app — could
+// reverse a settled payment. Gated to finance/admin specifically here.
 disputesRouter.post(
   "/:id/refund",
+  requireFinanceStaff,
   asyncRoute(async (req, res) => {
     const { milestone_id, notes } = refundSchema.parse(req.body);
 
@@ -156,11 +164,27 @@ disputesRouter.post(
       .maybeSingle();
     if (!payment) throw new HttpError(404, "No settled payment found for this milestone on this contract.");
 
-    const { error: paymentError } = await supabaseAdmin
+    // Ultra-review finding (2026-09-25, High): this used to read
+    // status='succeeded' above, then update unconditionally — two
+    // concurrent refund requests for the same milestone could both
+    // pass the read and both insert a finance_records refund row,
+    // a real duplicate-refund bug (today it's bookkeeping only, since
+    // payments are simulated, but this is exactly the code path that
+    // moves real money once ADORWORKS_FF_REAL_PAYMENTS is on, so it's
+    // fixed now rather than left for that switch to turn it into an
+    // active financial bug). The update is now conditional on the row
+    // still being 'succeeded' at write time, not just read time — if a
+    // concurrent request already refunded it, this affects zero rows
+    // and .maybeSingle() returns null instead of throwing.
+    const { data: updatedPayment, error: paymentError } = await supabaseAdmin
       .from("payment_events")
       .update({ status: "refunded" })
-      .eq("id", payment.id);
+      .eq("id", payment.id)
+      .eq("status", "succeeded")
+      .select("id")
+      .maybeSingle();
     if (paymentError) throw new HttpError(500, paymentError.message);
+    if (!updatedPayment) throw new HttpError(409, "This payment was already refunded.");
 
     const { data: record, error: recordError } = await supabaseAdmin
       .from("finance_records")
