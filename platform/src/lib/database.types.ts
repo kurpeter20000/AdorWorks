@@ -1160,6 +1160,16 @@ export type Database = {
         Relationships: [];
       };
     };
-    Functions: Record<string, never>;
+    Functions: {
+      check_rate_limit: {
+        Args: {
+          p_action: string;
+          p_identifier: string;
+          p_window_minutes: number;
+          p_max_attempts: number;
+        };
+        Returns: boolean;
+      };
+    };
   };
 }

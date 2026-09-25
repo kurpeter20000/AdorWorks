@@ -87,15 +87,23 @@ export async function requireSessionWithoutMfaGate(): Promise<VerifiedSession> {
  * S04-08 — every staff role (reviewer/matcher/finance/admin) must
  * enroll and verify TOTP MFA before reaching anything else.
  * getAuthenticatorAssuranceLevel() is a local read of the current
- * session's claims, not a network call, so an error here is treated as
- * exceptional and fails OPEN (lets the request through) rather than
- * locking out every staff member over a transient issue with a check
- * that should essentially never fail.
+ * session's claims, not a network call, so an error here should be
+ * essentially impossible in practice.
+ *
+ * Ultra-review finding (2026-09-25, High): this used to fail OPEN
+ * (silently return, letting the request through) on that error —
+ * "essentially impossible" isn't "impossible," and an authorization
+ * gate erroring open is a real, if narrow, MFA-bypass path, not just a
+ * resilience nicety. Now fails toward /mfa-challenge instead: it's the
+ * same redirect an enrolled-but-unverified session already gets, so a
+ * genuinely transient error just costs the user one re-check rather
+ * than a hard lockout, but an attacker can't turn an error into a free
+ * pass.
  */
 async function requireStaffMfa() {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-  if (error) return;
+  if (error) redirect("/mfa-challenge");
 
   if (data.nextLevel === "aal1") {
     // Never enrolled a factor at all.

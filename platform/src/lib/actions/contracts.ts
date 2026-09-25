@@ -136,10 +136,22 @@ async function maybeCompleteContract(admin: ReturnType<typeof createAdminClient>
     .maybeSingle();
   if (!contract || contract.status === "completed") return;
 
-  await admin
+  // Ultra-review finding (2026-09-25, High): this used to update
+  // unconditionally after the read-check above — two milestones
+  // approved in quick succession could each independently see "all
+  // settled, not yet completed" and both reach here, inserting two
+  // work_history rows for the same contract completion. Conditioning
+  // on status <> 'completed' at write time closes it; if a concurrent
+  // call already completed the contract, this affects zero rows and
+  // the work_history insert below is skipped.
+  const { data: completedContract } = await admin
     .from("contracts")
     .update({ status: "completed", completed_at: new Date().toISOString() })
-    .eq("id", contractId);
+    .eq("id", contractId)
+    .neq("status", "completed")
+    .select("id")
+    .maybeSingle();
+  if (!completedContract) return;
 
   // S09-*: a service-originated contract has no opportunity_id — fetch
   // the talent's own service listing instead (via service_requests).
@@ -186,8 +198,24 @@ export async function approveDeliverable(deliverableId: string): Promise<{ error
     return { error: "This deliverable isn't awaiting review." };
   }
 
+  // Ultra-review finding (2026-09-25, High): the milestone update used
+  // to be unconditional after the "submitted" check above — two
+  // concurrent approveDeliverable calls for the same milestone (e.g.
+  // a doubled click, or two admin sessions) could both pass that
+  // check and both raise an invoice below. Conditioning the update on
+  // the row still being 'submitted' at write time closes the race;
+  // .maybeSingle() returning null means a concurrent request already
+  // won.
+  const { data: approvedMilestone } = await admin
+    .from("milestones")
+    .update({ status: "approved" })
+    .eq("id", deliverable.milestone_id)
+    .eq("status", "submitted")
+    .select("id")
+    .maybeSingle();
+  if (!approvedMilestone) return { error: "This deliverable isn't awaiting review." };
+
   await admin.from("deliverables").update({ status: "approved" }).eq("id", deliverableId);
-  await admin.from("milestones").update({ status: "approved" }).eq("id", deliverable.milestone_id);
 
   await logAuditEvent(admin, {
     name: DOMAIN_EVENTS.MILESTONE_STATUS_CHANGED,
@@ -685,6 +713,24 @@ export async function raiseDispute(contractId: string, _prevState: FormState, fo
   if (contract.status === "disputed") return { message: "This contract already has an open dispute." };
   if (contract.status !== "active") return { message: "Only an active contract can be disputed." };
 
+  // Ultra-review finding (2026-09-25, Medium): this used to check
+  // status="active" above, then insert the dispute and update the
+  // contract unconditionally — a concurrent cancelContract() call
+  // could pass its own "active" check in the same window and set the
+  // contract to 'cancelled', leaving this dispute row orphaned against
+  // a contract that's no longer disputed at all. The contract update
+  // is now the gate: conditioned on the row still being 'active' at
+  // write time, checked BEFORE the dispute is inserted, so a lost race
+  // here means no dispute row gets created either.
+  const { data: disputedContract } = await admin
+    .from("contracts")
+    .update({ status: "disputed" })
+    .eq("id", contractId)
+    .eq("status", "active")
+    .select("id")
+    .maybeSingle();
+  if (!disputedContract) return { message: "Only an active contract can be disputed." };
+
   const { error } = await admin.from("disputes").insert({
     contract_id: contractId,
     raised_by: session.userId,
@@ -692,7 +738,6 @@ export async function raiseDispute(contractId: string, _prevState: FormState, fo
   });
   if (error) return { message: error.message };
 
-  await admin.from("contracts").update({ status: "disputed" }).eq("id", contractId);
   await postSystemMessage(admin, contractId, session.userId, "A dispute was raised on this contract — AdorWorks staff will review it.");
 
   await logAuditEvent(admin, {
@@ -778,7 +823,12 @@ export async function cancelContract(contractId: string, _prevState: FormState, 
   if (!isParticipant) return { message: "You aren't part of this contract." };
   if (contract.status !== "active") return { message: "Only an active contract can be cancelled." };
 
-  const { error } = await admin
+  // Ultra-review finding (2026-09-25, Medium) — same race as
+  // raiseDispute's matching comment: conditioning on status still
+  // being 'active' at write time means a concurrent raiseDispute()
+  // that won the race leaves this correctly rejected instead of
+  // silently overwriting a contract that's now disputed.
+  const { data: cancelledContract, error } = await admin
     .from("contracts")
     .update({
       status: "cancelled",
@@ -786,8 +836,12 @@ export async function cancelContract(contractId: string, _prevState: FormState, 
       cancelled_by: session.userId,
       cancellation_reason: validated.data.reason,
     })
-    .eq("id", contractId);
+    .eq("id", contractId)
+    .eq("status", "active")
+    .select("id")
+    .maybeSingle();
   if (error) return { message: error.message };
+  if (!cancelledContract) return { message: "Only an active contract can be cancelled." };
 
   await postSystemMessage(admin, contractId, session.userId, `This contract was cancelled: ${validated.data.reason}`);
 

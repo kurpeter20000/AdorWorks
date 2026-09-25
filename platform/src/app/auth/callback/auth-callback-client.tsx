@@ -34,7 +34,17 @@ async function resolveDefaultNextPath(supabase: SupabaseClient<Database>): Promi
     if (!membership) return "/organisation";
   }
 
-  return "/reset-password";
+  // Ultra-review finding (2026-09-25): this used to fall through to
+  // "/reset-password" for every case this function's own two branches
+  // above don't specifically handle — staff roles (reviewer/matcher/
+  // finance/admin), or a talent/employer account whose profile is
+  // already complete. Sending a signed-in staff member (or anyone with
+  // a finished profile) to the password-reset form on every magic-link/
+  // signup-confirmation callback where `next` didn't survive the trip
+  // was a real routing bug, not a deliberate default — this function
+  // exists specifically to replace "always assume password-reset" with
+  // a real guess, per its own doc comment above.
+  return "/dashboard";
 }
 
 export function AuthCallbackClient() {

@@ -112,7 +112,7 @@ jobs:
           retention-days: 14
 
   backend-api:
-    name: backend/api (lint, unit tests)
+    name: backend/api (lint, unit tests, clean-migration check)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -127,3 +127,9 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run test
+      # S15-04 — every migration, in order, against a genuinely fresh
+      # database (PGlite — no Docker/external Postgres needed), so a
+      # migration-ordering or dependency regression is caught here
+      # instead of the next time someone provisions a new environment.
+      # See the script's own header for what it does and doesn't cover.
+      - run: npm run verify:clean-migrations

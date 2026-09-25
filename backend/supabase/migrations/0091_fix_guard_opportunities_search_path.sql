@@ -1,0 +1,36 @@
+-- AdorWorks — S15 e2e gap-check finding (2026-09-25): found live, not
+-- via code review — running the e2e suite against the test project
+-- surfaced "function reject_unless_staff(boolean, unknown) does not
+-- exist" on every opportunity status-transition test, even the ones
+-- correctly expecting a rejection.
+--
+-- Root cause: guard_opportunities_update()'s live definition on the
+-- test project had `search_path` set to the single (bogus) value
+-- "public, pg_catalog" — a quoted string containing a comma, not two
+-- schema names. Confirmed via pg_proc.proconfig directly. No migration
+-- file ever sets this — 0076_opportunity_reopen.sql (the function's
+-- last real definition) has no SET search_path clause at all — so this
+-- was applied directly to the database outside the migration pipeline,
+-- most likely via Supabase's dashboard "fix" for the built-in
+-- Function Search Path Mutable advisory, whose suggested SQL is a
+-- known source of exactly this quoting bug.
+--
+-- With search_path broken, EVERY unqualified call inside this trigger
+-- (reject_unless_staff, opportunity_ready_for_review,
+-- organisation_is_verified) fails to resolve — meaning every guarded
+-- opportunity status transition (publish, reject, request changes,
+-- pause, submit for review) was raising a raw Postgres error instead
+-- of the intended check, for staff and non-staff callers alike. Only
+-- one function was affected (checked via a proconfig scan across all
+-- of pg_proc), not a wider pattern.
+--
+-- This migration doesn't change the fix by editing the trigger's own
+-- definition (0076's version is already correct, matching what's
+-- verified live) — it's an ALTER to strip the bad out-of-band config,
+-- since the same "dashboard fix" could equally have been (or later be)
+-- applied to any other environment, including production.
+
+alter function guard_opportunities_update() reset search_path;
+
+-- Rollback: no meaningful rollback — this only removes a broken,
+-- never-intended configuration; there is nothing to restore it to.
