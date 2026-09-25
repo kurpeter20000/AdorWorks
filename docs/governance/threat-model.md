@@ -92,13 +92,25 @@ where a dedicated review item already covers it more precisely.
 **Anonymous visitor**
 - *Credential stuffing / brute-force login* — mitigated: `auth_rate_limit_attempts`
   (5 attempts/15min by email, `platform/src/lib/domain/rateLimit.ts`).
-  S14-05's review confirmed this covers login/signup/password-reset
-  only — invitations, reports, MFA-challenge verification, and file
-  uploads have no rate limiting at all, and `backend/api` has no
-  rate-limiting middleware anywhere. Real gap, not yet closed.
+  S14-05's review found this originally covered login/signup/password-
+  reset only — closed in stages: invitations/reports/MFA-challenge
+  gained the same table-backed limit (0089/0090, 2026-09-24). File
+  uploads were a harder case — every upload goes straight from the
+  browser to Supabase Storage, never through a Server Action, so no
+  application-level check would ever run; closed instead with a
+  Postgres trigger on `storage.objects` reusing `check_rate_limit()`
+  (0094, 2026-09-26; 30 uploads/15min per user, exempting staff/
+  service-role; verified live — 30 succeed, the 31st is rejected).
+  `backend/api` having no rate-limiting middleware at all was also
+  closed 2026-09-26: a global `express-rate-limit` (300 requests/15min
+  per IP, in-memory — a single Render instance, no cross-instance
+  state to lose) now sits ahead of every route in `src/app.js`.
 - *Account enumeration via login/signup error messages* — confirmed
-  gap by S14-02's review: the raw Supabase error message is surfaced
-  as-is in the signup action. Not yet fixed.
+  gap by S14-02's review; the S14-05 follow-up (2026-09-24) found the
+  literal error-message leak doesn't actually trigger (Supabase itself
+  suppresses the error for an already-registered email, verified
+  live), but surfaced a real bug instead — fixed by checking Supabase's
+  own `identities: []` signal. See the 2026-09-24 decision-log entry.
 - *Scraping public talent profiles at scale* — not specifically
   mitigated (no scraping-rate-limit distinct from general rate limits);
   acceptable residual risk for a public-profile feature by design, but
@@ -220,13 +232,14 @@ where a dedicated review item already covers it more precisely.
 - *Dependency/supply-chain compromise* — partially mitigated.
   `backend/api`'s 3 moderate qs/body-parser vulnerabilities were fixed
   this session (`npm audit fix`, 0 vulnerabilities remaining). Platform's
-  10 vulnerabilities (7 high, 1 moderate, 2 low) remain open, entirely
-  within `@lhci/cli`'s dev-only dependency chain (0 exposure in prod
-  deps) — S14-07's review traced the exact chain and found a plain,
-  current `lighthouse` install would avoid nearly all of it, but at the
-  cost of rebuilding `lhci autorun`'s multi-run + budget-assertion
-  logic that `.github/workflows/ci.yml` currently relies on; this
-  remains an open decision for the founder, not resolved here. No
+  `@lhci/cli` chain (dev-only, 0 exposure in prod deps) was originally
+  10 findings (7 high, 1 moderate, 2 low) — `overrides` pinning `tmp`
+  and `uuid` to patched releases (2026-09-26) resolved 4 of them down
+  to 0 low/moderate. The remaining 6 (all high) trace to `extract-zip`,
+  which has no patched version published at all per npm's own advisory
+  — accepted as residual risk (only unpacks Chrome binaries from
+  Google's CDN inside CI, never untrusted input); see the 2026-09-26
+  decision-log entry. No
   automated, continuous dependency-scanning exists in CI today
   (Dependabot's GitHub-native alerts are the closest thing currently
   active).

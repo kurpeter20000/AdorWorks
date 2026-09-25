@@ -5,6 +5,7 @@ import cors from "cors";
 import helmet from "helmet";
 
 import { requestLog } from "./requestLog.js";
+import { apiRateLimit } from "./rateLimit.js";
 import { intakeRouter } from "./routes/intake.js";
 import { talentRouter } from "./routes/talent.js";
 import { organisationsRouter } from "./routes/organisations.js";
@@ -27,6 +28,12 @@ import { peopleRouter } from "./routes/people.js";
 // just this plus the actual app.listen() call.
 export const app = express();
 
+// Render sits one hop in front of this app — trust exactly that one
+// proxy so express-rate-limit (and req.ip generally) reads the real
+// client IP from X-Forwarded-For instead of Render's own load-balancer
+// IP, which would otherwise lump every caller into one shared bucket.
+app.set("trust proxy", 1);
+
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
   .split(",")
   .map((s) => s.trim())
@@ -45,6 +52,7 @@ app.use(
   })
 );
 app.use(express.json({ limit: "1mb" }));
+app.use(apiRateLimit);
 
 app.get("/health", (req, res) => res.json({ ok: true }));
 
