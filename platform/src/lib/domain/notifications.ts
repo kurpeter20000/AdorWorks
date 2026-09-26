@@ -27,6 +27,11 @@ export const NOTIFICATION_TYPES = {
   // here for a single source of truth on every notification type that
   // exists, even though notifyUser() itself never emits this one.
   ORGANISATION_VERIFICATION_DECIDED: "organisation_verification_decided",
+  // S16-01: same cross-codebase pattern, written directly from
+  // backend/api's intake.js (POST /intake/:id/convert-talent) the
+  // moment staff approve a talent_application submission — before the
+  // account exists in any session this app could act from.
+  TALENT_APPLICATION_APPROVED: "talent_application_approved",
   TIMESHEET_REVIEWED: "timesheet_reviewed",
   REVIEW_RECEIVED: "review_received",
   PASSWORD_CHANGED: "password_changed",

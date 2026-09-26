@@ -28,7 +28,27 @@ async function resolveDefaultNextPath(supabase: SupabaseClient<Database>): Promi
 
   if (profile.role === "talent") {
     const { data: talentProfile } = await supabase.from("talent_profiles").select("headline").eq("id", user.id).maybeSingle();
-    if (!talentProfile || !talentProfile.headline) return "/onboarding";
+    if (!talentProfile || !talentProfile.headline) {
+      // S16-01: "no headline yet" alone used to mean /onboarding
+      // unconditionally, which was correct for ordinary self-service
+      // signups (they already set a password at signup). A talent
+      // invited via convert-talent also has no headline at this point,
+      // but has NO password yet either — Supabase's invite flow
+      // authenticates the click but never prompts for one. The
+      // talent_application_approved notification (written by
+      // convert-talent, never by self-service signup) is what tells the
+      // two cases apart here, so only the invited case detours through
+      // /activate-account first; it redirects to /onboarding itself once
+      // a password is set.
+      const { data: approvalNotice } = await supabase
+        .from("notifications")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("type", "talent_application_approved")
+        .limit(1)
+        .maybeSingle();
+      return approvalNotice ? "/activate-account" : "/onboarding";
+    }
   } else if ((EMPLOYER_ACCOUNT_ROLES as readonly string[]).includes(profile.role)) {
     const { data: membership } = await supabase.from("organisation_members").select("organisation_id").eq("user_id", user.id).maybeSingle();
     if (!membership) return "/organisation";
