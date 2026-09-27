@@ -94,13 +94,8 @@ release candidate versus what's a documented, accepted position.
 
 ## E — Known, narrow technical bugs (buildable, just not yet built)
 
-- **Stale opportunity-discovery cache** — `e2e/opportunity-lifecycle.spec.ts`
-  found a closed opportunity still appearing in search results after
-  closing and reloading. (Note: this file's *other* known failure —
-  `reject_unless_staff(boolean, unknown) does not exist` — was actually
-  the `guard_opportunities_update` search_path corruption fixed in
-  `0091`, not a separate bug; only the stale-search-result issue is
-  still genuinely open.)
+None currently open — see the 2026-09-27 correction below for the one
+item previously listed here.
 
 ## Corrected from stale documentation while compiling this list
 
@@ -112,3 +107,17 @@ release candidate versus what's a documented, accepted position.
   `access-control-allow-origin` header, 204 response. **Fixed**, not
   open — noting here since nothing in the governance docs previously
   confirmed that.
+- **"Stale opportunity-discovery cache"** — previously listed under
+  section E as an open bug. Investigated directly rather than taken on
+  faith: `/opportunities` (`platform/src/app/opportunities/page.tsx`)
+  reads the session via cookies on every request, which forces Next.js
+  to render it dynamically — no Full Route Cache, no cached `fetch`
+  (Next 15+'s default), so every load queries Supabase live. The
+  2026-09-26 e2e run's exact reproduction of this ("a published
+  opportunity appears in search and disappears once closed") passed
+  cleanly, not flaky, confirming there's nothing to catch here. Closing
+  an opportunity's `revalidatePath` only targets the employer's own
+  `/organisation/opportunities/[id]` view, not the talent-facing
+  listing, but since that listing was never cached in the first place,
+  that's not a bug — just scope the original call correctly had no
+  need to widen. **Not reproducible**, removed from section E.
