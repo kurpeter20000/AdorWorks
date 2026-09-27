@@ -1,0 +1,69 @@
+name: Lighthouse (authenticated pages)
+
+# S15-09 — extends the public-page Lighthouse budget (ci.yml) to the
+# pages that require a login: dashboard, opportunities listing,
+# passport, notifications, organisation. ci.yml's job explicitly can't
+# do this (see its own comment) because it never has real auth working
+# — this job does, using the same real test Supabase project as e2e.yml.
+#
+# Manually triggered only, for the same reason as e2e.yml: this reuses
+# the shared test/staging Supabase project and creates two persistent
+# login accounts there (harmless, idempotent — see
+# scripts/seed-lighthouse-users.mjs) rather than something to run on
+# every push.
+#
+# Needs the same five E2E_* repository secrets as e2e.yml. See
+# platform/.env.e2e.example for what each one means.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  lighthouse-authenticated:
+    name: lighthouse (authenticated pages)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: platform
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+      SUPABASE_SECRET_KEY: ${{ secrets.E2E_SUPABASE_SECRET_KEY }}
+      E2E_ALLOW_MUTATIONS: ${{ secrets.E2E_ALLOW_MUTATIONS }}
+      E2E_EXPECTED_SUPABASE_PROJECT_REF: ${{ secrets.E2E_EXPECTED_SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: platform/package-lock.json
+      - run: npm ci
+      - name: Seed the two persistent Lighthouse test accounts
+        run: node scripts/seed-lighthouse-users.mjs
+      - run: npm run build
+      - name: Start the app and wait for it to respond
+        run: |
+          npm run start &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/login > /dev/null; then
+              echo "App is up."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "App did not become ready in time." >&2
+          exit 1
+      - run: npx lhci autorun --config=.lighthouserc.authenticated.json
+        env:
+          LH_TALENT_EMAIL: lighthouse-talent@adorworks-test.local
+          LH_TALENT_PASSWORD: LighthouseTestPass1234
+          LH_EMPLOYER_EMAIL: lighthouse-employer@adorworks-test.local
+          LH_EMPLOYER_PASSWORD: LighthouseTestPass1234
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: lighthouse-authenticated-report
+          path: platform/.lighthouseci-authenticated
+          retention-days: 14
