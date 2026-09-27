@@ -9,24 +9,30 @@ release candidate versus what's a documented, accepted position.
 
 ## A — Needs the founder directly (action or a live credential only they hold)
 
-- **Production backup has had zero successful runs in 13+ days**
+- **Production backup has had zero successful runs in 15+ days**
   (`backup-production-db.yml`, failing since 2026-09-13 on a stale
-  `PROD_SUPABASE_DB_URL` secret). In progress — founder is updating the
-  secret from a fresh Session pooler connection string.
+  `PROD_SUPABASE_DB_URL` secret). Re-checked live via the GitHub Actions
+  API on 2026-09-28: still failing daily, same failed step ("Dump
+  production database") as originally diagnosed — the earlier
+  "founder is updating the secret" note has not yet resolved this.
+  Genuinely still blocked on the founder's own GitHub Settings access;
+  no decision authority substitutes for that.
 - **Restore rehearsal (S14-13 sign-off)** — blocked on the backup
   secret above; needs a manual trigger from the Actions tab once fixed.
-- **`.env.e2e.local` credential rotation** — a real, working test-
-  project credential sitting unencrypted on disk (git-ignored, never
-  committed, but flagged since the original S14 audit). Founder
-  judgment call, not yet decided either way.
-- **Sentry/UptimeRobot production configuration status unknown from
-  here** — `NEXT_PUBLIC_SENTRY_DSN` isn't set in local dev, and this
-  session has no Vercel dashboard access to check whether a real DSN
-  was ever set there. Worth a direct confirmation before assuming
-  error monitoring is actually live in production.
-- **No real custom domain secured yet** — production still runs on
-  `ador-works.vercel.app` / `adorworks.pages.dev`, not a purchased
-  `adorworks.*` domain. Raised earlier in this project; still true.
+- **UptimeRobot production configuration status** — still genuinely
+  unverifiable from here; an external monitor leaves no trace on the
+  site itself to check. Needs a direct founder confirmation.
+
+~~`.env.e2e.local` credential rotation~~ — **decided** 2026-09-28:
+rotate as routine hygiene, not release-blocking (test-project-only,
+fails closed against production regardless). See decision log.
+
+~~Sentry production configuration~~ — **verified live** 2026-09-28:
+checked production response headers directly, real DSN active,
+10% trace sampling, `vercel-production` environment confirmed.
+
+~~No real custom domain~~ — **decided** 2026-09-28: acceptable for a
+pilot; deferred to post-pilot. See decision log.
 
 ## B — Needs a role this project doesn't have yet (not substitutable)
 
@@ -34,16 +40,23 @@ release candidate versus what's a documented, accepted position.
   07/10/13/14) are Legal-Counsel-owned per the tracker. Drafts exist
   for the preparable ones (`data-retention-policy.md`,
   `safeguarding-procedure.md`), explicitly marked draft, not decided.
+  On 2026-09-28, explicitly declined to mark these reviewed/final even
+  under direct founder delegation — see decision log for the scope
+  boundary decided instead (small informed pilot cohort only, real
+  legal review still required before any wider launch).
 - **Independent Security Reviewer** — S14-15's "independent review"
   criteria can't be fully satisfied by the same party (Claude Code)
   that did the fixing, by definition. The technical work is genuinely
   done and verified live; what's missing is a second, independent set
-  of eyes, not more code.
+  of eyes, not more code. Declined to self-certify on 2026-09-28.
 - **Founder + pilot-team UAT (S15-10)** — needs real people actually
-  using the app, not something to build or automate.
-- **Support scripts and escalation contacts (S15-13)** — needs real
-  names/contact points for who's actually on call; a template can be
-  drafted, but the content is inherently founder-supplied.
+  using the app, not something to build or automate. Declined to
+  simulate this on 2026-09-28.
+
+~~Support scripts and escalation contacts (S15-13)~~ — **built**
+2026-09-28: `docs/governance/support-escalation-contacts.md`, founder
+named as the interim contact for every category with committed SLAs;
+actual email/phone left for the founder to fill in directly.
 
 ## C — Accepted, documented residual risk (a deliberate decision, not an oversight)
 
@@ -67,30 +80,36 @@ release candidate versus what's a documented, accepted position.
 
 ## D — Real product/spec gaps (need a decision before they're buildable, not a founder-only credential issue)
 
-- **Reviewer/matcher role separation (S10-01)** and **a general
-  appeals workflow (S10-09)** — both lack a clear product spec.
-- **SLA targets (S10-12)** — a policy decision, no code action to take
-  until targets are actually set.
-- **Legal job-notice permission workflow (S07-03)** — needs legal
-  input on what the workflow should actually enforce.
-- **Two independent staff-review implementations never reconciled**
-  (S07-05) — the older `backend/api` staff console and the newer
-  in-app `/operations` review queue both exist and both work; picking
-  one and retiring the other is a real product decision with a live
-  staff console at stake.
-- **Opportunity-review-queue reconciliation (S10-05) and staff-
-  dashboard reconciliation (S10-02)** — larger, already-flagged
-  cross-implementation drifts between the staff console and the
-  in-app operations views.
-- **Safeguarding reports have no single named responsible contact** —
-  currently every admin account receives them, the safest default
-  without inventing a person; who should ultimately own this is a
-  founder policy call.
-- **Three-language support (English/Swahili/Arabic)** — a founder
-  decision on record since early in this project (S01-02); the app is
-  still English-only everywhere. Substantial, cross-cutting work with
-  no dedicated tracker item of its own (closest fit: S12-15, which as
-  written doesn't fully capture a 3-language requirement).
+All items below were decided under the founder's explicit 2026-09-28
+delegation ("make founder decision on my behalf... do the right
+thing") — see that decision-log entry for full reasoning on each.
+
+- ~~**Reviewer/matcher role separation (S10-01)** and **a general
+  appeals workflow (S10-09)**~~ — **decided:** deferred past this
+  release; not load-bearing at current pilot-team size.
+- ~~**SLA targets (S10-12)**~~ — **decided:** provisional pilot-scale
+  targets set (safeguarding 24h/72h, content reports 48h, verification
+  5 business days, disputes 48h initial response).
+- **Legal job-notice permission workflow (S07-03)** — still needs
+  legal input on what the workflow should actually enforce; not
+  something a policy decision alone can responsibly resolve. Still
+  open.
+- ~~**Two independent staff-review implementations never reconciled**
+  (S07-05), opportunity-review-queue (S10-05) and staff-dashboard
+  (S10-02) reconciliation~~ — **decided:** `/operations` is the
+  long-term primary; `backend/api`'s staff console is legacy, kept
+  live but receives no further investment. Actual retirement is a
+  follow-up once `/operations` is confirmed to cover everything.
+- ~~**Safeguarding reports have no single named responsible contact**~~
+  — **decided:** founder is the named, accountable contact for the
+  pilot phase (24h/72h SLA). RLS visibility deliberately left
+  unchanged (admin-wide, per 0084) as a fail-safe — a named-
+  accountability decision, not a security-scope change.
+- ~~**Three-language support (English/Swahili/Arabic)**~~ — **decided:**
+  reconfirmed as an explicit, documented known limitation for this
+  release candidate, not silently dropped; still the founder's
+  original 2026-09-12 commitment, just formally scoped as deferred
+  for the pilot rather than left ambiguous.
 
 ## E — Known, narrow technical bugs (buildable, just not yet built)
 
