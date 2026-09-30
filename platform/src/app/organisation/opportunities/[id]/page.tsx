@@ -150,10 +150,6 @@ export default async function OpportunityDetailPage({
         <StatusBadge state={OPPORTUNITY_STATES[opportunity.status]} />
       </div>
 
-      <ShortlistingModeForm opportunityId={opportunity.id} mode={opportunity.shortlisting_mode} />
-
-      <OpportunityAttachments opportunityId={opportunity.id} attachments={attachments ?? []} />
-
       {opportunity.status === "rejected" && opportunity.rejection_reason && (
         <div className="mt-4 rounded-lg bg-coral/10 px-4 py-3 text-sm text-coral-ink">
           <p>Not approved: {opportunity.rejection_reason}</p>
@@ -169,12 +165,6 @@ export default async function OpportunityDetailPage({
         <p className="mt-4 rounded-lg bg-slate/10 px-4 py-3 text-sm text-slate">
           This opportunity expired after its application deadline passed.
         </p>
-      )}
-
-      {opportunity.status === "open" && <CloseOpportunityActions opportunityId={opportunity.id} />}
-
-      {["filled", "closed", "cancelled", "expired"].includes(opportunity.status) && (
-        <ReopenOpportunityButton opportunityId={opportunity.id} />
       )}
 
       {opportunity.status === "changes_required" && (
@@ -322,6 +312,18 @@ export default async function OpportunityDetailPage({
           </ul>
         )}
       </div>
+
+      {/* Settings live below the applicants: reviewing people is what an
+          employer opens this page to do, not configuring it. */}
+      <section className="mt-10 border-t border-slate/15 pt-6">
+        <h2 className="font-bold text-midnight">Manage this opportunity</h2>
+        <ShortlistingModeForm opportunityId={opportunity.id} mode={opportunity.shortlisting_mode} />
+        <OpportunityAttachments opportunityId={opportunity.id} attachments={attachments ?? []} />
+        {opportunity.status === "open" && <CloseOpportunityActions opportunityId={opportunity.id} />}
+        {["filled", "closed", "cancelled", "expired"].includes(opportunity.status) && (
+          <ReopenOpportunityButton opportunityId={opportunity.id} />
+        )}
+      </section>
     </main>
   );
 }

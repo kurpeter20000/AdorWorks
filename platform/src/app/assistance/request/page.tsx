@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { verifySession } from "@/lib/dal/session";
 import { RequestForm } from "./request-form";
 
-export const metadata: Metadata = { title: "Request help" };
+export const metadata: Metadata = { title: "Request in-person help" };
 
 export default async function AssistanceRequestPage() {
   // No requireSession() here on purpose — this must be reachable by

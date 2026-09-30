@@ -9,6 +9,8 @@ export interface DashboardAction {
   primary?: boolean;
   /** Opens in a new tab instead of client-side routing — for links to a different deployment (e.g. the staff console) rather than a route in this app. */
   external?: boolean;
+  /** Setup/help links, grouped under "Support" at the foot of the sidebar and left off the dashboard's action grid. */
+  section?: "support";
 }
 
 export interface DashboardExperience {
@@ -22,19 +24,20 @@ const experiences: Record<DashboardKind, Omit<DashboardExperience, "kind">> = {
   talent: {
     title: "Build your career on AdorWorks",
     description: "Keep your Passport current, discover paid work, and manage applications and delivery.",
+    // Notifications isn't listed: the bell in the top bar (with its unread
+    // count) is the one entry point, on every screen size.
     actions: [
       { href: "/opportunities", label: "Find work", description: "Browse open, paid opportunities.", primary: true },
-      { href: "/passport", label: "Your Passport", description: "Manage your photo, links, evidence, and portfolio." },
+      { href: "/opportunities/saved", label: "Saved", description: "Return to opportunities saved for later." },
       { href: "/applications", label: "Applications", description: "Track the applications you have submitted." },
       { href: "/opportunities/invited", label: "Invitations", description: "Employers who've asked you specifically to apply." },
-      { href: "/passport/services/requests", label: "Service requests", description: "Respond to employers who've requested one of your services." },
       { href: "/offers", label: "Offers", description: "Review and respond to offers." },
       { href: "/contracts", label: "Contracts", description: "Deliver work, message clients, and view payments." },
-      { href: "/notifications", label: "Notifications", description: "Updates on your offers, payments, and messages." },
-      { href: "/opportunities/saved", label: "Saved", description: "Return to opportunities saved for later." },
-      { href: "/onboarding", label: "Onboarding", description: "Complete or review your verification steps." },
-      { href: "/trust-safety", label: "Trust & Safety", description: "Free orientation on staying safe on AdorWorks." },
-      { href: "/assistance/request", label: "Request help", description: "Ask for assisted onboarding support." },
+      { href: "/passport/services/requests", label: "Service requests", description: "Respond to employers who've requested one of your services." },
+      { href: "/passport", label: "Your Passport", description: "Manage your photo, links, evidence, and portfolio." },
+      { href: "/onboarding", label: "Profile setup", description: "Complete or review your verification steps.", section: "support" },
+      { href: "/trust-safety", label: "Trust & Safety", description: "Free orientation on staying safe on AdorWorks.", section: "support" },
+      { href: "/assistance/request", label: "In-person help", description: "Get someone to help you finish your profile at a partner hub.", section: "support" },
     ],
   },
   employer: {
@@ -48,8 +51,7 @@ const experiences: Record<DashboardKind, Omit<DashboardExperience, "kind">> = {
       { href: "/organisation/service-requests", label: "Service requests", description: "Track requests you've sent to talent and their proposals." },
       { href: "/organisation/team", label: "Team", description: "Review organisation membership and access." },
       { href: "/contracts", label: "Contracts", description: "Manage active and completed work." },
-      { href: "/notifications", label: "Notifications", description: "Updates on applicants, payments, and messages." },
-      { href: "/assistance/request", label: "Request help", description: "Ask AdorWorks for support." },
+      { href: "/assistance/request", label: "In-person help", description: "Get someone to help you finish your profile at a partner hub.", section: "support" },
     ],
   },
   assistance: {

@@ -1255,6 +1255,39 @@ table.compare th, table.compare td {
 }
 table.compare thead th { background: var(--color-surface-alt); color: var(--color-primary); }
 
+/* Phones: each row becomes a card, each cell labelled with its column
+   heading (data-label, set by js/main.js), instead of a table cut off at
+   the screen edge. */
+@media (max-width: 640px) {
+  table.compare.is-stacked { min-width: 0; }
+  table.compare.is-stacked thead {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap;
+  }
+  table.compare.is-stacked tr {
+    display: block;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    background: var(--color-surface);
+    padding: 0.4rem 0;
+    margin-bottom: 0.85rem;
+  }
+  table.compare.is-stacked td { display: block; border: 0; padding: 0.35rem 1rem; }
+  table.compare.is-stacked td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-muted);
+  }
+  table.compare.is-stacked td:first-child { font-size: 1.02rem; }
+  table.compare.is-stacked td:first-child::before { display: none; }
+  .table-wrap.has-stacked { overflow: visible; }
+  .table-wrap.has-stacked::after { display: none; }
+}
+
 /* Placeholder / content-pending block */
 .pending {
   border: 2px dashed var(--color-muted);
@@ -1702,4 +1735,92 @@ input[type="checkbox"], input[type="radio"] {
   /* Anchored bottom-left so it never overlaps Netlify's own fixed
      bottom-right "Powered by Netlify" badge (not ours to reposition). */
   .cookie-consent-banner { left: 1rem; right: auto; }
+}
+
+/* ------------------------------------------------------------------
+   Phone & tablet layout, closer to the laptop arrangement (2026-09-30).
+   Kept last so it overrides the component rules above.
+   ------------------------------------------------------------------ */
+
+/* Header CTA: .site-nav a (display:block, near-zero side padding) was
+   overriding .btn, pinning "Post a project" to the top of its box. */
+.site-nav .nav-cta .btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55em 1.2em;
+  border-bottom: 2px solid transparent;
+}
+
+/* Tablets get the laptop arrangement. */
+@media (min-width: 700px) {
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .footer-grid { grid-template-columns: 1.5fr 0.9fr 0.9fr 1.1fr; }
+  .tier-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 860px) {
+  .steps-4 { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Phones: short content side by side in two columns, like the laptop's
+   rows; long paragraphs and forms stay full width to stay readable. */
+@media (max-width: 699px) {
+  .section { padding-block: 2.1rem; }
+  .section-header { margin-bottom: 1.25rem; }
+  .section-header p { font-size: 0.98rem; }
+
+  .grid-3,
+  .tier-grid,
+  .steps,
+  .steps-3,
+  .steps-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+  /* An odd last item fills the row instead of leaving a gap. */
+  .grid-3 > :last-child:nth-child(odd),
+  .tier-grid > :last-child:nth-child(odd),
+  .steps > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+
+  .grid-3 > .card,
+  .tier-card { padding: 1rem; }
+  .grid-3 .card h3,
+  .tier-card h3,
+  .step h3 { font-size: 1rem; }
+  .grid-3 .card p,
+  .tier-card p,
+  .step p { font-size: 0.88rem; }
+  .grid-3 .card .btn { min-height: 40px; padding: 0.55em 0.7em; font-size: 0.85rem; white-space: normal; }
+
+  /* Homepage proof points: icon above text so two fit per row. */
+  .trust-card { flex-direction: column; gap: 0.55rem; padding: 0.95rem; }
+  .category-feature-media { height: 120px; }
+  .category-feature-body { padding: 0.9rem; }
+
+  /* "Five ways to work" carousel: show more than one card at a time. */
+  .path-card { width: 208px; padding: 1.1rem 1rem 0; }
+
+  /* Footer: link columns side by side; brand and contact span the row. */
+  .footer-grid { grid-template-columns: 1fr 1fr; gap: 1.25rem 1rem; }
+  .footer-grid > :first-child,
+  .footer-grid > :nth-child(4) { grid-column: 1 / -1; }
+}
+
+/* Live job listings: a grid on laptops/tablets, compact cards on phones. */
+.opportunity-list { align-items: stretch; }
+.opportunity-card { display: flex; flex-direction: column; }
+.opportunity-card .opportunity-foot { margin-top: auto; padding-top: 1rem; }
+@media (min-width: 640px) {
+  .opportunity-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .opportunity-head { flex-direction: column; gap: 0.35rem; }
+  .opportunity-pay { white-space: normal; }
+  .opportunity-foot { flex-direction: column; align-items: stretch; }
+  .opportunity-apply { width: 100%; }
+}
+@media (min-width: 1024px) {
+  .opportunity-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 639px) {
+  .opportunity-card { padding: 1rem 1.1rem; }
+  .opportunity-brief { -webkit-line-clamp: 2; line-clamp: 2; margin-top: 0.5rem; }
+  .opportunity-skills { margin-top: 0.6rem; }
+  .opportunity-skills li:nth-child(n + 4) { display: none; }
+  .opportunity-foot { margin-top: 0.75rem; }
+  .opportunity-apply { min-height: 40px; padding: 0.5em 1em; }
 }

@@ -71,14 +71,14 @@ export default async function OpportunitiesPage({
     workType?: string;
     location?: string;
     deadlineBefore?: string;
-    all?: string;
+    prefs?: string;
     sort?: string;
     page?: string;
   }>;
 }) {
   const session = await requireRole("talent");
   const rawParams = await searchParams;
-  const { q, category, engagementType, workMode, workType, location, deadlineBefore, all, sort, page } = rawParams;
+  const { q, category, engagementType, workMode, workType, location, deadlineBefore, prefs, sort, page } = rawParams;
   const supabase = await createClient();
   const sortMode = sort === "relevant" ? "relevant" : "recent";
   const currentPage = Math.max(1, Number(page) || 1);
@@ -89,21 +89,18 @@ export default async function OpportunitiesPage({
     .eq("id", session.userId)
     .maybeSingle();
 
-  // S05-10 — job/service preferences: per the founder's 2026-09-14
-  // decision, these pre-filter/prioritize the feed rather than sit as an
-  // inert settings page. Applied only on a genuinely untouched landing
-  // (none of these keys present in the URL at all, not even as an empty
-  // value from a submitted-but-blank search) — any explicit filter
-  // choice, including an intentionally blank one, always wins over a
-  // stored preference. `all=1` is the explicit escape hatch so a
-  // preference is never a dead end.
-  const noExplicitFilters = !("q" in rawParams || "category" in rawParams || "engagementType" in rawParams || "workMode" in rawParams || "workType" in rawParams || "all" in rawParams);
-  const usingPreferenceDefaults =
-    noExplicitFilters && !!myProfile && !!(myProfile.category || (myProfile.work_mode && myProfile.work_mode !== "any") || myProfile.preferred_engagement_type);
-  const effectiveCategory = category ?? (noExplicitFilters ? myProfile?.category ?? undefined : undefined);
+  // S05-10 — job/service preferences narrow the feed only when the talent
+  // asks (?prefs=1). Applying them silently on every landing (the
+  // 2026-09-14 behavior) hid most open work from anyone who had set a
+  // preference once — reversed by the founder on 2026-09-30. Any explicit
+  // filter still wins over a stored preference.
+  const hasPreferences =
+    !!myProfile && !!(myProfile.category || (myProfile.work_mode && myProfile.work_mode !== "any") || myProfile.preferred_engagement_type);
+  const usingPreferenceDefaults = prefs === "1" && hasPreferences;
+  const effectiveCategory = category ?? (usingPreferenceDefaults ? myProfile?.category ?? undefined : undefined);
   const effectiveWorkMode =
-    workMode ?? (noExplicitFilters && myProfile?.work_mode && myProfile.work_mode !== "any" ? myProfile.work_mode : undefined);
-  const effectiveWorkType = workType ?? (noExplicitFilters ? myProfile?.preferred_engagement_type ?? undefined : undefined);
+    workMode ?? (usingPreferenceDefaults && myProfile?.work_mode && myProfile.work_mode !== "any" ? myProfile.work_mode : undefined);
+  const effectiveWorkType = workType ?? (usingPreferenceDefaults ? myProfile?.preferred_engagement_type ?? undefined : undefined);
 
   let query = supabase
     .from("opportunities")
@@ -148,7 +145,10 @@ export default async function OpportunitiesPage({
   const appliedIds = new Set((myApplications ?? []).map((a) => a.opportunity_id));
   const savedIds = new Set((saved ?? []).map((s) => s.opportunity_id));
   const dismissedIds = new Set((dismissed ?? []).map((d) => d.opportunity_id));
-  const hasFilters = !!(q || category || engagementType || workMode || workType || location || deadlineBefore || all);
+  const hasFilters = !!(q || category || engagementType || workMode || workType || location || deadlineBefore || usingPreferenceDefaults);
+  // Keeps the collapsed "More filters" panel open whenever one of its own
+  // fields is in use, so an active filter is never hidden from view.
+  const hasAdvancedFilters = !!(category || engagementType || workMode || location || deadlineBefore);
 
   const visible = (opportunities ?? []).filter((o) => !dismissedIds.has(o.id));
 
@@ -163,7 +163,7 @@ export default async function OpportunitiesPage({
 
   function pageHref(overrides: Record<string, string | undefined>) {
     const params = new URLSearchParams();
-    const merged = { q, category, engagementType, workMode, workType, location, deadlineBefore, all, sort: sortMode, page: String(currentPage), ...overrides };
+    const merged = { q, category, engagementType, workMode, workType, location, deadlineBefore, prefs: usingPreferenceDefaults ? "1" : undefined, sort: sortMode, page: String(currentPage), ...overrides };
     for (const [key, value] of Object.entries(merged)) {
       if (value) params.set(key, value);
     }
@@ -172,7 +172,7 @@ export default async function OpportunitiesPage({
   }
 
   return (
-    <main className="mx-auto max-w-2xl p-6 sm:p-8">
+    <main className="mx-auto max-w-5xl p-6 sm:p-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-extrabold text-midnight">Find work</h1>
         <div className="flex items-center gap-3">
@@ -195,13 +195,21 @@ export default async function OpportunitiesPage({
         </p>
       )}
 
-      {usingPreferenceDefaults && (
+      {usingPreferenceDefaults ? (
         <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-violet/10 px-3 py-1 text-xs font-semibold text-violet">
           Showing opportunities matching your job preferences
-          <Link href={pageHref({ all: "1", page: "1" })} className="underline">
+          <Link href={pageHref({ prefs: undefined, page: "1" })} className="underline">
             See everything
           </Link>
         </p>
+      ) : (
+        hasPreferences && (
+          <p className="mt-2 text-xs">
+            <Link href={pageHref({ prefs: "1", page: "1" })} className="font-semibold text-violet underline">
+              Match my job preferences
+            </Link>
+          </p>
+        )
       )}
 
       <div className="mt-4 flex gap-2">
@@ -225,20 +233,33 @@ export default async function OpportunitiesPage({
         </p>
       )}
 
-      <form method="get" className="mt-4 space-y-2">
+      <form method="get" className="mt-4 max-w-3xl space-y-2">
         <input type="hidden" name="sort" value={sortMode} />
         {workType && <input type="hidden" name="workType" value={workType} />}
-        <label htmlFor="opportunities-search" className="sr-only">
-          Search opportunities by title or description
-        </label>
-        <input
-          id="opportunities-search"
-          type="search"
-          name="q"
-          defaultValue={q}
-          placeholder="Search by title or description…"
-          className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
-        />
+        {usingPreferenceDefaults && <input type="hidden" name="prefs" value="1" />}
+        <div className="flex gap-2">
+          <label htmlFor="opportunities-search" className="sr-only">
+            Search opportunities by title or description
+          </label>
+          <input
+            id="opportunities-search"
+            type="search"
+            name="q"
+            defaultValue={q}
+            placeholder="Search by title or description…"
+            className="min-w-0 flex-1 rounded-lg border border-slate/25 px-3 py-2 text-sm"
+          />
+          <button type="submit" className="rounded-lg bg-teal px-4 py-2 text-sm font-bold text-midnight">
+            Search
+          </button>
+        </div>
+        {/* Collapsed by default so results start near the top on a phone,
+            instead of below five filter fields. */}
+        <details open={hasAdvancedFilters} className="rounded-lg border border-slate/15 bg-white">
+          <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-teal-ink select-none">
+            More filters{hasAdvancedFilters ? " (active)" : ""}
+          </summary>
+          <div className="space-y-2 px-3 pb-3">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <div>
             <label htmlFor="opportunities-category" className="sr-only">
@@ -322,16 +343,16 @@ export default async function OpportunitiesPage({
             />
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button type="submit" className="rounded-lg bg-teal px-4 py-2 text-sm font-bold text-midnight">
-            Search
-          </button>
-          {hasFilters && (
-            <Link href={pageHref({ q: undefined, category: undefined, engagementType: undefined, workMode: undefined, workType: undefined, location: undefined, deadlineBefore: undefined, all: undefined, page: "1" })} className="text-xs font-semibold text-slate underline">
-              Clear filters
-            </Link>
-          )}
-        </div>
+            <button type="submit" className="rounded-lg bg-teal px-4 py-2 text-sm font-bold text-midnight">
+              Apply filters
+            </button>
+          </div>
+        </details>
+        {hasFilters && (
+          <Link href={pageHref({ q: undefined, category: undefined, engagementType: undefined, workMode: undefined, workType: undefined, location: undefined, deadlineBefore: undefined, prefs: undefined, page: "1" })} className="inline-block text-xs font-semibold text-slate underline">
+            Clear filters
+          </Link>
+        )}
       </form>
 
       {pageItems.length === 0 ? (
@@ -339,7 +360,7 @@ export default async function OpportunitiesPage({
           {hasFilters ? (
             <>
               <p>No opportunities match these filters.</p>
-              <Link href={pageHref({ q: undefined, category: undefined, engagementType: undefined, workMode: undefined, workType: undefined, location: undefined, deadlineBefore: undefined, all: undefined, page: "1" })} className="mt-1 inline-block font-semibold text-teal-ink underline">
+              <Link href={pageHref({ q: undefined, category: undefined, engagementType: undefined, workMode: undefined, workType: undefined, location: undefined, deadlineBefore: undefined, prefs: undefined, page: "1" })} className="mt-1 inline-block font-semibold text-teal-ink underline">
                 Clear filters and see everything open
               </Link>
             </>
@@ -349,9 +370,9 @@ export default async function OpportunitiesPage({
         </div>
       ) : (
         <>
-          <ul className="mt-6 space-y-3">
+          <ul className="mt-6 grid gap-3 md:grid-cols-2">
             {pageItems.map((o) => (
-              <li key={o.id} className="rounded-xl border border-slate/15 bg-white p-5">
+              <li key={o.id} className="flex flex-col rounded-xl border border-slate/15 bg-white p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="font-bold text-midnight">{o.title}</p>
@@ -379,9 +400,9 @@ export default async function OpportunitiesPage({
                     </span>
                   ))}
                 </div>
-                <div className="mt-3 flex items-center justify-between">
+                <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-3">
                   <p className="text-xs text-slate">
-                    {[o.location, o.work_mode, o.engagement_type?.replace("_", " ")].filter(Boolean).join(" · ")}
+                    {[o.location, o.work_mode && WORK_MODE_LABEL[o.work_mode], o.engagement_type && ENGAGEMENT_LABEL[o.engagement_type]].filter(Boolean).join(" · ")}
                     {o.application_deadline && ` · Apply by ${formatDate(o.application_deadline, { day: "numeric", month: "short", year: "numeric" })}`}
                   </p>
                   <div className="flex items-center gap-3">
@@ -389,13 +410,16 @@ export default async function OpportunitiesPage({
                     <ApplyButton opportunityId={o.id} alreadyApplied={appliedIds.has(o.id)} />
                   </div>
                 </div>
-                <div className="mt-2 flex items-center justify-between">
-                  <DismissButton opportunityId={o.id} />
-                  <div className="flex items-center gap-3">
+                {/* Secondary actions folded away so each card shows two
+                    clear choices (Save, Apply) instead of five. */}
+                <details className="mt-2 text-xs">
+                  <summary className="inline-block cursor-pointer font-semibold text-slate select-none">More options</summary>
+                  <div className="mt-2 flex flex-wrap items-center gap-4">
                     <ShareButton opportunityId={o.id} />
+                    <DismissButton opportunityId={o.id} />
                     <ReportButton targetType="opportunity" targetId={o.id} />
                   </div>
-                </div>
+                </details>
               </li>
             ))}
           </ul>

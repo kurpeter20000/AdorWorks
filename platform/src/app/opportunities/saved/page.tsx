@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireRole } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
+import { ENGAGEMENT_TYPE_LABEL, WORK_MODE_LABEL } from "@/lib/domain/taxonomy";
 import { ApplyButton } from "../apply-button";
 import { SaveButton } from "../save-button";
 
@@ -85,7 +86,9 @@ export default async function SavedOpportunitiesPage() {
               {o.brief && <p className="mt-2 line-clamp-3 text-sm text-slate">{o.brief}</p>}
               <div className="mt-3 flex items-center justify-between">
                 <p className="text-xs text-slate">
-                  {[o.location, o.work_mode, o.engagement_type?.replace("_", " ")].filter(Boolean).join(" · ")}
+                  {[o.location, o.work_mode && WORK_MODE_LABEL[o.work_mode], o.engagement_type && ENGAGEMENT_TYPE_LABEL[o.engagement_type]]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </p>
                 <div className="flex items-center gap-3">
                   <SaveButton opportunityId={o.id} initialSaved={true} />

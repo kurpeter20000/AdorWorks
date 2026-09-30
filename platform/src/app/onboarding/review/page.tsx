@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { requireRole } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
+import { CATEGORY_LABEL } from "@/lib/domain/taxonomy";
 import { ReviewForm } from "./review-form";
 
 export const metadata: Metadata = { title: "Review & publish" };
@@ -35,7 +36,7 @@ export default async function ReviewPage() {
         </div>
         <div>
           <dt className="font-semibold text-midnight">Category</dt>
-          <dd className="text-slate">{profile?.category?.replace(/_/g, " ") ?? "—"}</dd>
+          <dd className="text-slate">{profile?.category ? CATEGORY_LABEL[profile.category] : "—"}</dd>
         </div>
         <div>
           <dt className="font-semibold text-midnight">Skills</dt>

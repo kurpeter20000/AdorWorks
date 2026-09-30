@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "seed": "node scripts/seed.js",
     "migrate": "node scripts/apply-migrations.js",
-    "verify:clean-migrations": "node scripts/verify-clean-migrations.mjs"
+    "verify:clean-migrations": "node scripts/verify-clean-migrations.mjs",
+    "check:schema-drift": "node scripts/check-schema-drift.mjs"
   },
   "engines": {
     "node": ">=18.17"

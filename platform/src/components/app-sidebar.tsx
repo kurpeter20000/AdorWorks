@@ -61,48 +61,56 @@ export function AppSidebar({
 }) {
   const pathname = usePathname();
 
-  const items = [
-    { href: "/dashboard", label: "Dashboard", external: false },
-    ...actions.map((a) => ({ href: a.href, label: a.label, external: Boolean(a.external) })),
+  const toItem = (a: DashboardAction) => ({ href: a.href, label: a.label, external: Boolean(a.external) });
+  const mainItems = [{ href: "/dashboard", label: "Dashboard", external: false }, ...actions.filter((a) => !a.section).map(toItem)];
+  const supportItems = [
+    ...actions.filter((a) => a.section === "support").map(toItem),
     // S13-12 — always visible regardless of role, unlike the per-role
     // actions above: the platform app previously had no visible support
     // contact anywhere at all.
     { href: CONTACT_URL, label: "Help & Support", external: true },
   ];
 
-  function isActive(href: string) {
-    return pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`));
-  }
+  // Longest matching href wins, so /opportunities isn't also highlighted
+  // while /opportunities/saved is the page actually open.
+  const allHrefs = [...mainItems, ...supportItems].filter((i) => !i.external).map((i) => i.href);
+  const activeHref = allHrefs
+    .filter((href) => pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`)))
+    .sort((a, b) => b.length - a.length)[0];
 
   return (
     <nav aria-label="Primary" className="flex flex-col gap-0.5 p-3">
-      {items.map((item) => {
-        const Icon = ICONS[item.href] ?? Circle;
-        const active = !item.external && isActive(item.href);
-        const className = `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-          active ? "bg-teal/10 text-teal-ink" : "text-slate hover:bg-cloud hover:text-midnight"
-        }`;
-        if (item.external) {
-          return (
-            <a key={item.href} href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
-              <Icon className="size-4 shrink-0" aria-hidden="true" />
-              {item.label}
-            </a>
-          );
-        }
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            aria-current={active ? "page" : undefined}
-            className={className}
-          >
-            <Icon className="size-4 shrink-0" aria-hidden="true" />
-            {item.label}
-          </Link>
-        );
-      })}
+      {mainItems.map(renderItem)}
+      <p className="mt-4 mb-1 px-3 text-[11px] font-bold tracking-wide text-slate uppercase">Support</p>
+      {supportItems.map(renderItem)}
     </nav>
   );
+
+  function renderItem(item: { href: string; label: string; external: boolean }) {
+    const Icon = ICONS[item.href] ?? Circle;
+    const active = !item.external && item.href === activeHref;
+    const className = `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+      active ? "bg-teal/10 text-teal-ink" : "text-slate hover:bg-cloud hover:text-midnight"
+    }`;
+    if (item.external) {
+      return (
+        <a key={item.href} href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
+          <Icon className="size-4 shrink-0" aria-hidden="true" />
+          {item.label}
+        </a>
+      );
+    }
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={onNavigate}
+        aria-current={active ? "page" : undefined}
+        className={className}
+      >
+        <Icon className="size-4 shrink-0" aria-hidden="true" />
+        {item.label}
+      </Link>
+    );
+  }
 }

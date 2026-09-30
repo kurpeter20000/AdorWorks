@@ -15,6 +15,14 @@ const CHECK_LABEL: Record<string, string> = {
   representative: "Representative",
 };
 
+const OPPORTUNITY_TYPE_LABEL: Record<string, string> = {
+  service: "Service",
+  project: "Project",
+  contract: "Contract",
+  full_time: "Full-time role",
+  squad: "Talent squad",
+};
+
 export const metadata: Metadata = { title: "Your organisation" };
 
 export default async function OrganisationPage({
@@ -66,13 +74,66 @@ export default async function OrganisationPage({
             href="/organisation/opportunities/new"
             className="whitespace-nowrap rounded-lg bg-violet px-4 py-2 text-sm font-bold text-white"
           >
-            Post a new opportunity
+            Post an opportunity
           </Link>
           <Link href="/organisation/team" className="text-xs font-semibold text-violet underline">
             Manage team
           </Link>
         </div>
       </div>
+
+      {posted && (
+        <p className="mt-4 rounded-lg bg-teal/10 px-4 py-3 text-sm font-semibold text-teal-ink">
+          Submitted for review. AdorWorks staff will publish it once approved.
+        </p>
+      )}
+
+      {org.verification_status !== "verified" && org.representative_id === session.userId && (
+        <div className="mt-6 rounded-xl border border-coral/30 bg-coral/5 p-5">
+          <h2 className="font-bold text-midnight">Verification evidence</h2>
+          <p className="mt-1 text-sm text-slate">
+            Upload a registration document (certificate, license, or similar) so AdorWorks staff
+            can verify your organisation.
+          </p>
+          <EvidenceUpload orgId={org.id} existingPath={org.registration_evidence_path} />
+        </div>
+      )}
+
+      {/* Opportunities come before settings: they're what an employer
+          opens this page for day to day. */}
+      <div className="mt-8">
+        <h2 className="font-bold text-midnight">Your opportunities</h2>
+        {!opportunities || opportunities.length === 0 ? (
+          <p className="mt-2 text-sm text-slate">
+            Nothing posted yet.{" "}
+            <Link href="/organisation/opportunities/new" className="font-semibold text-violet underline">
+              Post your first opportunity
+            </Link>
+            .
+          </p>
+        ) : (
+          <ul className="mt-3 space-y-2">
+            {opportunities.map((o) => (
+              <li key={o.id}>
+                <Link
+                  href={`/organisation/opportunities/${o.id}`}
+                  className="flex items-center justify-between rounded-xl border border-slate/15 bg-white p-4 hover:border-violet/40"
+                >
+                  <div>
+                    <p className="font-semibold text-midnight">{o.title}</p>
+                    <p className="text-xs text-slate">{OPPORTUNITY_TYPE_LABEL[o.type] ?? o.type}</p>
+                  </div>
+                  <StatusBadge state={OPPORTUNITY_STATES[o.status]} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {org.representative_id === session.userId && (
+        <h2 className="mt-10 border-t border-slate/15 pt-6 font-bold text-midnight">Organisation settings</h2>
+      )}
 
       {org.representative_id === session.userId && (
         <div className="mt-6 rounded-xl border border-slate/15 bg-white p-5">
@@ -120,52 +181,6 @@ export default async function OrganisationPage({
         </div>
       )}
 
-      {posted && (
-        <p className="mt-4 rounded-lg bg-teal/10 px-4 py-3 text-sm font-semibold text-teal-ink">
-          Submitted for review. AdorWorks staff will publish it once approved.
-        </p>
-      )}
-
-      {org.verification_status !== "verified" && org.representative_id === session.userId && (
-        <div className="mt-6 rounded-xl border border-coral/30 bg-coral/5 p-5">
-          <h2 className="font-bold text-midnight">Verification evidence</h2>
-          <p className="mt-1 text-sm text-slate">
-            Upload a registration document (certificate, license, or similar) so AdorWorks staff
-            can verify your organisation.
-          </p>
-          <EvidenceUpload orgId={org.id} existingPath={org.registration_evidence_path} />
-        </div>
-      )}
-
-      <div className="mt-8">
-        <h2 className="font-bold text-midnight">Your opportunities</h2>
-        {!opportunities || opportunities.length === 0 ? (
-          <p className="mt-2 text-sm text-slate">
-            Nothing posted yet.{" "}
-            <Link href="/organisation/opportunities/new" className="font-semibold text-violet underline">
-              Post your first opportunity
-            </Link>
-            .
-          </p>
-        ) : (
-          <ul className="mt-3 space-y-2">
-            {opportunities.map((o) => (
-              <li key={o.id}>
-                <Link
-                  href={`/organisation/opportunities/${o.id}`}
-                  className="flex items-center justify-between rounded-xl border border-slate/15 bg-white p-4 hover:border-violet/40"
-                >
-                  <div>
-                    <p className="font-semibold text-midnight">{o.title}</p>
-                    <p className="text-xs text-slate">{o.type.replace("_", " ")}</p>
-                  </div>
-                  <StatusBadge state={OPPORTUNITY_STATES[o.status]} />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
     </main>
   );
 }
