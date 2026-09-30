@@ -118,6 +118,8 @@ body { background: var(--color-surface-alt); }
   font-weight: 600;
 }
 .dashboard-error .btn { flex-shrink: 0; }
+/* display:flex above would otherwise beat the `hidden` attribute, leaving the banner permanently visible. */
+.dashboard-error[hidden] { display: none; }
 
 /* Data tables — overflow-x:auto (not the old overflow:hidden) so wide
    tables scroll horizontally on narrow screens instead of silently
