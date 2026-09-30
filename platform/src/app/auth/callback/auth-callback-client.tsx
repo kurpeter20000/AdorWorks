@@ -86,11 +86,18 @@ export function AuthCallbackClient() {
 
   useEffect(() => {
     const rawNext = searchParams.get("next");
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    // Supabase stamps the link's purpose into the hash itself, and it
+    // survives even when `?next=` doesn't (dashboard-sent emails, or a
+    // redirectTo missing from the Redirect URLs allowlist). A recovery
+    // link must always reach the password form, whatever `next` says.
+    const linkType = hashParams.get("type");
+    const forcedNext = linkType === "recovery" ? "/reset-password" : linkType === "invite" ? "/activate-account" : null;
 
     async function proceed() {
       if (settled.current) return;
       settled.current = true;
-      const next = rawNext ? resolveSafeNextPath(rawNext) : await resolveDefaultNextPath(supabase);
+      const next = forcedNext ?? (rawNext ? resolveSafeNextPath(rawNext) : await resolveDefaultNextPath(supabase));
       router.replace(next);
     }
 
@@ -106,7 +113,6 @@ export function AuthCallbackClient() {
       // client instance exists (e.g. React's dev-mode double-effect-
       // invocation), since the second instance finds nothing left to
       // parse.
-      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
       const accessToken = hashParams.get("access_token");
       const refreshToken = hashParams.get("refresh_token");
       if (accessToken && refreshToken) {
