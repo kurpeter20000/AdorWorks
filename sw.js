@@ -18,7 +18,7 @@
   visitors' installed copies pick up the update instead of serving stale
   content indefinitely.
 */
-const CACHE_VERSION = "adorworks-v9";
+const CACHE_VERSION = "adorworks-v10";
 const SHELL_CACHE = CACHE_VERSION + "-shell";
 const RUNTIME_CACHE = CACHE_VERSION + "-runtime";
 
@@ -47,6 +47,8 @@ const SHELL_URLS = [
   "/css/themes.css",
   "/css/styles.css",
   "/js/main.js",
+  "/js/i18n.js",
+  "/js/i18n-early.js",
   "/js/supabase-config.js",
   "/js/analytics-config.js",
   "/js/analytics.js",
@@ -93,17 +95,23 @@ self.addEventListener("fetch", function (event) {
   // CDN, future API host) — only manage caching for same-origin site files.
   if (new URL(request.url).origin !== self.location.origin) return;
 
-  if (request.mode === "navigate") {
+  // Translations (i18n/ar.json, sw.json) go network-first so a translator's
+  // fix shows on the next visit, falling back to the saved copy offline.
+  var isTranslation = new URL(request.url).pathname.indexOf("/i18n/") === 0;
+
+  if (request.mode === "navigate" || isTranslation) {
     event.respondWith(
       fetch(request)
         .then(function (response) {
           var copy = response.clone();
-          caches.open(SHELL_CACHE).then(function (cache) { cache.put(request, copy); });
+          if (response && response.status === 200) {
+            caches.open(isTranslation ? RUNTIME_CACHE : SHELL_CACHE).then(function (cache) { cache.put(request, copy); });
+          }
           return response;
         })
         .catch(function () {
           return caches.match(request).then(function (cached) {
-            return cached || caches.match("/offline.html");
+            return cached || (isTranslation ? Response.error() : caches.match("/offline.html"));
           });
         })
     );

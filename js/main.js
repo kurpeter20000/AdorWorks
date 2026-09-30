@@ -313,7 +313,9 @@
         var select = document.getElementById("sv-service");
         var title = modalRequest.getAttribute("data-service-title");
         if (select && title) {
-          var match = Array.from(select.options).find(function (opt) { return opt.text === title; });
+          // Match on value too: js/i18n.js pins each option's value to its
+          // English text, so this still finds it when labels are translated.
+          var match = Array.from(select.options).find(function (opt) { return opt.value === title || opt.text === title; });
           if (match) select.value = match.value;
         }
         serviceModal.close();

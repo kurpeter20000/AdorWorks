@@ -76,49 +76,72 @@
     return node;
   }
 
+  // Employer-written content (titles, names, briefs, skills, places) is
+  // marked no-i18n so the translation layer (js/i18n.js) never rewrites
+  // it; only AdorWorks' own labels around it are translated.
+  function userText(tag, className, text) {
+    var node = el(tag, className ? className + " no-i18n" : "no-i18n", text);
+    return node;
+  }
+
   function renderCard(o) {
     var card = el("article", "card opportunity-card");
 
     var head = el("div", "opportunity-head");
     var titleWrap = el("div");
     var title = el("h3", "opportunity-title");
-    var titleLink = el("a", null, o.title);
+    var titleLink = userText("a", null, o.title);
+    titleLink.id = "opp-title-" + o.id;
     titleLink.href = PLATFORM_URL + "/jobs/" + encodeURIComponent(o.id);
     title.appendChild(titleLink);
     titleWrap.appendChild(title);
     var org = orgs[o.organisation_id];
-    var employer = el("p", "opportunity-employer", org && org.name ? org.name : "AdorWorks employer");
+    var employer = el("p", "opportunity-employer");
+    if (org && org.name) employer.appendChild(userText("span", null, org.name));
+    else employer.appendChild(el("span", null, "AdorWorks employer"));
     if (org && org.verification_status === "verified") {
       employer.appendChild(el("span", "opportunity-verified", "Verified"));
     }
     titleWrap.appendChild(employer);
     head.appendChild(titleWrap);
-    head.appendChild(el("p", "opportunity-pay", formatCompensation(o)));
+    var amount = o.compensation_amount || (o.compensation_min && o.compensation_max);
+    head.appendChild(amount ? userText("p", "opportunity-pay", formatCompensation(o)) : el("p", "opportunity-pay", formatCompensation(o)));
     card.appendChild(head);
 
-    if (o.brief) card.appendChild(el("p", "opportunity-brief", o.brief));
+    if (o.brief) card.appendChild(userText("p", "opportunity-brief", o.brief));
 
     if (o.skills && o.skills.length) {
       var skills = el("ul", "opportunity-skills");
       skills.setAttribute("aria-label", "Required skills");
       o.skills.slice(0, 6).forEach(function (s) {
-        skills.appendChild(el("li", null, s));
+        skills.appendChild(userText("li", null, s));
       });
       card.appendChild(skills);
     }
 
-    var meta = [
-      ENGAGEMENT_LABEL[o.engagement_type],
-      WORK_MODE_LABEL[o.work_mode],
-      o.location,
-      o.application_deadline ? "Apply by " + formatDate(o.application_deadline) : null,
-    ].filter(Boolean);
+    // Each part is its own element so labels translate and places/dates don't.
+    var parts = [];
+    if (ENGAGEMENT_LABEL[o.engagement_type]) parts.push(el("span", null, ENGAGEMENT_LABEL[o.engagement_type]));
+    if (WORK_MODE_LABEL[o.work_mode]) parts.push(el("span", null, WORK_MODE_LABEL[o.work_mode]));
+    if (o.location) parts.push(userText("span", null, o.location));
+    if (o.application_deadline) {
+      var by = el("span");
+      by.appendChild(el("span", null, "Apply by"));
+      by.appendChild(document.createTextNode(" "));
+      by.appendChild(userText("span", null, formatDate(o.application_deadline)));
+      parts.push(by);
+    }
+    var metaLine = el("p", "opportunity-meta");
+    parts.forEach(function (p, i) {
+      if (i) metaLine.appendChild(document.createTextNode(" · "));
+      metaLine.appendChild(p);
+    });
 
     var foot = el("div", "opportunity-foot");
-    foot.appendChild(el("p", "opportunity-meta", meta.join(" · ")));
+    foot.appendChild(metaLine);
     var apply = el("a", "btn btn-primary opportunity-apply", "View & apply");
     apply.href = PLATFORM_URL + "/jobs/" + encodeURIComponent(o.id);
-    apply.setAttribute("aria-label", "View and apply for " + o.title);
+    apply.setAttribute("aria-describedby", titleLink.id);
     foot.appendChild(apply);
     card.appendChild(foot);
 

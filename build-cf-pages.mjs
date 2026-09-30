@@ -42,4 +42,14 @@ for (const d of DIRS) {
   cpSync(join(ROOT, d), join(OUT_DIR, d), { recursive: true });
 }
 
-console.log(`Copied ${htmlFiles.length} HTML pages + ${DIRS.length} directories into ${OUT_DIR}`);
+// Translations: rebuild i18n/ar.json + sw.json from the translators'
+// spreadsheet (i18n/website.csv) on every deploy, so an edited CSV reaches
+// the site with no extra step. Only the JSON is published, not the CSV.
+const { buildDictionaries } = await import("./tools/i18n/build-dictionaries.mjs");
+buildDictionaries({ quiet: true });
+mkdirSync(join(OUT_DIR, "i18n"), { recursive: true });
+for (const f of readdirSync(join(ROOT, "i18n")).filter((f) => f.endsWith(".json"))) {
+  cpSync(join(ROOT, "i18n", f), join(OUT_DIR, "i18n", f));
+}
+
+console.log(`Copied ${htmlFiles.length} HTML pages + ${DIRS.length} directories + translations into ${OUT_DIR}`);

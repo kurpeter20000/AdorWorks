@@ -1826,3 +1826,67 @@ input[type="checkbox"], input[type="radio"] {
   .opportunity-foot { margin-top: 0.75rem; }
   .opportunity-apply { min-height: 40px; padding: 0.5em 1em; }
 }
+
+/* ------------------------------------------------------------------
+   Languages (js/i18n.js): picker, no-flash loading, Arabic (RTL)
+   ------------------------------------------------------------------ */
+.aw-i18n-pending body { visibility: hidden; }
+
+.nav-lang { display: flex; align-items: center; }
+.nav-lang select {
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  max-width: 100%;
+}
+.nav-lang select:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+@media (min-width: 960px) { .nav-lang { margin-inline-start: 0.5rem; } }
+
+html[lang="ar"] body,
+html[lang="ar"] button,
+html[lang="ar"] input,
+html[lang="ar"] select,
+html[lang="ar"] textarea {
+  font-family: "Noto Sans Arabic", "Manrope", system-ui, -apple-system, "Segoe UI", Tahoma, Arial, sans-serif;
+}
+/* Arabic script reads best a little larger and without Latin letter-spacing. */
+html[lang="ar"] body { letter-spacing: 0; line-height: 1.75; }
+html[lang="ar"] h1, html[lang="ar"] h2, html[lang="ar"] h3 { letter-spacing: 0; line-height: 1.4; }
+
+/* Mirror the rules above that use physical left/right. */
+[dir="rtl"] .skip-link { left: auto; right: 1rem; }
+@media (min-width: 960px) {
+  [dir="rtl"] .site-nav .nav-cta {
+    margin-left: 0; margin-right: 0.5rem;
+    padding-left: 0; padding-right: 1.5rem;
+    border-left: 0; border-right: 1px solid var(--color-border);
+  }
+}
+[dir="rtl"] .jump-nav a.jump-nav-cta { margin-left: 0; margin-right: auto; }
+[dir="rtl"] .check-list li, [dir="rtl"] .marker-list li { padding-left: 0; padding-right: 1.4em; }
+[dir="rtl"] .check-list li::before, [dir="rtl"] .marker-list li::before { left: auto; right: 0; }
+[dir="rtl"] .trust-story-list li { padding-left: 0; padding-right: 1.8rem; }
+[dir="rtl"] .trust-story-list li::before { left: auto; right: 0; }
+[dir="rtl"] .journey-steps li:not(:last-child)::after { left: auto; right: 17px; }
+[dir="rtl"] .notice { border-left: 0; border-right: 4px solid var(--color-accent); }
+[dir="rtl"] .notice-violet { border-right-color: var(--color-secondary); }
+[dir="rtl"] table.compare th, [dir="rtl"] table.compare td { text-align: right; }
+[dir="rtl"] .table-wrap::after { right: auto; left: 0; float: left; margin-left: 0; margin-right: -1.5rem; background: linear-gradient(to left, transparent, var(--color-surface)); }
+[dir="rtl"] .mobile-contact-bar a { border-right: 0; border-left: 1px solid var(--color-border); }
+[dir="rtl"] .mobile-contact-bar a:last-child { border-left: none; }
+@media (min-width: 700px) {
+  [dir="rtl"] .service-deck-panel, [dir="rtl"] .service-deck-intro { text-align: right; }
+}
+
+@media (min-width: 960px) { [dir="rtl"] .install-banner { right: auto; left: 1.25rem; } }
+@media (min-width: 480px) { [dir="rtl"] .cookie-consent-banner { right: 1rem; left: auto; } }
+/* Arrows written into copy ("See all →") point the reading direction. */
+[dir="rtl"] .arrow-inline, [dir="rtl"] .btn .arrow { display: inline-block; transform: scaleX(-1); }
+/* Phone numbers, emails and prices stay left-to-right inside Arabic text. */
+[dir="rtl"] a[href^="tel:"], [dir="rtl"] a[href^="mailto:"], [dir="rtl"] .opportunity-pay { direction: ltr; unicode-bidi: isolate; }
