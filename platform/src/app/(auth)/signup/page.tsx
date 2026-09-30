@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { resolveReturnPath } from "@/lib/domain/redirects";
 import { SignupForm } from "./signup-form";
 
 export const metadata: Metadata = { title: "Create your account" };
@@ -7,9 +8,10 @@ export const metadata: Metadata = { title: "Create your account" };
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ intent?: string }>;
+  searchParams: Promise<{ intent?: string; next?: string }>;
 }) {
-  const { intent } = await searchParams;
+  const { intent, next } = await searchParams;
+  const returnTo = resolveReturnPath(next);
   const defaultIntent = intent === "hire" ? "hire" : "talent";
 
   return (
@@ -18,11 +20,11 @@ export default async function SignupPage({
       <p className="mt-1 text-sm text-slate">
         Free to register, always. We&apos;ll never charge you to be considered for work.
       </p>
-      <SignupForm defaultIntent={defaultIntent} />
+      <SignupForm defaultIntent={defaultIntent} next={returnTo} />
       <p className="mt-4 text-center text-sm text-slate">
         Already have an account?{" "}
         {/* prefetch off — see the matching comment in ../login/page.tsx (S12-12) */}
-        <Link href="/login" prefetch={false} className="font-semibold text-teal-ink">
+        <Link href={returnTo ? `/login?next=${encodeURIComponent(returnTo)}` : "/login"} prefetch={false} className="font-semibold text-teal-ink">
           Sign in
         </Link>
       </p>

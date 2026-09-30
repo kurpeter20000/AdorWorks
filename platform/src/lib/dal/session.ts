@@ -1,9 +1,17 @@
 import "server-only";
 import { cache } from "react";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { UserRole } from "@/lib/database.types";
 import { EMPLOYER_ACCOUNT_ROLES, STAFF_ACCOUNT_ROLES, isStaffAccountRole } from "@/lib/domain/roles";
+import { REQUEST_PATH_HEADER, resolveReturnPath } from "@/lib/domain/redirects";
+
+/** /login, carrying the page that was requested so sign-in can return there. */
+async function loginPathForCurrentRequest(): Promise<string> {
+  const returnTo = resolveReturnPath((await headers()).get(REQUEST_PATH_HEADER));
+  return returnTo ? `/login?next=${encodeURIComponent(returnTo)}` : "/login";
+}
 
 export interface VerifiedSession {
   userId: string;
@@ -82,7 +90,10 @@ export async function requireSession(): Promise<VerifiedSession> {
  */
 export async function requireSessionWithoutMfaGate(): Promise<VerifiedSession> {
   const session = await verifySession();
-  if (!session || session.status !== "active") {
+  if (!session) {
+    redirect(await loginPathForCurrentRequest());
+  }
+  if (session.status !== "active") {
     redirect("/login");
   }
   return session;

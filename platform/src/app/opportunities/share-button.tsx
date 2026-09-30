@@ -3,17 +3,14 @@
 import { useState } from "react";
 
 /**
- * S07-10: links to the same auth-gated apply page every other in-app link
- * already uses — never exposes anything a signed-in talent couldn't
- * already reach on their own, since the recipient still needs their own
- * AdorWorks account and the opportunity still needs to be status='open'
- * for the link to resolve to anything (RLS/apply-page checks unchanged).
+ * S07-10: shares the public job page (/jobs/[id]), which anyone can read
+ * without an account — it only ever shows open, public opportunities.
  */
 export function ShareButton({ opportunityId }: { opportunityId: string }) {
   const [copied, setCopied] = useState(false);
 
   function share() {
-    const url = `${window.location.origin}/opportunities/${opportunityId}/apply`;
+    const url = `${window.location.origin}/jobs/${opportunityId}`;
     if (navigator.share) {
       navigator.share({ url, title: "AdorWorks opportunity" }).catch(() => {
         /* user cancelled the native share sheet — not an error */

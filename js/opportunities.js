@@ -81,7 +81,11 @@
 
     var head = el("div", "opportunity-head");
     var titleWrap = el("div");
-    titleWrap.appendChild(el("h3", "opportunity-title", o.title));
+    var title = el("h3", "opportunity-title");
+    var titleLink = el("a", null, o.title);
+    titleLink.href = PLATFORM_URL + "/jobs/" + encodeURIComponent(o.id);
+    title.appendChild(titleLink);
+    titleWrap.appendChild(title);
     var org = orgs[o.organisation_id];
     var employer = el("p", "opportunity-employer", org && org.name ? org.name : "AdorWorks employer");
     if (org && org.verification_status === "verified") {
@@ -112,9 +116,9 @@
 
     var foot = el("div", "opportunity-foot");
     foot.appendChild(el("p", "opportunity-meta", meta.join(" · ")));
-    var apply = el("a", "btn btn-primary opportunity-apply", "Apply on AdorWorks");
-    apply.href = PLATFORM_URL + "/opportunities/" + encodeURIComponent(o.id) + "/apply";
-    apply.setAttribute("aria-label", "Apply for " + o.title + " on AdorWorks");
+    var apply = el("a", "btn btn-primary opportunity-apply", "View & apply");
+    apply.href = PLATFORM_URL + "/jobs/" + encodeURIComponent(o.id);
+    apply.setAttribute("aria-label", "View and apply for " + o.title);
     foot.appendChild(apply);
     card.appendChild(foot);
 

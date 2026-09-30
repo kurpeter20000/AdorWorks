@@ -1,9 +1,11 @@
 "use server";
 
 import { z } from "zod";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
+import { RETURN_TO_COOKIE, resolveReturnPath } from "@/lib/domain/redirects";
 import type { FormState } from "./auth";
 
 const BasicsSchema = z.object({
@@ -121,5 +123,12 @@ export async function confirmPublicationConsent(_prevState: FormState, formData:
     return { message: `Could not record your confirmation: ${error.message}` };
   }
 
+  // Someone who signed up from a job link goes back to that job (see signup()).
+  const cookieStore = await cookies();
+  const returnTo = resolveReturnPath(cookieStore.get(RETURN_TO_COOKIE)?.value);
+  if (returnTo) {
+    cookieStore.delete(RETURN_TO_COOKIE);
+    redirect(returnTo);
+  }
   redirect("/dashboard?onboarding=submitted");
 }

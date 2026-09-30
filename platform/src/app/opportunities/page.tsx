@@ -375,7 +375,9 @@ export default async function OpportunitiesPage({
               <li key={o.id} className="flex flex-col rounded-xl border border-slate/15 bg-white p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="font-bold text-midnight">{o.title}</p>
+                    <Link href={`/jobs/${o.id}`} className="font-bold text-midnight hover:underline">
+                      {o.title}
+                    </Link>
                     <p className="flex items-center gap-1.5 text-xs text-slate">
                       {orgInfo.get(o.organisation_id)?.name ?? "AdorWorks employer"}
                       {orgInfo.get(o.organisation_id)?.verified && (

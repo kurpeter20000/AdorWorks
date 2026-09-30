@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -8,6 +9,7 @@ import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import { checkAndRecordAttempt, getClientIp } from "@/lib/domain/rateLimit";
 import { sendEmailSafely } from "@/lib/email";
 import { renderEmail } from "@/lib/emailTemplate";
+import { RETURN_TO_COOKIE, resolveReturnPath } from "@/lib/domain/redirects";
 
 export interface FormState {
   errors?: Record<string, string[]>;
@@ -56,6 +58,15 @@ export async function signup(_prevState: FormState, formData: FormData): Promise
   }
 
   const { fullName, email, password, intent } = validated.data;
+
+  // A new account can't go straight back to e.g. a job's apply page —
+  // applying needs the talent profile onboarding creates — so the page is
+  // remembered here and completeOnboardingReturn() sends them there once
+  // onboarding is done, across the email-confirmation round trip.
+  const returnTo = resolveReturnPath(formData.get("next") as string | null);
+  if (returnTo) {
+    (await cookies()).set(RETURN_TO_COOKIE, returnTo, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 7 });
+  }
 
   // S04-05 — by IP, not email: the thing worth limiting here is one
   // source creating many accounts, not repeated attempts for one
@@ -173,7 +184,7 @@ export async function login(_prevState: FormState, formData: FormData): Promise<
     return { message: "Incorrect email or password." };
   }
 
-  redirect("/dashboard");
+  redirect(resolveReturnPath(formData.get("next") as string | null) ?? "/dashboard");
 }
 
 export async function logout() {

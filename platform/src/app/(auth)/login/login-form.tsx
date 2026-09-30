@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button";
 
 const initialState: FormState = {};
 
-export function LoginForm() {
+export function LoginForm({ next }: { next?: string | null }) {
   const [state, formAction, pending] = useActionState(login, initialState);
 
   return (
     <form action={formAction} className="mt-6 space-y-4">
+      {next && <input type="hidden" name="next" value={next} />}
       <div>
         <label htmlFor="email" className="text-sm font-semibold text-midnight">
           Email

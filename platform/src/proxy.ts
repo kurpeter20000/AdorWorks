@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { REQUEST_PATH_HEADER } from "@/lib/domain/redirects";
 
 /**
  * Runs on every request (see matcher below) to refresh the Supabase
@@ -21,8 +22,16 @@ import { NextResponse, type NextRequest } from "next/server";
 const INACTIVITY_LIMIT_MS = 30 * 60 * 1000; // 30 minutes
 const LAST_ACTIVE_COOKIE = "aw_last_active";
 
+// Server Components can't read the URL they were requested at, so the
+// path is forwarded as a request header — lib/dal/session.ts uses it to
+// send someone back to the page they wanted after signing in.
 export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  const forward = () => {
+    const headers = new Headers(request.headers);
+    headers.set(REQUEST_PATH_HEADER, request.nextUrl.pathname + request.nextUrl.search);
+    return NextResponse.next({ request: { headers } });
+  };
+  let response = forward();
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -34,7 +43,7 @@ export async function proxy(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request });
+          response = forward();
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           );

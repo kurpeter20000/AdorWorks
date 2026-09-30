@@ -17,12 +17,14 @@ export function HeroVideoBackground({ className }: { className?: string }) {
     const video = videoRef.current;
     if (!video) return;
 
-    const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
+    const nav = navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } };
     const saveData = Boolean(nav.connection?.saveData);
+    // A laptop tethered to a phone on 2G/3G still reports a wide screen.
+    const slowConnection = /(^|-)2g$|^3g$/.test(nav.connection?.effectiveType ?? "");
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const wideEnough = window.matchMedia("(min-width: 768px)").matches;
 
-    if (wideEnough && !reduceMotion && !saveData) {
+    if (wideEnough && !reduceMotion && !saveData && !slowConnection) {
       video.muted = true;
       video.play().catch(() => {
         // Autoplay blocked by the browser — poster frame stays visible.

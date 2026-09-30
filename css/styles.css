@@ -1687,6 +1687,8 @@ input[type="checkbox"], input[type="radio"] {
 .opportunity-card:hover { transform: none; }
 .opportunity-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
 .opportunity-title { margin: 0; font-size: 1.1rem; }
+.opportunity-title a { color: inherit; text-decoration: none; }
+.opportunity-title a:hover { text-decoration: underline; }
 .opportunity-employer { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--color-muted); display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
 .opportunity-verified { font-size: 0.7rem; font-weight: 800; color: var(--color-accent-text); background: rgba(0, 168, 143, 0.12); border-radius: 999px; padding: 0.15em 0.6em; }
 .opportunity-pay { margin: 0; font-weight: 800; color: var(--color-accent-text); white-space: nowrap; }

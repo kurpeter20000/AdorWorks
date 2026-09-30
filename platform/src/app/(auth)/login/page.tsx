@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Briefcase, LogIn, Search } from "lucide-react";
+import { resolveReturnPath } from "@/lib/domain/redirects";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Sign in" };
@@ -17,10 +18,13 @@ const INTENT_COPY = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ as?: string }>;
+  searchParams: Promise<{ as?: string; next?: string }>;
 }) {
-  const { as } = await searchParams;
+  const { as, next } = await searchParams;
   const intent = as === "hire" ? "hire" : as === "talent" ? "talent" : null;
+  // The page someone was sent here from, carried through to sign-in/sign-up.
+  const returnTo = resolveReturnPath(next);
+  const withNext = (href: string) => (returnTo ? `${href}${href.includes("?") ? "&" : "?"}next=${encodeURIComponent(returnTo)}` : href);
 
   return (
     <div>
@@ -36,7 +40,7 @@ export default async function LoginPage({
           disabled here since none of these need instant navigation. */}
       <div className="mb-6 flex gap-1 rounded-lg bg-cloud p-1 text-sm font-semibold" role="tablist" aria-label="Signing in as">
         <Link
-          href="/login?as=talent"
+          href={withNext("/login?as=talent")}
           prefetch={false}
           role="tab"
           aria-selected={intent === "talent"}
@@ -48,7 +52,7 @@ export default async function LoginPage({
           Find work
         </Link>
         <Link
-          href="/login?as=hire"
+          href={withNext("/login?as=hire")}
           prefetch={false}
           role="tab"
           aria-selected={intent === "hire"}
@@ -66,11 +70,11 @@ export default async function LoginPage({
       </span>
       <h1 className="mt-3 text-2xl font-bold text-midnight">Sign in</h1>
       {intent && <p className="mt-1 text-sm text-slate">{INTENT_COPY[intent]}</p>}
-      <LoginForm />
+      <LoginForm next={returnTo} />
       <p className="mt-4 text-center text-sm text-slate">
         New to AdorWorks?{" "}
         <Link
-          href={intent ? `/signup?intent=${intent}` : "/signup"}
+          href={withNext(intent ? `/signup?intent=${intent}` : "/signup")}
           prefetch={false}
           className="font-semibold text-teal-ink hover:underline"
         >

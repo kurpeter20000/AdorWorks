@@ -128,9 +128,11 @@
     var heroVideos = document.querySelectorAll(".hero-video");
     if (heroVideos.length) {
       var saveData = Boolean(navigator.connection && navigator.connection.saveData);
+      // A laptop tethered to a phone on 2G/3G still reports a wide screen.
+      var slowConnection = Boolean(navigator.connection && /(^|-)2g$|^3g$/.test(navigator.connection.effectiveType || ""));
       var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       var wideEnough = window.matchMedia("(min-width: 768px)").matches;
-      if (wideEnough && !reduceMotion && !saveData) {
+      if (wideEnough && !reduceMotion && !saveData && !slowConnection) {
         heroVideos.forEach(function (heroVideo) {
           heroVideo.muted = true;
           heroVideo.play().catch(function () {

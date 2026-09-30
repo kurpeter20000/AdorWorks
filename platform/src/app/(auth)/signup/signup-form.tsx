@@ -8,11 +8,12 @@ import { MARKETING_SITE_URL } from "@/lib/domain/marketingSite";
 
 const initialState: FormState = {};
 
-export function SignupForm({ defaultIntent = "talent" }: { defaultIntent?: "talent" | "hire" }) {
+export function SignupForm({ defaultIntent = "talent", next }: { defaultIntent?: "talent" | "hire"; next?: string | null }) {
   const [state, formAction, pending] = useActionState(signup, initialState);
 
   return (
     <form action={formAction} className="mt-6 space-y-4">
+      {next && <input type="hidden" name="next" value={next} />}
       <fieldset className="space-y-2">
         <legend className="text-sm font-semibold text-midnight">I&apos;m here to</legend>
         <label className="flex items-center gap-2 rounded-lg border border-slate/20 p-3 text-sm has-[:checked]:border-teal has-[:checked]:bg-teal/5">
