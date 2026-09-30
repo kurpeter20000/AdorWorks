@@ -100,7 +100,7 @@ jobs:
           done
           echo "App did not become ready in time." >&2
           exit 1
-      - run: npx lhci autorun
+      - run: npx --yes @lhci/cli@0.15.1 autorun
       - name: Print LCP diagnostics
         if: always()
         run: node scripts/lh-diagnose.mjs

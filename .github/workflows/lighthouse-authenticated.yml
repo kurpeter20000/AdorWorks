@@ -55,7 +55,7 @@ jobs:
           done
           echo "App did not become ready in time." >&2
           exit 1
-      - run: npx lhci autorun --config=.lighthouserc.authenticated.json
+      - run: npx --yes @lhci/cli@0.15.1 autorun --config=.lighthouserc.authenticated.json
         env:
           LH_TALENT_EMAIL: lighthouse-talent@adorworks-test.local
           LH_TALENT_PASSWORD: LighthouseTestPass1234
