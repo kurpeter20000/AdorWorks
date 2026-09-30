@@ -172,7 +172,7 @@ export default async function OpportunitiesPage({
   }
 
   return (
-    <main className="mx-auto max-w-2xl p-6 sm:p-8">
+    <main className="mx-auto max-w-5xl p-6 sm:p-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-extrabold text-midnight">Find work</h1>
         <div className="flex items-center gap-3">
@@ -233,7 +233,7 @@ export default async function OpportunitiesPage({
         </p>
       )}
 
-      <form method="get" className="mt-4 space-y-2">
+      <form method="get" className="mt-4 max-w-3xl space-y-2">
         <input type="hidden" name="sort" value={sortMode} />
         {workType && <input type="hidden" name="workType" value={workType} />}
         {usingPreferenceDefaults && <input type="hidden" name="prefs" value="1" />}
@@ -370,9 +370,9 @@ export default async function OpportunitiesPage({
         </div>
       ) : (
         <>
-          <ul className="mt-6 space-y-3">
+          <ul className="mt-6 grid gap-3 md:grid-cols-2">
             {pageItems.map((o) => (
-              <li key={o.id} className="rounded-xl border border-slate/15 bg-white p-5">
+              <li key={o.id} className="flex flex-col rounded-xl border border-slate/15 bg-white p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="font-bold text-midnight">{o.title}</p>
@@ -400,7 +400,7 @@ export default async function OpportunitiesPage({
                     </span>
                   ))}
                 </div>
-                <div className="mt-3 flex items-center justify-between">
+                <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-3">
                   <p className="text-xs text-slate">
                     {[o.location, o.work_mode && WORK_MODE_LABEL[o.work_mode], o.engagement_type && ENGAGEMENT_LABEL[o.engagement_type]].filter(Boolean).join(" · ")}
                     {o.application_deadline && ` · Apply by ${formatDate(o.application_deadline, { day: "numeric", month: "short", year: "numeric" })}`}
