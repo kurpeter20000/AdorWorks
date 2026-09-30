@@ -1,4 +1,4 @@
-import { supabase, requireStaffSession, initLogout, apiFetch, escapeHtml, formatDate, statusBadge } from "./app.js";
+import { supabase, requireStaffSession, initLogout, apiFetch, escapeHtml, formatDate, statusBadge, friendlyError } from "./app.js";
 
 initLogout();
 
@@ -36,7 +36,7 @@ async function load() {
 
   var { data, error } = await q;
   if (error) {
-    tbody.innerHTML = '<tr><td colspan="5" class="staff-empty">Could not load submissions: ' + escapeHtml(error.message) + "</td></tr>";
+    tbody.innerHTML = '<tr><td colspan="5" class="staff-empty">' + escapeHtml(friendlyError(error, "intake submissions")) + "</td></tr>";
     return;
   }
   rows = data;

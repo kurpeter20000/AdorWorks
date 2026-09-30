@@ -111,14 +111,20 @@ export async function apiFetch(path, options) {
   var token = sessionData?.session?.access_token;
   if (!token) throw new Error("Your session has expired — please log in again.");
 
-  var res = await fetch(window.ADORWORKS_API_BASE_URL.replace(/\/$/, "") + path, {
-    method: options.method || "GET",
-    headers: Object.assign(
-      { "Content-Type": "application/json", Authorization: "Bearer " + token },
-      options.headers || {}
-    ),
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+  var res;
+  try {
+    res = await fetch(window.ADORWORKS_API_BASE_URL.replace(/\/$/, "") + path, {
+      method: options.method || "GET",
+      headers: Object.assign(
+        { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        options.headers || {}
+      ),
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+  } catch (err) {
+    console.error("[apiFetch] " + path + " network error:", err);
+    throw new Error("Couldn't reach the AdorWorks server. Check your connection and try again.");
+  }
 
   var body = null;
   try {
@@ -127,9 +133,22 @@ export async function apiFetch(path, options) {
     /* empty/non-JSON response body */
   }
   if (!res.ok) {
+    // 4xx errors carry messages written for staff ("already converted",
+    // "missing email") and are shown as-is. A 5xx carries whatever the
+    // database said — log it for whoever debugs, show staff plain words.
+    if (res.status >= 500) {
+      console.error("[apiFetch] " + path + " failed (" + res.status + "):", body && body.error);
+      throw new Error("Something went wrong on our side. Please try again — if it keeps happening, tell an admin.");
+    }
     throw new Error((body && body.error) || "Request failed (" + res.status + ").");
   }
   return body;
+}
+
+/** Plain-language wording for a direct Supabase query error; the raw one goes to the console. */
+export function friendlyError(error, context) {
+  console.error("[staff] " + (context || "query") + " failed:", error);
+  return "Couldn't load this right now. Please try again — if it keeps happening, tell an admin.";
 }
 
 export function escapeHtml(value) {

@@ -714,5 +714,22 @@
         true
       );
     }
+
+    // Comparison tables become stacked cards on phones (see
+    // table.compare.is-stacked in styles.css). Each cell gets its column
+    // heading as data-label so the card can show it; without this script
+    // the table simply keeps its horizontal scroll.
+    document.querySelectorAll("table.compare").forEach(function (table) {
+      var headers = Array.prototype.map.call(table.querySelectorAll("thead th"), function (th) {
+        return th.textContent.trim();
+      });
+      table.querySelectorAll("tbody tr").forEach(function (row) {
+        Array.prototype.forEach.call(row.children, function (cell, i) {
+          if (headers[i]) cell.setAttribute("data-label", headers[i]);
+        });
+      });
+      table.classList.add("is-stacked");
+      if (table.parentElement) table.parentElement.classList.add("has-stacked");
+    });
   });
 })();

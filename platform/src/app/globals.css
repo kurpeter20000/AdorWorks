@@ -78,3 +78,31 @@ body {
   outline: 3px solid var(--color-coral);
   outline-offset: 2px;
 }
+
+/* Every file picker in the app is a native <input type="file">; left
+   unstyled, its bare "Choose File / No file chosen" read as broken. This
+   styles all of them in one place without touching any upload logic. */
+input[type="file"] {
+  max-width: 100%;
+  border: 1px dashed color-mix(in srgb, var(--color-slate) 40%, transparent);
+  border-radius: 0.5rem;
+  background: var(--color-cloud);
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-slate);
+  cursor: pointer;
+}
+input[type="file"]::file-selector-button {
+  margin-right: 0.75rem;
+  border: 0;
+  border-radius: 0.375rem;
+  background: var(--color-midnight);
+  color: #fff;
+  padding: 0.45rem 0.9rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+input[type="file"]:hover::file-selector-button {
+  background: var(--color-teal-ink);
+}

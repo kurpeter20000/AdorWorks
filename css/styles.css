@@ -1255,6 +1255,39 @@ table.compare th, table.compare td {
 }
 table.compare thead th { background: var(--color-surface-alt); color: var(--color-primary); }
 
+/* Phones: each row becomes a card, each cell labelled with its column
+   heading (data-label, set by js/main.js), instead of a table cut off at
+   the screen edge. */
+@media (max-width: 640px) {
+  table.compare.is-stacked { min-width: 0; }
+  table.compare.is-stacked thead {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap;
+  }
+  table.compare.is-stacked tr {
+    display: block;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    background: var(--color-surface);
+    padding: 0.4rem 0;
+    margin-bottom: 0.85rem;
+  }
+  table.compare.is-stacked td { display: block; border: 0; padding: 0.35rem 1rem; }
+  table.compare.is-stacked td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-muted);
+  }
+  table.compare.is-stacked td:first-child { font-size: 1.02rem; }
+  table.compare.is-stacked td:first-child::before { display: none; }
+  .table-wrap.has-stacked { overflow: visible; }
+  .table-wrap.has-stacked::after { display: none; }
+}
+
 /* Placeholder / content-pending block */
 .pending {
   border: 2px dashed var(--color-muted);
