@@ -1644,6 +1644,31 @@ input[type="checkbox"], input[type="radio"] {
   color: var(--color-ink);
 }
 .filter-chip[aria-pressed="true"] { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+.filter-chip { font-family: inherit; }
+.filter-chip:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+/* Live opportunity listings (jobs-projects.html, js/opportunities.js) */
+.opportunity-count { margin: 0 0 1rem; font-size: 0.9rem; font-weight: 700; color: var(--color-muted); }
+.opportunity-list { display: grid; gap: 1rem; }
+.opportunity-list[hidden] { display: none; }
+.opportunity-card:hover { transform: none; }
+.opportunity-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.opportunity-title { margin: 0; font-size: 1.1rem; }
+.opportunity-employer { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--color-muted); display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.opportunity-verified { font-size: 0.7rem; font-weight: 800; color: var(--color-accent-text); background: rgba(0, 168, 143, 0.12); border-radius: 999px; padding: 0.15em 0.6em; }
+.opportunity-pay { margin: 0; font-weight: 800; color: var(--color-accent-text); white-space: nowrap; }
+.opportunity-brief { margin: 0.75rem 0 0; color: var(--color-muted); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.opportunity-skills { list-style: none; margin: 0.85rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.opportunity-skills li { font-size: 0.78rem; background: var(--color-surface-alt); color: var(--color-muted); border-radius: 999px; padding: 0.3em 0.75em; }
+.opportunity-foot { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
+.opportunity-meta { margin: 0; font-size: 0.85rem; color: var(--color-muted); }
+.opportunity-apply { font-size: 0.9rem; }
+.opportunity-filter-empty { color: var(--color-muted); }
+.link-button { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: var(--color-accent-text); text-decoration: underline; cursor: pointer; }
+@media (max-width: 560px) {
+  .opportunity-head { flex-direction: column; gap: 0.35rem; }
+  .opportunity-pay { white-space: normal; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }

@@ -69,16 +69,20 @@
 
   <section class="section">
     <div class="container">
-      <div class="filter-bar" aria-hidden="true">
-        <span class="filter-chip" aria-pressed="true">All</span>
-        <span class="filter-chip">Freelance project</span>
-        <span class="filter-chip">Contract</span>
-        <span class="filter-chip">Full-time</span>
-        <span class="filter-chip">Internship</span>
-        <span class="filter-chip">Managed opportunity</span>
+      <div class="filter-bar" role="group" aria-label="Filter by opportunity type">
+        <button type="button" class="filter-chip" data-filter="all" aria-pressed="true">All</button>
+        <button type="button" class="filter-chip" data-filter="freelance" aria-pressed="false">Freelance project</button>
+        <button type="button" class="filter-chip" data-filter="fixed_term_contract" aria-pressed="false">Contract</button>
+        <button type="button" class="filter-chip" data-filter="full_time" aria-pressed="false">Full-time</button>
+        <button type="button" class="filter-chip" data-filter="internship" aria-pressed="false">Internship</button>
+        <button type="button" class="filter-chip" data-filter="managed_service" aria-pressed="false">Managed opportunity</button>
       </div>
 
-      <div class="pending">
+      <p id="opportunity-count" class="opportunity-count" aria-live="polite" hidden></p>
+      <div id="opportunity-list" class="opportunity-list" hidden></div>
+      <p id="opportunity-filter-empty" class="opportunity-filter-empty" hidden>No open opportunities of this type right now. <button type="button" class="link-button" data-filter="all">Show all</button></p>
+
+      <div class="pending" id="opportunity-pending">
         <span class="pending-label">No open opportunities published yet</span>
         <p class="mt-0">AdorWorks is in its founding pilot, working through founding employers and our first verified cohort by direct match rather than a public board. We're not going to publish placeholder listings or invent openings just to fill this page — real, verified opportunities will appear here once we have them, each showing a verified-employer indicator, work mode, closing date and required skills.</p>
         <p class="mt-0 mb-0">In the meantime: employers can <a href="for-employers.html#brief-form">post a brief directly</a> and we'll match it by hand; professionals can <a href="for-talent.html#talent-form">build a profile</a> and be considered as soon as a matching brief comes in.</p>
@@ -190,6 +194,7 @@
 
 <script src="js/supabase-config.js"></script>
 <script src="js/main.js"></script>
+<script src="js/opportunities.js"></script>
 <script src="js/analytics-config.js"></script>
 <script src="js/analytics.js"></script>
 </body>
