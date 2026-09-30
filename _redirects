@@ -17,3 +17,9 @@
 # to produce.
 
 /find-talent.html  /for-employers.html#categories  301
+
+# The old static staff console was replaced by the platform app's
+# /operations console (one staff console). Old bookmarks land there;
+# sign-in and MFA happen in the app.
+/staff       https://ador-works.vercel.app/operations  302
+/staff/*     https://ador-works.vercel.app/operations  302

@@ -24,7 +24,9 @@ const OUT_DIR = join(ROOT, "_site");
 
 const FILES = ["manifest.webmanifest", "sw.js", "robots.txt", "sitemap.xml", "_headers", "_redirects"];
 
-const DIRS = ["css", "js", "img", "staff"];
+// staff/ is no longer published: the staff console moved into the platform
+// app at /operations, and _redirects sends old /staff links there.
+const DIRS = ["css", "js", "img"];
 
 // Every top-level *.html file, whatever the current page count is —
 // avoids a second hand-maintained list that will drift from reality.
@@ -39,9 +41,5 @@ for (const f of [...FILES, ...htmlFiles]) {
 for (const d of DIRS) {
   cpSync(join(ROOT, d), join(OUT_DIR, d), { recursive: true });
 }
-
-// staff/README.md documents the console for developers, not something
-// the running app needs — no reason to publish it alongside the rest.
-rmSync(join(OUT_DIR, "staff", "README.md"), { force: true });
 
 console.log(`Copied ${htmlFiles.length} HTML pages + ${DIRS.length} directories into ${OUT_DIR}`);

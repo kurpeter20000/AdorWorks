@@ -12,14 +12,6 @@
 // migration-routing issue, just Netlify's own limit page.
 export const MARKETING_SITE_URL = process.env.NEXT_PUBLIC_MARKETING_SITE_URL || "https://adorworks.pages.dev";
 
-// The full staff console (people/talent/organisations/opportunities/
-// engagements/contracts, including disputes and finance oversight this
-// app's own /operations doesn't cover yet) is a separate static app
-// deployed alongside the marketing site, not a route in this Next.js
-// app — see staff/README.md. It shares the same Supabase project, so a
-// staff account's session isn't transferred automatically, but the
-// login form there uses the same email/password.
-export const STAFF_CONSOLE_URL = `${MARKETING_SITE_URL}/staff/login`;
 
 // S13-12 — the platform app itself had no visible support/help contact
 // anywhere (confirmed by grepping the whole app for mailto:/support@/

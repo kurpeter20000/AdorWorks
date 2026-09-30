@@ -1,5 +1,4 @@
 import type { UserRole } from "@/lib/database.types";
-import { STAFF_CONSOLE_URL } from "./marketingSite";
 import { getDashboardKind, type DashboardKind } from "./roles";
 
 export interface DashboardAction {
@@ -64,16 +63,21 @@ const experiences: Record<DashboardKind, Omit<DashboardExperience, "kind">> = {
   operations: {
     title: "AdorWorks Operations",
     description:
-      "Review queues for opportunities, services and organisation verification, plus contract oversight. Disputes and finance still live in the existing staff console during this staged rollout.",
+      "The staff console: review queues, verification, matching, delivery, disputes, finance and accounts — all in one place.",
+    // The single staff console. Everything the old static /staff site did
+    // now lives under /operations; there is no second console to link to.
     actions: [
-      { href: "/operations", label: "Operations", description: "Review queue counts and open the opportunity review queue.", primary: true },
-      { href: "/contracts", label: "Contracts", description: "Browse contracts across every organisation." },
-      {
-        href: STAFF_CONSOLE_URL,
-        label: "Staff console",
-        description: "Full staff tools — people, disputes, finance and more — in the existing staff console.",
-        external: true,
-      },
+      { href: "/operations", label: "Operations", description: "Live queue counts across every staff area.", primary: true },
+      { href: "/operations/intake", label: "Intake", description: "Triage public-form submissions and convert them into real accounts." },
+      { href: "/operations/talent", label: "Talent", description: "Review evidence and videos, set verification tiers and visibility." },
+      { href: "/operations/organisations", label: "Organisations", description: "Record employer verification checks and risk flags." },
+      { href: "/operations/opportunities", label: "Opportunities", description: "Approve briefs, build shortlists and start engagements." },
+      { href: "/operations/services", label: "Services", description: "Publish, reject or pause talent-authored services." },
+      { href: "/operations/reports", label: "Reports", description: "Handle listings and profiles flagged by users." },
+      { href: "/operations/engagements", label: "Engagements", description: "Delivery tracking, milestones, finance records and disputes." },
+      { href: "/operations/contracts", label: "Contracts", description: "Contract oversight: disputes, refunds and invoice reconciliation." },
+      { href: "/operations/assisted-onboarding", label: "Assisted onboarding", description: "Partner hubs, onboarding agents and in-person help requests." },
+      { href: "/operations/people", label: "People", description: "Accounts, roles, suspensions and staff (admins only)." },
     ],
   },
   partner: {

@@ -8,7 +8,8 @@ import {
   Building2,
   Circle,
   ClipboardList,
-  ExternalLink,
+  Flag,
+  Handshake,
   FileCheck2,
   FilePlus2,
   FileSignature,
@@ -25,7 +26,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { STAFF_CONSOLE_URL, CONTACT_URL } from "@/lib/domain/marketingSite";
+import { CONTACT_URL } from "@/lib/domain/marketingSite";
 import type { DashboardAction } from "@/lib/domain/navigation";
 
 const ICONS: Record<string, LucideIcon> = {
@@ -47,8 +48,17 @@ const ICONS: Record<string, LucideIcon> = {
   "/onboarding": ListChecks,
   "/trust-safety": ShieldCheck,
   "/assist": LifeBuoy,
-  "/operations": Inbox,
-  [STAFF_CONSOLE_URL]: ExternalLink,
+  "/operations": LayoutDashboard,
+  "/operations/intake": Inbox,
+  "/operations/talent": IdCard,
+  "/operations/organisations": Building2,
+  "/operations/opportunities": Search,
+  "/operations/services": Sparkles,
+  "/operations/reports": Flag,
+  "/operations/engagements": Handshake,
+  "/operations/contracts": FileSignature,
+  "/operations/assisted-onboarding": LifeBuoy,
+  "/operations/people": Users,
   [CONTACT_URL]: LifeBuoy,
 };
 
