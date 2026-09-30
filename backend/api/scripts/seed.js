@@ -43,10 +43,11 @@ const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABAS
 const SEED_PASSWORD = "SeedData!2026"; // local development only — never used for a real account
 
 // auth.users insert triggers handle_new_auth_user (migration 0003), which
-// auto-creates the matching profiles row with role='talent' by default —
-// we update role/status afterward rather than insert a second row.
+// auto-creates the matching profiles row — but a reused account can have
+// lost that row (restore-rehearsal.yml empties every public table and
+// leaves auth.users alone), so the row is upserted, not just updated.
 async function createSeedUser({ email, fullName, role, phone }) {
-  const { data: existing } = await supabaseAdmin.auth.admin.listUsers();
+  const { data: existing } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
   const already = existing.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
   let userId;
   if (already) {
@@ -64,10 +65,10 @@ async function createSeedUser({ email, fullName, role, phone }) {
     console.log(`  created ${email}`);
   }
 
-  if (role !== "talent") {
-    const { error } = await supabaseAdmin.from("profiles").update({ role, status: "active" }).eq("id", userId);
-    if (error) throw new Error(`profiles.update(${email}) failed: ${error.message}`);
-  }
+  const { error } = await supabaseAdmin
+    .from("profiles")
+    .upsert({ id: userId, role, status: "active", full_name: fullName, phone: phone ?? null, email_verified: true });
+  if (error) throw new Error(`profiles.upsert(${email}) failed: ${error.message}`);
 
   return userId;
 }
