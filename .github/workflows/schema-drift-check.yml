@@ -1,0 +1,53 @@
+name: Schema drift check (weekly)
+
+# Catches the database falling behind the code. On 2026-09-30 production
+# turned out to be 34 migrations behind main (see decision-log.md) and
+# nothing had noticed — this checks every object the migrations create
+# (tables, columns, functions, RLS policies, triggers, enum values,
+# storage buckets) exists on each live database, and fails the run if not.
+# GitHub emails a failed scheduled run to the account that last changed
+# this file's schedule.
+#
+# Read-only: backend/api/scripts/check-schema-drift.mjs runs its queries
+# inside a READ ONLY transaction. Reuses the two connection secrets the
+# backup and restore-rehearsal workflows already use — nothing new to add.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC (09:00 Juba)
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    name: ${{ matrix.label }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: production
+            secret: PROD_SUPABASE_DB_URL
+          - label: test
+            secret: TEST_SUPABASE_DB_URL
+    defaults:
+      run:
+        working-directory: backend/api
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/api/package-lock.json
+      - run: npm ci
+      - name: Compare ${{ matrix.label }} against the migrations
+        env:
+          SCHEMA_CHECK_DB_URL: ${{ secrets[matrix.secret] }}
+          SCHEMA_CHECK_LABEL: ${{ matrix.label }}
+        run: |
+          if [ -z "$SCHEMA_CHECK_DB_URL" ]; then
+            echo "::error::${{ matrix.secret }} is not set — add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          node scripts/check-schema-drift.mjs

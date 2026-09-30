@@ -27,12 +27,12 @@ import { PGlite } from "@electric-sql/pglite";
 import { pgcrypto } from "@electric-sql/pglite/contrib/pgcrypto";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const MIGRATIONS_DIR = path.join(__dirname, "..", "..", "supabase", "migrations");
+export const MIGRATIONS_DIR = path.join(__dirname, "..", "..", "supabase", "migrations");
 
-const PLATFORM_SHIM = `
+export const PLATFORM_SHIM = `
 create extension if not exists pgcrypto;
 
 create schema if not exists auth;
@@ -98,7 +98,7 @@ end
 $$;
 `;
 
-const PG_CRON_EXTENSION_LINE = /^create extension if not exists pg_cron;\s*$/m;
+export const PG_CRON_EXTENSION_LINE = /^create extension if not exists pg_cron;\s*$/m;
 
 async function main() {
   const db = new PGlite({ extensions: { pgcrypto } });
@@ -135,4 +135,5 @@ async function main() {
   console.log(`public tables created: ${rows[0].n}`);
 }
 
-main();
+// Only when run directly — check-schema-drift.mjs imports the shim above.
+if (import.meta.url === pathToFileURL(process.argv[1]).href) main();
