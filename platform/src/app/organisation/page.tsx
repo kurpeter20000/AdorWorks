@@ -74,7 +74,7 @@ export default async function OrganisationPage({
             href="/organisation/opportunities/new"
             className="whitespace-nowrap rounded-lg bg-violet px-4 py-2 text-sm font-bold text-white"
           >
-            Post a new opportunity
+            Post an opportunity
           </Link>
           <Link href="/organisation/team" className="text-xs font-semibold text-violet underline">
             Manage team

@@ -320,7 +320,7 @@ export default async function DashboardPage({
             <h2 className="text-lg font-extrabold text-midnight">Hiring priorities</h2>
             <div className="flex items-center gap-3 text-xs font-semibold">
               <Link href="/organisation/opportunities/new" className="text-teal-ink underline">
-                Post a job
+                Post an opportunity
               </Link>
               <Link href="/organisation" className="text-slate underline">
                 Browse talent
@@ -338,7 +338,7 @@ export default async function DashboardPage({
 
           {experience.actions.length > 0 ? (
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {experience.actions.map((action) => {
+              {experience.actions.filter((action) => !action.section).map((action) => {
                 const className = `rounded-xl border p-4 transition-colors ${
                   action.primary
                     ? "border-teal bg-teal text-midnight hover:bg-teal/80"

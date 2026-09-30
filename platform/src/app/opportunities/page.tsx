@@ -410,13 +410,16 @@ export default async function OpportunitiesPage({
                     <ApplyButton opportunityId={o.id} alreadyApplied={appliedIds.has(o.id)} />
                   </div>
                 </div>
-                <div className="mt-2 flex items-center justify-between">
-                  <DismissButton opportunityId={o.id} />
-                  <div className="flex items-center gap-3">
+                {/* Secondary actions folded away so each card shows two
+                    clear choices (Save, Apply) instead of five. */}
+                <details className="mt-2 text-xs">
+                  <summary className="inline-block cursor-pointer font-semibold text-slate select-none">More options</summary>
+                  <div className="mt-2 flex flex-wrap items-center gap-4">
                     <ShareButton opportunityId={o.id} />
+                    <DismissButton opportunityId={o.id} />
                     <ReportButton targetType="opportunity" targetId={o.id} />
                   </div>
-                </div>
+                </details>
               </li>
             ))}
           </ul>

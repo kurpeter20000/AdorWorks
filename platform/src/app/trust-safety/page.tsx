@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireRole } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
+import { CONTACT_URL } from "@/lib/domain/marketingSite";
 import { OrientationForm } from "./orientation-form";
 
 export const metadata: Metadata = { title: "Trust & Safety orientation" };
@@ -70,11 +71,11 @@ export default async function TrustSafetyPage() {
         <div>
           <h2 className="font-bold text-midnight">Report anything that feels wrong</h2>
           <p className="mt-1">
-            If an opportunity, message, or request feels unsafe, dishonest, or asks for money upfront, stop and
-            contact AdorWorks staff through{" "}
-            <Link href="/assistance/request" className="font-semibold text-teal-ink underline">
-              Request help
-            </Link>
+            If an opportunity, message, or request feels unsafe, dishonest, or asks for money upfront, stop, use
+            the Report link on it, and contact AdorWorks staff through{" "}
+            <a href={CONTACT_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-teal-ink underline">
+              Help &amp; Support
+            </a>
             .
           </p>
         </div>

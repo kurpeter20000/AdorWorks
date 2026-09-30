@@ -70,6 +70,14 @@ body { background: var(--color-surface-alt); }
 }
 .staff-nav a:hover { color: var(--color-ink); }
 .staff-nav a[aria-current="page"] { color: var(--color-primary); border-bottom-color: var(--color-accent); }
+/* Phones and small tablets: wrap all eleven tabs onto a few rows instead
+   of a sideways scroll that left most of them off-screen. */
+@media (max-width: 900px) {
+  .staff-nav { overflow-x: visible; }
+  .staff-nav::after { display: none; }
+  .staff-nav .container { flex-wrap: wrap; gap: 0 0.1rem; }
+  .staff-nav a { padding: 0.55rem 0.7rem; font-size: 0.85rem; }
+}
 
 .staff-main { padding-block: 1.75rem 3rem; }
 .staff-page-header {
