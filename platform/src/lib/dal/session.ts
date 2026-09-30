@@ -42,12 +42,17 @@ export const verifySession = cache(async (): Promise<VerifiedSession | null> => 
   }
   if (!user) return null;
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("role, full_name, status, phone, phone_verified")
     .eq("id", user.id)
     .single();
-  if (!profile) return null;
+  if (!profile) {
+    // A valid session with no profiles row is a data-integrity problem, not
+    // "signed out" — callers can't tell the two apart, so log it.
+    console.error(`verifySession: authenticated user ${user.id} has no matching profiles row`, profileError);
+    return null;
+  }
 
   return {
     userId: user.id,
