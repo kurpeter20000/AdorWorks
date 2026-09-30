@@ -4,6 +4,11 @@ Add a new entry for every important decision. Keep entries even if a later decis
 
 ---
 
+**2026-09-30 — Production backup fixed and restore rehearsal passed for real, verified live (S03-10/S14-13 finally closed)**
+Owner: Founder. Reason: `backup-production-db.yml` had failed every day since 2026-09-13 on a stale `PROD_SUPABASE_DB_URL` secret. Founder rotated it to a fresh Session pooler connection string via GitHub Settings, then hit "Run workflow" on both `backup-production-db.yml` and `restore-rehearsal.yml`. The first restore-rehearsal attempt failed (exit code 2) — traced to a gap in the handoff instructions, not the workflow itself: that workflow needs a *second* secret, `TEST_SUPABASE_DB_URL`, never previously flagged as required. Founder added it and re-ran. Confirmed both green via the GitHub Actions API directly (not taken on the screenshot alone): `backup-production-db.yml` succeeded 2026-09-30 10:34 UTC, `restore-rehearsal.yml` succeeded 2026-09-30 10:33 UTC. Impact: S03-10 (backup exists) and S14-13 (restore actually proven, not just assumed) are both genuinely satisfied for the first time in this project. Follow-up: the rehearsal intentionally overwrote the test project's data with a copy of production's — re-seed the test project (see the workflow's own header comment) so it doesn't sit holding real production data indefinitely.
+
+---
+
 **2026-09-28 — Founder delegated standing decision authority ("do the right thing") for Stage 15's remaining open founder-judgment items; worked through the list, several decided, some explicitly declined**
 Owner: Founder (explicit, real-time delegation to Claude Code — "make founder decision on my behalf, I am the founder, and I want you to do the right thing"). Reason: several items in `stage-15-unresolved-issues.md` sections A and D were founder policy calls sitting open with no one available to make them. Rather than either leaving them open indefinitely or rubber-stamping everything asked, each was evaluated on its own terms — decided where a real founder-level judgment call was actually being asked for, declined where "the right thing" specifically meant not substituting for something the request couldn't actually make happen. Verified rather than assumed wherever verification was possible before deciding anything:
 

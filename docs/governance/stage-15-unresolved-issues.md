@@ -9,19 +9,29 @@ release candidate versus what's a documented, accepted position.
 
 ## A — Needs the founder directly (action or a live credential only they hold)
 
-- **Production backup has had zero successful runs in 15+ days**
-  (`backup-production-db.yml`, failing since 2026-09-13 on a stale
-  `PROD_SUPABASE_DB_URL` secret). Re-checked live via the GitHub Actions
-  API on 2026-09-28: still failing daily, same failed step ("Dump
-  production database") as originally diagnosed — the earlier
-  "founder is updating the secret" note has not yet resolved this.
-  Genuinely still blocked on the founder's own GitHub Settings access;
-  no decision authority substitutes for that.
-- **Restore rehearsal (S14-13 sign-off)** — blocked on the backup
-  secret above; needs a manual trigger from the Actions tab once fixed.
-- **UptimeRobot production configuration status** — still genuinely
-  unverifiable from here; an external monitor leaves no trace on the
-  site itself to check. Needs a direct founder confirmation.
+~~Production backup~~ — **fixed and verified** 2026-09-30: founder
+rotated `PROD_SUPABASE_DB_URL` to a fresh Session pooler connection
+string. Confirmed live via the GitHub Actions API:
+`backup-production-db.yml` succeeded at 2026-09-30 10:34 UTC — first
+success after 17 days of failures on the stale secret.
+
+~~Restore rehearsal (S14-13 sign-off)~~ — **passed and verified**
+2026-09-30: founder added the second required secret
+(`TEST_SUPABASE_DB_URL`, not previously flagged as needed — a gap in
+the original instructions, corrected once the run surfaced it) and
+manually triggered the workflow. Confirmed live via the GitHub Actions
+API: `restore-rehearsal.yml` succeeded at 2026-09-30 10:33 UTC. S14-13
+is genuinely satisfied now, not just attempted. **Follow-up needed**:
+the rehearsal overwrites the test project's own data with a copy of
+production's (by design, to prove the restore is real) — re-seed the
+test project so it isn't left holding production's real application
+data (`cd backend/api && SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=...
+SEED_CONFIRM=yes-seed-this-database npm run seed`, per the workflow's
+own comment).
+
+~~UptimeRobot~~ — **verified** 2026-09-29: founder's own screenshot
+showed 6 monitors, all up 16+ days, 100% uptime, covering the platform,
+backend API health check, and marketing site.
 
 ~~`.env.e2e.local` credential rotation~~ — **decided** 2026-09-28:
 rotate as routine hygiene, not release-blocking (test-project-only,
