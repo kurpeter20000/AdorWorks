@@ -13,15 +13,13 @@ import type { PaymentProvider } from "./paymentProviders";
  * the default and the only state anyone should run this in without
  * having tested it against a real sandbox first.
  *
- * No credentials exist in this environment, so NEITHER implementation
- * below has been exercised against a live API:
- *
- * - MTN MoMo: implemented against MTN's publicly documented Open API
- *   (Collections product — OAuth2 client-credentials token, then an
- *   async request-to-pay + short poll). This is a best-effort starting
- *   point from public documentation, not a verified integration —
- *   expect to debug real edge cases (rate limits, exact error shapes,
- *   sandbox-vs-production URL differences) once real credentials exist.
+ * - MTN MoMo: verified live against MTN's sandbox (Stage 16 step 4,
+ *   2026-10-01) — token auth, request-to-pay, and polling all confirmed
+ *   working end to end, both a SUCCESSFUL and several documented FAILED
+ *   outcomes (see docs/stage-16-payments-messaging-and-trust.md for the
+ *   test MSISDNs and their behaviour). Still only sandbox-tested, not
+ *   production — expect to revisit exact error shapes/rate limits once
+ *   production credentials exist.
  * - m-Gurush: deliberately a stub, not a real implementation. There is
  *   no reliable public API documentation for this provider available to
  *   write against — inventing a plausible-looking request/response shape
@@ -37,13 +35,19 @@ const mtnMomoReal: PaymentProvider = {
   method: "mobile_money",
   async charge({ phone, amount, currency }) {
     const baseUrl = process.env.MTN_MOMO_BASE_URL || "https://sandbox.momodeveloper.mtn.com";
-    const subscriptionKey = process.env.MTN_MOMO_SUBSCRIPTION_KEY;
-    const apiUser = process.env.MTN_MOMO_API_USER;
-    const apiKey = process.env.MTN_MOMO_API_KEY;
+    // _COLLECTION_-prefixed: Collections and Disbursements are separate
+    // MTN products with separate subscription keys and API users, even
+    // in sandbox (confirmed live, Stage 16 step 4) — payoutProviders.real.ts
+    // has its own _DISBURSEMENT_ set. Using one product's credentials for
+    // the other's endpoints fails outright, so the prefix exists to make
+    // that mix-up impossible to make silently.
+    const subscriptionKey = process.env.MTN_MOMO_COLLECTION_SUBSCRIPTION_KEY;
+    const apiUser = process.env.MTN_MOMO_COLLECTION_API_USER;
+    const apiKey = process.env.MTN_MOMO_COLLECTION_API_KEY;
     const targetEnvironment = process.env.MTN_MOMO_TARGET_ENVIRONMENT || "sandbox";
 
     if (!subscriptionKey || !apiUser || !apiKey) {
-      return { success: false, reason: "MTN MoMo is not configured — missing MTN_MOMO_* environment variables." };
+      return { success: false, reason: "MTN MoMo is not configured — missing MTN_MOMO_COLLECTION_* environment variables." };
     }
 
     try {

@@ -40,6 +40,8 @@ export const NOTIFICATION_TYPES = {
   TEAM_MEMBER_REMOVED: "team_member_removed",
   // Stage 16 step 3
   SUPPORT_MESSAGE_RECEIVED: "support_message_received",
+  // Stage 16 step 4
+  ESCROW_RELEASED: "escrow_released",
 } as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];

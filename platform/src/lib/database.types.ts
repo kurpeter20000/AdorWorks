@@ -533,6 +533,12 @@ export type PaymentEventRow = {
   employer_fee_percent: number;
   employer_fee_amount: number;
   total_charged: number;
+  escrow_status: "not_applicable" | "held" | "released";
+  dispute_window_ends_at: string | null;
+  disbursement_reference: string | null;
+  disbursement_status: "pending" | "succeeded" | "failed" | null;
+  disbursement_failure_reason: string | null;
+  disbursed_at: string | null;
   created_at: string;
 }
 
@@ -1198,6 +1204,18 @@ export type Database = {
       };
     };
     Functions: {
+      escrow_release_eligible: {
+        Args: Record<string, never>;
+        Returns: {
+          payment_event_id: string;
+          contract_id: string;
+          milestone_id: string;
+          talent_id: string;
+          net_amount: number;
+          currency: string;
+          dispute_window_ends_at: string;
+        }[];
+      };
       public_track_record: {
         Args: { p_kind: "talent" | "organisation"; p_id: string };
         Returns: {

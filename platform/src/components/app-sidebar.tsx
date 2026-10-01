@@ -26,6 +26,7 @@ import {
   ShieldCheck,
   Sparkles,
   Users,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import { CONTACT_URL } from "@/lib/domain/marketingSite";
@@ -63,6 +64,7 @@ const ICONS: Record<string, LucideIcon> = {
   "/operations/contracts": FileSignature,
   "/operations/assisted-onboarding": LifeBuoy,
   "/operations/people": Users,
+  "/operations/payouts": Wallet,
   "/operations/settings": Settings,
   "/operations/support": MessageCircle,
   "/support": MessageCircle,

@@ -134,10 +134,70 @@ message always appeared regardless (that path never depended on
 Realtime), which is why this needed a second, cross-party browser to
 catch at all.
 
-### Steps 4–5 — not built yet
+### Step 4 — MTN MoMo live sandbox, Disbursements, escrow ✅ (migration 0099)
 
-4. MTN MoMo sandbox: Collections tested live, Disbursements, escrow hold +
-   dispute window + auto-release, behind its own switch, off for real money.
+- **Collections verified live.** Real sandbox credentials (Collection
+  product, provisioned via MTN's self-service `/v1_0/apiuser` API), token
+  auth, request-to-pay and status polling all confirmed working against
+  `sandbox.momodeveloper.mtn.com` — both a `SUCCESSFUL` outcome and
+  several distinct `FAILED` ones came back exactly as the existing
+  `paymentProviders.real.ts` adapter expects. Found live: the Collections
+  and Collection Widget products are different subscriptions with
+  different keys — the adapter needs the plain Collection key. Env vars
+  renamed to `MTN_MOMO_COLLECTION_*` (from unprefixed `MTN_MOMO_*`) now
+  that Disbursements has its own, separate `MTN_MOMO_DISBURSEMENT_*` set
+  — using one product's credentials against the other's endpoints fails
+  outright, so the prefix makes that mix-up impossible to make silently.
+- **Disbursements built and verified live.** New `payoutProviders.ts`
+  (simulated, same shape as `paymentProviders.ts`) /
+  `payoutProviders.real.ts` (real MTN transfer adapter, same
+  token+transfer+poll shape as Collections) / `payoutProviders.server.ts`
+  (the `REAL_PAYMENTS`-gated seam). Verified live the same way as
+  Collections, same sandbox project, its own subscription key.
+- **Known sandbox test-number behaviour** (found live, 2026-10-01, for
+  both Collections and Disbursements): `256774290781` and `0912345678`
+  →  `SUCCESSFUL`; `46733123450` → `FAILED` (`INTERNAL_PROCESSING_ERROR`);
+  `46733123451` → `FAILED` (`APPROVAL_REJECTED`); `46733123454` → stays
+  `CREATED` (never resolves, simulating an ignored prompt); `46733123456`
+  → `FAILED` (`PAYEE_NOT_ALLOWED_TO_RECEIVE`); `46733123457` → `FAILED`
+  (`NOT_ALLOWED`). Not MTN's own published table — found by trial against
+  the live sandbox, kept here since nothing else documents it.
+- **Escrow:** built in full, switched off (`platform_settings` key
+  `escrow`, same enable/disable + reason-logged pattern as fees). When
+  on, a milestone's employer-side charge still succeeds immediately as
+  before (`payment_events.status='succeeded'`, milestone `paid`) — escrow
+  is a second, independent dimension on the same row
+  (`escrow_status`/`dispute_window_ends_at`/`disbursement_*`), not a new
+  milestone status, so nothing else that already checks "is this paid?"
+  needed to change. A held payment becomes eligible for release once its
+  dispute window passes *and* the contract has no open dispute
+  (`escrow_release_eligible()`, security-definer + an internal
+  `is_staff()` guard — this carries payment amounts and talent ids across
+  every contract, so unlike the anon-callable
+  `public_track_record()` it must never answer a non-staff caller).
+  Release itself is staff-triggered from `/operations/payouts`, not fully
+  automatic yet: disbursement needs an outbound HTTP call, which plain
+  SQL/pg_cron (the only scheduling this codebase has — see 0045) can't
+  make. `/operations/payouts` only ever shows rows
+  `escrow_release_eligible()` already says are due, so this is a
+  one-click action on a pre-filtered queue, not an unreviewed bulk
+  release — wiring a scheduled HTTP trigger to call the same action is
+  the natural next step once a deployment platform's cron and the legal
+  questions below are both settled. The talent-facing notification/email
+  for a held payment says so honestly ("received and held until…"), not
+  "you were paid" — that would be false while escrow holds it.
+
+Verified on the test project: a milestone payment with escrow on recorded
+`escrow_status='held'` with a dispute window; the held amount appeared at
+`/operations/payouts` once (test-backdated) due; releasing it called the
+simulated payout provider, recorded `escrow_status='released'` with a
+disbursement reference, and notified the talent — all through the real
+UI, not a direct DB check. Both the Collections and Disbursements real
+adapters were also exercised directly against MTN's live sandbox outside
+the app (not through `REAL_PAYMENTS`, which stays off).
+
+### Step 5 — not built yet
+
 5. Institutional (INGO) account track.
 
 ## Unresolved — needs a South Sudanese lawyer

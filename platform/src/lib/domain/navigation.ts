@@ -81,6 +81,7 @@ const experiences: Record<DashboardKind, Omit<DashboardExperience, "kind">> = {
       { href: "/operations/contracts", label: msg("Contracts"), description: msg("Contract oversight: disputes, refunds and invoice reconciliation.") },
       { href: "/operations/assisted-onboarding", label: msg("Assisted onboarding"), description: msg("Partner hubs, onboarding agents and in-person help requests.") },
       { href: "/operations/people", label: msg("People"), description: msg("Accounts, roles, suspensions and staff (admins only).") },
+      { href: "/operations/payouts", label: msg("Payouts"), description: msg("Escrow-held milestone payments due for release to talent.") },
       { href: "/operations/settings", label: msg("Settings"), description: msg("Platform fees and other settings (finance and admins).") },
       { href: "/operations/support", label: msg("Support"), description: msg("Reply to users messaging AdorWorks staff directly.") },
     ],

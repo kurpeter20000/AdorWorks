@@ -26,6 +26,9 @@ export function ReceiptView({
   employerFeeAmount,
   totalCharged,
   isSimulated,
+  escrowStatus,
+  disputeWindowEndsAt,
+  disbursedAt,
 }: {
   receiptNumber: string | null;
   amount: number;
@@ -43,6 +46,9 @@ export function ReceiptView({
   employerFeeAmount: number;
   totalCharged: number;
   isSimulated: boolean;
+  escrowStatus?: "not_applicable" | "held" | "released";
+  disputeWindowEndsAt?: string | null;
+  disbursedAt?: string | null;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -124,6 +130,16 @@ export function ReceiptView({
           <dd>{formatDateTime(createdAt)}</dd>
         </div>
       </dl>
+      {escrowStatus === "held" && disputeWindowEndsAt && (
+        <p className="mt-2 rounded-lg bg-cloud px-2 py-1.5 text-xs text-slate">
+          Talent&rsquo;s share held until {formatDateTime(disputeWindowEndsAt)}, then released automatically unless disputed.
+        </p>
+      )}
+      {escrowStatus === "released" && disbursedAt && (
+        <p className="mt-2 rounded-lg bg-teal-ink/5 px-2 py-1.5 text-xs text-teal-ink">
+          Released to talent {formatDateTime(disbursedAt)}.
+        </p>
+      )}
       {isSimulated && <p className="mt-2 text-xs text-coral-ink">Simulated payment — no real money moved.</p>}
       <button
         type="button"

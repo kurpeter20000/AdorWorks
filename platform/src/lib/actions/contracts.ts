@@ -5,7 +5,8 @@ import { requireSession, requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getActivePaymentProvider } from "@/lib/paymentProviders.server";
 import { calculateFees } from "@/lib/domain/fees";
-import { getFeeSettings } from "@/lib/dal/settings";
+import { disputeWindowEndsAt } from "@/lib/domain/escrow";
+import { getEscrowSettings, getFeeSettings } from "@/lib/dal/settings";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import { isFeatureEnabled, FEATURE_FLAGS } from "@/lib/domain/featureFlags";
 import { sendEmailSafely, getUserEmail } from "@/lib/email";
@@ -357,6 +358,9 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
   if (!milestone) return { message: "Milestone not found." };
   // Rates read once, here, and stamped on the payment below (0096).
   const fee = calculateFees(milestone.amount, await getFeeSettings());
+  // Escrow (0099): read once, here — switching it mid-flight never
+  // changes an already-held payment's window.
+  const escrow = await getEscrowSettings();
 
   const { data: invoice } = await admin
     .from("finance_records")
@@ -441,6 +445,7 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
   // configured) should ever record false. Cards stay simulated
   // regardless — no card-processor decision has been made.
   const isSimulated = v.provider === "visa_mastercard" || !isFeatureEnabled(FEATURE_FLAGS.REAL_PAYMENTS);
+  const escrowEndsAt = escrow.enabled ? disputeWindowEndsAt(escrow) : null;
 
   const { error: paymentError } = await admin.from("payment_events").insert({
     milestone_id: milestoneId,
@@ -462,6 +467,8 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     employer_fee_amount: fee.employerFeeAmount,
     total_charged: fee.totalCharged,
     is_simulated: isSimulated,
+    escrow_status: escrow.enabled ? "held" : "not_applicable",
+    dispute_window_ends_at: escrowEndsAt ? escrowEndsAt.toISOString() : null,
   });
   if (paymentError) {
     // Gap-check fix: the provider charge already succeeded at this point
@@ -519,11 +526,19 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     metadata: { contractId: check.contract!.id, receiptNumber },
   });
 
-  const paidNoticeBody = `${milestone.currency} ${fee.netAmount.toLocaleString()} net (${milestone.currency} ${milestone.amount.toLocaleString()} agreed${fee.talentFeeAmount > 0 ? `, ${milestone.currency} ${fee.talentFeeAmount.toLocaleString()} AdorWorks fee` : ""}). Receipt ${receiptNumber}.`;
+  // Escrow (0099): the employer's charge has succeeded either way, but
+  // when escrow is holding the payout, the talent hasn't actually
+  // received the money yet — "you were paid" would be false. Same event,
+  // different, honest wording depending on which is true right now.
+  const amountSummary = `${milestone.currency} ${fee.netAmount.toLocaleString()} net (${milestone.currency} ${milestone.amount.toLocaleString()} agreed${fee.talentFeeAmount > 0 ? `, ${milestone.currency} ${fee.talentFeeAmount.toLocaleString()} AdorWorks fee` : ""})`;
+  const paidNoticeTitle = escrow.enabled ? "Payment received — held briefly before release" : "You were paid";
+  const paidNoticeBody = escrow.enabled
+    ? `${amountSummary} received and held until ${escrowEndsAt!.toLocaleDateString()} (AdorWorks' dispute window), then released to you automatically unless a dispute is raised. Receipt ${receiptNumber}.`
+    : `${amountSummary}. Receipt ${receiptNumber}.`;
   await notifyUser(admin, {
     userId: check.contract!.talent_id,
     type: NOTIFICATION_TYPES.MILESTONE_PAID,
-    title: "You were paid",
+    title: paidNoticeTitle,
     body: paidNoticeBody,
     link: `/contracts/${check.contract!.id}`,
     dedupeKey: milestoneId,
@@ -531,9 +546,9 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
   const talentEmail = await getUserEmail(admin, check.contract!.talent_id);
   await sendEmailSafely(
     talentEmail,
-    "You were paid on AdorWorks",
+    `${paidNoticeTitle} — AdorWorks`,
     renderEmail({
-      heading: "You were paid",
+      heading: paidNoticeTitle,
       paragraphs: [paidNoticeBody],
       ctaLabel: "View contract",
       ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/contracts/${check.contract!.id}`,
