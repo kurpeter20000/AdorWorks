@@ -288,6 +288,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
           reviewerRole={isTalent ? "talent" : "employer"}
           myReview={myReview}
           theirReview={theirReview}
+          fullyPaid={(milestones ?? []).length > 0 && (milestones ?? []).every((m) => m.status === "paid")}
         />
       )}
 

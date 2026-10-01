@@ -1,3 +1,4 @@
+import { TrackRecord } from "@/components/track-record";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
@@ -294,6 +295,8 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
           </ul>
         </div>
       )}
+
+      <TrackRecord kind="talent" id={id} />
 
       {workHistory && workHistory.length > 0 && (
         <div className="mt-6">

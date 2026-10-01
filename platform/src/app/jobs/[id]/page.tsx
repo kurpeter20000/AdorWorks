@@ -1,3 +1,4 @@
+import { TrackRecord } from "@/components/track-record";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { cache } from "react";
@@ -122,6 +123,7 @@ export default async function PublicJobPage({ params }: { params: Promise<{ id: 
               </span>
             )}
           </p>
+          <TrackRecord kind="organisation" id={job.organisation_id} compact />
           <h1 className="mt-1 text-2xl font-extrabold text-midnight sm:text-3xl">{job.title}</h1>
           <p className="mt-2 text-lg font-bold text-teal-ink">{t(formatCompensation(job))}</p>
 

@@ -504,6 +504,9 @@ export type DisputeRow = {
   resolution: string | null;
   resolved_by: string | null;
   resolved_at: string | null;
+  /** 0097 — required when resolved; null on disputes resolved before outcomes were recorded. */
+  outcome: "talent_favour" | "employer_favour" | "mutual_agreement" | "unresolved" | null;
+  outcome_summary: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -1194,6 +1197,21 @@ export type Database = {
       };
     };
     Functions: {
+      public_track_record: {
+        Args: { p_kind: "talent" | "organisation"; p_id: string };
+        Returns: {
+          paid_contracts: number;
+          reviews_received: number;
+          average_rating: number | null;
+          disputes_total: number;
+          disputes_open: number;
+          talent_favour: number;
+          employer_favour: number;
+          mutual_agreement: number;
+          unresolved: number;
+          outcome_not_recorded: number;
+        }[];
+      };
       check_rate_limit: {
         Args: {
           p_action: string;

@@ -40,10 +40,16 @@ disputesRouter.get(
   })
 );
 
-const updateSchema = z.object({
-  status: z.enum(["open", "investigating", "resolved", "escalated"]).optional(),
-  resolution: z.string().max(4000).optional(),
-});
+const updateSchema = z
+  .object({
+    status: z.enum(["open", "investigating", "resolved", "escalated"]).optional(),
+    resolution: z.string().max(4000).optional(),
+    // 0097: resolving needs an outcome (the database refuses otherwise) and
+    // a short summary both parties see.
+    outcome: z.enum(["talent_favour", "employer_favour", "mutual_agreement", "unresolved"]).optional(),
+    outcome_summary: z.string().trim().max(500).optional(),
+  })
+  .refine((b) => b.status !== "resolved" || !!b.outcome, { message: "Choose the outcome before resolving.", path: ["outcome"] });
 
 // PATCH /api/disputes/:id — Blueprint §5.7 steps 3-5 (facilitated
 // resolution, escalation, recording the outcome). For a contract-scoped

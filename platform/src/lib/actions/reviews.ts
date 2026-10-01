@@ -17,7 +17,8 @@ const ReviewSchema = z.object({
 
 /**
  * Either contract participant reviewing the other, once the contract is
- * completed. This is a direct client insert (no admin client) — unlike
+ * completed and every milestone has been paid through AdorWorks (enforced
+ * by a database trigger, 0097, so no feature can bypass it). This is a direct client insert (no admin client) — unlike
  * the milestone/payment actions, RLS's reviews_insert policy (0013)
  * already enforces every rule that matters: contract must be
  * 'completed', reviewer_id must be the caller, and reviewer_role must
@@ -59,6 +60,9 @@ export async function submitReview(
     if (error.code === "23505") {
       return { message: "You've already reviewed this contract." };
     }
+    // 0097: the database refuses reviews until the contract is completed
+    // and every milestone is paid — its message is written for users.
+    if (error.code === "P0001") return { message: error.message };
     return { message: `Could not submit your review: ${error.message}` };
   }
 

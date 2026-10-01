@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { raiseDispute } from "@/lib/actions/contracts";
 import type { FormState } from "@/lib/actions/auth";
 import type { DisputeRow } from "@/lib/database.types";
+import { DISPUTE_OUTCOME_LABEL } from "@/lib/domain/disputes";
 
 const initialState: FormState = {};
 
@@ -38,6 +39,12 @@ export function DisputeSection({
             <li key={d.id} className="rounded-xl border border-coral/30 bg-coral/5 p-4">
               <p className="text-xs font-semibold text-coral-ink">{STATUS_LABEL[d.status] ?? d.status}</p>
               <p className="mt-1 text-sm text-midnight">{d.description}</p>
+              {d.status === "resolved" && (
+                <p className="mt-2 text-sm font-semibold text-midnight">
+                  Outcome: {d.outcome ? DISPUTE_OUTCOME_LABEL[d.outcome] : "not recorded (resolved before outcomes were tracked)"}
+                  {d.outcome_summary && <span className="block font-normal text-slate">{d.outcome_summary}</span>}
+                </p>
+              )}
               {d.resolution && (
                 <div className="mt-2 rounded-lg bg-white p-3">
                   <p className="text-xs font-semibold text-midnight">AdorWorks resolution</p>

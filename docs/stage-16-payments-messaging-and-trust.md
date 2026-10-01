@@ -56,10 +56,32 @@ kept; with fees on, an agreed SSP 1,000 milestone charged 1,025, talent net
 925, stamped on the payment and shown on the receipt; settings screen
 saves with a reason, records who changed it, and audits it.
 
-### Steps 2–5 — not built yet
+### Step 2 — Paid-only ratings and dispute outcomes ✅ (migration 0097)
 
-2. Ratings require a completed **and paid** contract; dispute outcomes
-   recorded (talent's favour / employer's favour / unresolved) and shown.
+- **Ratings:** a BEFORE INSERT trigger on reviews (applies to every
+  writer, including the service role) requires the contract completed,
+  every milestone paid, and a settled payment on record. The contract page
+  explains this until it's true.
+- **Dispute outcomes:** disputes.outcome (talent_favour / employer_favour /
+  mutual_agreement / unresolved) + outcome_summary for the parties. The
+  database refuses to resolve without an outcome. Staff resolve in
+  /operations (Contracts and Engagements) through a platform action that
+  also un-pauses the contract, notifies everyone and audits it; the staff
+  API requires an outcome too. Disputes resolved earlier show "not
+  recorded" — nothing invented.
+- **Public track record:** public_track_record() returns counts only
+  (paid contracts, reviews received and average, disputes by outcome and
+  open) for a talent or organisation; shown on the public Passport and
+  next to the employer on job pages. Individual disputes stay private.
+
+Verified on the test project: each review rule refused in turn (active,
+ unpaid milestone, no payment), then accepted; resolve-without-outcome
+ refused by the database and by the console; staff resolution saved with
+ outcome; parties see it; anonymous visitors see counts but can't read the
+ dispute; Passport and job page show the record.
+
+### Steps 3–5 — not built yet
+
 3. Chat: live updates (Supabase Realtime), contact-detail blocking before
    the first payment, "AdorWorks Support" conversations routed to
    /operations, disputes opening a support thread.

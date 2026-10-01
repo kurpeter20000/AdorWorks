@@ -24,6 +24,9 @@ import {
   useAction,
   useStaffData,
 } from "../_components/staff-ui";
+import { updateDispute } from "@/lib/actions/disputes";
+import type { DisputeOutcome } from "@/lib/domain/disputes";
+import { OutcomeFields } from "../_components/outcome-fields";
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- staff API payloads are untyped JSON from backend/api */
 type Row = any;
@@ -228,6 +231,8 @@ function InvoiceRow({ invoice, onSaved }: { invoice: Row; onSaved: () => void })
 function ContractDispute({ dispute, milestones, onSaved }: { dispute: Row; milestones: Row[]; onSaved: () => void }) {
   const [status, setStatusValue] = useState<string>(dispute.status);
   const [resolution, setResolution] = useState<string>(dispute.resolution || "");
+  const [outcome, setOutcome] = useState<string>(dispute.outcome || "");
+  const [outcomeSummary, setOutcomeSummary] = useState<string>(dispute.outcome_summary || "");
   const [refundMilestone, setRefundMilestone] = useState("");
   const [refundNotes, setRefundNotes] = useState("");
   const action = useAction(onSaved);
@@ -245,12 +250,20 @@ function ContractDispute({ dispute, milestones, onSaved }: { dispute: Row; miles
             </option>
           ))}
         </select>
-        <input aria-label="Resolution notes" className={inputClass} placeholder="Resolution notes" value={resolution} onChange={(e) => setResolution(e.target.value)} />
+        <input aria-label="Internal resolution notes" className={inputClass} placeholder="Internal notes (staff only)" value={resolution} onChange={(e) => setResolution(e.target.value)} />
       </div>
+      {status === "resolved" && (
+        <OutcomeFields outcome={outcome} setOutcome={setOutcome} summary={outcomeSummary} setSummary={setOutcomeSummary} />
+      )}
       <div className="mt-2">
         <Btn
           disabled={action.pending}
-          onClick={() => action.run(() => api(`/api/disputes/${dispute.id}`, { method: "PATCH", body: { status, resolution: resolution || undefined } }))}
+          onClick={() =>
+            action.run(async () => {
+              const r = await updateDispute(dispute.id, { status: status as "resolved", resolution: resolution || undefined, outcome: (outcome || undefined) as DisputeOutcome | undefined, outcomeSummary: outcomeSummary || undefined });
+              if (r.error) throw new Error(r.error);
+            })
+          }
         >
           Save
         </Btn>

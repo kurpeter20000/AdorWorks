@@ -20,11 +20,14 @@ export function ReviewSection({
   reviewerRole,
   myReview,
   theirReview,
+  fullyPaid,
 }: {
   contractId: string;
   reviewerRole: "talent" | "employer";
   myReview: { rating: number; feedback: string | null } | null;
   theirReview: { rating: number; feedback: string | null } | null;
+  /** Reviews open only once every milestone is paid (0097 enforces it in the database too). */
+  fullyPaid: boolean;
 }) {
   const boundAction = submitReview.bind(null, contractId, reviewerRole);
   const [state, formAction, pending] = useActionState(boundAction, initialState);
@@ -37,7 +40,12 @@ export function ReviewSection({
       </p>
 
       <div className="mt-3 space-y-3">
-        {myReview ? (
+        {!myReview && !fullyPaid ? (
+          <p className="rounded-xl border border-slate/15 bg-white p-4 text-sm text-slate">
+            Reviews open once every milestone has been paid through AdorWorks — so every rating on AdorWorks comes from
+            real, paid work.
+          </p>
+        ) : myReview ? (
           <div className="rounded-xl border border-slate/15 bg-white p-4">
             <p className="text-xs font-semibold text-slate">Your review</p>
             <div className="mt-1">

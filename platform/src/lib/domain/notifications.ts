@@ -12,6 +12,7 @@ export const NOTIFICATION_TYPES = {
   MILESTONE_PAID: "milestone_paid",
   DISPUTE_RAISED: "dispute_raised",
   DISPUTE_RESOLVED: "dispute_resolved",
+  DISPUTE_ESCALATED: "dispute_escalated",
   INVITATION_RECEIVED: "invitation_received",
   APPLICATION_STAGE_CHANGED: "application_stage_changed",
   INTRODUCTION_VIDEO_REVIEWED: "introduction_video_reviewed",
