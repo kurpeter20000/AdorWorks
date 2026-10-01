@@ -1,5 +1,6 @@
 "use server";
 
+import { msg } from "@/i18n/config";
 import { z } from "zod";
 import { randomInt, createHash } from "crypto";
 import { revalidatePath } from "next/cache";
@@ -24,7 +25,7 @@ const PhoneSchema = z.object({
   phone: z
     .string()
     .trim()
-    .regex(/^\+[1-9]\d{6,14}$/, "Enter a phone number in international format, e.g. +211900000000."),
+    .regex(/^\+[1-9]\d{6,14}$/, msg("Enter a phone number in international format, e.g. +211900000000.")),
 });
 
 /**
@@ -53,7 +54,7 @@ export async function sendPhoneOtp(_prevState: SendOtpState, formData: FormData)
     .limit(1)
     .maybeSingle();
   if (recent && Date.now() - new Date(recent.created_at).getTime() < RESEND_COOLDOWN_MS) {
-    return { message: "Please wait a minute before requesting another code." };
+    return { message: msg("Please wait a minute before requesting another code.") };
   }
 
   const code = randomInt(100000, 1000000).toString();
@@ -83,7 +84,7 @@ export async function sendPhoneOtp(_prevState: SendOtpState, formData: FormData)
 }
 
 const CodeSchema = z.object({
-  code: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit code."),
+  code: z.string().trim().regex(/^\d{6}$/, msg("Enter the 6-digit code.")),
 });
 
 export async function verifyPhoneOtp(_prevState: FormState, formData: FormData): Promise<FormState> {
@@ -106,10 +107,10 @@ export async function verifyPhoneOtp(_prevState: FormState, formData: FormData):
     .maybeSingle();
 
   if (!row || new Date(row.expires_at).getTime() < Date.now()) {
-    return { message: "That code has expired — request a new one." };
+    return { message: msg("That code has expired — request a new one.") };
   }
   if (row.attempts >= MAX_ATTEMPTS) {
-    return { message: "Too many attempts — request a new code." };
+    return { message: msg("Too many attempts — request a new code.") };
   }
 
   if (hashCode(code) !== row.code_hash) {
@@ -117,7 +118,7 @@ export async function verifyPhoneOtp(_prevState: FormState, formData: FormData):
       .from("phone_verification_codes")
       .update({ attempts: row.attempts + 1 })
       .eq("id", row.id);
-    return { message: "Incorrect code." };
+    return { message: msg("Incorrect code.") };
   }
 
   await admin.from("profiles").update({ phone_verified: true }).eq("id", session.userId);

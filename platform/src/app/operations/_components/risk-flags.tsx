@@ -71,7 +71,7 @@ export function RiskFlags({ targetType, targetId }: { targetType: "organisation"
                   </Btn>
                 </div>
               ) : (
-                <Btn className="ml-2" onClick={() => setResolving(f.id)}>
+                <Btn className="ms-2" onClick={() => setResolving(f.id)}>
                   Resolve…
                 </Btn>
               ))}

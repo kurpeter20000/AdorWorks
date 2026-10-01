@@ -3,9 +3,11 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { acceptInvitation, declineInvitation } from "@/lib/actions/invitations";
+import { useT } from "@/i18n/client";
 
 export function RespondButtons({ invitationId }: { invitationId: string }) {
   const router = useRouter();
+  const t = useT();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -22,7 +24,7 @@ export function RespondButtons({ invitationId }: { invitationId: string }) {
   }
 
   return (
-    <div className="text-right">
+    <div className="text-end">
       <div className="flex gap-2">
         <button
           type="button"
@@ -30,7 +32,7 @@ export function RespondButtons({ invitationId }: { invitationId: string }) {
           onClick={() => act(acceptInvitation)}
           className="rounded-lg bg-teal px-3 py-1.5 text-xs font-bold text-midnight disabled:opacity-60"
         >
-          Accept
+          {t("Accept")}
         </button>
         <button
           type="button"
@@ -38,10 +40,10 @@ export function RespondButtons({ invitationId }: { invitationId: string }) {
           onClick={() => act(declineInvitation)}
           className="rounded-lg border border-slate/25 px-3 py-1.5 text-xs font-semibold text-slate disabled:opacity-60"
         >
-          Decline
+          {t("Decline")}
         </button>
       </div>
-      {error && <p className="mt-1 text-xs text-coral-ink">{error}</p>}
+      {error && <p className="mt-1 text-xs text-coral-ink">{t(error)}</p>}
     </div>
   );
 }

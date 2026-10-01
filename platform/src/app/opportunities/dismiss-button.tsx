@@ -3,10 +3,13 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { msg } from "@/i18n/config";
+import { useT } from "@/i18n/client";
 
 /** Hides an opportunity from this talent's own future /opportunities results — see dismissed_opportunities (0048). */
 export function DismissButton({ opportunityId }: { opportunityId: string }) {
   const router = useRouter();
+  const t = useT();
   const [dismissed, setDismissed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -24,7 +27,7 @@ export function DismissButton({ opportunityId }: { opportunityId: string }) {
         .from("dismissed_opportunities")
         .insert({ talent_id: user.id, opportunity_id: opportunityId });
       if (insertError) {
-        setError("Could not update — try again.");
+        setError(msg("Could not update — try again."));
         return;
       }
       setDismissed(true);
@@ -42,9 +45,9 @@ export function DismissButton({ opportunityId }: { opportunityId: string }) {
         onClick={dismiss}
         className="text-xs font-semibold text-slate underline disabled:opacity-60"
       >
-        Not interested
+        {t("Not interested")}
       </button>
-      {error && <span className="ml-2 text-xs text-coral-ink">{error}</span>}
+      {error && <span className="ms-2 text-xs text-coral-ink">{t(error)}</span>}
     </span>
   );
 }

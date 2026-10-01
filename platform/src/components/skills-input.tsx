@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SKILL_SUGGESTIONS } from "@/lib/skills";
+import { useT } from "@/i18n/client";
 
 /**
  * Chip-based skill entry with autocomplete suggestions. Submits as a single
@@ -25,6 +26,7 @@ export function SkillsInput({
     () => defaultValue?.split(",").map((s) => s.trim()).filter(Boolean) ?? []
   );
   const [text, setText] = useState("");
+  const t = useT();
   const [focused, setFocused] = useState(false);
 
   const normalized = new Set(chips.map((c) => c.toLowerCase()));
@@ -67,7 +69,7 @@ export function SkillsInput({
                 removeChip(chip);
               }}
               className="text-slate hover:text-coral-ink"
-              aria-label={`Remove ${chip}`}
+              aria-label={t("Remove {skill}", { skill: chip })}
             >
               ×
             </button>
@@ -101,7 +103,7 @@ export function SkillsInput({
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => addChip(s)}
-                className="block w-full px-3 py-1.5 text-left hover:bg-cloud"
+                className="block w-full px-3 py-1.5 text-start hover:bg-cloud"
               >
                 {s}
               </button>

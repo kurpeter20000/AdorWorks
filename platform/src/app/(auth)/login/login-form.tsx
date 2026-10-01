@@ -6,42 +6,44 @@ import { Lock, Mail } from "lucide-react";
 import { login, type FormState } from "@/lib/actions/auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/i18n/client";
 
 const initialState: FormState = {};
 
 export function LoginForm({ next }: { next?: string | null }) {
   const [state, formAction, pending] = useActionState(login, initialState);
+  const t = useT();
 
   return (
     <form action={formAction} className="mt-6 space-y-4">
       {next && <input type="hidden" name="next" value={next} />}
       <div>
         <label htmlFor="email" className="text-sm font-semibold text-midnight">
-          Email
+          {t("Email")}
         </label>
         <div className="relative mt-1">
           <Mail
-            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate/50"
+            className="pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2 text-slate/50"
             aria-hidden="true"
           />
-          <Input id="email" name="email" type="email" autoComplete="email" required className="pl-10" />
+          <Input id="email" name="email" type="email" autoComplete="email" required className="ps-10" />
         </div>
-        {state.errors?.email && <p className="mt-1 text-sm text-coral-ink">{state.errors.email[0]}</p>}
+        {state.errors?.email && <p className="mt-1 text-sm text-coral-ink">{t(state.errors.email[0])}</p>}
       </div>
 
       <div>
         <div className="flex items-center justify-between">
           <label htmlFor="password" className="text-sm font-semibold text-midnight">
-            Password
+            {t("Password")}
           </label>
           {/* prefetch off — see the matching comment in ../login/page.tsx (S12-12) */}
           <Link href="/forgot-password" prefetch={false} className="text-xs font-semibold text-teal-ink hover:underline">
-            Forgot password?
+            {t("Forgot password?")}
           </Link>
         </div>
         <div className="relative mt-1">
           <Lock
-            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate/50"
+            className="pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2 text-slate/50"
             aria-hidden="true"
           />
           <Input
@@ -50,14 +52,14 @@ export function LoginForm({ next }: { next?: string | null }) {
             type="password"
             autoComplete="current-password"
             required
-            className="pl-10"
+            className="ps-10"
           />
         </div>
       </div>
 
       {state.message && (
         <p className="text-sm text-coral-ink" role="alert">
-          {state.message}
+          {t(state.message)}
         </p>
       )}
 
@@ -66,7 +68,7 @@ export function LoginForm({ next }: { next?: string | null }) {
           the duration of the pending Server Action — no separate spinner
           state needed here. */}
       <Button type="submit" loading={pending} size="lg" className="w-full">
-        {pending ? "Signing in…" : "Sign in"}
+        {pending ? t("Signing in…") : t("Sign in")}
       </Button>
     </form>
   );

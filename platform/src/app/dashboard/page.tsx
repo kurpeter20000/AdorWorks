@@ -14,8 +14,13 @@ import { ReadinessPanel } from "./readiness-panel";
 import { NotificationsPanel } from "./notifications-panel";
 import { TalentAttentionList, RecommendedOpportunities } from "./talent-today";
 import { EmployerPipelineSummary } from "./employer-today";
+import { msg } from "@/i18n/config";
+import { getT } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Dashboard" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return { title: t("Dashboard") };
+}
 
 export default async function DashboardPage({
   searchParams,
@@ -24,6 +29,7 @@ export default async function DashboardPage({
 }) {
   const session = await requireSession();
   const query = await searchParams;
+  const t = await getT();
   const experience = getDashboardExperience(session.role);
   const dashboardKind = getDashboardKind(session.role);
 
@@ -122,14 +128,14 @@ export default async function DashboardPage({
     const eligible = (openOpportunities ?? []).filter((o) => !appliedOrDismissed.has(o.id));
     const ranked = rankBySkillOverlap(eligible, talentProfile?.skills ?? []).slice(0, 3);
     if (ranked.length > 0) {
-      const { data: orgs, error: orgsError } = await supabase.from("organisations").select("id, name").in("id", [...new Set(ranked.map((o) => o.organisation_id))]);
+      const { data: orgs, error: orgsError } = await supabase.from("public_organisation_names").select("id, name").in("id", [...new Set(ranked.map((o) => o.organisation_id))]);
       if (orgsError) todayDataError = true;
       const orgNameById = new Map((orgs ?? []).map((o) => [o.id, o.name]));
       recommendedOpportunities = ranked.map((o) => ({
         id: o.id,
         title: o.title,
-        compensationLabel: formatCompensation(o),
-        orgName: orgNameById.get(o.organisation_id) ?? "AdorWorks employer",
+        compensationLabel: t(formatCompensation(o)),
+        orgName: orgNameById.get(o.organisation_id) ?? t("AdorWorks employer"),
       }));
     }
 
@@ -149,13 +155,13 @@ export default async function DashboardPage({
     const revisionCountValue = revisionCount ?? 0;
     const upcomingInterviewsCount = upcomingInterviews ?? 0;
     if (pendingOffersCount > 0) {
-      talentAttention.push({ href: "/offers", label: "Offers awaiting your response", count: pendingOffersCount, tone: "warning" });
+      talentAttention.push({ href: "/offers", label: msg("Offers awaiting your response"), count: pendingOffersCount, tone: "warning" });
     }
     if (revisionCountValue > 0) {
-      talentAttention.push({ href: "/contracts", label: "Milestones needing a resubmission", count: revisionCountValue, tone: "danger" });
+      talentAttention.push({ href: "/contracts", label: msg("Milestones needing a resubmission"), count: revisionCountValue, tone: "danger" });
     }
     if (upcomingInterviewsCount > 0) {
-      talentAttention.push({ href: "/applications", label: "Upcoming interviews", count: upcomingInterviewsCount, tone: "info" });
+      talentAttention.push({ href: "/applications", label: msg("Upcoming interviews"), count: upcomingInterviewsCount, tone: "info" });
     }
   } else if (dashboardKind === "employer") {
     const membership = await getMyOrganisationMembership();
@@ -225,7 +231,7 @@ export default async function DashboardPage({
       const offersAwaitingCount = offersAwaiting ?? 0;
 
       if (applicationsAwaiting > 0) {
-        employerPipeline.push({ href: "/organisation", label: "Applicants awaiting review", count: applicationsAwaiting, tone: "info" });
+        employerPipeline.push({ href: "/organisation", label: msg("Applicants awaiting review"), count: applicationsAwaiting, tone: "info" });
       }
       if (offersAwaitingCount > 0) {
         // /offers is requireRole("talent")-only (see offers/page.tsx) --
@@ -235,10 +241,10 @@ export default async function DashboardPage({
         // status is actually visible, per-opportunity (organisation/
         // opportunities/[id]/page.tsx), same destination as the applicants
         // item above.
-        employerPipeline.push({ href: "/organisation", label: "Offers awaiting a response", count: offersAwaitingCount, tone: "warning" });
+        employerPipeline.push({ href: "/organisation", label: msg("Offers awaiting a response"), count: offersAwaitingCount, tone: "warning" });
       }
       if (milestonesToPay > 0) {
-        employerPipeline.push({ href: "/contracts", label: "Milestones ready to pay", count: milestonesToPay, tone: "danger" });
+        employerPipeline.push({ href: "/contracts", label: msg("Milestones ready to pay"), count: milestonesToPay, tone: "danger" });
       }
 
       employerStats = {
@@ -253,21 +259,21 @@ export default async function DashboardPage({
   return (
     <main className="mx-auto max-w-6xl p-6 sm:p-8 lg:p-10">
       <h1 className="text-2xl font-extrabold text-midnight">
-        Welcome{session.fullName ? `, ${session.fullName}` : ""}
+        {session.fullName ? t("Welcome, {name}", { name: session.fullName }) : t("Welcome")}
       </h1>
 
       {query.error === "forbidden" && (
         <div className="mt-6">
-          <StatePanel title="You do not have access to that workspace" tone="danger" role="alert">
-            Your account has been returned to the workspace available for its current role.
+          <StatePanel title={t("You do not have access to that workspace")} tone="danger" role="alert">
+            {t("Your account has been returned to the workspace available for its current role.")}
           </StatePanel>
         </div>
       )}
 
       {query.onboarding === "submitted" && (
         <div className="mt-6">
-          <StatePanel title="Onboarding submitted" tone="success">
-            Your details were received and can now move through the existing review workflow.
+          <StatePanel title={t("Onboarding submitted")} tone="success">
+            {t("Your details were received and can now move through the existing review workflow.")}
           </StatePanel>
         </div>
       )}
@@ -287,8 +293,8 @@ export default async function DashboardPage({
 
       {todayDataError && (
         <div className="mt-6">
-          <StatePanel title="Couldn&rsquo;t load your full picture" tone="danger" role="alert">
-            Some of what&rsquo;s below may be incomplete — refresh the page to try again.
+          <StatePanel title={t("Couldn't load your full picture")} tone="danger" role="alert">
+            {t("Some of what's below may be incomplete — refresh the page to try again.")}
           </StatePanel>
         </div>
       )}
@@ -296,12 +302,12 @@ export default async function DashboardPage({
       {dashboardKind === "talent" && (
         <>
           <section className="mt-6">
-            <h2 className="text-lg font-extrabold text-midnight">Needs your attention</h2>
+            <h2 className="text-lg font-extrabold text-midnight">{t("Needs your attention")}</h2>
             <TalentAttentionList items={talentAttention} />
           </section>
           <section className="mt-6">
-            <h2 className="text-lg font-extrabold text-midnight">Recommended for you</h2>
-            <p className="mt-1 text-xs text-slate">Ranked by overlap with your Passport skills — never by pay or reputation.</p>
+            <h2 className="text-lg font-extrabold text-midnight">{t("Recommended for you")}</h2>
+            <p className="mt-1 text-xs text-slate">{t("Ranked by overlap with your Passport skills — never by pay or reputation.")}</p>
             <RecommendedOpportunities opportunities={recommendedOpportunities} />
           </section>
         </>
@@ -310,20 +316,20 @@ export default async function DashboardPage({
       {dashboardKind === "employer" && employerStats && (
         <section className="mt-6">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatTile label="Open opportunities" value={employerStats.openOpportunities} href="/organisation" />
-            <StatTile label="Applicants awaiting" value={employerStats.applicantsAwaiting} href="/organisation" />
-            <StatTile label="Active contracts" value={employerStats.activeContracts} href="/contracts" />
-            <StatTile label="Milestones to pay" value={employerStats.milestonesToPay} href="/contracts" />
+            <StatTile label={t("Open opportunities")} value={employerStats.openOpportunities} href="/organisation" />
+            <StatTile label={t("Applicants awaiting")} value={employerStats.applicantsAwaiting} href="/organisation" />
+            <StatTile label={t("Active contracts")} value={employerStats.activeContracts} href="/contracts" />
+            <StatTile label={t("Milestones to pay")} value={employerStats.milestonesToPay} href="/contracts" />
           </div>
 
           <div className="mt-6 flex items-center justify-between">
-            <h2 className="text-lg font-extrabold text-midnight">Hiring priorities</h2>
+            <h2 className="text-lg font-extrabold text-midnight">{t("Hiring priorities")}</h2>
             <div className="flex items-center gap-3 text-xs font-semibold">
               <Link href="/organisation/opportunities/new" className="text-teal-ink underline">
-                Post an opportunity
+                {t("Post an opportunity")}
               </Link>
               <Link href="/organisation" className="text-slate underline">
-                Browse talent
+                {t("Browse talent")}
               </Link>
             </div>
           </div>
@@ -333,8 +339,8 @@ export default async function DashboardPage({
 
       {(dashboardKind !== "employer" || !employerStats) && (
         <section className="mt-8">
-          <h2 className="text-xl font-extrabold text-midnight">{experience.title}</h2>
-          <p className="mt-1 text-sm text-slate">{experience.description}</p>
+          <h2 className="text-xl font-extrabold text-midnight">{t(experience.title)}</h2>
+          <p className="mt-1 text-sm text-slate">{t(experience.description)}</p>
 
           {experience.actions.length > 0 ? (
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -346,14 +352,14 @@ export default async function DashboardPage({
                 }`;
                 const content = (
                   <>
-                    <span className="block font-bold">{action.label}</span>
+                    <span className="block font-bold">{t(action.label)}</span>
                     {/* S12-07: text-slate on white is fine (5.4:1+) but the same
                         gray on this card's own bright teal background measures
                         only 2.04:1 — fails WCAG AA's 4.5:1. text-midnight (the
                         title's own color, already proven to work here) covers
                         the primary/teal case instead. */}
                     <span className={`mt-1 block text-xs ${action.primary ? "text-midnight" : "text-slate"}`}>
-                      {action.description}
+                      {t(action.description)}
                     </span>
                   </>
                 );
@@ -370,9 +376,8 @@ export default async function DashboardPage({
             </div>
           ) : (
             <div className="mt-4">
-              <StatePanel title="Workspace unchanged" tone="info">
-                This role continues in its existing operational workspace while the integrated experience is built
-                behind feature flags.
+              <StatePanel title={t("Workspace unchanged")} tone="info">
+                {t("This role continues in its existing operational workspace while the integrated experience is built behind feature flags.")}
               </StatePanel>
             </div>
           )}

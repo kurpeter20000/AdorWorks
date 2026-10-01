@@ -7,12 +7,17 @@ import { ReportButton } from "@/components/report-button";
 import { ShareButton } from "../../share-button";
 import { ApplyForm } from "./apply-form";
 import { formatDate } from "@/lib/domain/format";
+import { getT } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Apply" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return { title: t("Apply") };
+}
 
 export default async function ApplyPage({ params }: { params: Promise<{ id: string }> }) {
   await requireRole("talent");
   const { id } = await params;
+  const t = await getT();
   const supabase = await createClient();
 
   const { data: opportunity } = await supabase
@@ -64,30 +69,32 @@ export default async function ApplyPage({ params }: { params: Promise<{ id: stri
 
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
-      <h1 className="text-2xl font-extrabold text-midnight">Apply — {opportunity.title}</h1>
+      <h1 className="text-2xl font-extrabold text-midnight">
+        {t("Apply")} — <span className="no-i18n">{opportunity.title}</span>
+      </h1>
       {org && (
         <p className="mt-1 flex items-center gap-1.5 text-sm text-slate">
           {org.name}
           {org.verification_status === "verified" && (
             <span
               className="inline-flex items-center rounded-full bg-teal-ink/10 px-1.5 py-0.5 text-[10px] font-semibold text-teal-ink"
-              title="This organisation has completed AdorWorks verification."
+              title={t("This organisation has completed AdorWorks verification.")}
             >
-              Verified
+              {t("Verified")}
             </span>
           )}
         </p>
       )}
       {opportunity.application_deadline && (
         <p className="mt-1 text-sm text-slate">
-          Apply by {formatDate(opportunity.application_deadline, { day: "numeric", month: "short", year: "numeric" })}
+          {t("Apply by {date}", { date: formatDate(opportunity.application_deadline, { day: "numeric", month: "short", year: "numeric" }) })}
         </p>
       )}
       {opportunity.brief && <p className="mt-2 text-sm text-slate">{opportunity.brief}</p>}
 
       {attachments.length > 0 && (
         <div className="mt-3">
-          <p className="text-xs font-semibold text-midnight">Attachments</p>
+          <p className="text-xs font-semibold text-midnight">{t("Attachments")}</p>
           <ul className="mt-1 space-y-1">
             {attachments.map((a) =>
               a.url ? (

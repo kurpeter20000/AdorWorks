@@ -3,12 +3,17 @@ import Link from "next/link";
 import { Briefcase, LogIn, Search } from "lucide-react";
 import { resolveReturnPath } from "@/lib/domain/redirects";
 import { LoginForm } from "./login-form";
+import { msg } from "@/i18n/config";
+import { getT } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Sign in" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return { title: t("Sign in") };
+}
 
 const INTENT_COPY = {
-  talent: "Ready to find your next opportunity.",
-  hire: "Ready to review your hiring pipeline.",
+  talent: msg("Ready to find your next opportunity."),
+  hire: msg("Ready to review your hiring pipeline."),
 } as const;
 
 // Cosmetic only — cues below the heading, not the auth flow itself. Once
@@ -21,6 +26,7 @@ export default async function LoginPage({
   searchParams: Promise<{ as?: string; next?: string }>;
 }) {
   const { as, next } = await searchParams;
+  const t = await getT();
   const intent = as === "hire" ? "hire" : as === "talent" ? "talent" : null;
   // The page someone was sent here from, carried through to sign-in/sign-up.
   const returnTo = resolveReturnPath(next);
@@ -38,7 +44,7 @@ export default async function LoginPage({
           constrained runner, so this competes for CPU with the actual
           /login request during the exact window LCP is measured in —
           disabled here since none of these need instant navigation. */}
-      <div className="mb-6 flex gap-1 rounded-lg bg-cloud p-1 text-sm font-semibold" role="tablist" aria-label="Signing in as">
+      <div className="mb-6 flex gap-1 rounded-lg bg-cloud p-1 text-sm font-semibold" role="tablist" aria-label={t("Signing in as")}>
         <Link
           href={withNext("/login?as=talent")}
           prefetch={false}
@@ -49,7 +55,7 @@ export default async function LoginPage({
           }`}
         >
           <Search className="size-3.5" aria-hidden="true" />
-          Find work
+          {t("Find work")}
         </Link>
         <Link
           href={withNext("/login?as=hire")}
@@ -61,24 +67,24 @@ export default async function LoginPage({
           }`}
         >
           <Briefcase className="size-3.5" aria-hidden="true" />
-          Hire talent
+          {t("Hire talent")}
         </Link>
       </div>
 
       <span className="inline-flex size-10 items-center justify-center rounded-full bg-teal/15 text-teal-ink">
         <LogIn className="size-5" aria-hidden="true" />
       </span>
-      <h1 className="mt-3 text-2xl font-bold text-midnight">Sign in</h1>
-      {intent && <p className="mt-1 text-sm text-slate">{INTENT_COPY[intent]}</p>}
+      <h1 className="mt-3 text-2xl font-bold text-midnight">{t("Sign in")}</h1>
+      {intent && <p className="mt-1 text-sm text-slate">{t(INTENT_COPY[intent])}</p>}
       <LoginForm next={returnTo} />
       <p className="mt-4 text-center text-sm text-slate">
-        New to AdorWorks?{" "}
+        {t("New to AdorWorks?")}{" "}
         <Link
           href={withNext(intent ? `/signup?intent=${intent}` : "/signup")}
           prefetch={false}
           className="font-semibold text-teal-ink hover:underline"
         >
-          Create an account
+          {t("Create an account")}
         </Link>
       </p>
     </div>

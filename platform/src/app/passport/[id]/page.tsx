@@ -142,7 +142,7 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
     .order("sort_order", { ascending: true });
   const orgIds = [...new Set((workHistory ?? []).map((w) => w.organisation_id))];
   const { data: orgs } =
-    orgIds.length > 0 ? await supabase.from("organisations").select("id, name").in("id", orgIds) : { data: [] };
+    orgIds.length > 0 ? await supabase.from("public_organisation_names").select("id, name").in("id", orgIds) : { data: [] };
   const orgNameById = new Map((orgs ?? []).map((o) => [o.id, o.name]));
   const avatarUrl = profile.avatar_path
     ? supabase.storage.from("talent-avatars").getPublicUrl(profile.avatar_path).data.publicUrl

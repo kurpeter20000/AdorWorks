@@ -1,3 +1,5 @@
+import { msg } from "@/i18n/config";
+
 /**
  * S11-12: the pilot runs in South Sudan only — every date/time shown to a
  * user should read the same way regardless of what timezone their device
@@ -37,6 +39,6 @@ export function formatCompensation(o: {
   if (o.compensation_min && o.compensation_max) {
     return `${currency} ${o.compensation_min.toLocaleString()}–${o.compensation_max.toLocaleString()}`;
   }
-  if (o.payment_basis === "negotiable") return "Negotiable";
-  return "Paid — details on application";
+  if (o.payment_basis === "negotiable") return msg("Negotiable");
+  return msg("Paid — details on application");
 }

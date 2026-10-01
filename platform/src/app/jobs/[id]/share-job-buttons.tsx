@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { Link2, MessageCircle } from "lucide-react";
+import { useT } from "@/i18n/client";
 
 /** WhatsApp is how most listings will actually travel, so it gets its own button. */
 export function ShareJobButtons({ title, path }: { title: string; path: string }) {
   const [copied, setCopied] = useState(false);
+  const t = useT();
 
   function url() {
     return `${window.location.origin}${path}`;
@@ -35,7 +37,7 @@ export function ShareJobButtons({ title, path }: { title: string; path: string }
         className="inline-flex items-center gap-1.5 rounded-lg border border-slate/25 px-3 py-2 text-sm font-semibold text-midnight hover:border-teal"
       >
         <MessageCircle className="size-4" aria-hidden="true" />
-        Share on WhatsApp
+        {t("Share on WhatsApp")}
       </button>
       <button
         type="button"
@@ -43,7 +45,7 @@ export function ShareJobButtons({ title, path }: { title: string; path: string }
         className="inline-flex items-center gap-1.5 rounded-lg border border-slate/25 px-3 py-2 text-sm font-semibold text-midnight hover:border-teal"
       >
         <Link2 className="size-4" aria-hidden="true" />
-        {copied ? "Copied" : "Copy link"}
+        {copied ? t("Copied") : t("Copy link")}
       </button>
     </div>
   );

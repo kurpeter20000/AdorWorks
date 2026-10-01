@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
+import { useT } from "@/i18n/client";
+import { rich } from "@/i18n/rich";
 
 const DISMISSED_KEY = "adorworks-install-dismissed";
 
@@ -68,6 +70,7 @@ export function InstallAppBanner() {
     getServerInstallPromptSnapshot
   );
   const [dismissed, setDismissed] = useState(false);
+  const t = useT();
 
   if (!mounted) return null;
 
@@ -96,11 +99,12 @@ export function InstallAppBanner() {
     <div className="flex flex-wrap items-center justify-between gap-3 bg-midnight px-4 py-2.5 text-sm text-white">
       {ios ? (
         <p className="m-0">
-          Install AdorWorks: tap <span className="font-semibold">Share</span>, then{" "}
-          <span className="font-semibold">Add to Home Screen</span>.
+          {rich(t("Install AdorWorks: tap <b>Share</b>, then <b>Add to Home Screen</b>."), {
+            b: (text) => <span className="font-semibold">{text}</span>,
+          })}
         </p>
       ) : (
-        <p className="m-0">Install the AdorWorks app for quicker access.</p>
+        <p className="m-0">{t("Install the AdorWorks app for quicker access.")}</p>
       )}
       <div className="flex items-center gap-3">
         {!ios && (
@@ -109,11 +113,11 @@ export function InstallAppBanner() {
             onClick={install}
             className="rounded-lg bg-teal px-3 py-1.5 text-xs font-bold text-midnight"
           >
-            Install
+            {t("Install")}
           </button>
         )}
         <button type="button" onClick={dismiss} className="text-xs font-semibold text-white/70 hover:text-white">
-          Dismiss
+          {t("Dismiss")}
         </button>
       </div>
     </div>

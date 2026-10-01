@@ -1,4 +1,5 @@
 import type { Category, EngagementType, PaymentBasis, WorkMode } from "@/lib/database.types";
+import { msg } from "@/i18n/config";
 
 /**
  * Canonical labels for the opportunity/talent taxonomy. Stage 1 fixes this
@@ -11,34 +12,34 @@ import type { Category, EngagementType, PaymentBasis, WorkMode } from "@/lib/dat
  * this is not a talent-editable taxonomy service.
  */
 export const CATEGORY_LABEL = {
-  creative_media: "Creative & media",
-  digital_technology: "Digital & technology",
-  business_project_support: "Business & project support",
+  creative_media: msg("Creative & media"),
+  digital_technology: msg("Digital & technology"),
+  business_project_support: msg("Business & project support"),
 } as const satisfies Record<Category, string>;
 
 export const ENGAGEMENT_TYPE_LABEL = {
-  freelance: "Freelance",
-  fixed_term_contract: "Fixed-term contract",
-  full_time: "Full-time",
-  internship: "Internship",
-  apprenticeship: "Apprenticeship",
-  managed_service: "Managed service",
+  freelance: msg("Freelance"),
+  fixed_term_contract: msg("Fixed-term contract"),
+  full_time: msg("Full-time"),
+  internship: msg("Internship"),
+  apprenticeship: msg("Apprenticeship"),
+  managed_service: msg("Managed service"),
 } as const satisfies Record<EngagementType, string>;
 
 export const WORK_MODE_LABEL = {
-  remote: "Remote",
-  on_site: "On-site",
-  hybrid: "Hybrid",
-  any: "Any",
+  remote: msg("Remote"),
+  on_site: msg("On-site"),
+  hybrid: msg("Hybrid"),
+  any: msg("Any"),
 } as const satisfies Record<WorkMode, string>;
 
 export const PAYMENT_BASIS_LABEL = {
-  fixed: "Fixed price",
-  milestone: "Per milestone",
-  hourly: "Hourly",
-  daily: "Daily",
-  monthly: "Monthly",
-  negotiable: "Negotiable",
+  fixed: msg("Fixed price"),
+  milestone: msg("Per milestone"),
+  hourly: msg("Hourly"),
+  daily: msg("Daily"),
+  monthly: msg("Monthly"),
+  negotiable: msg("Negotiable"),
 } as const satisfies Record<PaymentBasis, string>;
 
 export function categoryOptions() {

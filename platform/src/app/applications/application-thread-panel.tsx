@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ApplicationMessageThread } from "@/components/application-message-thread";
+import { useT } from "@/i18n/client";
 
 export function ApplicationThreadPanel({
   applicationId,
@@ -13,11 +14,13 @@ export function ApplicationThreadPanel({
   messages: { id: string; sender_id: string; body: string; created_at: string }[];
 }) {
   const [open, setOpen] = useState(false);
+  const t = useT();
 
   if (!open) {
     return (
       <button type="button" onClick={() => setOpen(true)} className="mt-2 text-xs font-semibold text-teal-ink underline">
-        Messages{messages.length > 0 ? ` (${messages.length})` : ""}
+        {t("Messages")}
+        {messages.length > 0 ? ` (${messages.length})` : ""}
       </button>
     );
   }
@@ -25,7 +28,7 @@ export function ApplicationThreadPanel({
   return (
     <div className="mt-2">
       <button type="button" onClick={() => setOpen(false)} className="mb-2 text-xs font-semibold text-slate underline">
-        Hide messages
+        {t("Hide messages")}
       </button>
       <ApplicationMessageThread applicationId={applicationId} currentUserId={currentUserId} messages={messages} />
     </div>

@@ -71,6 +71,20 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Arabic: an Arabic typeface first (Manrope has no Arabic letters), no
+   Latin letter-spacing, and a little more line height for the script. */
+html[lang="ar"] body,
+html[lang="ar"] button,
+html[lang="ar"] input,
+html[lang="ar"] select,
+html[lang="ar"] textarea {
+  font-family: var(--font-arabic), var(--font-sans);
+  letter-spacing: 0;
+}
+html[lang="ar"] body {
+  line-height: 1.7;
+}
+
 /* Visible focus rings everywhere (WCAG 2.2 AA) — Tailwind's default
    outline-none-on-focus reset needs an explicit replacement, not just
    removal, or keyboard users lose their place entirely. */

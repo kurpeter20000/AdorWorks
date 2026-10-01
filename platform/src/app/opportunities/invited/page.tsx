@@ -3,13 +3,18 @@ import Link from "next/link";
 import { requireRole } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { RespondButtons } from "./respond-buttons";
+import { getT } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Invitations" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return { title: t("Invitations") };
+}
 
 /** Stage 5: the "invited" feed deferred from Stage 4 — now that employer invitations (0050) exist. */
 export default async function InvitedOpportunitiesPage() {
   const session = await requireRole("talent");
   const supabase = await createClient();
+  const t = await getT();
 
   const { data: invitations } = await supabase
     .from("invitations")
@@ -24,7 +29,7 @@ export default async function InvitedOpportunitiesPage() {
       : { data: [] };
   const orgIds = [...new Set((opportunities ?? []).map((o) => o.organisation_id))];
   const { data: orgs } =
-    orgIds.length > 0 ? await supabase.from("organisations").select("id, name").in("id", orgIds) : { data: [] };
+    orgIds.length > 0 ? await supabase.from("public_organisation_names").select("id, name").in("id", orgIds) : { data: [] };
 
   const opportunityById = new Map((opportunities ?? []).map((o) => [o.id, o]));
   const orgNameById = new Map((orgs ?? []).map((o) => [o.id, o.name]));
@@ -35,15 +40,15 @@ export default async function InvitedOpportunitiesPage() {
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold text-midnight">Invitations</h1>
+        <h1 className="text-2xl font-extrabold text-midnight">{t("Invitations")}</h1>
         <Link href="/applications" className="text-sm font-semibold text-teal-ink underline">
-          My applications
+          {t("My applications")}
         </Link>
       </div>
-      <p className="mt-2 text-sm text-slate">Employers who&rsquo;ve asked you specifically to apply.</p>
+      <p className="mt-2 text-sm text-slate">{t("Employers who've asked you specifically to apply.")}</p>
 
       {pending.length === 0 ? (
-        <p className="mt-8 text-sm text-slate">No pending invitations right now.</p>
+        <p className="mt-8 text-sm text-slate">{t("No pending invitations right now.")}</p>
       ) : (
         <ul className="mt-6 space-y-3">
           {pending.map((i) => {
@@ -52,9 +57,9 @@ export default async function InvitedOpportunitiesPage() {
               <li key={i.id} className="rounded-xl border border-slate/15 bg-white p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="font-bold text-midnight">{opp?.title ?? "Opportunity"}</p>
+                    <p className="font-bold text-midnight">{opp?.title ?? t("Opportunity")}</p>
                     <p className="text-xs text-slate">
-                      {opp ? (orgNameById.get(opp.organisation_id) ?? "AdorWorks employer") : ""}
+                      {opp ? (orgNameById.get(opp.organisation_id) ?? t("AdorWorks employer")) : ""}
                     </p>
                   </div>
                   <RespondButtons invitationId={i.id} />
@@ -68,14 +73,14 @@ export default async function InvitedOpportunitiesPage() {
 
       {responded.length > 0 && (
         <div className="mt-8">
-          <h2 className="text-sm font-bold text-midnight">Past invitations</h2>
+          <h2 className="text-sm font-bold text-midnight">{t("Past invitations")}</h2>
           <ul className="mt-3 space-y-2">
             {responded.map((i) => {
               const opp = opportunityById.get(i.opportunity_id);
               return (
                 <li key={i.id} className="flex items-center justify-between rounded-lg border border-slate/15 bg-white p-3 text-sm">
-                  <span className="text-midnight">{opp?.title ?? "Opportunity"}</span>
-                  <span className="text-xs text-slate">{i.status === "accepted" ? "Accepted" : "Declined"}</span>
+                  <span className="text-midnight">{opp?.title ?? t("Opportunity")}</span>
+                  <span className="text-xs text-slate">{i.status === "accepted" ? t("Accepted") : t("Declined")}</span>
                 </li>
               );
             })}

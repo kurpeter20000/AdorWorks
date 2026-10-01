@@ -28,7 +28,7 @@ export function Chip({ variant, arrow = true, className, children, ...props }: C
   return (
     <a className={cn(chipVariants({ variant }), className)} {...props}>
       {children}
-      {arrow && <ArrowRight className="size-3.5" aria-hidden="true" />}
+      {arrow && <ArrowRight className="size-3.5 rtl:-scale-x-100" aria-hidden="true" />}
     </a>
   );
 }

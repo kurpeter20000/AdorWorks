@@ -1,5 +1,6 @@
 "use server";
 
+import { msg } from "@/i18n/config";
 import { z } from "zod";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -22,15 +23,15 @@ export interface FormState {
 const CURRENT_POLICY_VERSION = "1.0";
 
 const SignupSchema = z.object({
-  fullName: z.string().trim().min(2, "Enter your full name."),
-  email: z.string().trim().email("Enter a valid email address."),
+  fullName: z.string().trim().min(2, msg("Enter your full name.")),
+  email: z.string().trim().email(msg("Enter a valid email address.")),
   password: z
     .string()
-    .min(8, "Use at least 8 characters.")
-    .regex(/[a-zA-Z]/, "Include at least one letter.")
-    .regex(/[0-9]/, "Include at least one number."),
-  intent: z.enum(["talent", "hire"], { message: "Choose one." }),
-  policyConsent: z.literal("on", { message: "You must agree to the Terms of Use and Privacy Policy to continue." }),
+    .min(8, msg("Use at least 8 characters."))
+    .regex(/[a-zA-Z]/, msg("Include at least one letter."))
+    .regex(/[0-9]/, msg("Include at least one number.")),
+  intent: z.enum(["talent", "hire"], { message: msg("Choose one.") }),
+  policyConsent: z.literal("on", { message: msg("You must agree to the Terms of Use and Privacy Policy to continue.") }),
 });
 
 /**
@@ -75,7 +76,7 @@ export async function signup(_prevState: FormState, formData: FormData): Promise
   const ip = await getClientIp();
   const { allowed } = await checkAndRecordAttempt(createAdminClient(), "signup", ip);
   if (!allowed) {
-    return { message: "Too many signup attempts. Please try again later." };
+    return { message: msg("Too many signup attempts. Please try again later.") };
   }
 
   const supabase = await createClient();
@@ -114,7 +115,7 @@ export async function signup(_prevState: FormState, formData: FormData): Promise
     return { message: error.message };
   }
   if (!data.user) {
-    return { message: "Something went wrong creating your account. Please try again." };
+    return { message: msg("Something went wrong creating your account. Please try again.") };
   }
 
   // S14-05 gap-check finding (2026-09-24): when the email already has a
@@ -157,8 +158,8 @@ export async function signup(_prevState: FormState, formData: FormData): Promise
 }
 
 const LoginSchema = z.object({
-  email: z.string().trim().email("Enter a valid email address."),
-  password: z.string().min(1, "Enter your password."),
+  email: z.string().trim().email(msg("Enter a valid email address.")),
+  password: z.string().min(1, msg("Enter your password.")),
 });
 
 export async function login(_prevState: FormState, formData: FormData): Promise<FormState> {
@@ -175,13 +176,13 @@ export async function login(_prevState: FormState, formData: FormData): Promise<
   const normalizedEmail = validated.data.email.toLowerCase();
   const { allowed } = await checkAndRecordAttempt(createAdminClient(), "login", normalizedEmail);
   if (!allowed) {
-    return { message: "Too many login attempts. Please wait a few minutes and try again." };
+    return { message: msg("Too many login attempts. Please wait a few minutes and try again.") };
   }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(validated.data);
   if (error) {
-    return { message: "Incorrect email or password." };
+    return { message: msg("Incorrect email or password.") };
   }
 
   redirect(resolveReturnPath(formData.get("next") as string | null) ?? "/dashboard");
@@ -194,7 +195,7 @@ export async function logout() {
 }
 
 const ForgotPasswordSchema = z.object({
-  email: z.string().trim().email("Enter a valid email address."),
+  email: z.string().trim().email(msg("Enter a valid email address.")),
 });
 
 // Always redirects to the same "check your email" state on success or
@@ -212,7 +213,7 @@ export async function requestPasswordReset(_prevState: FormState, formData: Form
   const normalizedEmail = validated.data.email.toLowerCase();
   const { allowed } = await checkAndRecordAttempt(createAdminClient(), "password_reset_request", normalizedEmail);
   if (!allowed) {
-    return { message: "Too many reset requests for this email. Please wait a few minutes and try again." };
+    return { message: msg("Too many reset requests for this email. Please wait a few minutes and try again.") };
   }
 
   const supabase = await createClient();
@@ -226,9 +227,9 @@ export async function requestPasswordReset(_prevState: FormState, formData: Form
 const ResetPasswordSchema = z.object({
   password: z
     .string()
-    .min(8, "Use at least 8 characters.")
-    .regex(/[a-zA-Z]/, "Include at least one letter.")
-    .regex(/[0-9]/, "Include at least one number."),
+    .min(8, msg("Use at least 8 characters."))
+    .regex(/[a-zA-Z]/, msg("Include at least one letter."))
+    .regex(/[0-9]/, msg("Include at least one number.")),
 });
 
 // Only reachable with a session — either a normal one, or the short-lived

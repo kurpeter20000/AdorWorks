@@ -164,7 +164,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
       <h1 className="text-2xl font-extrabold text-midnight">{contractTitle ?? "Contract"}</h1>
       <p className="mt-1 text-sm text-slate">
         {isTalent ? `With ${org?.name ?? "your employer"}` : `With ${talent?.display_name ?? "your talent"}`} ·{" "}
-        <StatusBadge state={CONTRACT_STATES[contract.status]} className="ml-1" />
+        <StatusBadge state={CONTRACT_STATES[contract.status]} className="ms-1" />
       </p>
 
       {contract.status === "completed" && (

@@ -3,9 +3,12 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { msg } from "@/i18n/config";
+import { useT } from "@/i18n/client";
 
 export function SaveButton({ opportunityId, initialSaved }: { opportunityId: string; initialSaved: boolean }) {
   const router = useRouter();
+  const t = useT();
   const [saved, setSaved] = useState(initialSaved);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -29,7 +32,7 @@ export function SaveButton({ opportunityId, initialSaved }: { opportunityId: str
           .eq("talent_id", user.id)
           .eq("opportunity_id", opportunityId);
         if (deleteError) {
-          setError("Could not update — try again.");
+          setError(msg("Could not update — try again."));
           return;
         }
         setSaved(false);
@@ -38,7 +41,7 @@ export function SaveButton({ opportunityId, initialSaved }: { opportunityId: str
           .from("saved_opportunities")
           .insert({ talent_id: user.id, opportunity_id: opportunityId });
         if (insertError) {
-          setError("Could not save — try again.");
+          setError(msg("Could not save — try again."));
           return;
         }
         setSaved(true);
@@ -55,9 +58,9 @@ export function SaveButton({ opportunityId, initialSaved }: { opportunityId: str
         onClick={toggle}
         className={`text-xs font-semibold underline disabled:opacity-60 ${saved ? "text-violet" : "text-slate"}`}
       >
-        {saved ? "Saved" : "Save for later"}
+        {saved ? t("Saved") : t("Save for later")}
       </button>
-      {error && <span className="ml-2 text-xs text-coral-ink">{error}</span>}
+      {error && <span className="ms-2 text-xs text-coral-ink">{t(error)}</span>}
     </span>
   );
 }

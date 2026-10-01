@@ -1,5 +1,6 @@
 "use server";
 
+import { msg } from "@/i18n/config";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireRole, CLIENT_ROLES } from "@/lib/dal/session";
@@ -37,7 +38,7 @@ export async function inviteTalent(
   // a real employer batch-inviting a large shortlist in one sitting.
   const { allowed } = await checkAndRecordAttempt(createAdminClient(), "invitation", session.userId);
   if (!allowed) {
-    return { message: "Too many invitations sent recently. Please wait a while and try again." };
+    return { message: msg("Too many invitations sent recently. Please wait a while and try again.") };
   }
 
   const validated = InviteSchema.safeParse({ message: formData.get("message") || undefined });
@@ -53,7 +54,7 @@ export async function inviteTalent(
     message: validated.data.message || null,
   });
   if (error) {
-    if (error.code === "23505") return { message: "Already invited to this opportunity." };
+    if (error.code === "23505") return { message: msg("Already invited to this opportunity.") };
     return { message: `Could not send this invitation: ${error.message}` };
   }
 
@@ -113,10 +114,10 @@ export async function acceptInvitation(invitationId: string): Promise<{ error?: 
 
   const { data: invitation } = await admin.from("invitations").select("*").eq("id", invitationId).maybeSingle();
   if (!invitation || invitation.talent_id !== session.userId) {
-    return { error: "Invitation not found." };
+    return { error: msg("Invitation not found.") };
   }
   if (invitation.status !== "pending") {
-    return { error: "This invitation has already been responded to." };
+    return { error: msg("This invitation has already been responded to.") };
   }
 
   const { error: inviteError } = await admin
@@ -169,10 +170,10 @@ export async function declineInvitation(invitationId: string): Promise<{ error?:
 
   const { data: invitation } = await admin.from("invitations").select("id, talent_id, status").eq("id", invitationId).maybeSingle();
   if (!invitation || invitation.talent_id !== session.userId) {
-    return { error: "Invitation not found." };
+    return { error: msg("Invitation not found.") };
   }
   if (invitation.status !== "pending") {
-    return { error: "This invitation has already been responded to." };
+    return { error: msg("This invitation has already been responded to.") };
   }
 
   const { error } = await admin

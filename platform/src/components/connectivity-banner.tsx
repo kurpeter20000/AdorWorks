@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { useT } from "@/i18n/client";
 
 function subscribe(callback: () => void) {
   window.addEventListener("online", callback);
@@ -30,12 +31,12 @@ export function ConnectivityBanner() {
     () => true
   );
 
+  const t = useT();
   if (online) return null;
 
   return (
     <div role="status" className="bg-coral-ink px-4 py-2 text-center text-sm font-semibold text-white">
-      You&rsquo;re offline — actions like sending messages or updating a contract won&rsquo;t go through until your
-      connection comes back.
+      {t("You're offline — actions like sending messages or updating a contract won't go through until your connection comes back.")}
     </div>
   );
 }

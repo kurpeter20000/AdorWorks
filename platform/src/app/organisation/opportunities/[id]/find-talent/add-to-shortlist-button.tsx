@@ -26,7 +26,7 @@ export function AddToShortlistButton({ opportunityId, talentId }: { opportunityI
   if (added) return <span className="text-xs font-semibold text-teal-ink">Added</span>;
 
   return (
-    <div className="text-right">
+    <div className="text-end">
       <button
         type="button"
         disabled={pending}

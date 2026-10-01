@@ -6,8 +6,13 @@ import { APPLICATION_STATES } from "@/lib/domain/states";
 import { createClient } from "@/lib/supabase/server";
 import { WithdrawActions } from "./withdraw-actions";
 import { ApplicationThreadPanel } from "./application-thread-panel";
+import { getT } from "@/i18n/server";
+import { rich } from "@/i18n/rich";
 
-export const metadata: Metadata = { title: "My applications" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return { title: t("My applications") };
+}
 
 const CLOSED_OPPORTUNITY_STATUSES = new Set(["closed", "cancelled", "expired", "filled"]);
 
@@ -18,6 +23,7 @@ export default async function ApplicationsPage({
 }) {
   const session = await requireRole("talent");
   const { applied } = await searchParams;
+  const t = await getT();
   const supabase = await createClient();
 
   const { data: applications } = await supabase
@@ -72,30 +78,32 @@ export default async function ApplicationsPage({
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold text-midnight">My applications</h1>
+        <h1 className="text-2xl font-extrabold text-midnight">{t("My applications")}</h1>
         <div className="flex items-center gap-3">
           <Link href="/opportunities/invited" className="text-sm font-semibold text-violet underline">
-            Invited
+            {t("Invited")}
           </Link>
           <Link href="/opportunities" className="text-sm font-semibold text-teal-ink underline">
-            Find more work
+            {t("Find more work")}
           </Link>
         </div>
       </div>
 
       {applied === "1" && (
         <div className="mt-4 rounded-xl border border-teal-ink/20 bg-teal-ink/5 p-4 text-sm text-teal-ink" role="status">
-          Your application was submitted. You&apos;ll see it below, and the employer will be notified.
+          {t("Your application was submitted. You'll see it below, and the employer will be notified.")}
         </div>
       )}
 
       {!applications || applications.length === 0 ? (
         <p className="mt-8 text-sm text-slate">
-          No applications yet.{" "}
-          <Link href="/opportunities" className="font-semibold text-teal-ink underline">
-            Browse open opportunities
-          </Link>
-          .
+          {rich(t("No applications yet. <browse>Browse open opportunities</browse>."), {
+            browse: (text) => (
+              <Link href="/opportunities" className="font-semibold text-teal-ink underline">
+                {text}
+              </Link>
+            ),
+          })}
         </p>
       ) : (
         <ul className="mt-6 space-y-2">
@@ -106,9 +114,9 @@ export default async function ApplicationsPage({
               <li key={a.id} className="rounded-xl border border-slate/15 bg-white p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-semibold text-midnight">{opp?.title ?? "Opportunity"}</p>
+                    <p className="font-semibold text-midnight">{opp?.title ?? t("Opportunity")}</p>
                     <p className="text-xs text-slate">
-                      {opp ? (orgNameById.get(opp.organisation_id) ?? "AdorWorks employer") : ""}
+                      {opp ? (orgNameById.get(opp.organisation_id) ?? t("AdorWorks employer")) : ""}
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-1">

@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { useT } from "@/i18n/client";
+import { rich } from "@/i18n/rich";
 
 interface RecommendedOpportunity {
   id: string;
@@ -28,9 +32,10 @@ const TONE_CLASS: Record<AttentionItem["tone"], string> = {
  * genuine "nothing needs you right now" state, not a hidden zero.
  */
 export function TalentAttentionList({ items }: { items: AttentionItem[] }) {
+  const t = useT();
   if (items.length === 0) {
     return (
-      <p className="mt-3 text-sm text-slate">Nothing needs your attention right now — nice work staying on top of it.</p>
+      <p className="mt-3 text-sm text-slate">{t("Nothing needs your attention right now — nice work staying on top of it.")}</p>
     );
   }
   return (
@@ -41,7 +46,7 @@ export function TalentAttentionList({ items }: { items: AttentionItem[] }) {
             href={item.href}
             className={`flex items-center justify-between rounded-lg border px-4 py-2.5 text-sm font-semibold text-midnight ${TONE_CLASS[item.tone]}`}
           >
-            <span>{item.label}</span>
+            <span>{t(item.label)}</span>
             <span className="rounded-full bg-white px-2 py-0.5 text-xs">{item.count}</span>
           </Link>
         </li>
@@ -51,14 +56,17 @@ export function TalentAttentionList({ items }: { items: AttentionItem[] }) {
 }
 
 export function RecommendedOpportunities({ opportunities }: { opportunities: RecommendedOpportunity[] }) {
+  const t = useT();
   if (opportunities.length === 0) {
     return (
       <p className="mt-3 text-sm text-slate">
-        No open opportunities match your Passport skills yet —{" "}
-        <Link href="/opportunities" className="font-semibold text-teal-ink underline">
-          browse everything open
-        </Link>
-        .
+        {rich(t("No open opportunities match your Passport skills yet — <all>browse everything open</all>."), {
+          all: (text) => (
+            <Link href="/opportunities" className="font-semibold text-teal-ink underline">
+              {text}
+            </Link>
+          ),
+        })}
       </p>
     );
   }

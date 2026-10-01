@@ -1,5 +1,6 @@
 "use server";
 
+import { msg } from "@/i18n/config";
 import { z } from "zod";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -10,15 +11,15 @@ import type { FormState } from "./auth";
 
 const BasicsSchema = z.object({
   honorific: z.string().optional(),
-  legalName: z.string().trim().min(2, "Enter your legal name."),
-  displayName: z.string().trim().min(2, "Enter a display name."),
-  headline: z.string().trim().min(5, "Enter a short professional headline."),
+  legalName: z.string().trim().min(2, msg("Enter your legal name.")),
+  displayName: z.string().trim().min(2, msg("Enter a display name.")),
+  headline: z.string().trim().min(5, msg("Enter a short professional headline.")),
   bio: z.string().trim().max(2000).optional(),
-  location: z.string().trim().min(2, "Enter your location."),
+  location: z.string().trim().min(2, msg("Enter your location.")),
   category: z.enum(["creative_media", "digital_technology", "business_project_support"], {
-    message: "Choose a category.",
+    message: msg("Choose a category."),
   }),
-  skills: z.string().trim().min(1, "List at least one skill."),
+  skills: z.string().trim().min(1, msg("List at least one skill.")),
   languages: z.string().trim().optional(),
   workMode: z.enum(["remote", "on_site", "hybrid", "any"]),
   availability: z.string().trim().optional(),
@@ -95,7 +96,7 @@ export async function completeVerificationStep(): Promise<void> {
 }
 
 const ReviewSchema = z.object({
-  confirmed: z.literal("on", { message: "Confirm the declaration to continue." }),
+  confirmed: z.literal("on", { message: msg("Confirm the declaration to continue.") }),
 });
 
 /**
@@ -111,7 +112,7 @@ export async function confirmPublicationConsent(_prevState: FormState, formData:
   const session = await requireRole("talent");
   const validated = ReviewSchema.safeParse({ confirmed: formData.get("confirmed") });
   if (!validated.success) {
-    return { message: "Please confirm the declaration before continuing." };
+    return { message: msg("Please confirm the declaration before continuing.") };
   }
 
   const supabase = await createClient();

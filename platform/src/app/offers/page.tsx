@@ -32,7 +32,7 @@ export default async function OffersPage() {
       : { data: [] };
   const orgIds = [...new Set((opportunities ?? []).map((o) => o.organisation_id))];
   const { data: orgs } =
-    orgIds.length > 0 ? await supabase.from("organisations").select("id, name").in("id", orgIds) : { data: [] };
+    orgIds.length > 0 ? await supabase.from("public_organisation_names").select("id, name").in("id", orgIds) : { data: [] };
 
   const opportunityById = new Map((opportunities ?? []).map((o) => [o.id, o]));
   const orgNameById = new Map((orgs ?? []).map((o) => [o.id, o.name]));

@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { REQUEST_PATH_HEADER } from "@/lib/domain/redirects";
+import { LOCALE_COOKIE, isLocale } from "@/i18n/config";
 
 /**
  * Runs on every request (see matcher below) to refresh the Supabase
@@ -26,10 +27,26 @@ const LAST_ACTIVE_COOKIE = "aw_last_active";
 // path is forwarded as a request header — lib/dal/session.ts uses it to
 // send someone back to the page they wanted after signing in.
 export async function proxy(request: NextRequest) {
+  // Links from the public website carry ?lang=ar|sw|en so the app opens in
+  // the language the visitor already chose there. Applied to this request
+  // (so this very page renders in it) and saved for the next ones.
+  const langParam = request.nextUrl.searchParams.get("lang");
+  const lang = isLocale(langParam) ? langParam : null;
+  if (lang) request.cookies.set(LOCALE_COOKIE, lang);
+
   const forward = () => {
     const headers = new Headers(request.headers);
     headers.set(REQUEST_PATH_HEADER, request.nextUrl.pathname + request.nextUrl.search);
-    return NextResponse.next({ request: { headers } });
+    const res = NextResponse.next({ request: { headers } });
+    if (lang) {
+      res.cookies.set(LOCALE_COOKIE, lang, {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+      });
+    }
+    return res;
   };
   let response = forward();
 

@@ -1,5 +1,6 @@
 "use server";
 
+import { msg } from "@/i18n/config";
 import { z } from "zod";
 import { requireSession } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
@@ -16,7 +17,7 @@ import type { FormState } from "./auth";
  */
 
 const ReportSchema = z.object({
-  reason: z.enum(["spam", "scam", "inappropriate", "misleading", "safeguarding", "other"], { message: "Choose a reason." }),
+  reason: z.enum(["spam", "scam", "inappropriate", "misleading", "safeguarding", "other"], { message: msg("Choose a reason.") }),
   note: z.string().trim().max(1000).optional(),
 });
 
@@ -33,7 +34,7 @@ export async function fileReport(
   // (docs/governance/threat-model.md) already named as unmitigated.
   const { allowed } = await checkAndRecordAttempt(createAdminClient(), "report", session.userId);
   if (!allowed) {
-    return { message: "Too many reports submitted recently. Please wait a while and try again." };
+    return { message: msg("Too many reports submitted recently. Please wait a while and try again.") };
   }
 
   const validated = ReportSchema.safeParse({

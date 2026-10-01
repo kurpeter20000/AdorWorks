@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { msg } from "@/i18n/config";
+import { useT } from "@/i18n/client";
 
 const STEPS = [
-  { href: "/onboarding/basics", label: "Basics" },
-  { href: "/onboarding/verification", label: "Verification" },
-  { href: "/onboarding/review", label: "Review & publish" },
+  { href: "/onboarding/basics", label: msg("Basics") },
+  { href: "/onboarding/verification", label: msg("Verification") },
+  { href: "/onboarding/review", label: msg("Review & publish") },
 ];
 
 /**
@@ -22,10 +24,11 @@ const STEPS = [
  */
 export function OnboardingNav() {
   const pathname = usePathname();
+  const t = useT();
   const currentIndex = STEPS.findIndex((step) => pathname === step.href || pathname.startsWith(`${step.href}/`));
 
   return (
-    <nav aria-label="Onboarding steps" className="mb-6 flex flex-wrap items-center gap-2 text-xs font-semibold">
+    <nav aria-label={t("Onboarding steps")} className="mb-6 flex flex-wrap items-center gap-2 text-xs font-semibold">
       {STEPS.map((step, i) => {
         const isCurrent = i === currentIndex;
         const isPast = currentIndex !== -1 && i < currentIndex;
@@ -33,16 +36,17 @@ export function OnboardingNav() {
           <span key={step.href} className="flex items-center gap-2">
             {i > 0 && (
               <span aria-hidden="true" className="text-slate/40">
-                &rarr;
+                <span className="rtl:hidden">&rarr;</span>
+                <span className="hidden rtl:inline">&larr;</span>
               </span>
             )}
             {isPast ? (
               <Link href={step.href} className="text-teal-ink underline">
-                {step.label}
+                {t(step.label)}
               </Link>
             ) : (
               <span aria-current={isCurrent ? "step" : undefined} className={isCurrent ? "text-midnight" : "text-slate/50"}>
-                {step.label}
+                {t(step.label)}
               </span>
             )}
           </span>

@@ -3,12 +3,15 @@
 import { useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { completeVerificationStep } from "@/lib/actions/onboarding";
+import { msg } from "@/i18n/config";
+import { useT } from "@/i18n/client";
 
 const MAX_SIZE_BYTES = 8 * 1024 * 1024; // 8MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 
 export function VerificationForm({ hasExisting }: { hasExisting: boolean }) {
   const [file, setFile] = useState<File | null>(null);
+  const t = useT();
   const [status, setStatus] = useState<{ kind: "error" | "success"; message: string } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -18,11 +21,11 @@ export function VerificationForm({ hasExisting }: { hasExisting: boolean }) {
     setStatus(null);
 
     if (!ALLOWED_TYPES.includes(file.type)) {
-      setStatus({ kind: "error", message: "Please upload a JPG, PNG or PDF file." });
+      setStatus({ kind: "error", message: msg("Please upload a JPG, PNG or PDF file.") });
       return;
     }
     if (file.size > MAX_SIZE_BYTES) {
-      setStatus({ kind: "error", message: "File is too large — 8MB maximum." });
+      setStatus({ kind: "error", message: msg("File is too large — 8MB maximum.") });
       return;
     }
 
@@ -33,7 +36,7 @@ export function VerificationForm({ hasExisting }: { hasExisting: boolean }) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      setStatus({ kind: "error", message: "Your session has expired — please sign in again." });
+      setStatus({ kind: "error", message: msg("Your session has expired — please sign in again.") });
       setUploading(false);
       return;
     }
@@ -43,7 +46,7 @@ export function VerificationForm({ hasExisting }: { hasExisting: boolean }) {
       upsert: false,
     });
     if (uploadError) {
-      setStatus({ kind: "error", message: `Upload failed: ${uploadError.message}` });
+      setStatus({ kind: "error", message: t("Upload failed: {reason}", { reason: uploadError.message }) });
       setUploading(false);
       return;
     }
@@ -55,20 +58,20 @@ export function VerificationForm({ hasExisting }: { hasExisting: boolean }) {
       status: "pending",
     });
     if (insertError) {
-      setStatus({ kind: "error", message: `Could not record the submission: ${insertError.message}` });
+      setStatus({ kind: "error", message: t("Could not record the submission: {reason}", { reason: insertError.message }) });
       setUploading(false);
       return;
     }
 
     setUploading(false);
-    setStatus({ kind: "success", message: "Uploaded — a reviewer will check this soon." });
+    setStatus({ kind: "success", message: msg("Uploaded — a reviewer will check this soon.") });
   }
 
   return (
     <div className="mt-6 space-y-4">
       <div>
         <label htmlFor="idFile" className="text-sm font-semibold text-midnight">
-          Identity document
+          {t("Identity document")}
         </label>
         <input
           id="idFile"
@@ -80,7 +83,7 @@ export function VerificationForm({ hasExisting }: { hasExisting: boolean }) {
       </div>
 
       {status && (
-        <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`} role={status.kind === "error" ? "alert" : "status"}>{status.message}</p>
+        <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`} role={status.kind === "error" ? "alert" : "status"}>{t(status.message)}</p>
       )}
 
       <button
@@ -89,7 +92,7 @@ export function VerificationForm({ hasExisting }: { hasExisting: boolean }) {
         disabled={!file || uploading}
         className="w-full rounded-lg border border-teal px-4 py-2.5 text-sm font-bold text-teal-ink disabled:opacity-60"
       >
-        {uploading ? "Uploading…" : "Upload document"}
+        {uploading ? t("Uploading…") : t("Upload document")}
       </button>
 
       <button
@@ -98,7 +101,7 @@ export function VerificationForm({ hasExisting }: { hasExisting: boolean }) {
         onClick={() => startTransition(() => completeVerificationStep())}
         className="w-full rounded-lg bg-teal px-4 py-2.5 text-sm font-bold text-midnight disabled:opacity-60"
       >
-        {pending ? "Continuing…" : "Continue"}
+        {pending ? t("Continuing…") : t("Continue")}
       </button>
     </div>
   );

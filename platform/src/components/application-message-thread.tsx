@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { sendApplicationMessage } from "@/lib/actions/messages";
+import { msg } from "@/i18n/config";
+import { useT } from "@/i18n/client";
 
 export function ApplicationMessageThread({
   applicationId,
@@ -13,12 +15,13 @@ export function ApplicationMessageThread({
   messages: { id: string; sender_id: string; body: string; created_at: string }[];
 }) {
   const [body, setBody] = useState("");
+  const t = useT();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   function send() {
     if (!body.trim()) {
-      setError("Write a message before sending.");
+      setError(msg("Write a message before sending."));
       return;
     }
     setError(null);
@@ -37,7 +40,7 @@ export function ApplicationMessageThread({
   return (
     <div className="rounded-lg border border-slate/15 bg-white p-3">
       {messages.length === 0 ? (
-        <p className="text-xs text-slate">No messages yet.</p>
+        <p className="text-xs text-slate">{t("No messages yet.")}</p>
       ) : (
         <ul className="max-h-64 space-y-2 overflow-y-auto">
           {messages.map((m) => {
@@ -55,13 +58,13 @@ export function ApplicationMessageThread({
 
       <div className="mt-2 flex gap-2">
         <label htmlFor={`app-message-${applicationId}`} className="sr-only">
-          Write a message
+          {t("Write a message")}
         </label>
         <input
           id={`app-message-${applicationId}`}
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder="Write a message…"
+          placeholder={t("Write a message…")}
           className="flex-1 rounded-lg border border-slate/25 px-2.5 py-1.5 text-xs"
         />
         <button
@@ -70,10 +73,10 @@ export function ApplicationMessageThread({
           onClick={send}
           className="rounded-lg bg-teal px-3 py-1.5 text-xs font-bold text-midnight disabled:opacity-60"
         >
-          {pending ? "Sending…" : "Send"}
+          {pending ? t("Sending…") : t("Send")}
         </button>
       </div>
-      {error && <p className="mt-1 text-xs text-coral-ink">{error}</p>}
+      {error && <p className="mt-1 text-xs text-coral-ink">{t(error)}</p>}
     </div>
   );
 }

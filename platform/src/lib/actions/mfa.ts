@@ -1,5 +1,6 @@
 "use server";
 
+import { msg } from "@/i18n/config";
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -49,7 +50,7 @@ export async function startMfaEnrollment(): Promise<MfaEnrollmentResult> {
 
 const CodeSchema = z.object({
   factorId: z.string().min(1),
-  code: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit code from your authenticator app."),
+  code: z.string().trim().regex(/^\d{6}$/, msg("Enter the 6-digit code from your authenticator app.")),
 });
 
 /** Completes enrollment — the factor only becomes active once a real code from it is verified. */
@@ -72,7 +73,7 @@ export async function verifyMfaEnrollment(_prevState: FormState, formData: FormD
   // same guard for consistency.
   const { allowed } = await checkAndRecordAttempt(createAdminClient(), "mfa_challenge", session.userId);
   if (!allowed) {
-    return { message: "Too many attempts. Please wait a few minutes and try again." };
+    return { message: msg("Too many attempts. Please wait a few minutes and try again.") };
   }
 
   const supabase = await createClient();
@@ -86,7 +87,7 @@ export async function verifyMfaEnrollment(_prevState: FormState, formData: FormD
     challengeId: challenge.id,
     code: validated.data.code,
   });
-  if (verifyError) return { message: "That code didn't work — check your authenticator app and try again." };
+  if (verifyError) return { message: msg("That code didn't work — check your authenticator app and try again.") };
 
   redirect("/dashboard");
 }
@@ -109,7 +110,7 @@ export async function verifyMfaChallenge(_prevState: FormState, formData: FormDa
   // severe of the confirmed rate-limiting gaps.
   const { allowed } = await checkAndRecordAttempt(createAdminClient(), "mfa_challenge", session.userId);
   if (!allowed) {
-    return { message: "Too many attempts. Please wait a few minutes and try again." };
+    return { message: msg("Too many attempts. Please wait a few minutes and try again.") };
   }
 
   const supabase = await createClient();
@@ -123,7 +124,7 @@ export async function verifyMfaChallenge(_prevState: FormState, formData: FormDa
     challengeId: challenge.id,
     code: validated.data.code,
   });
-  if (verifyError) return { message: "That code didn't work — check your authenticator app and try again." };
+  if (verifyError) return { message: msg("That code didn't work — check your authenticator app and try again.") };
 
   redirect("/dashboard");
 }

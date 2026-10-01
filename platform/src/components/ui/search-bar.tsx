@@ -40,7 +40,7 @@ export function SearchBar({
       role="search"
       {...formProps}
     >
-      <Search className="ml-2 size-5 shrink-0 text-slate" aria-hidden="true" />
+      <Search className="ms-2 size-5 shrink-0 text-slate" aria-hidden="true" />
       <label className="sr-only" htmlFor={`search-${name}`}>
         {placeholder}
       </label>

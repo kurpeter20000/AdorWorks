@@ -10,29 +10,34 @@ import { SaveButton } from "./save-button";
 import { DismissButton } from "./dismiss-button";
 import { ShareButton } from "./share-button";
 import type { Category, EngagementType, WorkMode } from "@/lib/database.types";
+import { msg } from "@/i18n/config";
+import { getT } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Find work" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return { title: t("Find work") };
+}
 
 const CATEGORY_LABEL: Record<string, string> = {
-  creative_media: "Creative & media",
-  digital_technology: "Digital & technology",
-  business_project_support: "Business & project support",
+  creative_media: msg("Creative & media"),
+  digital_technology: msg("Digital & technology"),
+  business_project_support: msg("Business & project support"),
 };
 
 const ENGAGEMENT_LABEL: Record<string, string> = {
-  freelance: "Freelance",
-  fixed_term_contract: "Fixed-term contract",
-  full_time: "Full-time",
-  internship: "Internship",
-  apprenticeship: "Apprenticeship",
-  managed_service: "Managed service",
+  freelance: msg("Freelance"),
+  fixed_term_contract: msg("Fixed-term contract"),
+  full_time: msg("Full-time"),
+  internship: msg("Internship"),
+  apprenticeship: msg("Apprenticeship"),
+  managed_service: msg("Managed service"),
 };
 
 const WORK_MODE_LABEL: Record<string, string> = {
-  remote: "Remote",
-  on_site: "On-site",
-  hybrid: "Hybrid",
-  any: "Any",
+  remote: msg("Remote"),
+  on_site: msg("On-site"),
+  hybrid: msg("Hybrid"),
+  any: msg("Any"),
 };
 
 const PAGE_SIZE = 10;
@@ -56,8 +61,8 @@ const WORK_TYPE_ENGAGEMENT_TYPES: Record<string, EngagementType[]> = {
   freelance_contract: ["freelance", "fixed_term_contract"],
 };
 const WORK_TYPE_LABEL: Record<string, string> = {
-  full_time: "Full-time",
-  freelance_contract: "Freelancing/Contract",
+  full_time: msg("Full-time"),
+  freelance_contract: msg("Freelancing/Contract"),
 };
 
 export default async function OpportunitiesPage({
@@ -77,6 +82,7 @@ export default async function OpportunitiesPage({
   }>;
 }) {
   const session = await requireRole("talent");
+  const t = await getT();
   const rawParams = await searchParams;
   const { q, category, engagementType, workMode, workType, location, deadlineBefore, prefs, sort, page } = rawParams;
   const supabase = await createClient();
@@ -174,39 +180,39 @@ export default async function OpportunitiesPage({
   return (
     <main className="mx-auto max-w-5xl p-6 sm:p-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold text-midnight">Find work</h1>
+        <h1 className="text-2xl font-extrabold text-midnight">{t("Find work")}</h1>
         <div className="flex items-center gap-3">
           <Link href="/opportunities/saved" className="text-sm font-semibold text-violet underline">
-            Saved
+            {t("Saved")}
           </Link>
           <Link href="/applications" className="text-sm font-semibold text-teal-ink underline">
-            My applications
+            {t("My applications")}
           </Link>
         </div>
       </div>
-      <p className="mt-2 text-sm text-slate">Open, paid opportunities on AdorWorks right now.</p>
+      <p className="mt-2 text-sm text-slate">{t("Open, paid opportunities on AdorWorks right now.")}</p>
 
       {workType && workType in WORK_TYPE_LABEL && (
         <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-teal/10 px-3 py-1 text-xs font-semibold text-teal-ink">
-          Showing {WORK_TYPE_LABEL[workType]} work
+          {t("Showing {type} work", { type: t(WORK_TYPE_LABEL[workType]) })}
           <Link href={pageHref({ workType: undefined, page: "1" })} className="underline">
-            Clear
+            {t("Clear")}
           </Link>
         </p>
       )}
 
       {usingPreferenceDefaults ? (
         <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-violet/10 px-3 py-1 text-xs font-semibold text-violet">
-          Showing opportunities matching your job preferences
+          {t("Showing opportunities matching your job preferences")}
           <Link href={pageHref({ prefs: undefined, page: "1" })} className="underline">
-            See everything
+            {t("See everything")}
           </Link>
         </p>
       ) : (
         hasPreferences && (
           <p className="mt-2 text-xs">
             <Link href={pageHref({ prefs: "1", page: "1" })} className="font-semibold text-violet underline">
-              Match my job preferences
+              {t("Match my job preferences")}
             </Link>
           </p>
         )
@@ -217,19 +223,18 @@ export default async function OpportunitiesPage({
           href={pageHref({ sort: "recent", page: "1" })}
           className={`rounded-full px-3 py-1 text-xs font-semibold ${sortMode === "recent" ? "bg-midnight text-white" : "border border-slate/25 text-midnight"}`}
         >
-          Recent
+          {t("Recent")}
         </Link>
         <Link
           href={pageHref({ sort: "relevant", page: "1" })}
           className={`rounded-full px-3 py-1 text-xs font-semibold ${sortMode === "relevant" ? "bg-midnight text-white" : "border border-slate/25 text-midnight"}`}
         >
-          Relevant to you
+          {t("Relevant to you")}
         </Link>
       </div>
       {sortMode === "relevant" && (
         <p className="mt-1 text-xs text-slate">
-          Ranked by overlap with your Passport skills, then most recently posted — not by employer spend, so every
-          opportunity gets fair visibility.
+          {t("Ranked by overlap with your Passport skills, then most recently posted — not by employer spend, so every opportunity gets fair visibility.")}
         </p>
       )}
 
@@ -239,31 +244,31 @@ export default async function OpportunitiesPage({
         {usingPreferenceDefaults && <input type="hidden" name="prefs" value="1" />}
         <div className="flex gap-2">
           <label htmlFor="opportunities-search" className="sr-only">
-            Search opportunities by title or description
+            {t("Search opportunities by title or description")}
           </label>
           <input
             id="opportunities-search"
             type="search"
             name="q"
             defaultValue={q}
-            placeholder="Search by title or description…"
+            placeholder={t("Search by title or description…")}
             className="min-w-0 flex-1 rounded-lg border border-slate/25 px-3 py-2 text-sm"
           />
           <button type="submit" className="rounded-lg bg-teal px-4 py-2 text-sm font-bold text-midnight">
-            Search
+            {t("Search")}
           </button>
         </div>
         {/* Collapsed by default so results start near the top on a phone,
             instead of below five filter fields. */}
         <details open={hasAdvancedFilters} className="rounded-lg border border-slate/15 bg-white">
           <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-teal-ink select-none">
-            More filters{hasAdvancedFilters ? " (active)" : ""}
+            {hasAdvancedFilters ? t("More filters (active)") : t("More filters")}
           </summary>
           <div className="space-y-2 px-3 pb-3">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <div>
             <label htmlFor="opportunities-category" className="sr-only">
-              Filter by category
+              {t("Filter by category")}
             </label>
             <select
               id="opportunities-category"
@@ -271,17 +276,17 @@ export default async function OpportunitiesPage({
               defaultValue={category ?? ""}
               className="w-full rounded-lg border border-slate/25 px-2 py-2 text-xs"
             >
-              <option value="">Any category</option>
+              <option value="">{t("Any category")}</option>
               {Object.entries(CATEGORY_LABEL).map(([value, label]) => (
                 <option key={value} value={value}>
-                  {label}
+                  {t(label)}
                 </option>
               ))}
             </select>
           </div>
           <div>
             <label htmlFor="opportunities-engagement-type" className="sr-only">
-              Filter by engagement type
+              {t("Filter by engagement type")}
             </label>
             <select
               id="opportunities-engagement-type"
@@ -289,17 +294,17 @@ export default async function OpportunitiesPage({
               defaultValue={engagementType ?? ""}
               className="w-full rounded-lg border border-slate/25 px-2 py-2 text-xs"
             >
-              <option value="">Any type</option>
+              <option value="">{t("Any type")}</option>
               {Object.entries(ENGAGEMENT_LABEL).map(([value, label]) => (
                 <option key={value} value={value}>
-                  {label}
+                  {t(label)}
                 </option>
               ))}
             </select>
           </div>
           <div>
             <label htmlFor="opportunities-work-mode" className="sr-only">
-              Filter by work mode
+              {t("Filter by work mode")}
             </label>
             <select
               id="opportunities-work-mode"
@@ -307,10 +312,10 @@ export default async function OpportunitiesPage({
               defaultValue={workMode ?? ""}
               className="w-full rounded-lg border border-slate/25 px-2 py-2 text-xs"
             >
-              <option value="">Any work mode</option>
+              <option value="">{t("Any work mode")}</option>
               {Object.entries(WORK_MODE_LABEL).map(([value, label]) => (
                 <option key={value} value={value}>
-                  {label}
+                  {t(label)}
                 </option>
               ))}
             </select>
@@ -319,20 +324,20 @@ export default async function OpportunitiesPage({
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <div>
             <label htmlFor="opportunities-location" className="sr-only">
-              Filter by location
+              {t("Filter by location")}
             </label>
             <input
               id="opportunities-location"
               type="text"
               name="location"
               defaultValue={location ?? ""}
-              placeholder="Location (e.g. Juba, Remote)"
+              placeholder={t("Location (e.g. Juba, Remote)")}
               className="w-full rounded-lg border border-slate/25 px-2 py-2 text-xs"
             />
           </div>
           <div>
             <label htmlFor="opportunities-deadline-before" className="block text-[11px] text-slate">
-              Closing on or before
+              {t("Closing on or before")}
             </label>
             <input
               id="opportunities-deadline-before"
@@ -344,13 +349,13 @@ export default async function OpportunitiesPage({
           </div>
         </div>
             <button type="submit" className="rounded-lg bg-teal px-4 py-2 text-sm font-bold text-midnight">
-              Apply filters
+              {t("Apply filters")}
             </button>
           </div>
         </details>
         {hasFilters && (
           <Link href={pageHref({ q: undefined, category: undefined, engagementType: undefined, workMode: undefined, workType: undefined, location: undefined, deadlineBefore: undefined, prefs: undefined, page: "1" })} className="inline-block text-xs font-semibold text-slate underline">
-            Clear filters
+            {t("Clear filters")}
           </Link>
         )}
       </form>
@@ -359,13 +364,13 @@ export default async function OpportunitiesPage({
         <div className="mt-8 text-sm text-slate">
           {hasFilters ? (
             <>
-              <p>No opportunities match these filters.</p>
+              <p>{t("No opportunities match these filters.")}</p>
               <Link href={pageHref({ q: undefined, category: undefined, engagementType: undefined, workMode: undefined, workType: undefined, location: undefined, deadlineBefore: undefined, prefs: undefined, page: "1" })} className="mt-1 inline-block font-semibold text-teal-ink underline">
-                Clear filters and see everything open
+                {t("Clear filters and see everything open")}
               </Link>
             </>
           ) : (
-            <p>Nothing open yet — check back soon.</p>
+            <p>{t("Nothing open yet — check back soon.")}</p>
           )}
         </div>
       ) : (
@@ -379,19 +384,19 @@ export default async function OpportunitiesPage({
                       {o.title}
                     </Link>
                     <p className="flex items-center gap-1.5 text-xs text-slate">
-                      {orgInfo.get(o.organisation_id)?.name ?? "AdorWorks employer"}
+                      {orgInfo.get(o.organisation_id)?.name ?? t("AdorWorks employer")}
                       {orgInfo.get(o.organisation_id)?.verified && (
                         <span
                           className="inline-flex items-center rounded-full bg-teal-ink/10 px-1.5 py-0.5 text-[10px] font-semibold text-teal-ink"
-                          title="This organisation has completed AdorWorks verification."
+                          title={t("This organisation has completed AdorWorks verification.")}
                         >
-                          Verified
+                          {t("Verified")}
                         </span>
                       )}
                     </p>
                   </div>
                   <span className="whitespace-nowrap text-sm font-semibold text-teal-ink">
-                    {formatCompensation(o)}
+                    {t(formatCompensation(o))}
                   </span>
                 </div>
                 {o.brief && <p className="mt-2 line-clamp-3 text-sm text-slate">{o.brief}</p>}
@@ -404,8 +409,8 @@ export default async function OpportunitiesPage({
                 </div>
                 <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-3">
                   <p className="text-xs text-slate">
-                    {[o.location, o.work_mode && WORK_MODE_LABEL[o.work_mode], o.engagement_type && ENGAGEMENT_LABEL[o.engagement_type]].filter(Boolean).join(" · ")}
-                    {o.application_deadline && ` · Apply by ${formatDate(o.application_deadline, { day: "numeric", month: "short", year: "numeric" })}`}
+                    {[o.location, o.work_mode && t(WORK_MODE_LABEL[o.work_mode]), o.engagement_type && t(ENGAGEMENT_LABEL[o.engagement_type])].filter(Boolean).join(" · ")}
+                    {o.application_deadline && ` · ${t("Apply by {date}", { date: formatDate(o.application_deadline, { day: "numeric", month: "short", year: "numeric" }) })}`}
                   </p>
                   <div className="flex items-center gap-3">
                     <SaveButton opportunityId={o.id} initialSaved={savedIds.has(o.id)} />
@@ -415,7 +420,7 @@ export default async function OpportunitiesPage({
                 {/* Secondary actions folded away so each card shows two
                     clear choices (Save, Apply) instead of five. */}
                 <details className="mt-2 text-xs">
-                  <summary className="inline-block cursor-pointer font-semibold text-slate select-none">More options</summary>
+                  <summary className="inline-block cursor-pointer font-semibold text-slate select-none">{t("More options")}</summary>
                   <div className="mt-2 flex flex-wrap items-center gap-4">
                     <ShareButton opportunityId={o.id} />
                     <DismissButton opportunityId={o.id} />
@@ -430,17 +435,17 @@ export default async function OpportunitiesPage({
             <div className="mt-6 flex items-center justify-between text-sm">
               {currentPage > 1 ? (
                 <Link href={pageHref({ page: String(currentPage - 1) })} className="font-semibold text-teal-ink underline">
-                  &larr; Previous
+                  <span className="rtl:hidden">&larr;</span> {t("Previous")} <span className="hidden rtl:inline">&rarr;</span>
                 </Link>
               ) : (
                 <span />
               )}
               <span className="text-xs text-slate">
-                Page {currentPage} of {totalPages}
+                {t("Page {page} of {total}", { page: currentPage, total: totalPages })}
               </span>
               {currentPage < totalPages ? (
                 <Link href={pageHref({ page: String(currentPage + 1) })} className="font-semibold text-teal-ink underline">
-                  Next &rarr;
+                  {t("Next")} <span className="rtl:hidden">&rarr;</span><span className="hidden rtl:inline">&larr;</span>
                 </Link>
               ) : (
                 <span />

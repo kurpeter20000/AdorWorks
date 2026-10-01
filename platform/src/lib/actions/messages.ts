@@ -1,5 +1,6 @@
 "use server";
 
+import { msg } from "@/i18n/config";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/dal/session";
@@ -25,7 +26,7 @@ import type { FormState } from "./auth";
  */
 
 const MessageSchema = z.object({
-  body: z.string().trim().min(1, "Write a message before sending.").max(4000),
+  body: z.string().trim().min(1, msg("Write a message before sending.")).max(4000),
 });
 
 async function getApplicationParties(admin: ReturnType<typeof createAdminClient>, applicationId: string) {
@@ -73,10 +74,10 @@ export async function sendApplicationMessage(
   }
 
   const parties = await getApplicationParties(admin, applicationId);
-  if (!parties) return { message: "Application not found." };
+  if (!parties) return { message: msg("Application not found.") };
 
   const isParticipant = session.userId === parties.talentId || session.userId === parties.employerId;
-  if (!isParticipant) return { message: "You aren't part of this application." };
+  if (!isParticipant) return { message: msg("You aren't part of this application.") };
 
   let { data: conversation } = await admin
     .from("conversations")
@@ -107,7 +108,7 @@ export async function sendApplicationMessage(
       }
     }
   }
-  if (!conversation) return { message: "Could not open this conversation." };
+  if (!conversation) return { message: msg("Could not open this conversation.") };
 
   const { error } = await admin.from("messages").insert({
     conversation_id: conversation.id,

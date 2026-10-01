@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation";
 import { markNotificationRead, markAllNotificationsRead } from "@/lib/actions/notifications";
 import { formatDateTime } from "@/lib/domain/format";
 import type { NotificationRow } from "@/lib/database.types";
+import { useT } from "@/i18n/client";
 
 export function NotificationsList({ notifications }: { notifications: NotificationRow[] }) {
   const router = useRouter();
+  const t = useT();
   const [pending, startTransition] = useTransition();
   const unreadCount = notifications.filter((n) => !n.read_at).length;
 
@@ -30,7 +32,7 @@ export function NotificationsList({ notifications }: { notifications: Notificati
     <div className="mt-6">
       {unreadCount > 0 && (
         <button type="button" disabled={pending} onClick={markAllRead} className="text-xs font-semibold text-teal-ink underline disabled:opacity-60">
-          Mark all read
+          {t("Mark all read")}
         </button>
       )}
       <ul className="mt-3 space-y-2">
@@ -49,7 +51,7 @@ export function NotificationsList({ notifications }: { notifications: Notificati
                   {content}
                 </Link>
               ) : (
-                <button type="button" disabled={pending || !!n.read_at} onClick={() => markRead(n.id)} className="block w-full text-left">
+                <button type="button" disabled={pending || !!n.read_at} onClick={() => markRead(n.id)} className="block w-full text-start">
                   {content}
                 </button>
               )}

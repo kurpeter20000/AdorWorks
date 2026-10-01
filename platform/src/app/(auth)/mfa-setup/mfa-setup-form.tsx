@@ -15,7 +15,7 @@ export function MfaSetupForm({ factorId, qrCode, secret }: { factorId: string; q
     <form action={formAction} className="mt-6 space-y-4">
       <input type="hidden" name="factorId" value={factorId} />
 
-      <ol className="list-decimal space-y-3 pl-5 text-sm text-slate">
+      <ol className="list-decimal space-y-3 ps-5 text-sm text-slate">
         <li>
           Scan this code with an authenticator app (Google Authenticator, Authy, 1Password, etc.):
           {/* Supabase returns this as a ready-to-use SVG data URI — next/image

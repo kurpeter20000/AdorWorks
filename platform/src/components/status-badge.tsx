@@ -1,4 +1,7 @@
+"use client";
+
 import type { StateDefinition, StatusTone } from "@/lib/domain/states";
+import { useT } from "@/i18n/client";
 
 const TONE_CLASS: Record<StatusTone, string> = {
   neutral: "bg-slate/10 text-slate",
@@ -15,9 +18,10 @@ export function StatusBadge({
   state: StateDefinition;
   className?: string;
 }) {
+  const t = useT();
   return (
     <span className={`rounded-full px-3 py-1 text-xs font-semibold ${TONE_CLASS[state.tone]} ${className}`.trim()}>
-      {state.label}
+      {t(state.label)}
     </span>
   );
 }

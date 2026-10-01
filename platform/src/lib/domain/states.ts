@@ -1,3 +1,4 @@
+import { msg } from "@/i18n/config";
 import type {
   ApplicationStage,
   ContractStatus,
@@ -17,67 +18,67 @@ export interface StateDefinition {
 }
 
 export const APPLICATION_STATES = {
-  submitted: { label: "Submitted", tone: "neutral" },
-  shortlisted: { label: "Shortlisted", tone: "info" },
-  interviewing: { label: "Interviewing", tone: "info" },
-  offered: { label: "Offer sent", tone: "warning" },
-  accepted: { label: "Accepted", tone: "success", terminal: true },
-  rejected: { label: "Not selected", tone: "neutral", terminal: true },
-  withdrawn: { label: "Withdrawn", tone: "neutral", terminal: true },
+  submitted: { label: msg("Submitted"), tone: "neutral" },
+  shortlisted: { label: msg("Shortlisted"), tone: "info" },
+  interviewing: { label: msg("Interviewing"), tone: "info" },
+  offered: { label: msg("Offer sent"), tone: "warning" },
+  accepted: { label: msg("Accepted"), tone: "success", terminal: true },
+  rejected: { label: msg("Not selected"), tone: "neutral", terminal: true },
+  withdrawn: { label: msg("Withdrawn"), tone: "neutral", terminal: true },
 } as const satisfies Record<ApplicationStage, StateDefinition>;
 
 export const OPPORTUNITY_STATES = {
-  draft: { label: "Draft", tone: "neutral" },
-  pending_review: { label: "Submitted for review", tone: "warning" },
-  open: { label: "Published", tone: "success" },
-  filled: { label: "Filled", tone: "info", terminal: true },
-  closed: { label: "Closed", tone: "neutral", terminal: true },
-  cancelled: { label: "Cancelled", tone: "neutral", terminal: true },
-  rejected: { label: "Not approved", tone: "danger", terminal: true },
-  changes_required: { label: "Changes requested", tone: "warning" },
-  paused: { label: "Paused", tone: "neutral" },
-  expired: { label: "Expired", tone: "neutral", terminal: true },
+  draft: { label: msg("Draft"), tone: "neutral" },
+  pending_review: { label: msg("Submitted for review"), tone: "warning" },
+  open: { label: msg("Published"), tone: "success" },
+  filled: { label: msg("Filled"), tone: "info", terminal: true },
+  closed: { label: msg("Closed"), tone: "neutral", terminal: true },
+  cancelled: { label: msg("Cancelled"), tone: "neutral", terminal: true },
+  rejected: { label: msg("Not approved"), tone: "danger", terminal: true },
+  changes_required: { label: msg("Changes requested"), tone: "warning" },
+  paused: { label: msg("Paused"), tone: "neutral" },
+  expired: { label: msg("Expired"), tone: "neutral", terminal: true },
 } as const satisfies Record<OpportunityStatus, StateDefinition>;
 
 export const TALENT_SERVICE_STATES = {
-  draft: { label: "Draft", tone: "neutral" },
-  pending_review: { label: "Submitted for review", tone: "warning" },
-  published: { label: "Published", tone: "success" },
-  paused: { label: "Paused", tone: "neutral" },
-  rejected: { label: "Not approved", tone: "danger" },
-  removed: { label: "Withdrawn", tone: "neutral", terminal: true },
+  draft: { label: msg("Draft"), tone: "neutral" },
+  pending_review: { label: msg("Submitted for review"), tone: "warning" },
+  published: { label: msg("Published"), tone: "success" },
+  paused: { label: msg("Paused"), tone: "neutral" },
+  rejected: { label: msg("Not approved"), tone: "danger" },
+  removed: { label: msg("Withdrawn"), tone: "neutral", terminal: true },
 } as const satisfies Record<TalentServiceStatus, StateDefinition>;
 
 export const OFFER_STATES = {
-  draft: { label: "Draft", tone: "neutral" },
-  sent: { label: "Awaiting response", tone: "info" },
-  accepted: { label: "Accepted", tone: "success", terminal: true },
-  declined: { label: "Declined", tone: "neutral", terminal: true },
-  withdrawn: { label: "Withdrawn", tone: "neutral", terminal: true },
+  draft: { label: msg("Draft"), tone: "neutral" },
+  sent: { label: msg("Awaiting response"), tone: "info" },
+  accepted: { label: msg("Accepted"), tone: "success", terminal: true },
+  declined: { label: msg("Declined"), tone: "neutral", terminal: true },
+  withdrawn: { label: msg("Withdrawn"), tone: "neutral", terminal: true },
 } as const satisfies Record<OfferStatus, StateDefinition>;
 
 export const CONTRACT_STATES = {
-  active: { label: "Active", tone: "success" },
-  completed: { label: "Completed", tone: "info", terminal: true },
-  cancelled: { label: "Cancelled", tone: "neutral", terminal: true },
-  disputed: { label: "Disputed", tone: "danger" },
+  active: { label: msg("Active"), tone: "success" },
+  completed: { label: msg("Completed"), tone: "info", terminal: true },
+  cancelled: { label: msg("Cancelled"), tone: "neutral", terminal: true },
+  disputed: { label: msg("Disputed"), tone: "danger" },
 } as const satisfies Record<ContractStatus, StateDefinition>;
 
 export const MILESTONE_STATES = {
-  pending: { label: "Not started", tone: "neutral" },
-  submitted: { label: "Awaiting review", tone: "info" },
-  approved: { label: "Approved — ready for payment", tone: "warning" },
-  revision_requested: { label: "Revision requested", tone: "danger" },
-  paid: { label: "Paid", tone: "success", terminal: true },
+  pending: { label: msg("Not started"), tone: "neutral" },
+  submitted: { label: msg("Awaiting review"), tone: "info" },
+  approved: { label: msg("Approved — ready for payment"), tone: "warning" },
+  revision_requested: { label: msg("Revision requested"), tone: "danger" },
+  paid: { label: msg("Paid"), tone: "success", terminal: true },
 } as const satisfies Record<MilestoneStatus, StateDefinition>;
 
 type OrganisationVerificationStatus = OrganisationRow["verification_status"];
 
 export const ORGANISATION_VERIFICATION_STATES = {
-  pending: { label: "Pending verification", tone: "warning" },
-  verified: { label: "Verified", tone: "success" },
-  rejected: { label: "Not verified", tone: "danger", terminal: true },
-  suspended: { label: "Suspended", tone: "danger" },
+  pending: { label: msg("Pending verification"), tone: "warning" },
+  verified: { label: msg("Verified"), tone: "success" },
+  rejected: { label: msg("Not verified"), tone: "danger", terminal: true },
+  suspended: { label: msg("Suspended"), tone: "danger" },
 } as const satisfies Record<OrganisationVerificationStatus, StateDefinition>;
 
 // The two tracked dimensions behind ORGANISATION_VERIFICATION_STATES
@@ -94,12 +95,12 @@ export type VerificationCheckStatus =
   | "expired";
 
 export const VERIFICATION_CHECK_STATES = {
-  not_started: { label: "Not started", tone: "neutral" },
-  information_required: { label: "Information required", tone: "warning" },
-  submitted: { label: "Submitted", tone: "info" },
-  under_review: { label: "Under review", tone: "info" },
-  verified: { label: "Verified", tone: "success", terminal: true },
-  rejected: { label: "Not verified", tone: "danger" },
-  suspended: { label: "Suspended", tone: "danger" },
-  expired: { label: "Expired", tone: "warning" },
+  not_started: { label: msg("Not started"), tone: "neutral" },
+  information_required: { label: msg("Information required"), tone: "warning" },
+  submitted: { label: msg("Submitted"), tone: "info" },
+  under_review: { label: msg("Under review"), tone: "info" },
+  verified: { label: msg("Verified"), tone: "success", terminal: true },
+  rejected: { label: msg("Not verified"), tone: "danger" },
+  suspended: { label: msg("Suspended"), tone: "danger" },
+  expired: { label: msg("Expired"), tone: "warning" },
 } as const satisfies Record<VerificationCheckStatus, StateDefinition>;

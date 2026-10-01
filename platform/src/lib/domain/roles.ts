@@ -1,4 +1,5 @@
 import type { UserRole } from "@/lib/database.types";
+import { msg } from "@/i18n/config";
 
 /**
  * Runtime role catalogue matching the current `user_role` database enum.
@@ -37,17 +38,17 @@ export type DashboardKind = "talent" | "employer" | "assistance" | "operations" 
 
 /** Human-friendly account-role label for the nav's role Badge — display only, never used for authorization. */
 export const USER_ROLE_LABELS: Record<UserRole, string> = {
-  talent: "Talent",
-  employer: "Employer",
-  individual_client: "Client",
-  org_member: "Team member",
-  org_admin: "Org admin",
-  reviewer: "Reviewer",
-  matcher: "Matcher",
-  finance: "Finance",
-  admin: "Admin",
-  onboarding_agent: "Assistance",
-  partner_hub_admin: "Partner",
+  talent: msg("Talent"),
+  employer: msg("Employer"),
+  individual_client: msg("Client"),
+  org_member: msg("Team member"),
+  org_admin: msg("Org admin"),
+  reviewer: msg("Reviewer"),
+  matcher: msg("Matcher"),
+  finance: msg("Finance"),
+  admin: msg("Admin"),
+  onboarding_agent: msg("Assistance"),
+  partner_hub_admin: msg("Partner"),
 };
 
 /** Which Badge variant a role's label renders in — grouped by account kind, not per-role. */

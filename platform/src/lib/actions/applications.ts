@@ -1,5 +1,6 @@
 "use server";
 
+import { msg } from "@/i18n/config";
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -15,7 +16,7 @@ import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
 import type { FormState } from "./auth";
 
 const PitchSchema = z.object({
-  pitch: z.string().trim().min(30, "Tell them a bit more about why you're a fit — at least 30 characters."),
+  pitch: z.string().trim().min(30, msg("Tell them a bit more about why you're a fit — at least 30 characters.")),
 });
 
 // Anti-spam without a pay-to-apply model (Stage 5): a soft daily cap
@@ -88,10 +89,10 @@ export async function applyToOpportunity(
     .eq("id", opportunityId)
     .maybeSingle();
   if (!opportunityCheck || opportunityCheck.status !== "open") {
-    return { message: "This opportunity is no longer accepting applications." };
+    return { message: msg("This opportunity is no longer accepting applications.") };
   }
   if (opportunityCheck.application_deadline && opportunityCheck.application_deadline < new Date().toISOString().slice(0, 10)) {
-    return { message: "The application deadline for this opportunity has passed." };
+    return { message: msg("The application deadline for this opportunity has passed.") };
   }
 
   const { data: questions } = await supabase
@@ -125,7 +126,7 @@ export async function applyToOpportunity(
 
   if (error) {
     if (error.code === "23505") {
-      return { message: "You've already applied to this opportunity." };
+      return { message: msg("You've already applied to this opportunity.") };
     }
     return { message: error.message };
   }
@@ -273,7 +274,7 @@ export async function addCandidateToShortlist(opportunityId: string, talentId: s
     .select("id")
     .single();
   if (error) {
-    if (error.code === "23505") return { error: "Already added to this shortlist." };
+    if (error.code === "23505") return { error: msg("Already added to this shortlist.") };
     return { error: error.message };
   }
 
@@ -406,7 +407,7 @@ export async function addApplicationNote(
     .eq("user_id", session.userId)
     .maybeSingle();
   if (membership?.role === "viewer") {
-    return { message: "Viewers can't add notes." };
+    return { message: msg("Viewers can't add notes.") };
   }
 
   const { error } = await supabase.from("application_notes").insert({

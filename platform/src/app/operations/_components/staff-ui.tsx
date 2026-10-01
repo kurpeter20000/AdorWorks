@@ -236,7 +236,7 @@ export function KV({ items }: { items: [string, ReactNode][] }) {
 export function Timeline({ items, empty }: { items: { key: string; when?: string | null; body: ReactNode }[]; empty: string }) {
   if (!items.length) return <p className="text-sm text-slate">{empty}</p>;
   return (
-    <ul className="space-y-2 border-l-2 border-slate/15 pl-3 text-sm">
+    <ul className="space-y-2 border-s-2 border-slate/15 ps-3 text-sm">
       {items.map((i) => (
         <li key={i.key}>
           {i.when && <time className="block text-xs text-slate">{fmtDateTime(i.when)}</time>}
@@ -417,7 +417,7 @@ export function StaffTable<T>({
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate/15 bg-white">
-      <table className="w-full text-left text-sm">
+      <table className="w-full text-start text-sm">
         <thead className="hidden bg-cloud text-xs font-bold tracking-wide text-slate uppercase md:table-header-group">
           <tr>
             {columns.map((c) => (

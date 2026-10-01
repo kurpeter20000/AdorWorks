@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState, useTransition } from "react";
 import { applyToOpportunity, saveApplicationDraft } from "@/lib/actions/applications";
 import type { FormState } from "@/lib/actions/auth";
+import { useT } from "@/i18n/client";
 
 const initialState: FormState = {};
 
@@ -17,6 +18,7 @@ export function ApplyForm({
   initialPitch: string;
   initialAnswers: Record<string, string>;
 }) {
+  const t = useT();
   const boundAction = applyToOpportunity.bind(null, opportunityId);
   const [state, formAction, pending] = useActionState(boundAction, initialState);
   const formRef = useRef<HTMLFormElement>(null);
@@ -43,7 +45,7 @@ export function ApplyForm({
     <form ref={formRef} action={formAction} className="mt-6 space-y-4">
       <div>
         <label htmlFor="pitch" className="text-sm font-semibold text-midnight">
-          Why are you a fit for this?
+          {t("Why are you a fit for this?")}
         </label>
         <textarea
           id="pitch"
@@ -51,15 +53,15 @@ export function ApplyForm({
           rows={5}
           required
           defaultValue={initialPitch}
-          placeholder="Share relevant experience, how you'd approach this, or anything that sets you apart."
+          placeholder={t("Share relevant experience, how you'd approach this, or anything that sets you apart.")}
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
-        {state.errors?.pitch && <p className="mt-1 text-sm text-coral-ink">{state.errors.pitch[0]}</p>}
+        {state.errors?.pitch && <p className="mt-1 text-sm text-coral-ink">{t(state.errors.pitch[0])}</p>}
       </div>
 
       {questions.length > 0 && (
         <div className="space-y-4 rounded-xl border border-slate/15 bg-cloud p-4">
-          <p className="text-sm font-semibold text-midnight">Screening questions</p>
+          <p className="text-sm font-semibold text-midnight">{t("Screening questions")}</p>
           {questions.map((q) => (
             <div key={q.id}>
               <label htmlFor={`answer-${q.id}`} className="text-sm text-midnight">
@@ -73,14 +75,14 @@ export function ApplyForm({
                 className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
               />
               {state.errors?.[`answer-${q.id}`] && (
-                <p className="mt-1 text-sm text-coral-ink">{state.errors[`answer-${q.id}`][0]}</p>
+                <p className="mt-1 text-sm text-coral-ink">{t(state.errors[`answer-${q.id}`][0])}</p>
               )}
             </div>
           ))}
         </div>
       )}
 
-      {state.message && <p className="text-sm text-coral-ink" role="alert">{state.message}</p>}
+      {state.message && <p className="text-sm text-coral-ink" role="alert">{t(state.message)}</p>}
 
       <div className="flex items-center gap-3">
         <button
@@ -88,7 +90,7 @@ export function ApplyForm({
           disabled={pending}
           className="flex-1 rounded-lg bg-teal px-4 py-2.5 text-sm font-bold text-midnight disabled:opacity-60"
         >
-          {pending ? "Submitting…" : "Submit application"}
+          {pending ? t("Submitting…") : t("Submit application")}
         </button>
         <button
           type="button"
@@ -96,12 +98,12 @@ export function ApplyForm({
           disabled={draftPending}
           className="rounded-lg border border-slate/25 px-4 py-2.5 text-sm font-semibold text-midnight disabled:opacity-60"
         >
-          {draftPending ? "Saving…" : "Save draft"}
+          {draftPending ? t("Saving…") : t("Save draft")}
         </button>
       </div>
       {draftSaved && (
         <p className="text-xs text-teal-ink" role="status">
-          Draft saved — come back any time before submitting.
+          {t("Draft saved — come back any time before submitting.")}
         </p>
       )}
     </form>

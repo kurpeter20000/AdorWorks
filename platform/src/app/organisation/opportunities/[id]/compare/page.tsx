@@ -78,11 +78,11 @@ export default async function CompareCandidatesPage({ params }: { params: Promis
         <div className="mt-6 overflow-x-auto">
           <table className="w-full min-w-[640px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-slate/15 text-left text-xs uppercase tracking-wide text-slate">
-                <th className="py-2 pr-3">Candidate</th>
-                <th className="py-2 pr-3">Stage</th>
+              <tr className="border-b border-slate/15 text-start text-xs uppercase tracking-wide text-slate">
+                <th className="py-2 pe-3">Candidate</th>
+                <th className="py-2 pe-3">Stage</th>
                 {SCORECARD_CRITERIA.map((c) => (
-                  <th key={c} className="py-2 pr-3">
+                  <th key={c} className="py-2 pe-3">
                     {CRITERION_LABEL[c]}
                   </th>
                 ))}
@@ -94,17 +94,17 @@ export default async function CompareCandidatesPage({ params }: { params: Promis
                 const byCriterion = scoresByApplication.get(a.id) ?? {};
                 return (
                   <tr key={a.id} className="border-b border-slate/10">
-                    <td className="py-2 pr-3">
+                    <td className="py-2 pe-3">
                       <Link href={`/passport/${a.talent_id}`} className="font-semibold text-midnight underline decoration-slate/30 hover:decoration-teal">
                         {talent?.display_name ?? "AdorWorks talent"}
                       </Link>
                       <p className="text-xs text-slate">{talent?.headline}</p>
                     </td>
-                    <td className="py-2 pr-3">
+                    <td className="py-2 pe-3">
                       <StatusBadge state={APPLICATION_STATES[a.stage]} />
                     </td>
                     {SCORECARD_CRITERIA.map((c) => (
-                      <td key={c} className="py-2 pr-3 font-semibold text-midnight">
+                      <td key={c} className="py-2 pe-3 font-semibold text-midnight">
                         {average(byCriterion[c] ?? [])}
                       </td>
                     ))}

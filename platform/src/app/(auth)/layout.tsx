@@ -1,6 +1,9 @@
 import { Compass } from "lucide-react";
 import { MARKETING_SITE_URL } from "@/lib/domain/marketingSite";
 import { HeroVideoBackground } from "@/components/hero-video-background";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { msg } from "@/i18n/config";
+import { getT } from "@/i18n/server";
 
 // Same three value props on both sides of the marketplace — the auth
 // pages are the one place login/signup for talent and employers share a
@@ -8,16 +11,16 @@ import { HeroVideoBackground } from "@/components/hero-video-background";
 // than picking a side.
 const VALUE_PROPS = [
   {
-    title: "Fair-ranked matching",
-    body: "Opportunities and candidates surfaced by skill overlap — never by who pays more.",
+    title: msg("Fair-ranked matching"),
+    body: msg("Opportunities and candidates surfaced by skill overlap — never by who pays more."),
   },
   {
-    title: "Built-in escrow",
-    body: "Milestone payments held safely until work is approved, both sides protected.",
+    title: msg("Built-in escrow"),
+    body: msg("Milestone payments held safely until work is approved, both sides protected."),
   },
   {
-    title: "Verified from day one",
-    body: "Every profile carries a visible trust tier, so credibility is never just a claim.",
+    title: msg("Verified from day one"),
+    body: msg("Every profile carries a visible trust tier, so credibility is never just a claim."),
   },
 ];
 
@@ -30,19 +33,20 @@ const VALUE_PROPS = [
 // "misplaced" sitting right on top of the card at most viewport sizes.
 // Paired with the brand wordmark like a real header instead, in normal
 // document flow on both the desktop panel and the mobile top bar.
-function ExploreLink({ className }: { className?: string }) {
+function ExploreLink({ className, label }: { className?: string; label: string }) {
   return (
     <a
       href={MARKETING_SITE_URL}
       className={`inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/20 ${className ?? ""}`}
     >
       <Compass className="size-4" aria-hidden="true" />
-      Explore AdorWorks
+      {label}
     </a>
   );
 }
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export default async function AuthLayout({ children }: { children: React.ReactNode }) {
+  const t = await getT();
   return (
     <div className="relative isolate flex flex-1 flex-col overflow-hidden">
       {/* CI's Lighthouse run flagged LCP >2500ms on /login and /signup —
@@ -65,27 +69,33 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
       <div className="relative z-0 flex items-center justify-between gap-3 px-6 py-4 text-white lg:hidden">
         <span className="text-lg font-extrabold">AdorWorks</span>
-        <ExploreLink className="px-3 py-1.5 text-xs" />
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher className="text-white [&_select]:border-white/30 [&_select]:bg-white/10 [&_select]:text-white [&_option]:text-midnight" />
+          <ExploreLink className="px-3 py-1.5 text-xs" label={t("Explore AdorWorks")} />
+        </div>
       </div>
 
       <div className="relative z-0 flex flex-1 flex-col lg:flex-row">
         <div className="hidden flex-col justify-center py-16 text-white lg:flex lg:w-1/2 lg:px-16 xl:px-24">
           <div className="flex items-center justify-between">
             <span className="text-lg font-extrabold">AdorWorks</span>
-            <ExploreLink />
+            <div className="flex items-center gap-3">
+              <LanguageSwitcher className="text-white [&_select]:border-white/30 [&_select]:bg-white/10 [&_select]:text-white [&_option]:text-midnight" />
+              <ExploreLink label={t("Explore AdorWorks")} />
+            </div>
           </div>
 
           <div className="mt-10">
             <p className="text-4xl leading-snug font-extrabold">
-              Talent found.
+              {t("Talent found.")}
               <br />
-              Work delivered.
+              {t("Work delivered.")}
             </p>
             <ul className="mt-8 max-w-md space-y-6">
               {VALUE_PROPS.map((item) => (
                 <li key={item.title}>
-                  <p className="font-bold text-teal">{item.title}</p>
-                  <p className="mt-1 text-sm text-white/75">{item.body}</p>
+                  <p className="font-bold text-teal">{t(item.title)}</p>
+                  <p className="mt-1 text-sm text-white/75">{t(item.body)}</p>
                 </li>
               ))}
             </ul>

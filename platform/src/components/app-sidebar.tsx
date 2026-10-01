@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import { CONTACT_URL } from "@/lib/domain/marketingSite";
 import type { DashboardAction } from "@/lib/domain/navigation";
+import { msg } from "@/i18n/config";
+import { useT } from "@/i18n/client";
 
 const ICONS: Record<string, LucideIcon> = {
   "/dashboard": LayoutDashboard,
@@ -70,15 +72,16 @@ export function AppSidebar({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const t = useT();
 
   const toItem = (a: DashboardAction) => ({ href: a.href, label: a.label, external: Boolean(a.external) });
-  const mainItems = [{ href: "/dashboard", label: "Dashboard", external: false }, ...actions.filter((a) => !a.section).map(toItem)];
+  const mainItems = [{ href: "/dashboard", label: msg("Dashboard"), external: false }, ...actions.filter((a) => !a.section).map(toItem)];
   const supportItems = [
     ...actions.filter((a) => a.section === "support").map(toItem),
     // S13-12 — always visible regardless of role, unlike the per-role
     // actions above: the platform app previously had no visible support
     // contact anywhere at all.
-    { href: CONTACT_URL, label: "Help & Support", external: true },
+    { href: CONTACT_URL, label: msg("Help & Support"), external: true },
   ];
 
   // Longest matching href wins, so /opportunities isn't also highlighted
@@ -89,9 +92,9 @@ export function AppSidebar({
     .sort((a, b) => b.length - a.length)[0];
 
   return (
-    <nav aria-label="Primary" className="flex flex-col gap-0.5 p-3">
+    <nav aria-label={t("Primary")} className="flex flex-col gap-0.5 p-3">
       {mainItems.map(renderItem)}
-      <p className="mt-4 mb-1 px-3 text-[11px] font-bold tracking-wide text-slate uppercase">Support</p>
+      <p className="mt-4 mb-1 px-3 text-[11px] font-bold tracking-wide text-slate uppercase">{t("Support")}</p>
       {supportItems.map(renderItem)}
     </nav>
   );
@@ -106,7 +109,7 @@ export function AppSidebar({
       return (
         <a key={item.href} href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
           <Icon className="size-4 shrink-0" aria-hidden="true" />
-          {item.label}
+          {t(item.label)}
         </a>
       );
     }
@@ -119,7 +122,7 @@ export function AppSidebar({
         className={className}
       >
         <Icon className="size-4 shrink-0" aria-hidden="true" />
-        {item.label}
+        {t(item.label)}
       </Link>
     );
   }

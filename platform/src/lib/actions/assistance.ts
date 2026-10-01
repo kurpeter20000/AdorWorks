@@ -1,5 +1,6 @@
 "use server";
 
+import { msg } from "@/i18n/config";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireSession, requireRole } from "@/lib/dal/session";
@@ -11,7 +12,7 @@ import { ASSISTED_TALENT_FIELDS } from "@/lib/assistedFields";
 import { isAssistanceSessionActive, isAssistanceSessionExpired } from "@/lib/domain/assistancePermissions";
 
 const RequestSchema = z.object({
-  reason: z.string().trim().min(5, "Tell us briefly what you need help with."),
+  reason: z.string().trim().min(5, msg("Tell us briefly what you need help with.")),
   preferredChannel: z.string().trim().optional(),
 });
 
@@ -52,7 +53,7 @@ export async function submitAssistanceRequest(_prevState: FormState, formData: F
 
 const NewPasswordSchema = z
   .string()
-  .min(8, "Choose a password with at least 8 characters.")
+  .min(8, msg("Choose a password with at least 8 characters."))
   .optional();
 
 /**
@@ -82,10 +83,10 @@ export async function consentToAssistance(
     .eq("user_id", session.userId)
     .maybeSingle();
   if (!assistanceSession || assistanceSession.status !== "pending_consent" || assistanceSession.revoked_at) {
-    return { message: "This assistance request is no longer awaiting your consent." };
+    return { message: msg("This assistance request is no longer awaiting your consent.") };
   }
   if (isAssistanceSessionExpired(assistanceSession)) {
-    return { message: "This assistance request has expired. Ask AdorWorks to create a new session." };
+    return { message: msg("This assistance request has expired. Ask AdorWorks to create a new session.") };
   }
 
   const newPassword = formData.get("newPassword");
@@ -96,7 +97,7 @@ export async function consentToAssistance(
     }
     const confirmPassword = formData.get("confirmPassword");
     if (newPassword !== confirmPassword) {
-      return { message: "Passwords don't match." };
+      return { message: msg("Passwords don't match.") };
     }
     const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
     if (passwordError) {
@@ -118,7 +119,7 @@ export async function consentToAssistance(
   if (error) {
     return { message: `Could not record your consent: ${error.message}` };
   }
-  if (!consented) return { message: "This assistance request expired or changed. Refresh and try again." };
+  if (!consented) return { message: msg("This assistance request expired or changed. Refresh and try again.") };
 
   revalidatePath("/dashboard");
   return {};
@@ -147,7 +148,7 @@ export async function updateAssistedField(_prevState: FormState, formData: FormD
     value: formData.get("value") ?? "",
   });
   if (!validated.success) {
-    return { message: "Invalid field update." };
+    return { message: msg("Invalid field update.") };
   }
   const { sessionId, field, value } = validated.data;
 
@@ -163,7 +164,7 @@ export async function updateAssistedField(_prevState: FormState, formData: FormD
     assistSession.agent_id !== agentSession.userId ||
     !isAssistanceSessionActive(assistSession)
   ) {
-    return { message: "This session is no longer active." };
+    return { message: msg("This session is no longer active.") };
   }
   if (!assistSession.scope.fields.includes(field)) {
     return { message: `"${field}" isn't in this session's scope.` };
@@ -227,7 +228,7 @@ export async function finishAssistanceSession(sessionId: string): Promise<{ erro
     .select("id")
     .maybeSingle();
   if (error) return { error: error.message };
-  if (!completed) return { error: "This session has expired, was revoked, or is no longer active." };
+  if (!completed) return { error: msg("This session has expired, was revoked, or is no longer active.") };
 
   revalidatePath("/assist");
   return {};
@@ -251,7 +252,7 @@ export async function revokeAssistanceSession(sessionId: string): Promise<FormSt
     .select("id")
     .maybeSingle();
   if (error) return { message: `Could not revoke access: ${error.message}` };
-  if (!revoked) return { message: "This assistance session is already closed." };
+  if (!revoked) return { message: msg("This assistance session is already closed.") };
 
   revalidatePath("/dashboard");
   return {};

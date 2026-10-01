@@ -37,7 +37,7 @@ export function MemberRow({
       <div>
         <p className="text-sm font-semibold text-midnight">
           {name}
-          {isRepresentative && <span className="ml-2 text-xs font-normal text-slate">(representative)</span>}
+          {isRepresentative && <span className="ms-2 text-xs font-normal text-slate">(representative)</span>}
         </p>
         {error && <p className="text-xs text-coral-ink">{error}</p>}
       </div>

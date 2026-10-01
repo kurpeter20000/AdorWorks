@@ -10,7 +10,7 @@ export function OfferActions({ offerId }: { offerId: string }) {
   const [pending, startTransition] = useTransition();
 
   return (
-    <div className="text-right">
+    <div className="text-end">
       <div className="flex gap-2">
         <button
           type="button"

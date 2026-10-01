@@ -5,28 +5,19 @@ import { createClient } from "@/lib/supabase/server";
 import { ENGAGEMENT_TYPE_LABEL, WORK_MODE_LABEL } from "@/lib/domain/taxonomy";
 import { ApplyButton } from "../apply-button";
 import { SaveButton } from "../save-button";
+import { formatCompensation } from "@/lib/domain/format";
+import { getT } from "@/i18n/server";
+import { rich } from "@/i18n/rich";
 
-export const metadata: Metadata = { title: "Saved opportunities" };
-
-function formatCompensation(o: {
-  payment_basis: string | null;
-  compensation_amount: number | null;
-  compensation_min: number | null;
-  compensation_max: number | null;
-  currency: string | null;
-}) {
-  const currency = o.currency || "SSP";
-  if (o.compensation_amount) return `${currency} ${o.compensation_amount.toLocaleString()}`;
-  if (o.compensation_min && o.compensation_max) {
-    return `${currency} ${o.compensation_min.toLocaleString()}–${o.compensation_max.toLocaleString()}`;
-  }
-  if (o.payment_basis === "negotiable") return "Negotiable";
-  return "Paid — details on application";
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return { title: t("Saved opportunities") };
 }
 
 export default async function SavedOpportunitiesPage() {
   const session = await requireRole("talent");
   const supabase = await createClient();
+  const t = await getT();
 
   const { data: saved } = await supabase
     .from("saved_opportunities")
@@ -45,7 +36,7 @@ export default async function SavedOpportunitiesPage() {
           )
           .in("id", opportunityIds)
       : Promise.resolve({ data: [] }),
-    supabase.from("organisations").select("id, name"),
+    supabase.from("public_organisation_names").select("id, name"),
     supabase.from("applications").select("opportunity_id").eq("talent_id", session.userId),
   ]);
 
@@ -58,19 +49,21 @@ export default async function SavedOpportunitiesPage() {
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold text-midnight">Saved opportunities</h1>
+        <h1 className="text-2xl font-extrabold text-midnight">{t("Saved opportunities")}</h1>
         <Link href="/opportunities" className="text-sm font-semibold text-teal-ink underline">
-          Find work
+          {t("Find work")}
         </Link>
       </div>
 
       {ordered.length === 0 ? (
         <p className="mt-8 text-sm text-slate">
-          Nothing saved yet.{" "}
-          <Link href="/opportunities" className="font-semibold text-teal-ink underline">
-            Browse open opportunities
-          </Link>{" "}
-          and save the ones you want to come back to.
+          {rich(t("Nothing saved yet. <browse>Browse open opportunities</browse> and save the ones you want to come back to."), {
+            browse: (text) => (
+              <Link href="/opportunities" className="font-semibold text-teal-ink underline">
+                {text}
+              </Link>
+            ),
+          })}
         </p>
       ) : (
         <ul className="mt-6 space-y-3">
@@ -79,14 +72,14 @@ export default async function SavedOpportunitiesPage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="font-bold text-midnight">{o.title}</p>
-                  <p className="text-xs text-slate">{orgNames.get(o.organisation_id) ?? "AdorWorks employer"}</p>
+                  <p className="text-xs text-slate">{orgNames.get(o.organisation_id) ?? t("AdorWorks employer")}</p>
                 </div>
-                <span className="whitespace-nowrap text-sm font-semibold text-teal-ink">{formatCompensation(o)}</span>
+                <span className="whitespace-nowrap text-sm font-semibold text-teal-ink">{t(formatCompensation(o))}</span>
               </div>
               {o.brief && <p className="mt-2 line-clamp-3 text-sm text-slate">{o.brief}</p>}
               <div className="mt-3 flex items-center justify-between">
                 <p className="text-xs text-slate">
-                  {[o.location, o.work_mode && WORK_MODE_LABEL[o.work_mode], o.engagement_type && ENGAGEMENT_TYPE_LABEL[o.engagement_type]]
+                  {[o.location, o.work_mode && t(WORK_MODE_LABEL[o.work_mode]), o.engagement_type && t(ENGAGEMENT_TYPE_LABEL[o.engagement_type])]
                     .filter(Boolean)
                     .join(" · ")}
                 </p>

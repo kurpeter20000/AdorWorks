@@ -44,7 +44,7 @@ export function DismissServiceButton({ serviceId }: { serviceId: string }) {
       >
         Not interested
       </button>
-      {error && <span className="ml-2 text-xs text-coral-ink">{error}</span>}
+      {error && <span className="ms-2 text-xs text-coral-ink">{error}</span>}
     </span>
   );
 }
