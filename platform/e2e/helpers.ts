@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Browser, Page } from "@playwright/test";
+import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import { validateE2EEnvironment, type E2EEnvironment } from "../src/lib/testing/e2e-environment";
@@ -60,9 +61,25 @@ export async function createTestUser(rolePrefix: string, role: string) {
   return { id: data.user.id, email };
 }
 
+/**
+ * Deleting a user fails with a generic "Database error deleting user"
+ * whenever any row still references their profile with a blocking FK —
+ * normally a real cleanup bug. Confirmed live (Stage 16 step 3) this can
+ * also happen with zero such rows actually left, reproducing only when
+ * running the full spec sequentially (never a test in isolation) — load
+ * on the shared test project, not anything a caller did wrong. A real
+ * leftover-reference bug fails identically on every attempt; this backs
+ * off across a few to absorb a transient one instead.
+ */
 export async function deleteTestUser(userId: string) {
-  const { error } = await admin.auth.admin.deleteUser(userId);
-  if (error) throw new Error(`Failed to delete test user: ${error.message}`);
+  let lastError: { message: string } | null = null;
+  for (const delayMs of [0, 2000, 5000, 10000]) {
+    if (delayMs) await new Promise((resolve) => setTimeout(resolve, delayMs));
+    const { error } = await admin.auth.admin.deleteUser(userId);
+    if (!error) return;
+    lastError = error;
+  }
+  throw new Error(`Failed to delete test user: ${lastError!.message}`);
 }
 
 async function mustInsert<T extends { id: string }>(
@@ -255,6 +272,67 @@ export async function loginAs(page: Page, email: string, password = TEST_PASSWOR
   await page.getByLabel(/email/i).fill(email);
   await page.getByLabel(/password/i).fill(password);
   await page.getByRole("button", { name: /sign in|log in/i }).click();
+  await page.waitForURL("**/dashboard", { timeout: 20000 });
+}
+
+/** RFC 4648 base32 decode (no padding needed — Supabase's manual-entry secrets never have any). */
+function base32Decode(input: string): Buffer {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const clean = input.toUpperCase().replace(/[^A-Z2-7]/g, "");
+  let bits = "";
+  for (const char of clean) {
+    bits += alphabet.indexOf(char).toString(2).padStart(5, "0");
+  }
+  const bytes: number[] = [];
+  for (let i = 0; i + 8 <= bits.length; i += 8) {
+    bytes.push(parseInt(bits.slice(i, i + 8), 2));
+  }
+  return Buffer.from(bytes);
+}
+
+/** RFC 6238 TOTP (SHA-1, 30s step, 6 digits) — the universal authenticator-app default, matching /mfa-setup's QR. */
+function totpCode(secret: string, atMs = Date.now()): string {
+  const key = base32Decode(secret);
+  const counter = Math.floor(atMs / 1000 / 30);
+  const counterBuf = Buffer.alloc(8);
+  counterBuf.writeBigUInt64BE(BigInt(counter));
+  const hmac = crypto.createHmac("sha1", key).update(counterBuf).digest();
+  const offset = hmac[hmac.length - 1] & 0xf;
+  const truncated =
+    ((hmac[offset] & 0x7f) << 24) | ((hmac[offset + 1] & 0xff) << 16) | ((hmac[offset + 2] & 0xff) << 8) | (hmac[offset + 3] & 0xff);
+  return (truncated % 1_000_000).toString().padStart(6, "0");
+}
+
+/**
+ * Staff roles (reviewer/matcher/finance/admin) are gated behind mandatory
+ * TOTP MFA (S04-08, lib/dal/session.ts's requireStaffMfa) before reaching
+ * anything past /mfa-setup or /mfa-challenge — no existing e2e spec drove
+ * a staff login through the browser at all before Stage 16 step 3's
+ * /operations/support, which is exactly why this gap had gone
+ * unexercised. /mfa-setup prints its TOTP secret as plain text (the
+ * "can't scan it" manual-entry code) specifically so a user without a
+ * camera can type it in — this reads that same text and computes a real
+ * code from it instead of trying to drive a QR scanner.
+ */
+export async function loginAsStaff(page: Page, email: string, password = TEST_PASSWORD) {
+  await page.goto("/login");
+  await page.getByLabel(/email/i).fill(email);
+  await page.getByLabel(/password/i).fill(password);
+  await page.getByRole("button", { name: /sign in|log in/i }).click();
+  await page.waitForURL(/\/mfa-(setup|challenge)/, { timeout: 20000 });
+
+  if (page.url().includes("/mfa-setup")) {
+    const secret = await page.getByText(/^[A-Z2-7]{16,}$/).textContent();
+    if (!secret) throw new Error("Could not read the MFA manual-entry secret off /mfa-setup");
+    await page.getByLabel(/6-digit code/i).fill(totpCode(secret.trim()));
+    await page.getByRole("button", { name: /verify/i }).click();
+  } else {
+    // Already enrolled from an earlier session in this test run — needs
+    // the secret again, which /mfa-challenge doesn't display; re-enrolling
+    // isn't an option here, so this path is left for a future need.
+    throw new Error("loginAsStaff hit /mfa-challenge (already enrolled) — not yet supported, use a fresh staff user per test");
+  }
+
   await page.waitForURL("**/dashboard", { timeout: 20000 });
 }
 

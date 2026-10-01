@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export interface RealtimeMessageRow {
@@ -22,9 +23,18 @@ export interface RealtimeMessageRow {
  * policy per connected subscriber.
  *
  * `conversationId` is null until the first message has ever been sent
- * (the conversation row is created on first use) — the hook simply
- * doesn't subscribe until the caller has one; see each thread
- * component's own comment for how it bridges that one-time gap.
+ * (the conversation row is created on first use). A subscription needs a
+ * conversation_id to filter on, so there's nothing to filter by yet — but
+ * the *other* party may already have this page open when that first
+ * message arrives, so simply not subscribing would miss it. Instead,
+ * while conversationId is null, this subscribes to messages INSERT with
+ * no filter at all: Supabase still re-checks RLS per row before
+ * delivering it, and by the time a first message exists its conversation
+ * already has both participants as members (see postSystemMessage /
+ * sendMessage), so a genuine first message for this thread is delivered
+ * same as any other — it's just not yet known which conversation_id to
+ * expect, so any delivery here is treated as "something changed, go get
+ * the real state" rather than appended directly.
  *
  * `initial` only seeds state on mount — it is not re-synced on every
  * render (that would fight the realtime stream's own appends, and
@@ -35,28 +45,69 @@ export interface RealtimeMessageRow {
  * render this component with `key={conversationId}` so React remounts
  * it and reinitialises state naturally, instead of this hook reaching
  * into a ref during render to detect the change itself.
+ *
+ * Found live (e2e): a fresh page load restores its session from cookies
+ * rather than firing a live sign-in event, and subscribing immediately —
+ * before the realtime client has finished wiring that restored session's
+ * JWT onto the socket — means Postgres evaluates RLS with no auth.uid()
+ * at all, so every row is silently (and permanently, for that channel)
+ * rejected. `supabase.auth.getSession()` resolves once hydration is
+ * done; explicitly passing its token to `realtime.setAuth()` before
+ * subscribing closes that race instead of hoping the client's own
+ * internal auth-state wiring won by then.
  */
 export function useRealtimeMessages<T extends RealtimeMessageRow>(conversationId: string | null, initial: T[]): T[] {
   const [messages, setMessages] = useState<T[]>(initial);
+  const router = useRouter();
 
   useEffect(() => {
-    if (!conversationId) return;
     const supabase = createClient();
-    const channel = supabase
-      .channel(`messages:${conversationId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
-        (payload) => {
-          const row = payload.new as T;
-          setMessages((prev) => (prev.some((m) => m.id === row.id) ? prev : [...prev, row]));
-        }
-      )
-      .subscribe();
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (cancelled) return;
+      if (session?.access_token) await supabase.realtime.setAuth(session.access_token);
+      if (cancelled) return;
+
+      if (!conversationId) {
+        // Pre-first-message state: any insert this subscriber is allowed
+        // to see (RLS-filtered) might be the first message of *this*
+        // thread — there's no conversation_id yet to tell for sure, so
+        // refresh and let the server re-derive it. router.refresh()
+        // re-renders this component with the real conversationId as its
+        // key, which remounts it into the normal, filtered-subscription
+        // branch below.
+        channel = supabase
+          .channel(`messages:pending:${Math.random().toString(36).slice(2)}`)
+          .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, () => {
+            router.refresh();
+          })
+          .subscribe();
+        return;
+      }
+
+      channel = supabase
+        .channel(`messages:${conversationId}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
+          (payload) => {
+            const row = payload.new as T;
+            setMessages((prev) => (prev.some((m) => m.id === row.id) ? prev : [...prev, row]));
+          }
+        )
+        .subscribe();
+    })();
+
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
     };
-  }, [conversationId]);
+  }, [conversationId, router]);
 
   return messages;
 }

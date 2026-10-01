@@ -119,6 +119,21 @@ message to `/support` created their conversation and reached staff at
 raising a dispute added a message to the raiser's support conversation
 naming the contract.
 
+Found and fixed during that verification, not after it: a page loaded via
+direct navigation restores its Supabase session from cookies rather than
+firing a live sign-in event, and the browser Realtime client wasn't
+guaranteed to have wired that restored session's JWT onto the socket
+before `useRealtimeMessages` subscribed — Postgres then evaluated RLS
+with no `auth.uid()` at all, so a genuinely new message from the other
+party was silently never delivered to a page that was already open
+(confirmed with two real browser contexts, not just a same-page send).
+Reproduced reliably, then fixed by explicitly awaiting
+`supabase.auth.getSession()` and calling `supabase.realtime.setAuth()`
+before subscribing, re-verified clean after. Everyone's *own* sent
+message always appeared regardless (that path never depended on
+Realtime), which is why this needed a second, cross-party browser to
+catch at all.
+
 ### Steps 4–5 — not built yet
 
 4. MTN MoMo sandbox: Collections tested live, Disbursements, escrow hold +
