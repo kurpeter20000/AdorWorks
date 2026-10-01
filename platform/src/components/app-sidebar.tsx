@@ -20,6 +20,7 @@ import {
   LifeBuoy,
   ListChecks,
   Mail,
+  MessageCircle,
   NotebookPen,
   Search,
   ShieldCheck,
@@ -63,6 +64,8 @@ const ICONS: Record<string, LucideIcon> = {
   "/operations/assisted-onboarding": LifeBuoy,
   "/operations/people": Users,
   "/operations/settings": Settings,
+  "/operations/support": MessageCircle,
+  "/support": MessageCircle,
   [CONTACT_URL]: LifeBuoy,
 };
 

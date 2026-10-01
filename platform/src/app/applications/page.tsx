@@ -129,6 +129,7 @@ export default async function ApplicationsPage({
                 )}
                 <ApplicationThreadPanel
                   applicationId={a.id}
+                  conversationId={conversationIdByApplication.get(a.id) ?? null}
                   currentUserId={session.userId}
                   messages={messagesByApplication.get(a.id) ?? []}
                 />

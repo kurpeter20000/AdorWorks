@@ -100,6 +100,10 @@ $$;
 
 export const PG_CRON_EXTENSION_LINE = /^create extension if not exists pg_cron;\s*$/m;
 
+// 0098 — enabling Realtime needs logical replication, which PGlite
+// doesn't run; same treatment as the pg_cron line above.
+export const REALTIME_PUBLICATION_LINE = /^alter publication supabase_realtime add table \w+;\s*$/m;
+
 async function main() {
   const db = new PGlite({ extensions: { pgcrypto } });
 
@@ -114,6 +118,9 @@ async function main() {
     let sql = await readFile(path.join(MIGRATIONS_DIR, file), "utf8");
     if (PG_CRON_EXTENSION_LINE.test(sql)) {
       sql = sql.replace(PG_CRON_EXTENSION_LINE, "-- (pg_cron extension line skipped — see this script's own header)\n");
+    }
+    if (REALTIME_PUBLICATION_LINE.test(sql)) {
+      sql = sql.replace(REALTIME_PUBLICATION_LINE, "-- (realtime publication line skipped — see this script's own header)\n");
     }
     try {
       await db.exec(sql);

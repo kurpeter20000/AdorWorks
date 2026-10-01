@@ -276,7 +276,9 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
       <div className="mt-8">
         <h2 className="font-bold text-midnight">Messages</h2>
         <MessageThread
+          key={conversation?.id ?? "pending"}
           contractId={contract.id}
+          conversationId={conversation?.id ?? null}
           currentUserId={session.userId}
           messages={messages ?? []}
         />

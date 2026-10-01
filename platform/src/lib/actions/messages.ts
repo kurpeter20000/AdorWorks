@@ -9,6 +9,7 @@ import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import { sendEmailSafely, getUserEmail } from "@/lib/email";
 import { renderEmail } from "@/lib/emailTemplate";
 import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
+import { containsContactDetails, CONTACT_DETAIL_BLOCKED_MESSAGE } from "@/lib/domain/messageFilter";
 import type { FormState } from "./auth";
 
 /**
@@ -75,6 +76,12 @@ export async function sendApplicationMessage(
 
   const parties = await getApplicationParties(admin, applicationId);
   if (!parties) return { message: msg("Application not found.") };
+
+  // Pre-contract: no payment can exist yet, so this is always filtered
+  // (Stage 16 step 3) — the same rule contract chat applies conditionally.
+  if (containsContactDetails(validated.data.body)) {
+    return { message: CONTACT_DETAIL_BLOCKED_MESSAGE };
+  }
 
   const isParticipant = session.userId === parties.talentId || session.userId === parties.employerId;
   if (!isParticipant) return { message: msg("You aren't part of this application.") };

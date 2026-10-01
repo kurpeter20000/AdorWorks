@@ -80,11 +80,47 @@ Verified on the test project: each review rule refused in turn (active,
  outcome; parties see it; anonymous visitors see counts but can't read the
  dispute; Passport and job page show the record.
 
-### Steps 3–5 — not built yet
+### Step 3 — Live chat, contact-detail blocking and support ✅ (migration 0098)
 
-3. Chat: live updates (Supabase Realtime), contact-detail blocking before
-   the first payment, "AdorWorks Support" conversations routed to
-   /operations, disputes opening a support thread.
+- **Live updates:** `messages` added to the `supabase_realtime` publication;
+  a `useRealtimeMessages` hook subscribes each open thread to inserts for
+  its conversation. RLS (0007/0017) is what actually limits what a
+  subscriber receives — enabling Realtime on the table doesn't widen
+  access, Supabase re-checks the same policy per connection. Covers
+  contract chat, pre-contract (application) chat and the new support
+  conversations.
+- **Contact-detail blocking:** a conservative filter (`lib/domain/messageFilter.ts`)
+  blocks emails, phone-shaped numbers (9–13 digits with a separator or a
+  leading `+`, so budget/quantity figures like "2,500,000 SSP" pass
+  through) and WhatsApp/Telegram/Signal mentions. Applied as a hard block
+  (the message isn't sent) to pre-contract application chat always, and to
+  contract chat until the first payment has succeeded on that contract —
+  after that, exchanging contact details is the parties' own call.
+  Deliberately **not** applied to the free-text note on a revision
+  request, which also reaches the thread via the same system-message
+  path — a known, narrower gap, left out to keep this change focused.
+- **AdorWorks Support:** a third conversation kind (`conversations.support_user_id`),
+  one per user, created on first message. Self-service at `/support`;
+  staff reply from `/operations/support`. No contact-detail filtering here
+  — the user is talking to AdorWorks itself, not another marketplace
+  party.
+- **Disputes → support:** raising a dispute now also drops a message into
+  the raiser's own support conversation (creating it if needed) with the
+  contract title and the dispute description, so staff see it in the same
+  inbox as everything else without hunting through contracts.
+
+Verified on the test project: a message sent from one side of a contract
+chat appeared on the other side's screen without a reload; an email, a
+formatted phone number and a WhatsApp mention were each refused with the
+same explanation, before the first payment; after a successful payment,
+the same contract thread allowed them through; a brand-new user's first
+message to `/support` created their conversation and reached staff at
+`/operations/support`, whose reply appeared live back on `/support`;
+raising a dispute added a message to the raiser's support conversation
+naming the contract.
+
+### Steps 4–5 — not built yet
+
 4. MTN MoMo sandbox: Collections tested live, Disbursements, escrow hold +
    dispute window + auto-release, behind its own switch, off for real money.
 5. Institutional (INGO) account track.

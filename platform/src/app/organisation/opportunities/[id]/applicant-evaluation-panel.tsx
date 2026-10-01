@@ -39,6 +39,7 @@ interface MessageRow {
 
 export function ApplicantEvaluationPanel({
   applicationId,
+  conversationId,
   opportunityId,
   myUserId,
   scores,
@@ -48,6 +49,7 @@ export function ApplicantEvaluationPanel({
   messages,
 }: {
   applicationId: string;
+  conversationId: string | null;
   opportunityId: string;
   myUserId: string;
   scores: ScoreRow[];
@@ -197,7 +199,13 @@ export function ApplicantEvaluationPanel({
       <div>
         <p className="text-xs font-semibold text-midnight">Message candidate</p>
         <p className="mb-2 text-[11px] text-slate">Visible to the candidate — not the same as team notes above.</p>
-        <ApplicationMessageThread applicationId={applicationId} currentUserId={myUserId} messages={messages} />
+        <ApplicationMessageThread
+          key={conversationId ?? "pending"}
+          applicationId={applicationId}
+          conversationId={conversationId}
+          currentUserId={myUserId}
+          messages={messages}
+        />
       </div>
 
       {error && <p className="text-xs text-coral-ink">{error}</p>}

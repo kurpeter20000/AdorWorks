@@ -608,6 +608,7 @@ export type ConversationRow = {
   id: string;
   contract_id: string | null;
   application_id: string | null;
+  support_user_id: string | null;
   created_at: string;
 }
 

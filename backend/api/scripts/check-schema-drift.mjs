@@ -24,7 +24,7 @@ import { pgcrypto } from "@electric-sql/pglite/contrib/pgcrypto";
 import pg from "pg";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import { MIGRATIONS_DIR, PLATFORM_SHIM, PG_CRON_EXTENSION_LINE } from "./verify-clean-migrations.mjs";
+import { MIGRATIONS_DIR, PLATFORM_SHIM, PG_CRON_EXTENSION_LINE, REALTIME_PUBLICATION_LINE } from "./verify-clean-migrations.mjs";
 
 const SNAPSHOT = `
   select 'table' kind, c.relname obj from pg_class c join pg_namespace n on n.oid = c.relnamespace
@@ -58,7 +58,7 @@ async function expectedObjects() {
   const firstSeenIn = new Map();
   const files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith(".sql")).sort();
   for (const file of files) {
-    const sql = (await readFile(path.join(MIGRATIONS_DIR, file), "utf8")).replace(PG_CRON_EXTENSION_LINE, "");
+    const sql = (await readFile(path.join(MIGRATIONS_DIR, file), "utf8")).replace(PG_CRON_EXTENSION_LINE, "").replace(REALTIME_PUBLICATION_LINE, "");
     await db.exec(sql);
     for (const row of (await db.query(SNAPSHOT)).rows) {
       const k = key(row);

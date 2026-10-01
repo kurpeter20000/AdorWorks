@@ -13,6 +13,8 @@ import { renderEmail } from "@/lib/emailTemplate";
 import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
+import { containsContactDetails, CONTACT_DETAIL_BLOCKED_MESSAGE } from "@/lib/domain/messageFilter";
+import { attachDisputeToSupport } from "@/lib/dal/support";
 import type { FormState } from "./auth";
 
 /** Looks up the talent and the org representative for a contract — the two people every contract-scoped notification/message goes between. */
@@ -644,6 +646,14 @@ export async function sendMessage(contractId: string, _prevState: FormState, for
   const isParticipant = session.userId === contract.talent_id || session.userId === org?.representative_id;
   if (!isParticipant) return { message: "You aren't part of this contract." };
 
+  // Stage 16 step 3: blocked until the engagement's first payment has
+  // gone through AdorWorks — cheap in-memory check first, the database
+  // round trip only runs when something actually matched.
+  if (validated.data.body && containsContactDetails(validated.data.body)) {
+    const { data: paid } = await admin.from("payment_events").select("id").eq("contract_id", contractId).eq("status", "succeeded").limit(1).maybeSingle();
+    if (!paid) return { message: CONTACT_DETAIL_BLOCKED_MESSAGE };
+  }
+
   await postSystemMessage(
     admin,
     contractId,
@@ -703,7 +713,7 @@ export async function raiseDispute(contractId: string, _prevState: FormState, fo
 
   const { data: contract } = await admin
     .from("contracts")
-    .select("talent_id, organisation_id, status")
+    .select("talent_id, organisation_id, status, opportunity_id, service_request_id")
     .eq("id", contractId)
     .maybeSingle();
   if (!contract) return { message: "Contract not found." };
@@ -717,6 +727,7 @@ export async function raiseDispute(contractId: string, _prevState: FormState, fo
   const isParticipant = session.userId === contract.talent_id || session.userId === org?.representative_id;
   if (!isParticipant) return { message: "You aren't part of this contract." };
   if (contract.status === "disputed") return { message: "This contract already has an open dispute." };
+
   if (contract.status !== "active") return { message: "Only an active contract can be disputed." };
 
   // Ultra-review finding (2026-09-25, Medium): this used to check
@@ -745,6 +756,27 @@ export async function raiseDispute(contractId: string, _prevState: FormState, fo
   if (error) return { message: error.message };
 
   await postSystemMessage(admin, contractId, session.userId, "A dispute was raised on this contract — AdorWorks staff will review it.");
+
+  // Stage 16 step 3: the dispute lands in a support conversation staff
+  // actually monitor, with the contract it concerns attached, rather than
+  // only existing as a row the staff console happens to list. Same
+  // opportunity-or-service-request title resolution as maybeCompleteContract.
+  let disputeContractTitle: string | null = null;
+  if (contract.opportunity_id) {
+    const { data: opp } = await admin.from("opportunities").select("title").eq("id", contract.opportunity_id).maybeSingle();
+    disputeContractTitle = opp?.title ?? null;
+  } else if (contract.service_request_id) {
+    const { data: req } = await admin.from("service_requests").select("talent_service_id").eq("id", contract.service_request_id).maybeSingle();
+    if (req) {
+      const { data: svc } = await admin.from("talent_services").select("title").eq("id", req.talent_service_id).maybeSingle();
+      disputeContractTitle = svc?.title ?? null;
+    }
+  }
+  await attachDisputeToSupport(admin, session.userId, {
+    contractId,
+    contractTitle: disputeContractTitle ?? "AdorWorks engagement",
+    description: validated.data.description,
+  });
 
   await logAuditEvent(admin, {
     name: DOMAIN_EVENTS.DISPUTE_RAISED,

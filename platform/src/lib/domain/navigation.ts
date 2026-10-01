@@ -38,6 +38,7 @@ const experiences: Record<DashboardKind, Omit<DashboardExperience, "kind">> = {
       { href: "/onboarding", label: msg("Profile setup"), description: msg("Complete or review your verification steps."), section: "support" },
       { href: "/trust-safety", label: msg("Trust & Safety"), description: msg("Free orientation on staying safe on AdorWorks."), section: "support" },
       { href: "/assistance/request", label: msg("In-person help"), description: msg("Get someone to help you finish your profile at a partner hub."), section: "support" },
+      { href: "/support", label: msg("Message support"), description: msg("Talk directly with AdorWorks staff."), section: "support" },
     ],
   },
   employer: {
@@ -52,6 +53,7 @@ const experiences: Record<DashboardKind, Omit<DashboardExperience, "kind">> = {
       { href: "/organisation/team", label: msg("Team"), description: msg("Review organisation membership and access.") },
       { href: "/contracts", label: msg("Contracts"), description: msg("Manage active and completed work.") },
       { href: "/assistance/request", label: msg("In-person help"), description: msg("Get someone to help you finish your profile at a partner hub."), section: "support" },
+      { href: "/support", label: msg("Message support"), description: msg("Talk directly with AdorWorks staff."), section: "support" },
     ],
   },
   assistance: {
@@ -80,6 +82,7 @@ const experiences: Record<DashboardKind, Omit<DashboardExperience, "kind">> = {
       { href: "/operations/assisted-onboarding", label: msg("Assisted onboarding"), description: msg("Partner hubs, onboarding agents and in-person help requests.") },
       { href: "/operations/people", label: msg("People"), description: msg("Accounts, roles, suspensions and staff (admins only).") },
       { href: "/operations/settings", label: msg("Settings"), description: msg("Platform fees and other settings (finance and admins).") },
+      { href: "/operations/support", label: msg("Support"), description: msg("Reply to users messaging AdorWorks staff directly.") },
     ],
   },
   partner: {

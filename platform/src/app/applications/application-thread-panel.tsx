@@ -6,10 +6,12 @@ import { useT } from "@/i18n/client";
 
 export function ApplicationThreadPanel({
   applicationId,
+  conversationId,
   currentUserId,
   messages,
 }: {
   applicationId: string;
+  conversationId: string | null;
   currentUserId: string;
   messages: { id: string; sender_id: string; body: string; created_at: string }[];
 }) {
@@ -30,7 +32,13 @@ export function ApplicationThreadPanel({
       <button type="button" onClick={() => setOpen(false)} className="mb-2 text-xs font-semibold text-slate underline">
         {t("Hide messages")}
       </button>
-      <ApplicationMessageThread applicationId={applicationId} currentUserId={currentUserId} messages={messages} />
+      <ApplicationMessageThread
+        key={conversationId ?? "pending"}
+        applicationId={applicationId}
+        conversationId={conversationId}
+        currentUserId={currentUserId}
+        messages={messages}
+      />
     </div>
   );
 }

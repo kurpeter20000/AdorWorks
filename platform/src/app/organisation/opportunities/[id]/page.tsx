@@ -295,6 +295,7 @@ export default async function OpportunityDetailPage({
 
                   <ApplicantEvaluationPanel
                     applicationId={a.id}
+                    conversationId={conversationIdByApplication.get(a.id) ?? null}
                     opportunityId={opportunity.id}
                     myUserId={session.userId}
                     scores={scoresByApplication.get(a.id) ?? []}

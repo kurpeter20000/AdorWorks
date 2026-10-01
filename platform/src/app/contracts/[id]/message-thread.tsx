@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { sendMessage } from "@/lib/actions/contracts";
+import { useRealtimeMessages } from "@/lib/hooks/useRealtimeMessages";
 
 const MAX_SIZE_BYTES = 20 * 1024 * 1024; // 20MB
 
@@ -32,17 +34,22 @@ function AttachmentLink({ filePath, fileName }: { filePath: string; fileName: st
 
 export function MessageThread({
   contractId,
+  conversationId,
   currentUserId,
   messages,
 }: {
   contractId: string;
+  /** Null until this contract's first message has ever been sent. */
+  conversationId: string | null;
   currentUserId: string;
   messages: { id: string; sender_id: string; body: string; file_path: string | null; file_name: string | null; created_at: string }[];
 }) {
+  const router = useRouter();
   const [body, setBody] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const liveMessages = useRealtimeMessages(conversationId, messages);
 
   function send() {
     if (!body.trim() && !file) {
@@ -81,6 +88,11 @@ export function MessageThread({
         setError(result.message);
         return;
       }
+      // First message on this contract ever: the conversation row didn't
+      // exist when this page rendered, so there's nothing to subscribe
+      // to yet — one refresh picks up the new conversationId, after
+      // which every further message (either side) streams in live.
+      if (!conversationId) router.refresh();
       setBody("");
       setFile(null);
     });
@@ -88,11 +100,11 @@ export function MessageThread({
 
   return (
     <div className="mt-3 rounded-xl border border-slate/15 bg-white p-4">
-      {messages.length === 0 ? (
+      {liveMessages.length === 0 ? (
         <p className="text-sm text-slate">No messages yet.</p>
       ) : (
         <ul className="max-h-80 space-y-2 overflow-y-auto">
-          {messages.map((m) => {
+          {liveMessages.map((m) => {
             const mine = m.sender_id === currentUserId;
             return (
               <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>

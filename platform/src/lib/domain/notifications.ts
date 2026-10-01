@@ -38,6 +38,8 @@ export const NOTIFICATION_TYPES = {
   PASSWORD_CHANGED: "password_changed",
   TEAM_ROLE_CHANGED: "team_role_changed",
   TEAM_MEMBER_REMOVED: "team_member_removed",
+  // Stage 16 step 3
+  SUPPORT_MESSAGE_RECEIVED: "support_message_received",
 } as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];
