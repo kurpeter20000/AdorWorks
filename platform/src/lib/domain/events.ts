@@ -39,6 +39,9 @@ export const DOMAIN_EVENTS = {
   PAYMENT_REFUND_ISSUED: "payment.refund_issued",
   FINANCE_RECORD_CREATED: "finance.record_created",
   FINANCE_RECORD_UPDATED: "finance.record_updated",
+  // Stage 16 (0096)
+  PLATFORM_SETTINGS_CHANGED: "platform.settings_changed",
+  CONTRACT_TERMS_ISSUED: "contract.terms_issued",
   ASSISTANCE_SESSION_STARTED: "assistance.session.started",
   // S11-06: a failed send is no longer silent (console.error only) — it's
   // also written here so it's staff-visible via the existing

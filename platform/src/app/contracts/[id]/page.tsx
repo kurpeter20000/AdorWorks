@@ -15,6 +15,8 @@ import { ReviewSection } from "./review-section";
 import { TimesheetsSection } from "./timesheets-section";
 import { DisputeSection } from "./dispute-section";
 import { CancelContractSection } from "./cancel-contract-section";
+import Link from "next/link";
+import { getFeeSettings } from "@/lib/dal/settings";
 
 export const metadata: Metadata = { title: "Contract" };
 
@@ -107,10 +109,11 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
   const { data: paymentEvents } = await supabase
     .from("payment_events")
     .select(
-      "milestone_id, external_reference, amount, currency, provider_name, payer_phone, card_last4, card_brand, receipt_number, created_at, fee_percent, fee_amount, net_amount, is_simulated"
+      "milestone_id, external_reference, amount, currency, provider_name, payer_phone, card_last4, card_brand, receipt_number, created_at, fee_percent, fee_amount, net_amount, employer_fee_percent, employer_fee_amount, total_charged, is_simulated"
     )
     .eq("contract_id", contract.id);
   const paymentByMilestone = new Map((paymentEvents ?? []).map((p) => [p.milestone_id, p]));
+  const feeSettings = await getFeeSettings();
 
   const { data: conversation } = await supabase
     .from("conversations")
@@ -165,6 +168,12 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
       <p className="mt-1 text-sm text-slate">
         {isTalent ? `With ${org?.name ?? "your employer"}` : `With ${talent?.display_name ?? "your talent"}`} ·{" "}
         <StatusBadge state={CONTRACT_STATES[contract.status]} className="ms-1" />
+      </p>
+      <p className="mt-2 text-sm">
+        <Link href={`/contracts/${contract.id}/terms`} className="font-semibold text-teal-ink underline">
+          Written terms of this contract
+        </Link>
+        <span className="text-slate"> — parties, work, duration and pay, ready to print.</span>
       </p>
 
       {contract.status === "completed" && (
@@ -232,6 +241,9 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                     feePercent={payment.fee_percent}
                     feeAmount={payment.fee_amount}
                     netAmount={payment.net_amount}
+                    employerFeePercent={payment.employer_fee_percent}
+                    employerFeeAmount={payment.employer_fee_amount}
+                    totalCharged={payment.total_charged}
                     isSimulated={payment.is_simulated}
                   />
                 </div>
@@ -251,6 +263,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                   amount={m.amount}
                   currency={m.currency}
                   realPaymentsEnabled={isFeatureEnabled(FEATURE_FLAGS.REAL_PAYMENTS)}
+                  fees={feeSettings}
                 />
               )}
             </div>

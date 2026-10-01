@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Flag,
   Handshake,
+  Settings,
   FileCheck2,
   FilePlus2,
   FileSignature,
@@ -61,6 +62,7 @@ const ICONS: Record<string, LucideIcon> = {
   "/operations/contracts": FileSignature,
   "/operations/assisted-onboarding": LifeBuoy,
   "/operations/people": Users,
+  "/operations/settings": Settings,
   [CONTACT_URL]: LifeBuoy,
 };
 

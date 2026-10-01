@@ -64,9 +64,43 @@ async function main() {
     );
   `);
 
+  // --baseline-through=NNNN records every migration up to and including
+  // NNNN as applied WITHOUT running it. Only for a database whose schema
+  // is already known to match (run check-schema-drift.mjs first) but whose
+  // tracking table is behind because earlier files were applied another
+  // way, e.g. pasted into the SQL Editor.
+  const baselineArg = process.argv.find((a) => a.startsWith("--baseline-through="));
+  if (baselineArg) {
+    const through = baselineArg.split("=")[1];
+    const toRecord = files.filter((f) => f.slice(0, 4) <= through);
+    for (const f of toRecord) {
+      await client.query("insert into _schema_migrations (filename) values ($1) on conflict do nothing", [f]);
+    }
+    console.log(`Baseline: recorded ${toRecord.length} migration(s) through ${through} as applied (nothing was run).`);
+    await client.end();
+    return;
+  }
+
   const { rows } = await client.query("select filename from _schema_migrations");
   const already = new Set(rows.map((r) => r.filename));
   const pending = files.filter((f) => !already.has(f));
+
+  // Incident 2026-10-01: the tracking table on the test project listed only
+  // 3 files, so this script re-ran 0001/0002 on a fully-migrated database
+  // and reset 13 RLS policies to their original versions (repaired the
+  // same day). Refuse when the schema clearly already exists but older
+  // migrations are still listed as pending — that means the tracking table
+  // is out of date, not that the database is new.
+  const { rows: existing } = await client.query("select to_regclass('public.profiles') is not null as has_schema");
+  if (existing[0]?.has_schema && pending.includes(files[0])) {
+    console.error(
+      `Refusing: the database already has the schema, but _schema_migrations doesn't list ${files[0]}. ` +
+        "The tracking table is out of date. Run check-schema-drift.mjs, then record what's already applied with " +
+        "--baseline-through=NNNN before applying anything."
+    );
+    await client.end();
+    process.exit(1);
+  }
 
   if (pending.length === 0) {
     console.log(`Target "${target}" is already up to date — all ${files.length} migrations previously applied.`);

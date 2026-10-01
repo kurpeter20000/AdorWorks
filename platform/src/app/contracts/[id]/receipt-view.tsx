@@ -22,6 +22,9 @@ export function ReceiptView({
   feePercent,
   feeAmount,
   netAmount,
+  employerFeePercent,
+  employerFeeAmount,
+  totalCharged,
   isSimulated,
 }: {
   receiptNumber: string | null;
@@ -36,6 +39,9 @@ export function ReceiptView({
   feePercent: number;
   feeAmount: number;
   netAmount: number;
+  employerFeePercent: number;
+  employerFeeAmount: number;
+  totalCharged: number;
   isSimulated: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -62,13 +68,25 @@ export function ReceiptView({
           <dd className="font-semibold text-midnight">{receiptNumber ?? "—"}</dd>
         </div>
         <div className="flex justify-between">
-          <dt className="text-slate">Gross amount</dt>
+          <dt className="text-slate">Agreed amount</dt>
           <dd className="font-semibold text-midnight">
             {currency} {amount.toLocaleString()}
           </dd>
         </div>
         <div className="flex justify-between">
-          <dt className="text-slate">Platform fee ({feePercent}%)</dt>
+          <dt className="text-slate">Employer fee ({employerFeePercent}%)</dt>
+          <dd>
+            {currency} {employerFeeAmount.toLocaleString()}
+          </dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="font-semibold text-midnight">Total paid by employer</dt>
+          <dd className="font-semibold text-midnight">
+            {currency} {totalCharged.toLocaleString()}
+          </dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-slate">Talent fee ({feePercent}%)</dt>
           <dd>
             {currency} {feeAmount.toLocaleString()}
           </dd>

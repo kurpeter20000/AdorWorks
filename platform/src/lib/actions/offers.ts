@@ -1,5 +1,6 @@
 "use server";
 
+import { ensureContractTerms } from "@/lib/dal/contractTerms";
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -238,6 +239,8 @@ export async function acceptOffer(offerId: string): Promise<{ error?: string }> 
     source: "platform",
     metadata: { offerId: offer.id, opportunityId: offer.opportunity_id },
   });
+  // Written terms (Labour Act s.44) on record from the first moment.
+  await ensureContractTerms(contract.id, session.userId);
   await notifyUser(admin, {
     userId: offer.created_by,
     type: NOTIFICATION_TYPES.OFFER_RESPONDED,
@@ -407,6 +410,7 @@ export async function acceptServiceProposal(offerId: string): Promise<{ error?: 
     source: "platform",
     metadata: { offerId: offer.id, serviceRequestId: offer.service_request_id },
   });
+  await ensureContractTerms(contract.id, session.userId);
   await notifyUser(admin, {
     userId: offer.talent_id,
     type: NOTIFICATION_TYPES.OFFER_RESPONDED,

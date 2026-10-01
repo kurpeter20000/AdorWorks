@@ -527,7 +527,28 @@ export type PaymentEventRow = {
   fee_percent: number;
   fee_amount: number;
   net_amount: number;
+  employer_fee_percent: number;
+  employer_fee_amount: number;
+  total_charged: number;
   created_at: string;
+}
+
+/** 0096 — key/value settings that change without a release (first key: 'fees'). */
+export type PlatformSettingRow = {
+  key: string;
+  value: unknown;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+/** 0096 — immutable, versioned written terms per contract (Labour Act 2017 s.44). */
+export type ContractTermsRow = {
+  id: string;
+  contract_id: string;
+  version: number;
+  content: unknown;
+  content_hash: string;
+  generated_at: string;
 }
 
 export type PaymentIntentionStatus = "processing" | "succeeded" | "failed";
@@ -994,6 +1015,18 @@ export type Database = {
         Row: PaymentEventRow;
         Insert: Partial<PaymentEventRow> & { contract_id: string; external_reference: string; amount: number };
         Update: Partial<PaymentEventRow>;
+        Relationships: [];
+      };
+      platform_settings: {
+        Row: PlatformSettingRow;
+        Insert: Partial<PlatformSettingRow> & { key: string; value: unknown };
+        Update: Partial<PlatformSettingRow>;
+        Relationships: [];
+      };
+      contract_terms: {
+        Row: ContractTermsRow;
+        Insert: Partial<ContractTermsRow> & { contract_id: string; version: number; content: unknown; content_hash: string };
+        Update: Partial<ContractTermsRow>;
         Relationships: [];
       };
       payment_intentions: {

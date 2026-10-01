@@ -4,7 +4,8 @@ import { z } from "zod";
 import { requireSession, requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getActivePaymentProvider } from "@/lib/paymentProviders.server";
-import { calculateFee } from "@/lib/domain/fees";
+import { calculateFees } from "@/lib/domain/fees";
+import { getFeeSettings } from "@/lib/dal/settings";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import { isFeatureEnabled, FEATURE_FLAGS } from "@/lib/domain/featureFlags";
 import { sendEmailSafely, getUserEmail } from "@/lib/email";
@@ -352,6 +353,8 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     .eq("id", milestoneId)
     .maybeSingle();
   if (!milestone) return { message: "Milestone not found." };
+  // Rates read once, here, and stamped on the payment below (0096).
+  const fee = calculateFees(milestone.amount, await getFeeSettings());
 
   const { data: invoice } = await admin
     .from("finance_records")
@@ -395,7 +398,8 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
       invoice_id: invoice?.id ?? null,
       provider: v.provider,
       payer_phone: v.phone || null,
-      amount: milestone.amount,
+      // What the employer is charged: the agreed amount plus their fee.
+      amount: fee.totalCharged,
       currency: milestone.currency,
       status: "processing",
       created_by: session.userId,
@@ -411,7 +415,7 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
 
   const provider = await getActivePaymentProvider(v.provider);
   const result = provider
-    ? await provider.charge({ phone: v.phone ?? "", amount: milestone.amount, currency: milestone.currency })
+    ? await provider.charge({ phone: v.phone ?? "", amount: fee.totalCharged, currency: milestone.currency })
     : { success: false as const, reason: "Unknown payment provider." };
 
   if (!result.success) {
@@ -430,7 +434,6 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
   }
 
   const receiptNumber = `RCPT-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${intention.id.slice(0, 8).toUpperCase()}`;
-  const fee = calculateFee(milestone.amount);
   // is_simulated defaults true (0006) — only a mobile-money charge that
   // actually went through the real adapter (flag on, real credentials
   // configured) should ever record false. Cards stay simulated
@@ -450,9 +453,12 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     receipt_number: receiptNumber,
     amount: milestone.amount,
     currency: milestone.currency,
-    fee_percent: fee.feePercent,
-    fee_amount: fee.feeAmount,
+    fee_percent: fee.talentFeePercent,
+    fee_amount: fee.talentFeeAmount,
     net_amount: fee.netAmount,
+    employer_fee_percent: fee.employerFeePercent,
+    employer_fee_amount: fee.employerFeeAmount,
+    total_charged: fee.totalCharged,
     is_simulated: isSimulated,
   });
   if (paymentError) {
@@ -497,7 +503,7 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     entityType: "payment_events",
     entityId: intention.id,
     source: "platform",
-    after: { status: "succeeded", receiptNumber, amount: milestone.amount, currency: milestone.currency, isSimulated },
+    after: { status: "succeeded", receiptNumber, amount: milestone.amount, totalCharged: fee.totalCharged, platformRevenue: fee.platformRevenue, currency: milestone.currency, isSimulated },
     metadata: { contractId: check.contract!.id, milestoneId, provider: v.provider },
   });
   await logAuditEvent(admin, {
@@ -511,7 +517,7 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     metadata: { contractId: check.contract!.id, receiptNumber },
   });
 
-  const paidNoticeBody = `${milestone.currency} ${fee.netAmount.toLocaleString()} net (${milestone.currency} ${milestone.amount.toLocaleString()} gross${fee.feeAmount > 0 ? `, ${milestone.currency} ${fee.feeAmount.toLocaleString()} platform fee` : ""}). Receipt ${receiptNumber}.`;
+  const paidNoticeBody = `${milestone.currency} ${fee.netAmount.toLocaleString()} net (${milestone.currency} ${milestone.amount.toLocaleString()} agreed${fee.talentFeeAmount > 0 ? `, ${milestone.currency} ${fee.talentFeeAmount.toLocaleString()} AdorWorks fee` : ""}). Receipt ${receiptNumber}.`;
   await notifyUser(admin, {
     userId: check.contract!.talent_id,
     type: NOTIFICATION_TYPES.MILESTONE_PAID,

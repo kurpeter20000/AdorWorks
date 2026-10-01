@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { payMilestone } from "@/lib/actions/contracts";
 import type { FormState } from "@/lib/actions/auth";
 import { PAYMENT_PROVIDERS } from "@/lib/paymentProviders";
-import { calculateFee } from "@/lib/domain/fees";
+import { calculateFees, type FeeSettings } from "@/lib/domain/fees";
 
 const initialState: FormState = {};
 
@@ -13,18 +13,21 @@ export function PaymentCheckout({
   amount,
   currency,
   realPaymentsEnabled,
+  fees,
 }: {
   milestoneId: string;
   amount: number;
   currency: string;
   /** Server-computed (isFeatureEnabled reads an unprefixed env var, invisible to the client) — see contracts/[id]/page.tsx. */
   realPaymentsEnabled: boolean;
+  /** Current rates, read on the server (0096 platform_settings). */
+  fees: FeeSettings;
 }) {
   const boundAction = payMilestone.bind(null, milestoneId);
   const [state, formAction, pending] = useActionState(boundAction, initialState);
   const [providerId, setProviderId] = useState(PAYMENT_PROVIDERS[0].id);
   const isCard = PAYMENT_PROVIDERS.find((p) => p.id === providerId)?.method === "card";
-  const fee = calculateFee(amount);
+  const fee = calculateFees(amount, fees);
 
   return (
     <form action={formAction} className="mt-3 rounded-lg border border-coral/30 bg-coral/5 p-3">
@@ -44,27 +47,36 @@ export function PaymentCheckout({
 
       <dl className="mt-3 space-y-1 text-sm">
         <div className="flex justify-between">
-          <dt className="text-slate">Gross amount</dt>
+          <dt className="text-slate">Agreed amount</dt>
           <dd className="font-semibold text-midnight">
-            {currency} {fee.grossAmount.toLocaleString()}
+            {currency} {fee.amount.toLocaleString()}
           </dd>
         </div>
         <div className="flex justify-between text-xs">
-          <dt className="text-slate">Platform fee ({fee.feePercent}%)</dt>
+          <dt className="text-slate">AdorWorks fee for employers ({fee.employerFeePercent}%)</dt>
           <dd className="text-slate">
-            {currency} {fee.feeAmount.toLocaleString()}
+            + {currency} {fee.employerFeeAmount.toLocaleString()}
           </dd>
         </div>
         <div className="flex justify-between border-t border-coral/20 pt-1">
-          <dt className="font-semibold text-midnight">Talent receives (net)</dt>
+          <dt className="font-semibold text-midnight">You pay</dt>
           <dd className="font-bold text-midnight">
+            {currency} {fee.totalCharged.toLocaleString()}
+          </dd>
+        </div>
+        <div className="flex justify-between pt-2 text-xs">
+          <dt className="text-slate">AdorWorks fee for talent ({fee.talentFeePercent}%)</dt>
+          <dd className="text-slate">
+            − {currency} {fee.talentFeeAmount.toLocaleString()}
+          </dd>
+        </div>
+        <div className="flex justify-between text-xs">
+          <dt className="text-slate">Talent receives</dt>
+          <dd className="font-semibold text-midnight">
             {currency} {fee.netAmount.toLocaleString()}
           </dd>
         </div>
       </dl>
-      <p className="mt-2 text-sm font-semibold text-midnight">
-        You will be charged {currency} {amount.toLocaleString()}
-      </p>
 
       <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
         {PAYMENT_PROVIDERS.map((p, i) => (

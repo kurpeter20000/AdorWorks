@@ -15,8 +15,8 @@ const VALUE_PROPS = [
     body: msg("Opportunities and candidates surfaced by skill overlap — never by who pays more."),
   },
   {
-    title: msg("Built-in escrow"),
-    body: msg("Milestone payments held safely until work is approved, both sides protected."),
+    title: msg("Pay as work is approved"),
+    body: msg("Milestone by milestone, with written terms and a receipt every time."),
   },
   {
     title: msg("Verified from day one"),
