@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getActivePaymentProvider } from "@/lib/paymentProviders.server";
 import { calculateFees } from "@/lib/domain/fees";
 import { disputeWindowEndsAt } from "@/lib/domain/escrow";
+import { isInstitutional, DEFAULT_PAYMENT_TERMS_DAYS } from "@/lib/domain/institutional";
 import { getEscrowSettings, getFeeSettings } from "@/lib/dal/settings";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import { isFeatureEnabled, FEATURE_FLAGS } from "@/lib/domain/featureFlags";
@@ -242,6 +243,12 @@ export async function approveDeliverable(deliverableId: string): Promise<{ error
     .eq("id", deliverable.milestone_id)
     .maybeSingle();
   if (milestoneForInvoice) {
+    // Institutional orgs (Stage 16 step 5: ngo/ingo/government) pay by
+    // bank transfer against this same invoice row instead of mobile
+    // money — stamp payment terms on it now so the due date is set from
+    // the moment the invoice exists, not only once someone looks at it.
+    const { data: org } = await admin.from("organisations").select("org_type").eq("id", check.contract!.organisation_id).maybeSingle();
+    const institutional = isInstitutional(org?.org_type);
     await admin.from("finance_records").insert({
       contract_id: check.contract!.id,
       milestone_id: deliverable.milestone_id,
@@ -250,6 +257,8 @@ export async function approveDeliverable(deliverableId: string): Promise<{ error
       currency: milestoneForInvoice.currency,
       status: "pending",
       recorded_by: session.userId,
+      payment_terms_days: institutional ? DEFAULT_PAYMENT_TERMS_DAYS : null,
+      due_date: institutional ? new Date(Date.now() + DEFAULT_PAYMENT_TERMS_DAYS * 24 * 60 * 60 * 1000).toISOString().slice(0, 10) : null,
     });
   }
 

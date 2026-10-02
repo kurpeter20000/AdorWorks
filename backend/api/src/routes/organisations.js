@@ -290,3 +290,40 @@ organisationsRouter.patch(
     res.json({ data });
   })
 );
+
+const orgTypeSchema = z.object({
+  org_type: z.enum(["individual", "company", "ngo", "ingo", "government", "other"]),
+});
+
+// PATCH /api/organisations/:id/org-type — staff correction of the org's
+// self-declared type (Stage 16 step 5), e.g. an NGO that signed up as
+// "company" by mistake. A separate, lighter endpoint from /verify on
+// purpose: changing this isn't a verification decision and shouldn't
+// need the same mandatory reason — institutional (ngo/ingo/government)
+// orgs get invoice billing instead of mobile money the moment this is
+// set, so getting it right matters, but explaining it in a paragraph
+// doesn't.
+organisationsRouter.patch(
+  "/:id/org-type",
+  asyncRoute(async (req, res) => {
+    const body = orgTypeSchema.parse(req.body);
+
+    const { data: before } = await supabaseAdmin.from("organisations").select("org_type").eq("id", req.params.id).maybeSingle();
+
+    const { data, error } = await supabaseAdmin.from("organisations").update(body).eq("id", req.params.id).select().single();
+    if (error) throw new HttpError(400, error.message);
+
+    await logAuditEvent(supabaseAdmin, {
+      name: "trust.verification.decided",
+      actorId: req.user.id,
+      subjectId: null,
+      entityType: "organisations",
+      entityId: req.params.id,
+      reason: "Organisation type corrected by staff",
+      before: before ? { org_type: before.org_type } : null,
+      after: { org_type: body.org_type },
+    });
+
+    res.json({ data });
+  })
+);

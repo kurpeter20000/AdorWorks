@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { createOrganisation } from "@/lib/actions/organisation";
 import type { FormState } from "@/lib/actions/auth";
+import { ORG_TYPES, ORG_TYPE_LABEL, type OrgType } from "@/lib/domain/institutional";
 
 const initialState: FormState = {};
 
@@ -22,6 +23,22 @@ export function SetupForm() {
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
         {state.errors?.name && <p className="mt-1 text-sm text-coral-ink">{state.errors.name[0]}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="orgType" className="text-sm font-semibold text-midnight">
+          Organisation type
+        </label>
+        <select id="orgType" name="orgType" defaultValue="company" className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm">
+          {ORG_TYPES.map((t: OrgType) => (
+            <option key={t} value={t}>
+              {ORG_TYPE_LABEL[t]}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-xs text-slate">
+          NGOs, INGOs and government bodies pay by invoice and bank transfer instead of mobile money.
+        </p>
       </div>
 
       <div>

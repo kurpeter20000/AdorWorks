@@ -9,6 +9,7 @@ import { EvidenceUpload } from "./evidence-upload";
 import { LogoUpload } from "./logo-upload";
 import { OrgInfoForm } from "./org-info-form";
 import { VerificationCheckResponseForm } from "./verification-check-response-form";
+import { ExportButton } from "./export-button";
 
 const CHECK_LABEL: Record<string, string> = {
   registration: "Registration",
@@ -76,9 +77,13 @@ export default async function OrganisationPage({
           >
             Post an opportunity
           </Link>
+          <Link href="/organisation/opportunities/batch" className="text-xs font-semibold text-violet underline">
+            Post several at once
+          </Link>
           <Link href="/organisation/team" className="text-xs font-semibold text-violet underline">
             Manage team
           </Link>
+          <ExportButton />
         </div>
       </div>
 

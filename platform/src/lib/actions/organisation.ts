@@ -10,11 +10,18 @@ import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import type { FormState } from "./auth";
 
+// Self-declared (Stage 16 step 5) — staff can correct it during
+// verification review (see operations/organisations). Institutional
+// orgs (ngo/ingo/government) get invoice + bank-transfer billing
+// instead of per-milestone mobile money — see lib/domain/institutional.ts.
+const ORG_TYPES = ["individual", "company", "ngo", "ingo", "government", "other"] as const;
+
 const OrganisationSchema = z.object({
   name: z.string().trim().min(2, "Enter your organisation or business name."),
   sector: z.string().trim().optional(),
   website: z.string().trim().optional(),
   billingEmail: z.string().trim().email("Enter a valid email address.").optional().or(z.literal("")),
+  orgType: z.enum(ORG_TYPES).default("company"),
 });
 
 /**
@@ -34,6 +41,7 @@ export async function createOrganisation(_prevState: FormState, formData: FormDa
     sector: formData.get("sector") || undefined,
     website: formData.get("website") || undefined,
     billingEmail: formData.get("billingEmail") || undefined,
+    orgType: formData.get("orgType") || undefined,
   });
   if (!validated.success) {
     return { errors: validated.error.flatten().fieldErrors };
@@ -46,6 +54,7 @@ export async function createOrganisation(_prevState: FormState, formData: FormDa
     sector: v.sector || null,
     website: v.website || null,
     billing_email: v.billingEmail || null,
+    org_type: v.orgType,
     representative_id: session.userId,
   });
 
@@ -73,6 +82,7 @@ export async function updateOrganisation(
     sector: formData.get("sector") || undefined,
     website: formData.get("website") || undefined,
     billingEmail: formData.get("billingEmail") || undefined,
+    orgType: formData.get("orgType") || undefined,
   });
   if (!validated.success) {
     return { errors: validated.error.flatten().fieldErrors };
@@ -87,6 +97,7 @@ export async function updateOrganisation(
       sector: v.sector || null,
       website: v.website || null,
       billing_email: v.billingEmail || null,
+      org_type: v.orgType,
     })
     .eq("id", organisationId);
 
@@ -253,6 +264,111 @@ export async function createOpportunity(organisationId: string, _prevState: Form
   }
 
   redirect("/organisation?posted=1");
+}
+
+const BATCH_MAX_ROWS = 10;
+
+const BatchSharedSchema = z.object({
+  type: z.enum(["service", "project", "contract", "full_time", "squad"], { message: "Choose a type." }),
+  category: z.enum(["creative_media", "digital_technology", "business_project_support"], { message: "Choose a category." }),
+  workMode: z.enum(["remote", "on_site", "hybrid", "any"]),
+  engagementType: z.enum(
+    ["freelance", "fixed_term_contract", "full_time", "internship", "apprenticeship", "managed_service"],
+    { message: "Choose an engagement type." }
+  ),
+  paymentBasis: z.enum(["fixed", "milestone", "hourly", "daily", "monthly", "negotiable"], { message: "Choose how this is paid." }),
+  currency: z.string().trim().min(1).default("SSP"),
+  applicationDeadline: z.string().trim().optional(),
+  shortlistingMode: z.enum(["self_service", "staff_assisted"]).default("staff_assisted"),
+});
+
+const BatchRowSchema = z.object({
+  title: z.string().trim().min(5, "Enter a title."),
+  skills: z.string().trim().min(1, "List at least one required skill."),
+  location: z.string().trim().optional(),
+  compensationAmount: z.string().trim().min(1, "Enter an amount."),
+});
+
+/**
+ * Batch posting (Stage 16 step 5) — an institutional employer hiring for
+ * a program often needs several near-identical roles (e.g. "Field
+ * Officer" in three locations) rather than one unique opportunity. Not a
+ * CSV upload: a shared-settings-plus-row-table form, same fields as
+ * createOpportunity split into what's common across the batch (type,
+ * category, work mode, engagement, pay basis, currency, deadline,
+ * shortlisting) versus what varies per row (title, skills, location,
+ * amount) — each row becomes its own 'pending_review' opportunity,
+ * reviewed individually by staff exactly like one posted alone.
+ *
+ * Deliberately does not call createOpportunity() in a loop — that
+ * function redirects on its own success, which would abandon every row
+ * after the first. This duplicates its insert (not its validation
+ * schema, which only covers the single-opportunity form's exact field
+ * set), redirecting once after every row is in.
+ */
+export async function createOpportunitiesBatch(organisationId: string, _prevState: FormState, formData: FormData): Promise<FormState> {
+  await requireRole(...CLIENT_ROLES);
+
+  const sharedValidated = BatchSharedSchema.safeParse({
+    type: formData.get("type"),
+    category: formData.get("category"),
+    workMode: formData.get("workMode"),
+    engagementType: formData.get("engagementType"),
+    paymentBasis: formData.get("paymentBasis"),
+    currency: formData.get("currency") || "SSP",
+    applicationDeadline: formData.get("applicationDeadline") || undefined,
+    shortlistingMode: formData.get("shortlistingMode") || undefined,
+  });
+  if (!sharedValidated.success) {
+    return { errors: sharedValidated.error.flatten().fieldErrors };
+  }
+  const shared = sharedValidated.data;
+
+  const rows: { title: string; skills: string; location?: string; compensationAmount: string }[] = [];
+  for (let i = 0; i < BATCH_MAX_ROWS; i++) {
+    const title = formData.get(`title_${i}`);
+    if (!title || String(title).trim() === "") continue;
+    const rowValidated = BatchRowSchema.safeParse({
+      title,
+      skills: formData.get(`skills_${i}`) || "",
+      location: formData.get(`location_${i}`) || undefined,
+      compensationAmount: formData.get(`compensationAmount_${i}`) || "",
+    });
+    if (!rowValidated.success) {
+      return { message: `Row ${i + 1}: ${rowValidated.error.issues[0]?.message ?? "invalid"}` };
+    }
+    rows.push(rowValidated.data);
+  }
+  if (rows.length === 0) {
+    return { message: "Add at least one role to post." };
+  }
+
+  const supabase = await createClient();
+  for (const row of rows) {
+    const { error } = await supabase.from("opportunities").insert({
+      organisation_id: organisationId,
+      type: shared.type,
+      title: row.title,
+      category: shared.category,
+      skills: splitSkills(row.skills),
+      location: row.location || null,
+      work_mode: shared.workMode,
+      engagement_type: shared.engagementType,
+      payment_basis: shared.paymentBasis,
+      compensation_amount: toNullableNumber(row.compensationAmount),
+      currency: shared.currency,
+      application_deadline: shared.applicationDeadline || null,
+      number_of_openings: 1,
+      visibility: "public",
+      status: "pending_review",
+      shortlisting_mode: shared.shortlistingMode,
+    });
+    if (error) {
+      return { message: `Could not submit "${row.title}": ${error.message}` };
+    }
+  }
+
+  redirect(`/organisation?posted=${rows.length}`);
 }
 
 const ProjectBriefSchema = z.object({

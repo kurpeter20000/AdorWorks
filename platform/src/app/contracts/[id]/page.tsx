@@ -17,6 +17,8 @@ import { DisputeSection } from "./dispute-section";
 import { CancelContractSection } from "./cancel-contract-section";
 import Link from "next/link";
 import { getFeeSettings } from "@/lib/dal/settings";
+import { isInstitutional } from "@/lib/domain/institutional";
+import { InstitutionalInvoicePanel } from "./institutional-invoice-panel";
 
 export const metadata: Metadata = { title: "Contract" };
 
@@ -40,7 +42,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
     contract.opportunity_id
       ? supabase.from("opportunities").select("title").eq("id", contract.opportunity_id).maybeSingle()
       : Promise.resolve({ data: null }),
-    supabase.from("organisations").select("id, name, representative_id").eq("id", contract.organisation_id).maybeSingle(),
+    supabase.from("organisations").select("id, name, representative_id, org_type").eq("id", contract.organisation_id).maybeSingle(),
   ]);
   // S09-*: a service-originated contract has no opportunity — fall back to
   // the talent's own service listing via service_requests.
@@ -114,6 +116,19 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
     .eq("contract_id", contract.id);
   const paymentByMilestone = new Map((paymentEvents ?? []).map((p) => [p.milestone_id, p]));
   const feeSettings = await getFeeSettings();
+
+  // Institutional orgs (Stage 16 step 5) pay by invoice + bank transfer
+  // instead of mobile money — approveDeliverable() already raises this
+  // same finance_records row for every milestone, institutional or not.
+  const institutional = isInstitutional(org?.org_type);
+  const { data: invoices } = institutional
+    ? await supabase
+        .from("finance_records")
+        .select("id, milestone_id, amount, currency, status, due_date, payment_terms_days, bank_reference, confirmed_at")
+        .eq("contract_id", contract.id)
+        .eq("record_type", "invoice")
+    : { data: [] };
+  const invoiceByMilestone = new Map((invoices ?? []).map((i) => [i.milestone_id, i]));
 
   const { data: conversation } = await supabase
     .from("conversations")
@@ -260,7 +275,11 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                 <ReviewActions deliverableId={deliverable.id} />
               )}
 
-              {isEmployer && m.status === "approved" && (
+              {!payment && institutional && invoiceByMilestone.get(m.id) && (
+                <InstitutionalInvoicePanel invoice={invoiceByMilestone.get(m.id)!} />
+              )}
+
+              {isEmployer && !institutional && m.status === "approved" && (
                 <PaymentCheckout
                   milestoneId={m.id}
                   amount={m.amount}

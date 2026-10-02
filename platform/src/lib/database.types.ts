@@ -199,6 +199,7 @@ export type OrganisationRow = {
   billing_email: string | null;
   verification_status: "pending" | "verified" | "rejected" | "suspended";
   risk_notes: string | null;
+  org_type: "individual" | "company" | "ngo" | "ingo" | "government" | "other";
   created_at: string;
   updated_at: string;
 }
@@ -595,6 +596,11 @@ export type FinanceRecordRow = {
   exchange_rate_basis: string | null;
   notes: string | null;
   recorded_by: string;
+  payment_terms_days: number | null;
+  due_date: string | null;
+  bank_reference: string | null;
+  confirmed_by: string | null;
+  confirmed_at: string | null;
   created_at: string;
   updated_at: string;
 }

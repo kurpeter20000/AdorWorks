@@ -196,9 +196,53 @@ UI, not a direct DB check. Both the Collections and Disbursements real
 adapters were also exercised directly against MTN's live sandbox outside
 the app (not through `REAL_PAYMENTS`, which stays off).
 
-### Step 5 — not built yet
+### Step 5 — Institutional (INGO) account track ✅ (migration 0100)
 
-5. Institutional (INGO) account track.
+- **Organisation type:** `organisations.org_type` (individual/company/ngo/
+  ingo/government/other) — self-declared at signup/edit, staff can
+  correct it during verification review at `/operations/organisations`
+  (a separate, lighter endpoint from the verification-decision override,
+  since getting the type right isn't itself a verification decision and
+  shouldn't need the same mandatory written reason). Previously the only
+  classification was the free-text, non-enforced `sector` hint string —
+  that stays as-is for the actual sector; `org_type` is a new, real
+  dimension specifically for institutional billing eligibility.
+- **Invoice + bank-transfer billing:** ngo/ingo/government orgs settle a
+  milestone by invoice instead of mobile money — real institutional
+  procurement pays by bank transfer against an invoice with payment
+  terms, not mobile money, and this codebase has no bank-transfer payment
+  *gateway* to automate that. `approveDeliverable()` already raised an
+  invoice (a `finance_records` row) automatically for every milestone
+  before this stage; for an institutional org it now also stamps
+  `payment_terms_days`/`due_date` (Net 30) onto that same row. Staff
+  confirm the transfer cleared at `/operations/invoices`
+  (`confirmInstitutionalPayment()`) — deliberately not self-serve (an
+  org confirming its own payment is an obvious fraud vector) — which
+  creates the payment_events row (`provider_name='bank_transfer'`,
+  `is_simulated` always false — there's no simulated version of a human
+  checking a bank statement) and from there feeds into the exact same
+  escrow/fee pipeline every other payment uses (step 4).
+- **Compliance export:** any member of an org can download a CSV of
+  their own contracts, milestones and payments from `/organisation` —
+  donor/audit reporting is a routine institutional need, and this is the
+  same data already shown one contract at a time, just flattened.
+- **Batch posting:** `/organisation/opportunities/batch` — shared
+  settings (type, category, work mode, engagement, pay basis, currency,
+  deadline, shortlisting) entered once, then up to 10 role rows
+  (title/skills/location/amount) submitted together, each becoming its
+  own `pending_review` opportunity reviewed individually by staff exactly
+  like one posted alone. Not a CSV upload — a program hiring several
+  near-identical roles (e.g. the same position in three locations) is the
+  target case, not bulk data migration.
+
+Verified on the test project, through the real UI: an INGO's milestone
+raised an invoice with Net 30 terms and a due date the moment its
+deliverable was approved; the contract page showed "awaiting bank
+transfer" with the amount and due date; staff confirmed it at
+`/operations/invoices` with a bank reference; the resulting payment_events
+row recorded `provider_name='bank_transfer'`, `is_simulated=false`,
+milestone marked paid, and the contract page then showed the normal
+paid/receipt state with "Bank transfer" as the provider.
 
 ## Unresolved — needs a South Sudanese lawyer
 

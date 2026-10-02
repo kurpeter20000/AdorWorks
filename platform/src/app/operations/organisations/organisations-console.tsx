@@ -73,10 +73,22 @@ export function OrganisationsConsole({ initialFilter }: { initialFilter: string 
   );
 }
 
+const ORG_TYPES = ["individual", "company", "ngo", "ingo", "government", "other"];
+const ORG_TYPE_LABEL: Record<string, string> = {
+  individual: "Individual",
+  company: "Company",
+  ngo: "NGO",
+  ingo: "International NGO (INGO)",
+  government: "Government body",
+  other: "Other",
+};
+
 function OrgDetail({ row, onChanged }: { row: Row; onChanged: () => void }) {
   const { run, pending, status, setStatus } = useAction(onChanged);
+  const orgTypeAction = useAction(onChanged);
   const [overall, setOverall] = useState<string>(row.verification_status);
   const [why, setWhy] = useState<string>(row.risk_notes || "");
+  const [orgType, setOrgType] = useState<string>(row.org_type || "company");
 
   return (
     <div onClick={(e) => e.stopPropagation()} className="space-y-6">
@@ -101,6 +113,7 @@ function OrgDetail({ row, onChanged }: { row: Row; onChanged: () => void }) {
                     ),
                   ],
                   ["Billing email", row.billing_email || "—"],
+                  ["Organisation type", ORG_TYPE_LABEL[row.org_type] || row.org_type || "Company"],
                   [
                     "Registration evidence",
                     row.registration_evidence_path ? (
@@ -180,6 +193,32 @@ function OrgDetail({ row, onChanged }: { row: Row; onChanged: () => void }) {
           <ActionStatus status={status} />
         </div>
       </Grid2>
+
+      <div>
+        <SubHeading>Organisation type</SubHeading>
+        <p className="text-xs text-slate">
+          Self-declared by the org; correct it if it&rsquo;s wrong. NGO/INGO/government types get invoice billing
+          instead of mobile money.
+        </p>
+        <div className="mt-2 grid gap-2 sm:max-w-xs">
+          <select aria-label="Organisation type" className={inputClass} value={orgType} onChange={(e) => setOrgType(e.target.value)}>
+            {ORG_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {ORG_TYPE_LABEL[t]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <ActionRow>
+          <Btn
+            disabled={orgTypeAction.pending}
+            onClick={() => orgTypeAction.run(() => api(`/api/organisations/${row.id}/org-type`, { method: "PATCH", body: { org_type: orgType } }))}
+          >
+            Save type
+          </Btn>
+        </ActionRow>
+        <ActionStatus status={orgTypeAction.status} />
+      </div>
     </div>
   );
 }

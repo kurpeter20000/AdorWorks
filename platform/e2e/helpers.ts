@@ -162,6 +162,14 @@ export async function seedContract(talentId: string) {
   return {
     contractId: contract.id as string,
     async cleanup() {
+      // maybeCompleteContract() (contracts.ts) writes a work_history row
+      // once every milestone on the contract is settled —
+      // work_history.contract_id has no cascade, so any test that drives
+      // a contract to completion needs this gone before the contract
+      // delete below, or that delete (and everything that depends on it
+      // succeeding — the org, then the rep's own deletion) fails silently
+      // with the rep stuck undeletable at the very end of the test.
+      await admin.from("work_history").delete().eq("contract_id", contract.id);
       await admin.from("contracts").delete().eq("id", contract.id);
       await admin.from("offers").delete().eq("id", offer.id);
       await admin.from("applications").delete().eq("id", application.id);

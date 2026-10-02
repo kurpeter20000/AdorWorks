@@ -7,6 +7,7 @@ const PROVIDER_LABEL: Record<string, string> = {
   mgurush: "m-Gurush",
   mtn_momo: "MTN Mobile Money",
   visa_mastercard: "Card",
+  bank_transfer: "Bank transfer",
 };
 
 export function ReceiptView({

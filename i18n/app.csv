@@ -456,6 +456,8 @@ Engagements,,,,,lib/domain/navigation,Staff console label — the staff console 
 "Partner hubs, onboarding agents and in-person help requests.",,,,,lib/domain/navigation,Staff console label — the staff console stays in English. Leave blank.
 People,,,,,lib/domain/navigation,Staff console label — the staff console stays in English. Leave blank.
 "Accounts, roles, suspensions and staff (admins only).",,,,,lib/domain/navigation,Staff console label — the staff console stays in English. Leave blank.
+Invoices,,,,,lib/domain/navigation,
+Institutional invoices awaiting bank-transfer confirmation.,,,,,lib/domain/navigation,
 Payouts,,,,,lib/domain/navigation,
 Escrow-held milestone payments due for release to talent.,,,,,lib/domain/navigation,
 Settings,,,,,lib/domain/navigation,Staff console label — the staff console stays in English. Leave blank.
