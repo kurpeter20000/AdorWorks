@@ -1210,6 +1210,21 @@ export type Database = {
       };
     };
     Functions: {
+      talent_finance_summary: {
+        Args: Record<string, never>;
+        Returns: { currency: string; total_earned: number; pending_payout: number }[];
+      };
+      employer_finance_summary: {
+        Args: Record<string, never>;
+        Returns: {
+          currency: string;
+          total_spent: number;
+          invoices_due_count: number;
+          invoices_due_amount: number;
+          milestones_to_pay_count: number;
+          milestones_to_pay_amount: number;
+        }[];
+      };
       escrow_release_eligible: {
         Args: Record<string, never>;
         Returns: {
