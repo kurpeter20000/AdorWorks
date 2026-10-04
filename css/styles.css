@@ -471,14 +471,20 @@ p { margin: 0 0 1em; }
    their box model. */
 .hero-audience [hidden] { display: none; }
 
-/* Homepage hero carousel: three full-bleed photos crossfade behind a
-   single, fixed copy block whose text is swapped (not re-laid-out) in
-   sync -- js/main.js's hero carousel owns the timing, this just owns
-   the transition. The search bar/toggle/chips below never move or
-   fade, by design (feedback: the photo+headline should feel alive,
-   the "what do I do here" controls should feel stable). */
-.hero-slide { position: absolute; inset: 0; opacity: 0; transition: opacity 1.1s ease; }
-.hero-slide.is-active { opacity: 1; }
+/* Homepage hero carousel: three full-bleed photos physically slide past
+   each other (not a crossfade) behind a single, fixed copy block whose
+   text is swapped in sync -- js/main.js's hero carousel owns the
+   direction/timing, this just owns the transform. The search bar/
+   toggle/chips below never move, by design (feedback: the photo+
+   headline should feel alive, the "what do I do here" controls should
+   feel stable). Three states instead of a simple hidden/shown toggle
+   so a slide can be parked off either edge, ready to enter from
+   whichever side motion is coming from (js/main.js's isForward). */
+.hero-slide { position: absolute; inset: 0; transition: transform 1s cubic-bezier(0.65, 0.05, 0.36, 1); }
+.hero-slide.is-park-right { transform: translateX(100%); }
+.hero-slide.is-park-left { transform: translateX(-100%); }
+.hero-slide.is-active { transform: translateX(0); }
+.hero-slide.no-transition { transition: none; }
 .hero-home .container { padding-block: clamp(3rem, 6.5vw, 5rem); }
 
 /* Scaled down from the original single-headline design: three rotating
