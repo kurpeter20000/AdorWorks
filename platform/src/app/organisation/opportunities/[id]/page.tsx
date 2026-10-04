@@ -322,7 +322,11 @@ export default async function OpportunityDetailPage({
         <OpportunityAttachments opportunityId={opportunity.id} attachments={attachments ?? []} />
         {opportunity.status === "open" && <CloseOpportunityActions opportunityId={opportunity.id} />}
         {["filled", "closed", "cancelled", "expired"].includes(opportunity.status) && (
-          <ReopenOpportunityButton opportunityId={opportunity.id} />
+          <ReopenOpportunityButton
+            opportunityId={opportunity.id}
+            currentDeadline={opportunity.application_deadline}
+            expired={opportunity.status === "expired"}
+          />
         )}
       </section>
     </main>
