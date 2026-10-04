@@ -20,7 +20,16 @@ import { LOCALE_COOKIE, isLocale } from "@/i18n/config";
 // renewing it forever, so a session that's merely left open never signs
 // itself out. Enforce an idle timeout ourselves via a plain (non-auth)
 // cookie stamped with the last request time and checked on every request.
-const INACTIVITY_LIMIT_MS = 30 * 60 * 1000; // 30 minutes
+//
+// This is a *revisit-gated* check only — it runs when a request comes
+// in, not while someone sits idle on an already-loaded page. The real
+// 10-minute "no mouse/keyboard/touch activity" enforcement is
+// components/idle-timer.tsx, mounted in every authenticated page's
+// shell; this proxy is the backstop for a browser tab left open and
+// revisited later (bookmark, reload, deep link) without that client
+// timer ever having had a chance to run. Kept at the same 10-minute
+// limit so the two agree on what "idle" means.
+const INACTIVITY_LIMIT_MS = 10 * 60 * 1000; // 10 minutes
 const LAST_ACTIVE_COOKIE = "aw_last_active";
 
 // Server Components can't read the URL they were requested at, so the
