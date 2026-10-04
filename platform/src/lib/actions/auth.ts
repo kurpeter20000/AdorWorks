@@ -194,6 +194,22 @@ export async function logout() {
   redirect("/login");
 }
 
+/**
+ * Called by the client-side idle timer (components/idle-timer.tsx) after
+ * 10 minutes with no mouse/keyboard/touch activity — a separate action
+ * from logout() (not logout(reason) with an optional param) because
+ * logout is also used as a bare `<form action={logout}>`, which calls it
+ * with the form's FormData as the first argument; giving logout an
+ * optional parameter would silently receive that FormData as `reason`
+ * instead of nothing. ?reason=idle lets /login explain why the session
+ * ended instead of just dropping someone back at a blank sign-in form.
+ */
+export async function logoutDueToIdle() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/login?reason=idle");
+}
+
 const ForgotPasswordSchema = z.object({
   email: z.string().trim().email(msg("Enter a valid email address.")),
 });

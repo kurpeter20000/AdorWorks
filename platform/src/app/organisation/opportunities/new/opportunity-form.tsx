@@ -33,10 +33,27 @@ const STEPS = ["Basics", "Details", "Compensation", "Screening & shortlisting", 
 const FIELD_STEP: Record<string, number> = {
   title: 0,
   category: 0,
+  brief: 1,
   skills: 1,
   engagementType: 1,
   compensationAmount: 2,
 };
+
+const MIN_BRIEF_LENGTH = 120;
+
+/**
+ * Guidance list for a genuinely useful brief — feedback was that the
+ * plain "what needs doing" textarea produced generic, interchangeable
+ * descriptions. Shown as a checklist rather than baked into the
+ * placeholder alone, since a placeholder disappears the moment someone
+ * starts typing and this is meant to stay visible while they write.
+ */
+const BRIEF_PROMPTS = [
+  "The outcome you need, not just the task",
+  "Day-to-day responsibilities or deliverables",
+  "What makes this role/project different from a similar one elsewhere",
+  "Anything a strong applicant should know before applying",
+];
 
 interface PreviewSnapshot {
   title: string;
@@ -107,6 +124,7 @@ export function OpportunityForm({
   const [preview, setPreview] = useState<PreviewSnapshot | null>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const briefRef = useRef<HTMLTextAreaElement>(null);
+  const [briefLength, setBriefLength] = useState(opportunity?.brief?.length ?? 0);
   const categoryRef = useRef<HTMLSelectElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -144,6 +162,7 @@ export function OpportunityForm({
       ]
         .filter(Boolean)
         .join("\n");
+      setBriefLength(briefRef.current.value.length);
     }
   }
 
@@ -267,15 +286,26 @@ export function OpportunityForm({
           <label htmlFor="brief" className="text-sm font-semibold text-midnight">
             Brief
           </label>
+          <p className="mt-1 text-xs text-slate">A strong, professional brief covers:</p>
+          <ul className="mt-1 list-inside list-disc text-xs text-slate">
+            {BRIEF_PROMPTS.map((prompt) => (
+              <li key={prompt}>{prompt}</li>
+            ))}
+          </ul>
           <textarea
             id="brief"
             name="brief"
             ref={briefRef}
-            rows={4}
+            rows={6}
             defaultValue={opportunity?.brief ?? undefined}
-            placeholder="What needs doing, the outcome you want, anything a good applicant should know."
-            className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
+            onChange={(e) => setBriefLength(e.target.value.length)}
+            placeholder="What needs doing, the outcome you want, the day-to-day responsibilities, and what makes this specific role or project worth applying to."
+            className="mt-2 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
           />
+          <p className={`mt-1 text-xs ${briefLength < MIN_BRIEF_LENGTH ? "text-slate" : "text-slate/70"}`}>
+            {briefLength} characters{briefLength < MIN_BRIEF_LENGTH ? ` — at least ${MIN_BRIEF_LENGTH} needed` : ""}
+          </p>
+          {state.errors?.brief && <p className="mt-1 text-sm text-coral-ink">{state.errors.brief[0]}</p>}
         </div>
 
         <div>

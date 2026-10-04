@@ -22,6 +22,11 @@ export function formatDateTime(input: string | Date, opts?: Intl.DateTimeFormatO
   return d.toLocaleString("en-GB", { timeZone: PILOT_TIMEZONE, ...opts });
 }
 
+/** A plain (amount, currency) pair, e.g. "SSP 1,234.56" — unlike formatCompensation, which is shaped around an opportunity's payment-basis/range fields, not a single settled figure. */
+export function formatMoney(amount: number, currency: string): string {
+  return `${currency} ${amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+}
+
 /**
  * Shared with the talent dashboard's "Recommended for you" widget — one
  * formatting rule, not a second copy that could drift from
