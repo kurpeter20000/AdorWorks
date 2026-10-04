@@ -29,14 +29,14 @@
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "4.3.3",
-    "@types/node": "24.9.2",
+    "@types/node": "26.6.3",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "eslint": "10.11.0",
     "eslint-config-next": "16.3.8",
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.2"
   },
   "overrides": {
     "tmp": "^0.2.7",

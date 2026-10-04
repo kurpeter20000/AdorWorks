@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { AppSidebar } from "./app-sidebar";
 import { ModeSwitcher, type SwitchableMode } from "./mode-switcher";
 import { LanguageSwitcher } from "./language-switcher";
+import { IdleTimer } from "./idle-timer";
 import { useT } from "@/i18n/client";
 
 export function AppShellClient({
@@ -54,6 +55,7 @@ export function AppShellClient({
 
   return (
     <div className="flex min-h-screen flex-1">
+      <IdleTimer />
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-e border-slate/15 bg-white lg:flex">
         <Link href="/dashboard" className="px-5 py-4 text-lg font-extrabold text-midnight">
           AdorWorks

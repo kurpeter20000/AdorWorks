@@ -72,18 +72,45 @@
 <main id="main">
 
   <section class="hero hero-photo hero-home">
-    <picture class="hero-audience-image" data-audience-image="employer">
-      <source type="image/webp" srcset="img/photos/hero-employers-480.webp 480w, img/photos/hero-employers-960.webp 960w, img/photos/hero-employers-1440.webp 1440w" sizes="100vw">
-      <img class="hero-photo-img" src="img/photos/hero-employers-1440.jpg" srcset="img/photos/hero-employers-480.jpg 480w, img/photos/hero-employers-960.jpg 960w, img/photos/hero-employers-1440.jpg 1440w" sizes="100vw" alt="" width="1440" height="960" fetchpriority="high">
-    </picture>
-    <picture class="hero-audience-image" data-audience-image="talent" hidden>
-      <source type="image/webp" srcset="img/photos/hero-talent-480.webp 480w, img/photos/hero-talent-960.webp 960w, img/photos/hero-talent-1440.webp 1440w" sizes="100vw">
-      <img class="hero-photo-img" src="img/photos/hero-talent-1440.jpg" srcset="img/photos/hero-talent-480.jpg 480w, img/photos/hero-talent-960.jpg 960w, img/photos/hero-talent-1440.jpg 1440w" sizes="100vw" alt="" width="1440" height="960">
-    </picture>
+    <div class="hero-slide is-active" data-hero-slide="0">
+      <picture>
+        <source type="image/webp" srcset="img/photos/home-hero-480.webp 480w, img/photos/home-hero-960.webp 960w, img/photos/home-hero-1440.webp 1440w" sizes="100vw">
+        <img class="hero-photo-img" src="img/photos/home-hero-1440.jpg" srcset="img/photos/home-hero-480.jpg 480w, img/photos/home-hero-960.jpg 960w, img/photos/home-hero-1440.jpg 1440w" sizes="100vw" alt="" width="1440" height="870" fetchpriority="high">
+      </picture>
+    </div>
+    <div class="hero-slide is-park-right" data-hero-slide="1">
+      <picture>
+        <source type="image/webp" srcset="img/photos/hero-employers-480.webp 480w, img/photos/hero-employers-960.webp 960w, img/photos/hero-employers-1440.webp 1440w" sizes="100vw">
+        <img class="hero-photo-img" src="img/photos/hero-employers-1440.jpg" srcset="img/photos/hero-employers-480.jpg 480w, img/photos/hero-employers-960.jpg 960w, img/photos/hero-employers-1440.jpg 1440w" sizes="100vw" alt="" width="1440" height="960">
+      </picture>
+    </div>
+    <div class="hero-slide is-park-right" data-hero-slide="2">
+      <picture>
+        <source type="image/webp" srcset="img/photos/hero-talent-480.webp 480w, img/photos/hero-talent-960.webp 960w, img/photos/hero-talent-1440.webp 1440w" sizes="100vw">
+        <img class="hero-photo-img" src="img/photos/hero-talent-1440.jpg" srcset="img/photos/hero-talent-480.jpg 480w, img/photos/hero-talent-960.jpg 960w, img/photos/hero-talent-1440.jpg 1440w" sizes="100vw" alt="" width="1440" height="960">
+      </picture>
+    </div>
     <div class="container">
-      <p class="hero-kicker" data-audience-copy data-employer="Trusted talent. Stronger delivery." data-talent="Your skills deserve real opportunity.">Trusted talent. Stronger delivery.</p>
-      <h1 data-audience-copy data-employer="Hire verified African talent with confidence." data-talent="Find fair opportunities that match your skills.">Hire verified African talent with confidence.</h1>
-      <p class="lede" data-audience-copy data-employer="Tell us what you need. We assess capability, recommend a qualified shortlist and support delivery from brief to completion." data-talent="Build a credible profile, complete practical verification and get matched to legitimate jobs and project briefs without paying to be considered.">Tell us what you need. We assess capability, recommend a qualified shortlist and support delivery from brief to completion.</p>
+      <div class="hero-copy" data-hero-copy>
+        <p class="hero-kicker" data-slide-copy
+          data-slide-0="Built for programmes, not just projects."
+          data-slide-1="Trusted talent. Stronger delivery."
+          data-slide-2="Your skills deserve real opportunity.">Built for programmes, not just projects.</p>
+        <h1 data-slide-copy
+          data-slide-0="Partner with AdorWorks at scale."
+          data-slide-1="Hire verified African talent with confidence."
+          data-slide-2="Find fair opportunities that match your skills.">Partner with AdorWorks at scale.</h1>
+        <p class="lede" data-slide-copy
+          data-slide-0="Framework agreements, consolidated billing and a dedicated contact for NGOs, agencies and development programmes hiring across multiple roles."
+          data-slide-1="Tell us what you need. We assess capability, recommend a qualified shortlist and support delivery from brief to completion."
+          data-slide-2="Build a credible profile, complete practical verification and get matched to legitimate jobs and project briefs without paying to be considered.">Framework agreements, consolidated billing and a dedicated contact for NGOs, agencies and development programmes hiring across multiple roles.</p>
+
+        <div class="hero-dots" data-hero-dots role="tablist" aria-label="Hero highlights">
+          <button type="button" role="tab" aria-selected="true" aria-label="Highlight 1 of 3" data-hero-dot="0"></button>
+          <button type="button" role="tab" aria-selected="false" aria-label="Highlight 2 of 3" data-hero-dot="1"></button>
+          <button type="button" role="tab" aria-selected="false" aria-label="Highlight 3 of 3" data-hero-dot="2"></button>
+        </div>
+      </div>
 
       <div class="hero-audience" data-hero-audience>
         <div class="hero-audience-toggle" role="tablist" aria-label="I am looking to">
@@ -406,9 +433,11 @@
 </div>
 
 <script src="js/supabase-config.js"></script>
+<script src="js/api-config.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
 <script src="js/analytics-config.js"></script>
 <script src="js/analytics.js"></script>
+<script src="js/chat-widget.js"></script>
 </body>
 </html>

@@ -20,12 +20,21 @@ import { reviewsRouter } from "./routes/reviews.js";
 import { disputesRouter } from "./routes/disputes.js";
 import { assistedOnboardingRouter } from "./routes/assistedOnboarding.js";
 import { peopleRouter } from "./routes/people.js";
+import { publicChatRouter } from "./routes/publicChat.js";
 
 // Split from server.js (S04-14) so tests can boot the real Express app
 // — real routing, real middleware chain — on an ephemeral port without
 // duplicating this setup or needing a fixed :8787. server.js is now
 // just this plus the actual app.listen() call.
 export const app = express();
+
+// Needed for the public chat widget's IP-based rate limiting
+// (routes/publicChat.js) to see the real visitor address rather than
+// Render's own internal proxy address — Render always fronts this
+// service with a reverse proxy in production, and locally there's no
+// proxy at all (the X-Forwarded-For header this trusts is simply
+// absent), so this is safe in both environments.
+app.set("trust proxy", 1);
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
   .split(",")
@@ -63,6 +72,7 @@ app.use("/api/reviews", reviewsRouter);
 app.use("/api/disputes", disputesRouter);
 app.use("/api/assisted-onboarding", assistedOnboardingRouter);
 app.use("/api/people", peopleRouter);
+app.use("/api/public", publicChatRouter);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Not found." });

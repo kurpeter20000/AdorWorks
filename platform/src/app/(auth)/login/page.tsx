@@ -23,9 +23,9 @@ const INTENT_COPY = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ as?: string; next?: string }>;
+  searchParams: Promise<{ as?: string; next?: string; reason?: string }>;
 }) {
-  const { as, next } = await searchParams;
+  const { as, next, reason } = await searchParams;
   const t = await getT();
   const intent = as === "hire" ? "hire" : as === "talent" ? "talent" : null;
   // The page someone was sent here from, carried through to sign-in/sign-up.
@@ -75,6 +75,11 @@ export default async function LoginPage({
         <LogIn className="size-5" aria-hidden="true" />
       </span>
       <h1 className="mt-3 text-2xl font-bold text-midnight">{t("Sign in")}</h1>
+      {reason === "idle" && (
+        <p className="mt-2 rounded-lg bg-cloud px-3 py-2 text-sm text-slate" role="status">
+          {t("You were signed out after 10 minutes of inactivity. Sign in again to continue.")}
+        </p>
+      )}
       {intent && <p className="mt-1 text-sm text-slate">{t(INTENT_COPY[intent])}</p>}
       <LoginForm next={returnTo} />
       <p className="mt-4 text-center text-sm text-slate">
