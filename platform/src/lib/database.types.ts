@@ -1210,6 +1210,34 @@ export type Database = {
       };
     };
     Functions: {
+      organisation_activity_log: {
+        Args: { p_limit?: number };
+        Returns: {
+          id: string;
+          name: string;
+          occurred_at: string;
+          actor_name: string | null;
+          actor_is_staff: boolean;
+          entity_type: string;
+          entity_id: string;
+          metadata: Record<string, unknown>;
+        }[];
+      };
+      talent_finance_summary: {
+        Args: Record<string, never>;
+        Returns: { currency: string; total_earned: number; pending_payout: number }[];
+      };
+      employer_finance_summary: {
+        Args: Record<string, never>;
+        Returns: {
+          currency: string;
+          total_spent: number;
+          invoices_due_count: number;
+          invoices_due_amount: number;
+          milestones_to_pay_count: number;
+          milestones_to_pay_amount: number;
+        }[];
+      };
       escrow_release_eligible: {
         Args: Record<string, never>;
         Returns: {

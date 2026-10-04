@@ -43,6 +43,7 @@ const ICONS: Record<string, LucideIcon> = {
   "/organisation/team": Users,
   "/services": Sparkles,
   "/contracts": FileSignature,
+  "/finance": Wallet,
   "/notifications": Bell,
   "/assistance/request": LifeBuoy,
   "/opportunities": Search,

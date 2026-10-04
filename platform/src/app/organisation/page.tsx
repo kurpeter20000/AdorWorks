@@ -83,6 +83,9 @@ export default async function OrganisationPage({
           <Link href="/organisation/team" className="text-xs font-semibold text-violet underline">
             Manage team
           </Link>
+          <Link href="/organisation/activity" className="text-xs font-semibold text-violet underline">
+            View activity
+          </Link>
           <ExportButton />
         </div>
       </div>

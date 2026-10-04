@@ -113,7 +113,14 @@ const OpportunitySchema = z
   .object({
     type: z.enum(["service", "project", "contract", "full_time", "squad"], { message: "Choose a type." }),
     title: z.string().trim().min(5, "Enter a title."),
-    brief: z.string().trim().max(4000).optional(),
+    brief: z
+      .string()
+      .trim()
+      .min(
+        120,
+        "Write a fuller brief (at least a few sentences) — what needs doing, why it matters, and what makes this role or project distinct."
+      )
+      .max(4000),
     category: z.enum(["creative_media", "digital_technology", "business_project_support"], {
       message: "Choose a category.",
     }),
@@ -153,6 +160,43 @@ function splitSkills(value: string) {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+function normaliseBrief(value: string) {
+  return value.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Catches the plainest version of "not unique" — the same organisation
+ * reposting the exact same brief text (often copy-pasted wholesale from
+ * an earlier listing that didn't get applicants) rather than writing
+ * something that actually describes this particular role or project.
+ * Deliberately an exact match on normalised text, not fuzzy similarity
+ * scoring — a real near-duplicate detector is a much bigger, harder-to-
+ * tune feature, and an exact-match check already stops the laziest
+ * (and most common) case without any risk of false-positiving two
+ * briefs that just happen to share a lot of wording.
+ */
+async function checkBriefIsUnique(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  organisationId: string,
+  brief: string,
+  excludeOpportunityId?: string
+): Promise<FormState | null> {
+  const target = normaliseBrief(brief);
+  let query = supabase.from("opportunities").select("id, brief").eq("organisation_id", organisationId).not("brief", "is", null);
+  if (excludeOpportunityId) query = query.neq("id", excludeOpportunityId);
+  const { data: siblings } = await query;
+
+  const duplicate = (siblings ?? []).some((row) => row.brief && normaliseBrief(row.brief) === target);
+  if (duplicate) {
+    return {
+      errors: {
+        brief: ["This is identical to the brief on another of your listings — write a description specific to this role or project."],
+      },
+    };
+  }
+  return null;
 }
 
 const ScreeningQuestionsSchema = z
@@ -196,7 +240,7 @@ export async function createOpportunity(organisationId: string, _prevState: Form
   const validated = OpportunitySchema.safeParse({
     type: formData.get("type"),
     title: formData.get("title"),
-    brief: formData.get("brief") || undefined,
+    brief: formData.get("brief") ?? "",
     category: formData.get("category"),
     skills: formData.get("skills"),
     location: formData.get("location") || undefined,
@@ -219,6 +263,9 @@ export async function createOpportunity(organisationId: string, _prevState: Form
   const servicePackageId = (formData.get("servicePackageId") as string | null)?.trim() || null;
 
   const supabase = await createClient();
+  const duplicate = await checkBriefIsUnique(supabase, organisationId, v.brief);
+  if (duplicate) return duplicate;
+
   const { data: opportunity, error } = await supabase
     .from("opportunities")
     .insert({
@@ -459,7 +506,7 @@ export async function resubmitOpportunity(
   const validated = OpportunitySchema.safeParse({
     type: formData.get("type"),
     title: formData.get("title"),
-    brief: formData.get("brief") || undefined,
+    brief: formData.get("brief") ?? "",
     category: formData.get("category"),
     skills: formData.get("skills"),
     location: formData.get("location") || undefined,
@@ -485,7 +532,7 @@ export async function resubmitOpportunity(
 
   const { data: existing } = await supabase
     .from("opportunities")
-    .select("id, status")
+    .select("id, status, organisation_id")
     .eq("id", opportunityId)
     .maybeSingle();
   if (!existing) {
@@ -494,6 +541,9 @@ export async function resubmitOpportunity(
   if (existing.status !== "changes_required" && existing.status !== "draft") {
     return { message: "This opportunity isn't awaiting changes right now." };
   }
+
+  const duplicate = await checkBriefIsUnique(supabase, existing.organisation_id, v.brief, opportunityId);
+  if (duplicate) return duplicate;
 
   const { error } = await supabase
     .from("opportunities")
@@ -790,16 +840,44 @@ export async function removeOpportunityAttachment(attachmentId: string, opportun
   return {};
 }
 
-export async function reopenOpportunity(opportunityId: string): Promise<FormState> {
+/**
+ * S07-06 follow-up: an opportunity most often lands back in 'expired'
+ * because its old application_deadline already passed — reopening it
+ * with that same stale date would just let it expire again on the next
+ * run of the 0045 auto-expiry job, so this lets the employer push the
+ * deadline out in the same step instead of needing a separate edit
+ * (which the edit form doesn't even allow once a listing has left
+ * draft/changes_required — see [id]/edit/page.tsx).
+ */
+export async function reopenOpportunity(opportunityId: string, newDeadline?: string): Promise<FormState> {
   await requireRole(...CLIENT_ROLES);
 
+  const deadline = (newDeadline ?? "").trim();
+  const today = new Date().toISOString().slice(0, 10);
+  if (deadline && (Number.isNaN(Date.parse(deadline)) || deadline < today)) {
+    return { message: "Choose today or a future date so this listing can actually take new applications." };
+  }
+
   const supabase = await createClient();
-  const { data: current } = await supabase.from("opportunities").select("status").eq("id", opportunityId).maybeSingle();
+  const { data: current } = await supabase
+    .from("opportunities")
+    .select("status, application_deadline")
+    .eq("id", opportunityId)
+    .maybeSingle();
   if (!current || !REOPENABLE_STATUSES.includes(current.status as (typeof REOPENABLE_STATUSES)[number])) {
     return { message: "This opportunity can't be reopened from its current status." };
   }
+  // It almost always expired because this date passed — reopening with
+  // that same stale date would just expire it again on the next run of
+  // the auto-expiry job (0045), silently undoing the reopen.
+  if (current.status === "expired" && !deadline && current.application_deadline && current.application_deadline < today) {
+    return { message: "This listing's old deadline has already passed — set a new one so it stays open." };
+  }
 
-  const { error } = await supabase.from("opportunities").update({ status: "open" }).eq("id", opportunityId);
+  const update: { status: "open"; application_deadline?: string } = { status: "open" };
+  if (deadline) update.application_deadline = deadline;
+
+  const { error } = await supabase.from("opportunities").update(update).eq("id", opportunityId);
   if (error) return { message: `Could not reopen this: ${error.message}` };
 
   revalidatePath(`/organisation/opportunities/${opportunityId}`);

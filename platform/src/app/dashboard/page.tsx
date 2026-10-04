@@ -140,22 +140,36 @@ export default async function DashboardPage({
     }
 
     const contractIds = (myContracts ?? []).map((c) => c.id);
-    const revisionRes =
+    const [revisionRes, awaitingSubmissionRes, serviceRequestsRes] = await Promise.all([
       contractIds.length > 0
-        ? await supabase
-            .from("milestones")
-            .select("id", { count: "exact", head: true })
-            .in("contract_id", contractIds)
-            .eq("status", "revision_requested")
-        : { count: 0, error: null };
-    if (revisionRes.error) todayDataError = true;
-    const revisionCount = revisionRes.count;
+        ? supabase.from("milestones").select("id", { count: "exact", head: true }).in("contract_id", contractIds).eq("status", "revision_requested")
+        : Promise.resolve({ count: 0, error: null }),
+      // Gap: only 'revision_requested' was counted here before — a
+      // milestone sitting at 'pending' (nothing submitted yet at all) is
+      // equally a deliverable owed, just not previously surfaced.
+      contractIds.length > 0
+        ? supabase.from("milestones").select("id", { count: "exact", head: true }).in("contract_id", contractIds).eq("status", "pending")
+        : Promise.resolve({ count: 0, error: null }),
+      // Gap: an employer's service request sitting at 'pending' needs the
+      // talent to respond with a proposal (submitServiceProposal) —
+      // previously not surfaced on the dashboard at all.
+      supabase.from("service_requests").select("id", { count: "exact", head: true }).eq("talent_id", session.userId).eq("status", "pending"),
+    ]);
+    if (revisionRes.error || awaitingSubmissionRes.error || serviceRequestsRes.error) todayDataError = true;
 
     const pendingOffersCount = pendingOffers ?? 0;
-    const revisionCountValue = revisionCount ?? 0;
+    const revisionCountValue = revisionRes.count ?? 0;
+    const awaitingSubmissionCount = awaitingSubmissionRes.count ?? 0;
+    const serviceRequestsCount = serviceRequestsRes.count ?? 0;
     const upcomingInterviewsCount = upcomingInterviews ?? 0;
     if (pendingOffersCount > 0) {
       talentAttention.push({ href: "/offers", label: msg("Offers awaiting your response"), count: pendingOffersCount, tone: "warning" });
+    }
+    if (serviceRequestsCount > 0) {
+      talentAttention.push({ href: "/passport/services/requests", label: msg("Service requests awaiting your response"), count: serviceRequestsCount, tone: "warning" });
+    }
+    if (awaitingSubmissionCount > 0) {
+      talentAttention.push({ href: "/contracts", label: msg("Milestones awaiting your submission"), count: awaitingSubmissionCount, tone: "info" });
     }
     if (revisionCountValue > 0) {
       talentAttention.push({ href: "/contracts", label: msg("Milestones needing a resubmission"), count: revisionCountValue, tone: "danger" });
@@ -218,20 +232,39 @@ export default async function DashboardPage({
       if (offerDecisionRes.error || selfServiceRes.error) todayDataError = true;
       const applicationsAwaiting = (offerDecisionRes.count ?? 0) + (selfServiceRes.count ?? 0);
       const contractIds = (orgContracts ?? []).map((c) => c.id);
-      const milestonesToPayRes =
+      const [milestonesToPayRes, orgMilestonesRes] = await Promise.all([
         contractIds.length > 0
-          ? await supabase
-              .from("milestones")
-              .select("id", { count: "exact", head: true })
-              .in("contract_id", contractIds)
-              .eq("status", "approved")
-          : { count: 0, error: null };
-      if (milestonesToPayRes.error) todayDataError = true;
+          ? supabase.from("milestones").select("id", { count: "exact", head: true }).in("contract_id", contractIds).eq("status", "approved")
+          : Promise.resolve({ count: 0, error: null }),
+        contractIds.length > 0
+          ? supabase.from("milestones").select("id").in("contract_id", contractIds)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+      if (milestonesToPayRes.error || orgMilestonesRes.error) todayDataError = true;
       const milestonesToPay = milestonesToPayRes.count ?? 0;
       const offersAwaitingCount = offersAwaiting ?? 0;
 
+      // Gap: a talent's submitted deliverable (deliverables.status =
+      // 'submitted') was never queried here — only the *result* of
+      // reviewing it (milestones.status = 'approved', below) showed up,
+      // meaning work waiting on the employer's own review had no entry
+      // until after that review already happened.
+      const orgMilestoneIds = (orgMilestonesRes.data ?? []).map((m) => m.id);
+      const deliverablesToReviewRes =
+        orgMilestoneIds.length > 0
+          ? await supabase.from("deliverables").select("id", { count: "exact", head: true }).in("milestone_id", orgMilestoneIds).eq("status", "submitted")
+          : { count: 0, error: null };
+      if (deliverablesToReviewRes.error) todayDataError = true;
+      const deliverablesToReview = deliverablesToReviewRes.count ?? 0;
+
       if (applicationsAwaiting > 0) {
         employerPipeline.push({ href: "/organisation", label: msg("Applicants awaiting review"), count: applicationsAwaiting, tone: "info" });
+      }
+      if (deliverablesToReview > 0) {
+        employerPipeline.push({ href: "/contracts", label: msg("Deliverables awaiting your review"), count: deliverablesToReview, tone: "warning" });
+      }
+      if (milestonesToPay > 0) {
+        employerPipeline.push({ href: "/contracts", label: msg("Milestones ready to pay"), count: milestonesToPay, tone: "danger" });
       }
       if (offersAwaitingCount > 0) {
         // /offers is requireRole("talent")-only (see offers/page.tsx) --
@@ -240,11 +273,11 @@ export default async function DashboardPage({
         // to /dashboard?error=forbidden. /organisation is where an offer's
         // status is actually visible, per-opportunity (organisation/
         // opportunities/[id]/page.tsx), same destination as the applicants
-        // item above.
-        employerPipeline.push({ href: "/organisation", label: msg("Offers awaiting a response"), count: offersAwaitingCount, tone: "warning" });
-      }
-      if (milestonesToPay > 0) {
-        employerPipeline.push({ href: "/contracts", label: msg("Milestones ready to pay"), count: milestonesToPay, tone: "danger" });
+        // item above. Tone/label corrected: this is waiting on the
+        // *talent* to respond, not an action owed by the employer — kept
+        // in the list for visibility, but as an FYI, not a same-weight
+        // "you need to do this" item like the three above it.
+        employerPipeline.push({ href: "/organisation", label: msg("Offers sent — awaiting talent response"), count: offersAwaitingCount, tone: "info" });
       }
 
       employerStats = {
