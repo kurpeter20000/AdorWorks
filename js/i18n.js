@@ -37,6 +37,7 @@
     "data-talent", "data-employer", "data-service-group", "data-success-message",
     "data-audience-placeholder-talent", "data-audience-placeholder-talent-mobile",
     "data-audience-placeholder-employer", "data-audience-placeholder-employer-mobile",
+    "data-slide-0", "data-slide-1", "data-slide-2",
   ];
 
   var dict = null;

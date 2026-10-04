@@ -471,20 +471,47 @@ p { margin: 0 0 1em; }
    their box model. */
 .hero-audience [hidden] { display: none; }
 
-/* The homepage audience switch changes the actual story—not only the
-   search placeholder. Employer and talent imagery is kept in the HTML as
-   responsive pictures, so both experiences remain fast and accessible. */
-.hero-audience-image { position: absolute; inset: 0; display: block; }
-.hero-audience-image[hidden] { display: none; }
-.hero-home .container { padding-block: clamp(3.25rem, 7vw, 5.75rem); }
-.hero-home h1 { max-width: 16ch; font-size: clamp(2.15rem, 5.5vw, 3.9rem); }
-.hero-home .lede { max-width: 58ch; }
+/* Homepage hero carousel: three full-bleed photos crossfade behind a
+   single, fixed copy block whose text is swapped (not re-laid-out) in
+   sync -- js/main.js's hero carousel owns the timing, this just owns
+   the transition. The search bar/toggle/chips below never move or
+   fade, by design (feedback: the photo+headline should feel alive,
+   the "what do I do here" controls should feel stable). */
+.hero-slide { position: absolute; inset: 0; opacity: 0; transition: opacity 1.1s ease; }
+.hero-slide.is-active { opacity: 1; }
+.hero-home .container { padding-block: clamp(3rem, 6.5vw, 5rem); }
+
+/* Scaled down from the original single-headline design: three rotating
+   headlines in the same slot read as noisy/oversized at the old 3.9rem
+   ceiling, and the tighter max-width keeps every variant's line count
+   steady so the layout doesn't jump as text changes. */
+.hero-home h1 { max-width: 15ch; font-size: clamp(1.9rem, 4.4vw, 3.05rem); line-height: 1.12; }
+.hero-home .lede { max-width: 52ch; }
+.hero-copy { transition: opacity 0.25s ease; }
+.hero-copy.is-fading { opacity: 0; }
+.hero-dots { display: flex; gap: 0.5rem; margin-top: 1.5rem; }
+.hero-dots button {
+  width: 28px;
+  height: 4px;
+  border-radius: 999px;
+  border: none;
+  padding: 0;
+  background: rgba(255,255,255,0.3);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.hero-dots button[aria-selected="true"] { background: var(--color-accent); }
+.hero-dots button:hover { background: rgba(255,255,255,0.55); }
 .hero-home::before {
-  background: linear-gradient(90deg, rgba(24,34,48,0.96) 0%, rgba(24,34,48,0.86) 48%, rgba(24,34,48,0.42) 100%);
+  background: linear-gradient(90deg, rgba(24,34,48,0.94) 0%, rgba(24,34,48,0.82) 48%, rgba(24,34,48,0.38) 100%);
 }
 @media (max-width: 699px) {
-  .hero-home::before { background: linear-gradient(180deg, rgba(24,34,48,0.80), rgba(24,34,48,0.96)); }
+  .hero-home::before { background: linear-gradient(180deg, rgba(24,34,48,0.78), rgba(24,34,48,0.94)); }
   .hero-home h1 { max-width: 13ch; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-slide { transition: none; }
+  .hero-copy { transition: none; }
 }
 
 /* Hero with a real photo behind the text (visual redesign) -- the <img>

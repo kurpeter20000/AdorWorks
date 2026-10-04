@@ -184,9 +184,6 @@
           var copy = el.getAttribute("data-" + audience);
           if (copy) el.textContent = copy;
         });
-        hero.querySelectorAll("[data-audience-image]").forEach(function (el) {
-          el.hidden = el.getAttribute("data-audience-image") !== audience;
-        });
         hero.querySelectorAll("[data-audience-label]").forEach(function (el) {
           var label = el.getAttribute("data-" + audience);
           if (label) el.textContent = label;
@@ -203,6 +200,73 @@
       });
 
       updateSearchPlaceholder("employer");
+    }
+
+    // Homepage hero carousel: rotates the background photo and the
+    // kicker/headline/lede together, independent of the audience toggle
+    // above -- the toggle still drives the search box (that stays put,
+    // per the redesign brief), this just keeps the opening visual from
+    // being one static wall of bold text.
+    var heroCopy = document.querySelector("[data-hero-copy]");
+    if (heroCopy) {
+      var heroSlides = document.querySelectorAll("[data-hero-slide]");
+      var heroDots = document.querySelectorAll("[data-hero-dot]");
+      var heroCopyFields = heroCopy.querySelectorAll("[data-slide-copy]");
+      var heroReduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var heroSlideIndex = 0;
+      var heroTimer = null;
+
+      function showHeroSlide(index) {
+        heroSlideIndex = index;
+        heroCopy.classList.add("is-fading");
+        window.setTimeout(function () {
+          heroSlides.forEach(function (slide) {
+            slide.classList.toggle("is-active", Number(slide.getAttribute("data-hero-slide")) === index);
+          });
+          heroDots.forEach(function (dot) {
+            dot.setAttribute("aria-selected", String(Number(dot.getAttribute("data-hero-dot")) === index));
+          });
+          heroCopyFields.forEach(function (el) {
+            var copy = el.getAttribute("data-slide-" + index);
+            if (copy) el.textContent = copy;
+          });
+          heroCopy.classList.remove("is-fading");
+        }, heroReduceMotion ? 0 : 250);
+        track("hero_slide_change", { slide: index });
+      }
+
+      function startHeroTimer() {
+        if (heroReduceMotion) return;
+        stopHeroTimer();
+        heroTimer = window.setInterval(function () {
+          showHeroSlide((heroSlideIndex + 1) % heroSlides.length);
+        }, 6000);
+      }
+      function stopHeroTimer() {
+        if (heroTimer) window.clearInterval(heroTimer);
+        heroTimer = null;
+      }
+
+      heroDots.forEach(function (dot) {
+        dot.addEventListener("click", function () {
+          showHeroSlide(Number(dot.getAttribute("data-hero-dot")));
+          startHeroTimer();
+        });
+      });
+
+      var heroSection = heroCopy.closest(".hero-home");
+      if (heroSection) {
+        heroSection.addEventListener("mouseenter", stopHeroTimer);
+        heroSection.addEventListener("mouseleave", startHeroTimer);
+        heroSection.addEventListener("focusin", stopHeroTimer);
+        heroSection.addEventListener("focusout", startHeroTimer);
+      }
+      document.addEventListener("visibilitychange", function () {
+        if (document.hidden) stopHeroTimer();
+        else startHeroTimer();
+      });
+
+      startHeroTimer();
     }
 
     // Category search-match highlight: if a visitor arrives at
