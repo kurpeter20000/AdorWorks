@@ -5,6 +5,8 @@ import { createOpportunity, resubmitOpportunity } from "@/lib/actions/organisati
 import type { FormState } from "@/lib/actions/auth";
 import type { OpportunityRow, ServicePackageRow } from "@/lib/database.types";
 import { SkillsInput } from "@/components/skills-input";
+import { ProfessionInput } from "@/components/profession-input";
+import { PROFESSION_SUGGESTIONS } from "@/lib/skills";
 import { ENGAGEMENT_TYPE_LABEL, PAYMENT_BASIS_LABEL, WORK_MODE_LABEL } from "@/lib/domain/taxonomy";
 
 const initialState: FormState = {};
@@ -198,14 +200,14 @@ export function OpportunityForm({
           <label htmlFor="title" className="text-sm font-semibold text-midnight">
             Title
           </label>
-          <input
+          <ProfessionInput
             id="title"
             name="title"
             ref={titleRef}
             required
             defaultValue={opportunity?.title}
             placeholder="e.g. Graphic designer for a 2-month brand refresh"
-            className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
+            suggestions={PROFESSION_SUGGESTIONS}
           />
           {state.errors?.title && <p className="mt-1 text-sm text-coral-ink">{state.errors.title[0]}</p>}
         </div>
