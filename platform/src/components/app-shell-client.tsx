@@ -14,6 +14,7 @@ import { AppSidebar } from "./app-sidebar";
 import { ModeSwitcher, type SwitchableMode } from "./mode-switcher";
 import { LanguageSwitcher } from "./language-switcher";
 import { IdleTimer } from "./idle-timer";
+import { AccountMenu } from "./account-menu";
 import { useT } from "@/i18n/client";
 
 export function AppShellClient({
@@ -23,6 +24,8 @@ export function AppShellClient({
   displayName,
   unreadCount,
   marketingSiteUrl,
+  avatarUrl,
+  profileHref,
   children,
 }: {
   actions: readonly DashboardAction[];
@@ -31,10 +34,13 @@ export function AppShellClient({
   displayName: string;
   unreadCount: number;
   marketingSiteUrl: string;
+  avatarUrl: string | null;
+  profileHref: string | null;
   children: ReactNode;
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const t = useT();
+  const profileLabel = mode === "employer" ? t("View & edit organisation") : t("View & edit profile");
 
   const accountFooter = (
     <div className="mt-auto space-y-2 border-t border-slate/10 p-3">
@@ -124,6 +130,9 @@ export function AppShellClient({
                 </span>
               )}
             </Link>
+            {profileHref && (
+              <AccountMenu displayName={displayName} avatarUrl={avatarUrl} profileHref={profileHref} profileLabel={profileLabel} />
+            )}
           </div>
         </header>
 

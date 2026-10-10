@@ -42,12 +42,12 @@ export function ProfessionalLinksForm({ initial }: { initial: TalentProfileRow }
 
       <div>
         <label htmlFor="websiteUrl" className="text-sm font-semibold text-midnight">
-          Personal website
+          Portfolio / personal website
         </label>
         <input
           id="websiteUrl"
           name="websiteUrl"
-          placeholder="https://…"
+          placeholder="https://… (your site, Behance, Dribbble, etc.)"
           defaultValue={initial.website_url ?? ""}
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />

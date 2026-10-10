@@ -5,15 +5,11 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { TalentPortfolioItemRow } from "@/lib/database.types";
 
-const MAX_SIZE_BYTES = 8 * 1024 * 1024; // 8MB
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
-
 export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] }) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [externalUrl, setExternalUrl] = useState("");
-  const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<{ kind: "error" | "success"; message: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -23,16 +19,8 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
       setStatus({ kind: "error", message: "Give this piece a title." });
       return;
     }
-    if (!externalUrl.trim() && !file) {
-      setStatus({ kind: "error", message: "Add a link or upload a file." });
-      return;
-    }
-    if (file && !ALLOWED_TYPES.includes(file.type)) {
-      setStatus({ kind: "error", message: "Please upload a JPG, PNG, WebP image, or a PDF." });
-      return;
-    }
-    if (file && file.size > MAX_SIZE_BYTES) {
-      setStatus({ kind: "error", message: "File is too large — 8MB maximum." });
+    if (!externalUrl.trim()) {
+      setStatus({ kind: "error", message: "Add a link to the work." });
       return;
     }
 
@@ -47,26 +35,11 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
       return;
     }
 
-    let filePath: string | null = null;
-    if (file) {
-      const path = `${user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-      const { error: uploadError } = await supabase.storage.from("talent-portfolio").upload(path, file, {
-        upsert: false,
-      });
-      if (uploadError) {
-        setStatus({ kind: "error", message: `Upload failed: ${uploadError.message}` });
-        setBusy(false);
-        return;
-      }
-      filePath = path;
-    }
-
     const { error: insertError } = await supabase.from("talent_portfolio_items").insert({
       talent_id: user.id,
       title: title.trim(),
       description: description.trim() || null,
-      external_url: externalUrl.trim() || null,
-      file_path: filePath,
+      external_url: externalUrl.trim(),
     });
     if (insertError) {
       setStatus({ kind: "error", message: `Could not save this item: ${insertError.message}` });
@@ -77,17 +50,15 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
     setTitle("");
     setDescription("");
     setExternalUrl("");
-    setFile(null);
     setBusy(false);
     setStatus({ kind: "success", message: "Added." });
     router.refresh();
   }
 
-  // S05-07 — talent-portfolio is now a private bucket (migration 0065);
-  // getPublicUrl() no longer works. Signed on click, not pre-fetched for
-  // every item on render — this is the owner's own management view, so
-  // the authenticated client's own session already has read access via
-  // RLS (talent_portfolio_owner_write covers select too, being `for all`).
+  // Pre-existing items from before portfolio went link-only may still carry
+  // a file_path (talent-portfolio is a private bucket — migration 0065),
+  // so this stays to let someone still view/finish migrating those off —
+  // handleAdd above no longer offers uploading a new one.
   async function handleViewFile(path: string) {
     const supabase = createClient();
     const { data, error } = await supabase.storage.from("talent-portfolio").createSignedUrl(path, 300);
@@ -218,17 +189,10 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
           className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
         <input
-          placeholder="Link to the work (optional)"
+          placeholder="Link to the work (e.g. a live site, a Drive/Dropbox share, Behance, Dribbble)"
           value={externalUrl}
           onChange={(e) => setExternalUrl(e.target.value)}
           className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
-        />
-        <input
-          type="file"
-          aria-label="Portfolio work sample file"
-          accept="image/jpeg,image/png,image/webp,application/pdf"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          className="w-full text-sm"
         />
         {status && (
           <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`} role={status.kind === "error" ? "alert" : "status"}>{status.message}</p>
