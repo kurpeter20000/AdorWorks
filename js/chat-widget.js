@@ -49,7 +49,16 @@
     ".aw-chat-escalate{padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:#fff;border-top:1px solid var(--color-border,#E2E7F0)}" +
     ".aw-chat-escalate input,.aw-chat-escalate textarea{border:1px solid var(--color-border,#E2E7F0);border-radius:8px;padding:8px 10px;" +
     "font-size:13.5px;font-family:inherit;width:100%;box-sizing:border-box}" +
-    ".aw-chat-escalate textarea{resize:vertical;min-height:60px}";
+    ".aw-chat-escalate textarea{resize:vertical;min-height:60px}" +
+    /* Below 960px the homepage (and others) show a fixed mobile-contact-bar
+       (css/styles.css) along the bottom edge — without this, the chat
+       bubble sits on top of it at a higher z-index, covering its
+       "Post a project" button. Same breakpoint and the same 60px clearance
+       css/styles.css's own .install-banner already uses for the same bar. */
+    "@media (max-width:959px){" +
+    ".aw-chat-bubble{bottom:calc(60px + env(safe-area-inset-bottom,0px))}" +
+    ".aw-chat-panel{bottom:calc(128px + env(safe-area-inset-bottom,0px))}" +
+    "}";
   document.head.appendChild(style);
 
   var bubble = document.createElement("button");
