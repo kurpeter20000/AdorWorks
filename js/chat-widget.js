@@ -25,10 +25,16 @@
 
   var style = document.createElement("style");
   style.textContent =
-    ".aw-chat-bubble{position:fixed;bottom:20px;inset-inline-end:20px;z-index:1000;width:56px;height:56px;border-radius:50%;" +
+    /* --aw-chat-bottom defaults to 20px and is overridden by JS (see
+       updateChatOffset below) to clear .mobile-contact-bar's REAL
+       rendered height where one exists — a fixed guessed pixel value
+       drifted out of sync whenever that bar's text wrapped to two
+       lines on a narrower/zoomed device, re-covering its own button. */
+    ":root{--aw-chat-bottom:20px}" +
+    ".aw-chat-bubble{position:fixed;bottom:var(--aw-chat-bottom);inset-inline-end:16px;z-index:1000;width:56px;height:56px;border-radius:50%;" +
     "background:var(--color-accent,#00A88F);color:var(--color-accent-ink,#182230);border:none;cursor:pointer;" +
     "box-shadow:0 4px 16px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;font-size:24px}" +
-    ".aw-chat-panel{position:fixed;bottom:88px;inset-inline-end:20px;z-index:1000;width:min(360px,calc(100vw - 32px));" +
+    ".aw-chat-panel{position:fixed;bottom:calc(var(--aw-chat-bottom) + 68px);inset-inline-end:16px;z-index:1000;width:min(360px,calc(100vw - 32px));" +
     "max-height:min(520px,calc(100vh - 140px));display:flex;flex-direction:column;background:#fff;border-radius:14px;" +
     "box-shadow:0 8px 32px rgba(0,0,0,.25);overflow:hidden;font-family:inherit}" +
     ".aw-chat-panel[hidden]{display:none}" +
@@ -50,16 +56,32 @@
     ".aw-chat-escalate input,.aw-chat-escalate textarea{border:1px solid var(--color-border,#E2E7F0);border-radius:8px;padding:8px 10px;" +
     "font-size:13.5px;font-family:inherit;width:100%;box-sizing:border-box}" +
     ".aw-chat-escalate textarea{resize:vertical;min-height:60px}" +
-    /* Below 960px the homepage (and others) show a fixed mobile-contact-bar
-       (css/styles.css) along the bottom edge — without this, the chat
-       bubble sits on top of it at a higher z-index, covering its
-       "Post a project" button. Same breakpoint and the same 60px clearance
-       css/styles.css's own .install-banner already uses for the same bar. */
-    "@media (max-width:959px){" +
-    ".aw-chat-bubble{bottom:calc(60px + env(safe-area-inset-bottom,0px))}" +
-    ".aw-chat-panel{bottom:calc(128px + env(safe-area-inset-bottom,0px))}" +
+    /* A 56px circle is sized for a cursor, not a thumb next to a narrow
+       phone's own bottom bar — smaller here leaves more of whatever's
+       behind it (page content, the contact bar's own buttons) visible. */
+    "@media (max-width:480px){" +
+    ".aw-chat-bubble{width:46px;height:46px;font-size:20px;inset-inline-end:12px}" +
+    ".aw-chat-panel{inset-inline-end:12px;bottom:calc(var(--aw-chat-bottom) + 58px);width:min(340px,calc(100vw - 24px))}" +
     "}";
   document.head.appendChild(style);
+
+  /*
+   * Measures .mobile-contact-bar's actual rendered height (it can wrap
+   * to two lines on a narrow/zoomed device) rather than assuming a
+   * fixed value, so the bubble/panel always clear it exactly instead
+   * of drifting back into overlap on whichever device renders it
+   * taller or shorter than expected. No-ops (falls back to the 20px
+   * default) on pages/widths where that bar doesn't exist or is hidden.
+   */
+  function updateChatOffset() {
+    var bar = document.querySelector(".mobile-contact-bar");
+    var visible = bar && getComputedStyle(bar).display !== "none";
+    var offset = visible ? Math.ceil(bar.getBoundingClientRect().height) + 12 : 20;
+    document.documentElement.style.setProperty("--aw-chat-bottom", offset + "px");
+  }
+  updateChatOffset();
+  window.addEventListener("resize", updateChatOffset);
+  window.addEventListener("orientationchange", updateChatOffset);
 
   var bubble = document.createElement("button");
   bubble.type = "button";
