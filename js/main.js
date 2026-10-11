@@ -210,7 +210,6 @@
     var heroCopy = document.querySelector("[data-hero-copy]");
     if (heroCopy) {
       var heroSlides = document.querySelectorAll("[data-hero-slide]");
-      var heroDots = document.querySelectorAll("[data-hero-dot]");
       var heroCopyFields = heroCopy.querySelectorAll("[data-slide-copy]");
       var heroReduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       var heroSlideIndex = 0;
@@ -237,9 +236,6 @@
         heroSlideIndex = index;
         heroCopy.classList.add("is-fading");
         window.setTimeout(function () {
-          heroDots.forEach(function (dot) {
-            dot.setAttribute("aria-selected", String(Number(dot.getAttribute("data-hero-dot")) === index));
-          });
           heroCopyFields.forEach(function (el) {
             var copy = el.getAttribute("data-slide-" + index);
             if (copy) el.textContent = copy;
@@ -260,13 +256,6 @@
         if (heroTimer) window.clearInterval(heroTimer);
         heroTimer = null;
       }
-
-      heroDots.forEach(function (dot) {
-        dot.addEventListener("click", function () {
-          showHeroSlide(Number(dot.getAttribute("data-hero-dot")));
-          startHeroTimer();
-        });
-      });
 
       var heroSection = heroCopy.closest(".hero-home");
       if (heroSection) {

@@ -490,19 +490,6 @@ p { margin: 0 0 1em; }
 .hero-home .lede { max-width: 52ch; }
 .hero-copy { transition: opacity 0.6s ease; }
 .hero-copy.is-fading { opacity: 0; }
-.hero-dots { display: flex; gap: 0.5rem; margin-top: 1.5rem; }
-.hero-dots button {
-  width: 28px;
-  height: 4px;
-  border-radius: 999px;
-  border: none;
-  padding: 0;
-  background: rgba(255,255,255,0.3);
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-.hero-dots button[aria-selected="true"] { background: var(--color-accent); }
-.hero-dots button:hover { background: rgba(255,255,255,0.55); }
 .hero-home::before {
   background: linear-gradient(90deg, rgba(24,34,48,0.94) 0%, rgba(24,34,48,0.82) 48%, rgba(24,34,48,0.38) 100%);
 }
