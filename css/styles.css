@@ -361,9 +361,44 @@ p { margin: 0 0 1em; }
 .hero p.lede { font-size: 1rem; max-width: 60ch; color: rgba(255,255,255,0.9); }
 .hero-ctas { display: flex; flex-wrap: wrap; gap: 0.65rem; margin-top: 1.5rem; }
 .hero-ctas .btn { min-height: 38px; padding: 0.55em 1.1em; font-size: 0.88rem; }
-.hero-login-note { color: rgba(255,255,255,0.85); }
-.hero-login-note a { color: #fff; text-decoration: underline; font-weight: 700; }
-.hero-login-note a:hover { color: var(--color-accent); }
+/* Account card: replaces the old plain-text "New here? / already
+   registered?" line with an actual card so the signup/login path reads
+   as a real, considered feature rather than fine print. Translucent +
+   blurred so it sits comfortably over both a plain-color hero (.hero)
+   and a photo hero (.hero-photo) without needing two versions. */
+.auth-cta {
+  margin-top: 1.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 640px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 14px;
+  padding: 1.05rem 1.3rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.auth-cta-copy { flex: 1 1 260px; }
+.auth-cta-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--color-accent);
+  margin-bottom: 0.3em;
+}
+.auth-cta-text { margin: 0; font-size: 0.88rem; line-height: 1.4; color: rgba(255,255,255,0.88); }
+.auth-cta-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; flex: none; }
+.auth-cta-actions .btn { min-height: 38px; padding: 0.55em 1.15em; font-size: 0.85rem; white-space: nowrap; }
+@media (max-width: 520px) {
+  .auth-cta { flex-direction: column; align-items: stretch; }
+  .auth-cta-copy { flex-basis: auto; }
+  .auth-cta-actions { width: 100%; }
+  .auth-cta-actions .btn { flex: 1; text-align: center; }
+}
 
 /* Hero audience toggle, search and category chips (competitive-research
    pattern: a clear two-path entry point above a real search input, with
