@@ -996,97 +996,30 @@ p { margin: 0 0 1em; }
 
 .card h3 { margin-bottom: 0.4em; }
 
-/* Homepage trust strip: brief proof points with small line icons. */
-.trust-strip { gap: 1rem; }
-.trust-card {
+/* Homepage trust bar: a single slim row of proof points right under the
+   hero -- was three full cards with their own heading+paragraph each
+   (redundant with the fuller "marketplace built on proof" section
+   further down the page), replaced with this one line to cut the
+   page's overall length/repetition rather than its content. */
+.trust-bar-section { padding-block: 1.1rem; border-bottom: 1px solid var(--color-border); }
+.trust-bar {
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 1.15rem 1.25rem;
-}
-.trust-card-icon {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
+  flex-wrap: wrap;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 11px;
-  background: rgba(0,168,143,0.12);
-  color: var(--color-accent-text);
+  gap: 0.6rem 2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
-.trust-card-icon svg { width: 21px; height: 21px; }
-.trust-card h3 { margin-bottom: 0.25rem; font-size: 1rem; }
-.trust-card p { margin: 0; color: var(--color-muted); font-size: 0.88rem; line-height: 1.55; }
-
-/* Image-led service categories on the homepage. The full card is one
-   clear target, with a fixed media ratio to avoid layout shifts. */
-.category-feature-card {
+.trust-bar li {
   display: flex;
-  flex-direction: column;
-  min-width: 0;
-  overflow: hidden;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  color: var(--color-ink);
-  text-decoration: none;
-  box-shadow: 0 6px 22px rgba(24,34,48,0.06);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-.category-feature-card:hover,
-.category-feature-card:focus-visible {
-  transform: translateY(-4px);
-  border-color: var(--color-accent);
-  box-shadow: 0 16px 34px rgba(24,34,48,0.13);
-}
-/* Explicit height (not aspect-ratio) is deliberate: this <img> also
-   carries width/height content attributes for layout-shift prevention,
-   and this browser's replaced-element sizing keeps using that
-   attribute-derived intrinsic height even when aspect-ratio is set in
-   CSS to something else -- an explicit height has no such ambiguity to
-   resolve, and object-fit: cover crops any source image to fill it
-   regardless of its own dimensions. ~210px at the ~345-360px card
-   widths this grid actually renders is approximately the requested
-   5:3 look without depending on that computation. */
-.category-feature-media { display: block; overflow: hidden; background: var(--color-surface-alt); height: 210px; }
-.category-feature-media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.35s ease;
-}
-.category-feature-card:hover .category-feature-media img { transform: scale(1.035); }
-@media (min-width: 960px) {
-  .category-feature-media { height: 230px; }
-}
-.category-feature-body { display: flex; flex-direction: column; flex: 1; padding: 1.25rem; }
-.category-feature-body > span:last-child { color: var(--color-muted); font-size: 0.91rem; line-height: 1.55; }
-.category-feature-meta {
-  margin-bottom: 0.45rem;
-  color: var(--color-accent-text);
-  font-size: 0.73rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.category-feature-title {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.55rem;
+  align-items: center;
+  gap: 0.5rem;
   color: var(--color-primary);
-  font-size: 1.08rem;
-  font-weight: 800;
-  line-height: 1.3;
+  font-weight: 700;
+  font-size: 0.92rem;
 }
-.category-feature-title span { color: var(--color-accent-text); }
-@media (prefers-reduced-motion: reduce) {
-  .category-feature-card,
-  .category-feature-media img { transition: none; }
-  .category-feature-card:hover,
-  .category-feature-card:hover .category-feature-media img { transform: none; }
-}
+.trust-bar svg { flex: none; width: 18px; height: 18px; color: var(--color-accent-text); }
 
 /* Path cards ("five ways to work" on the homepage) -- title + a circular
    arrow link at top, description, a text CTA, then a photo bled flush to
@@ -1822,11 +1755,6 @@ input[type="checkbox"], input[type="radio"] {
   .tier-card p,
   .step p { font-size: 0.88rem; }
   .grid-3 .card .btn { min-height: 40px; padding: 0.55em 0.7em; font-size: 0.85rem; white-space: normal; }
-
-  /* Homepage proof points: icon above text so two fit per row. */
-  .trust-card { flex-direction: column; gap: 0.55rem; padding: 0.95rem; }
-  .category-feature-media { height: 120px; }
-  .category-feature-body { padding: 0.9rem; }
 
   /* "Five ways to work" carousel: show more than one card at a time. */
   .path-card { width: 208px; padding: 1.1rem 1rem 0; }
