@@ -10,6 +10,7 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [externalUrl, setExternalUrl] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [status, setStatus] = useState<{ kind: "error" | "success"; message: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -40,6 +41,7 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
       title: title.trim(),
       description: description.trim() || null,
       external_url: externalUrl.trim(),
+      image_url: imageUrl.trim() || null,
     });
     if (insertError) {
       setStatus({ kind: "error", message: `Could not save this item: ${insertError.message}` });
@@ -50,6 +52,7 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
     setTitle("");
     setDescription("");
     setExternalUrl("");
+    setImageUrl("");
     setBusy(false);
     setStatus({ kind: "success", message: "Added." });
     router.refresh();
@@ -112,66 +115,57 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
   return (
     <div className="mt-4">
       {items.length > 0 && (
-        <ul className="space-y-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {items.map((item, index) => (
-            <li
-              key={item.id}
-              className="flex items-start justify-between gap-3 rounded-lg border border-slate/15 bg-white p-3"
-            >
-              <div className="flex flex-col gap-1">
-                <button
-                  type="button"
-                  disabled={busy || index === 0}
-                  onClick={() => handleMove(index, -1)}
-                  aria-label="Move up"
-                  className="text-xs text-slate disabled:opacity-30"
-                >
-                  &uarr;
-                </button>
-                <button
-                  type="button"
-                  disabled={busy || index === items.length - 1}
-                  onClick={() => handleMove(index, 1)}
-                  aria-label="Move down"
-                  className="text-xs text-slate disabled:opacity-30"
-                >
-                  &darr;
-                </button>
+            <div key={item.id} className="overflow-hidden rounded-lg border border-slate/15 bg-white">
+              <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden bg-cloud">
+                {item.image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- arbitrary talent-pasted URLs, not a local/known domain set for next/image.
+                  <img src={item.image_url} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="size-9 text-slate/40" aria-hidden="true">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <path d="m21 15-5-5L5 21" />
+                  </svg>
+                )}
               </div>
-              <div className="flex-1">
+              <div className="p-3">
                 <p className="text-sm font-semibold text-midnight">{item.title}</p>
-                {item.description && <p className="text-xs text-slate">{item.description}</p>}
-                {item.external_url && (
-                  <a
-                    href={item.external_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs font-semibold text-teal-ink underline"
-                  >
-                    View link
-                  </a>
-                )}
-                {item.file_path && (
-                  <button
-                    type="button"
-                    onClick={() => handleViewFile(item.file_path!)}
-                    className="text-xs font-semibold text-teal-ink underline"
-                  >
-                    View file
+                {item.description && <p className="mt-0.5 text-xs text-slate">{item.description}</p>}
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  {item.external_url && (
+                    <a href={item.external_url} target="_blank" rel="noreferrer" className="text-xs font-semibold text-teal-ink underline">
+                      View link
+                    </a>
+                  )}
+                  {item.file_path && (
+                    <button type="button" onClick={() => handleViewFile(item.file_path!)} className="text-xs font-semibold text-teal-ink underline">
+                      View file
+                    </button>
+                  )}
+                  <button type="button" disabled={busy} onClick={() => handleDelete(item.id)} className="text-xs font-semibold text-coral-ink disabled:opacity-60">
+                    Remove
                   </button>
-                )}
+                  <div className="ms-auto flex gap-1">
+                    <button type="button" disabled={busy || index === 0} onClick={() => handleMove(index, -1)} aria-label="Move up" className="text-xs text-slate disabled:opacity-30">
+                      &uarr;
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy || index === items.length - 1}
+                      onClick={() => handleMove(index, 1)}
+                      aria-label="Move down"
+                      className="text-xs text-slate disabled:opacity-30"
+                    >
+                      &darr;
+                    </button>
+                  </div>
+                </div>
               </div>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => handleDelete(item.id)}
-                className="text-xs font-semibold text-coral-ink disabled:opacity-60"
-              >
-                Remove
-              </button>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
 
       <div className="mt-4 space-y-2 rounded-lg border border-slate/15 bg-cloud/40 p-3">
@@ -192,6 +186,12 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
           placeholder="Link to the work (e.g. a live site, a Drive/Dropbox share, Behance, Dribbble)"
           value={externalUrl}
           onChange={(e) => setExternalUrl(e.target.value)}
+          className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
+        />
+        <input
+          placeholder="Preview image link (optional — a screenshot or thumbnail makes this stand out)"
+          value={imageUrl}
+          onChange={(e) => setImageUrl(e.target.value)}
           className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
         {status && (

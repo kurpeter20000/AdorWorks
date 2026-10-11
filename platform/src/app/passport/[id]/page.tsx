@@ -7,16 +7,10 @@ import { verifySession } from "@/lib/dal/session";
 import { ReportButton } from "@/components/report-button";
 import { StatePanel } from "@/components/state-panel";
 import { formatDate } from "@/lib/domain/format";
+import { youtubeEmbedUrl } from "@/lib/domain/youtube";
+import { VerificationBadge } from "@/components/verification-badge";
 
 export const metadata: Metadata = { title: "AdorWorks Passport" };
-
-const TIER_LABEL: Record<string, string> = {
-  registered: "Registered",
-  identity_verified: "Identity verified",
-  adorverified: "AdorVerified",
-  adorcertified: "AdorCertified",
-  team_lead: "Team lead",
-};
 
 // S05-11 — the exact same column list as public_talent_profiles (0034,
 // extended with cv_path by 0065), reproduced here so an owner's preview
@@ -89,35 +83,19 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
     ? (await adminForFiles.storage.from("talent-cv").createSignedUrl(profile.cv_path, 3600)).data?.signedUrl ?? null
     : null;
 
-  // Signed URL generated server-side with the admin client, not the
-  // viewer's own session — this page is public/anonymous-reachable, and
-  // talent-videos is a private bucket. Explicit application-code checks
-  // here (status/public_visible) mirror exactly what the table's own RLS
-  // would enforce; see 0055's migration comment for why this path was
-  // chosen over teaching storage.objects RLS to reach into two other
-  // RLS-protected tables. Never persisted — recomputed fresh on every
-  // render, so "no private media URL exposed permanently" holds.
+  // 0105 — a YouTube link, not Storage, so no signed URL/admin client
+  // needed here at all: YouTube URLs are already public, and the embed
+  // is built straight from the stored link. status/public_visible
+  // checks stay the same as before (profile already came back from
+  // public_talent_profiles, whose own WHERE clause guarantees
+  // public_visible = true — no need to re-check it here).
   const { data: introVideo } = await supabase
     .from("talent_introduction_videos")
-    .select("video_path, thumbnail_path, transcript, status")
+    .select("youtube_url, transcript, status")
     .eq("talent_id", id)
     .eq("status", "approved")
     .maybeSingle();
-  let videoUrl: string | null = null;
-  let videoThumbnailUrl: string | null = null;
-  // profile came back from public_talent_profiles, whose own WHERE clause
-  // already guarantees public_visible = true — no need to re-check it here.
-  if (introVideo) {
-    const admin = createAdminClient();
-    const [videoSigned, thumbSigned] = await Promise.all([
-      admin.storage.from("talent-videos").createSignedUrl(introVideo.video_path, 3600),
-      introVideo.thumbnail_path
-        ? admin.storage.from("talent-videos").createSignedUrl(introVideo.thumbnail_path, 3600)
-        : Promise.resolve({ data: null }),
-    ]);
-    videoUrl = videoSigned.data?.signedUrl ?? null;
-    videoThumbnailUrl = thumbSigned?.data?.signedUrl ?? null;
-  }
+  const videoEmbedUrl = introVideo ? youtubeEmbedUrl(introVideo.youtube_url) : null;
 
   const { data: workHistory } = await supabase
     .from("work_history")
@@ -171,9 +149,7 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
               <p className="text-sm text-slate">{profile.headline}</p>
             </div>
           </div>
-          <span className="whitespace-nowrap rounded-full bg-violet/10 px-3 py-1 text-xs font-semibold text-violet">
-            {TIER_LABEL[profile.verification_tier] ?? profile.verification_tier}
-          </span>
+          <VerificationBadge tier={profile.verification_tier} />
         </div>
         {profile.bio && <p className="mt-3 text-sm text-slate">{profile.bio}</p>}
         <p className="mt-3 text-xs text-slate">
@@ -233,13 +209,18 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
         )}
       </div>
 
-      {videoUrl && (
+      {videoEmbedUrl && (
         <div className="mt-6">
           <h2 className="font-bold text-midnight">Introduction</h2>
-          <div className="mt-3 overflow-hidden rounded-xl border border-slate/15 bg-white">
-            <video controls preload="metadata" poster={videoThumbnailUrl ?? undefined} className="w-full" style={{ maxHeight: 480 }}>
-              <source src={videoUrl} />
-            </video>
+          <div className="mt-3 aspect-video w-full overflow-hidden rounded-xl border border-slate/15 bg-midnight">
+            <iframe
+              src={videoEmbedUrl}
+              title="Introduction video"
+              className="h-full w-full"
+              allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              loading="lazy"
+            />
           </div>
           {introVideo?.transcript && (
             <details className="mt-2">
@@ -324,50 +305,61 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
       {items && items.length > 0 && (
         <div className="mt-6">
           <h2 className="font-bold text-midnight">Portfolio</h2>
-          <ul className="mt-3 space-y-3">
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {items.map((item) => {
               const fileUrl = item.file_path ? portfolioFileUrls.get(item.id) ?? null : null;
               const isPdf = item.file_path?.toLowerCase().endsWith(".pdf") ?? false;
               return (
-                <li key={item.id} className="rounded-xl border border-slate/15 bg-white p-4">
-                  {fileUrl && !isPdf && (
-                    <div className="relative mb-3 h-64 w-full overflow-hidden rounded-lg">
-                      <Image src={fileUrl} alt={item.title} fill sizes="(max-width: 640px) 100vw, 640px" className="object-cover" />
-                    </div>
-                  )}
-                  <p className="text-sm font-semibold text-midnight">{item.title}</p>
-                  {item.description && <p className="text-xs text-slate">{item.description}</p>}
-                  <div className="mt-1 flex flex-wrap gap-3">
-                    {item.external_url && (
-                      <a
-                        href={item.external_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs font-semibold text-teal-ink underline"
-                      >
-                        View link
-                      </a>
-                    )}
-                    {fileUrl && isPdf && (
-                      <a
-                        href={fileUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs font-semibold text-teal-ink underline"
-                      >
-                        View document
-                      </a>
+                <div key={item.id} className="overflow-hidden rounded-xl border border-slate/15 bg-white">
+                  <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden bg-cloud">
+                    {fileUrl && !isPdf ? (
+                      <Image src={fileUrl} alt="" fill sizes="(max-width: 640px) 100vw, 400px" className="object-cover" />
+                    ) : item.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- arbitrary talent-pasted URL, not a configured next/image domain.
+                      <img src={item.image_url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="size-9 text-slate/40" aria-hidden="true">
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <path d="m21 15-5-5L5 21" />
+                      </svg>
                     )}
                   </div>
-                  {session && (
-                    <div className="mt-2">
-                      <ReportButton targetType="portfolio_item" targetId={item.id} />
+                  <div className="p-4">
+                    <p className="text-sm font-semibold text-midnight">{item.title}</p>
+                    {item.description && <p className="text-xs text-slate">{item.description}</p>}
+                    <div className="mt-1 flex flex-wrap gap-3">
+                      {item.external_url && (
+                        <a
+                          href={item.external_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs font-semibold text-teal-ink underline"
+                        >
+                          View link
+                        </a>
+                      )}
+                      {fileUrl && isPdf && (
+                        <a
+                          href={fileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs font-semibold text-teal-ink underline"
+                        >
+                          View document
+                        </a>
+                      )}
                     </div>
-                  )}
-                </li>
+                    {session && (
+                      <div className="mt-2">
+                        <ReportButton targetType="portfolio_item" targetId={item.id} />
+                      </div>
+                    )}
+                  </div>
+                </div>
               );
             })}
-          </ul>
+          </div>
         </div>
       )}
     </main>

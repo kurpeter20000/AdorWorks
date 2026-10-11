@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireRole, STAFF_ROLES } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { StatePanel } from "@/components/state-panel";
+import { TrendBars } from "@/components/trend-bars";
 
 export const metadata: Metadata = { title: "Operations" };
 export const dynamic = "force-dynamic";
@@ -42,6 +43,26 @@ const GROUPS: { title: string; tiles: Tile[] }[] = [
   },
 ];
 
+const TREND_DAYS = 14;
+
+/** Buckets a list of ISO timestamps into one count per calendar day, oldest first, for the last `numDays` days (today included). */
+function bucketByDay(timestamps: string[], numDays: number): { label: string; count: number }[] {
+  const counts = new Map<string, number>();
+  for (const ts of timestamps) {
+    const key = ts.slice(0, 10);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const buckets: { label: string; count: number }[] = [];
+  const today = new Date();
+  for (let i = numDays - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    buckets.push({ label: d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }), count: counts.get(key) ?? 0 });
+  }
+  return buckets;
+}
+
 export default async function OperationsPage() {
   await requireRole(...STAFF_ROLES);
   const supabase = await createClient();
@@ -60,7 +81,11 @@ export default async function OperationsPage() {
     return error ? null : (n ?? 0);
   };
 
-  const [counts, recent] = await Promise.all([
+  const trendCutoff = new Date();
+  trendCutoff.setDate(trendCutoff.getDate() - (TREND_DAYS - 1));
+  const trendCutoffIso = trendCutoff.toISOString().slice(0, 10);
+
+  const [counts, recent, newOpportunities, newApplications] = await Promise.all([
     Promise.all(GROUPS.map((g) => Promise.all(g.tiles.map(count)))),
     db
       .from("intake_submissions")
@@ -68,8 +93,12 @@ export default async function OperationsPage() {
       .order("created_at", { ascending: false })
       .limit(8)
       .returns<IntakeRow[]>(),
+    db.from("opportunities").select("created_at").gte("created_at", trendCutoffIso),
+    db.from("applications").select("created_at").gte("created_at", trendCutoffIso),
   ]);
   const failed = GROUPS.flatMap((g, gi) => g.tiles.filter((_, ti) => counts[gi][ti] === null).map((t) => t.label));
+  const opportunityTrend = bucketByDay((newOpportunities.data ?? []).map((r) => r.created_at as string), TREND_DAYS);
+  const applicationTrend = bucketByDay((newApplications.data ?? []).map((r) => r.created_at as string), TREND_DAYS);
 
   return (
     <div>
@@ -104,6 +133,14 @@ export default async function OperationsPage() {
           </div>
         </section>
       ))}
+
+      <section className="mt-8">
+        <h2 className="mb-2 text-sm font-bold tracking-wide text-slate uppercase">Trends</h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <TrendBars title="New opportunities posted" days={opportunityTrend} />
+          <TrendBars title="New applications" days={applicationTrend} />
+        </div>
+      </section>
 
       <section className="mt-8">
         <div className="mb-2 flex items-baseline justify-between gap-3">
