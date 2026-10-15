@@ -181,6 +181,95 @@ export async function seedContract(talentId: string) {
 }
 
 /**
+ * Same shape as seedContract, but drives the contract straight to a
+ * disputed state with one already-settled milestone payment, so a test
+ * can exercise the refund flow directly instead of walking the whole
+ * delivery pipeline. payment_events.net_amount and total_charged are
+ * NOT NULL with no default (0% platform/employer fee still has to be
+ * recorded explicitly) — found live the hard way when the first version
+ * of this helper's insert failed silently (its error wasn't checked),
+ * which is why every insert below throws on failure instead.
+ */
+export async function seedDisputeWithSettledPayment(talentId: string) {
+  const stamp = Date.now();
+  const rep = await createTestUser("disputerep", "individual_client");
+
+  const org = await mustInsert(
+    admin.from("organisations").insert({ name: `E2E Dispute Org ${stamp}`, representative_id: rep.id, verification_status: "verified" }).select("id").single(),
+    "organisation"
+  );
+  const opportunity = await mustInsert(
+    admin
+      .from("opportunities")
+      .insert({
+        organisation_id: org.id, type: "project", title: `E2E Dispute Opportunity ${stamp}`, category: "digital_technology",
+        skills: ["testing"], work_mode: "remote", engagement_type: "freelance", payment_basis: "fixed",
+        compensation_amount: 100, currency: "SSP", visibility: "public", status: "open",
+      })
+      .select("id")
+      .single(),
+    "opportunity"
+  );
+  const application = await mustInsert(
+    admin.from("applications").insert({ opportunity_id: opportunity.id, talent_id: talentId, source: "matched" }).select("id").single(),
+    "application"
+  );
+  const offer = await mustInsert(
+    admin
+      .from("offers")
+      .insert({
+        application_id: application.id, opportunity_id: opportunity.id, talent_id: talentId, organisation_id: org.id,
+        payment_basis: "fixed", compensation_amount: 100, status: "accepted", created_by: rep.id,
+      })
+      .select("id")
+      .single(),
+    "offer"
+  );
+  const contract = await mustInsert(
+    admin.from("contracts").insert({ offer_id: offer.id, opportunity_id: opportunity.id, talent_id: talentId, organisation_id: org.id, status: "active" }).select("id").single(),
+    "contract"
+  );
+  const milestone = await mustInsert(
+    admin.from("milestones").insert({ contract_id: contract.id, title: "E2E milestone", amount: 100, currency: "SSP", status: "paid" }).select("id").single(),
+    "milestone"
+  );
+  const payment = await mustInsert(
+    admin
+      .from("payment_events")
+      .insert({
+        milestone_id: milestone.id, contract_id: contract.id, external_reference: `e2e-${stamp}`,
+        amount: 100, net_amount: 100, total_charged: 100, currency: "SSP", status: "succeeded",
+      })
+      .select("id")
+      .single(),
+    "payment_event"
+  );
+  const dispute = await mustInsert(
+    admin.from("disputes").insert({ contract_id: contract.id, raised_by: talentId, description: "E2E test dispute — safe to delete." }).select("id").single(),
+    "dispute"
+  );
+
+  return {
+    disputeId: dispute.id as string,
+    contractId: contract.id as string,
+    opportunityTitle: `E2E Dispute Opportunity ${stamp}`,
+    milestoneId: milestone.id as string,
+    paymentId: payment.id as string,
+    async cleanup() {
+      await admin.from("disputes").delete().eq("id", dispute.id);
+      await admin.from("payment_events").delete().eq("id", payment.id);
+      await admin.from("milestones").delete().eq("id", milestone.id);
+      await admin.from("contracts").delete().eq("id", contract.id);
+      await admin.from("offers").delete().eq("id", offer.id);
+      await admin.from("applications").delete().eq("id", application.id);
+      await admin.from("opportunities").delete().eq("id", opportunity.id);
+      await admin.from("organisations").delete().eq("id", org.id);
+      await deleteTestUser(rep.id);
+    },
+  };
+}
+
+/**
  * A real, RLS-scoped client authenticated as a test user — for asserting
  * the database boundary (RLS + guard triggers) directly rejects an
  * illegal request, the same way a browser client bypassing the app's own
@@ -271,6 +360,24 @@ export async function seedTalentService(talentId: string, overrides: Record<stri
     id: service.id,
     async cleanup() {
       await admin.from("talent_services").delete().eq("id", service.id);
+    },
+  };
+}
+
+/** A content report against a real opportunity, filed by a real reporter profile (reports.reporter_id has no other constraint, but a real row keeps this honest). */
+export async function seedReport(reporterId: string, opportunityId: string) {
+  const report = await mustInsert<{ id: string }>(
+    admin
+      .from("reports")
+      .insert({ reporter_id: reporterId, target_type: "opportunity", target_id: opportunityId, reason: "spam", note: "E2E test report — safe to delete." })
+      .select("id")
+      .single(),
+    "report"
+  );
+  return {
+    id: report.id,
+    async cleanup() {
+      await admin.from("reports").delete().eq("id", report.id);
     },
   };
 }

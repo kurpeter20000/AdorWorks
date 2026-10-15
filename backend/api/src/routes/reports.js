@@ -32,7 +32,14 @@ reportsRouter.get(
     const query = listQuerySchema.parse(req.query);
     let q = supabaseAdmin
       .from("reports")
-      .select("*, profiles(full_name)", { count: "exact" })
+      // reports has three FKs to profiles (reporter_id, reviewed_by,
+      // assigned_to — the last added by S10-06 after this embed was
+      // first written) — PostgREST can't guess which one "profiles(...)"
+      // means once there's more than one, and 500s instead. Found live:
+      // GET /api/reports failed on every real report row once there was
+      // more than one such FK. Named explicitly, same pattern already
+      // used in organisations.js/assistedOnboarding.js.
+      .select("*, profiles!reports_reporter_id_fkey(full_name)", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(query.offset, query.offset + query.limit - 1);
     if (query.status) q = q.eq("status", query.status);
