@@ -14,6 +14,7 @@ import { ShortlistingModeForm } from "./shortlisting-mode-form";
 import { ShortlistActions } from "./shortlist-actions";
 import { RemoveFromShortlistButton } from "./remove-from-shortlist-button";
 import { OpportunityAttachments } from "./opportunity-attachments";
+import { VerificationBadge } from "@/components/verification-badge";
 
 export const metadata: Metadata = { title: "Opportunity" };
 
@@ -54,7 +55,7 @@ export default async function OpportunityDetailPage({
   const talentIds = [...new Set((applications ?? []).map((a) => a.talent_id))];
   const { data: talents } =
     talentIds.length > 0
-      ? await supabase.from("talent_profiles").select("id, display_name, headline").in("id", talentIds)
+      ? await supabase.from("talent_profiles").select("id, display_name, headline, verification_tier").in("id", talentIds)
       : { data: [] };
   const talentById = new Map((talents ?? []).map((t) => [t.id, t]));
 
@@ -248,16 +249,19 @@ export default async function OpportunityDetailPage({
                 <li key={a.id} className="rounded-xl border border-slate/15 bg-white p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      {talent ? (
-                        <Link
-                          href={`/passport/${talent.id}`}
-                          className="font-semibold text-midnight underline decoration-slate/30 hover:decoration-teal"
-                        >
-                          {talent.display_name ?? "AdorWorks talent"}
-                        </Link>
-                      ) : (
-                        <p className="font-semibold text-midnight">AdorWorks talent</p>
-                      )}
+                      <div className="flex flex-wrap items-center gap-2">
+                        {talent ? (
+                          <Link
+                            href={`/passport/${talent.id}`}
+                            className="font-semibold text-midnight underline decoration-slate/30 hover:decoration-teal"
+                          >
+                            {talent.display_name ?? "AdorWorks talent"}
+                          </Link>
+                        ) : (
+                          <p className="font-semibold text-midnight">AdorWorks talent</p>
+                        )}
+                        {talent?.verification_tier && <VerificationBadge tier={talent.verification_tier} />}
+                      </div>
                       <p className="text-xs text-slate">{talent?.headline}</p>
                     </div>
                     <StatusBadge state={APPLICATION_STATES[a.stage]} className="whitespace-nowrap" />

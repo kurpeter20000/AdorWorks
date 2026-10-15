@@ -11,16 +11,9 @@ import { IntroductionVideoManager } from "./introduction-video-manager";
 import { CvUpload } from "./cv-upload";
 import { WorkExperienceManager } from "./work-experience-manager";
 import { EducationManager } from "./education-manager";
+import { VerificationBadge } from "@/components/verification-badge";
 
 export const metadata: Metadata = { title: "Your Passport" };
-
-const TIER_LABEL: Record<string, string> = {
-  registered: "Registered",
-  identity_verified: "Identity verified",
-  adorverified: "AdorVerified",
-  adorcertified: "AdorCertified",
-  team_lead: "Team lead",
-};
 
 export default async function PassportPage() {
   const session = await requireRole("talent");
@@ -94,9 +87,7 @@ export default async function PassportPage() {
             <p className="text-lg font-bold text-midnight">{profile.display_name}</p>
             <p className="text-sm text-slate">{profile.headline}</p>
           </div>
-          <span className="whitespace-nowrap rounded-full bg-violet/10 px-3 py-1 text-xs font-semibold text-violet">
-            {TIER_LABEL[profile.verification_tier] ?? profile.verification_tier}
-          </span>
+          <VerificationBadge tier={profile.verification_tier} />
         </div>
         {/* S05-02/03/08 — these fields (name, headline, bio, skills,
             location, work mode, availability) already validate and save

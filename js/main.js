@@ -210,7 +210,6 @@
     var heroCopy = document.querySelector("[data-hero-copy]");
     if (heroCopy) {
       var heroSlides = document.querySelectorAll("[data-hero-slide]");
-      var heroDots = document.querySelectorAll("[data-hero-dot]");
       var heroCopyFields = heroCopy.querySelectorAll("[data-slide-copy]");
       var heroReduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       var heroSlideIndex = 0;
@@ -223,57 +222,26 @@
         return null;
       }
 
-      // Only ever true/false for a 3-slide carousel: every index other
-      // than "the next one forward" is necessarily "the next one back"
-      // (0->2 is as much a step backward as 2->0 is a step forward).
-      function isForward(from, to, len) {
-        return (from + 1) % len === to;
-      }
-
+      // Slow cross-dissolve: the outgoing slide simply fades out while the
+      // incoming one fades in on top of it (raised z-index), no horizontal
+      // movement -- a calmer read than a hard push/slide transition.
       function showHeroSlide(index) {
         if (index === heroSlideIndex) return;
-        var forward = isForward(heroSlideIndex, index, heroSlides.length);
         var current = heroSlideEl(heroSlideIndex);
         var target = heroSlideEl(index);
-        // Forward motion enters from the right, backward from the left.
-        // A slide's resting side after an earlier transition doesn't
-        // reliably match the side its *next* entrance needs (e.g. a
-        // slide that exited left in one step needs to enter from the
-        // right next time it's forward target) -- so the correct
-        // starting side is asserted immediately before each entrance,
-        // snapped into place with no transition if it isn't there already.
-        var entryClass = forward ? "is-park-right" : "is-park-left";
-        var exitClass = forward ? "is-park-left" : "is-park-right";
 
-        if (target && !target.classList.contains(entryClass)) {
-          target.classList.add("no-transition");
-          target.classList.remove("is-park-right", "is-park-left", "is-active");
-          target.classList.add(entryClass);
-          void target.offsetWidth;
-          target.classList.remove("no-transition");
-        }
-
-        if (current) {
-          current.classList.remove("is-active");
-          current.classList.add(exitClass);
-        }
-        if (target) {
-          target.classList.remove("is-park-left", "is-park-right");
-          target.classList.add("is-active");
-        }
+        if (current) current.classList.remove("is-active");
+        if (target) target.classList.add("is-active");
 
         heroSlideIndex = index;
         heroCopy.classList.add("is-fading");
         window.setTimeout(function () {
-          heroDots.forEach(function (dot) {
-            dot.setAttribute("aria-selected", String(Number(dot.getAttribute("data-hero-dot")) === index));
-          });
           heroCopyFields.forEach(function (el) {
             var copy = el.getAttribute("data-slide-" + index);
             if (copy) el.textContent = copy;
           });
           heroCopy.classList.remove("is-fading");
-        }, heroReduceMotion ? 0 : 250);
+        }, heroReduceMotion ? 0 : 600);
         track("hero_slide_change", { slide: index });
       }
 
@@ -288,13 +256,6 @@
         if (heroTimer) window.clearInterval(heroTimer);
         heroTimer = null;
       }
-
-      heroDots.forEach(function (dot) {
-        dot.addEventListener("click", function () {
-          showHeroSlide(Number(dot.getAttribute("data-hero-dot")));
-          startHeroTimer();
-        });
-      });
 
       var heroSection = heroCopy.closest(".hero-home");
       if (heroSection) {

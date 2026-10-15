@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { requireOrganisationMembership } from "@/lib/dal/organisation";
 import { createClient } from "@/lib/supabase/server";
 import { AddToShortlistButton } from "./add-to-shortlist-button";
+import { VerificationBadge } from "@/components/verification-badge";
 
 export const metadata: Metadata = { title: "Find talent" };
 
@@ -99,12 +100,15 @@ export default async function FindTalentPage({
             <li key={t.id} className="rounded-xl border border-slate/15 bg-white p-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <Link
-                    href={`/passport/${t.id}`}
-                    className="font-semibold text-midnight underline decoration-slate/30 hover:decoration-teal"
-                  >
-                    {t.display_name ?? "AdorWorks talent"}
-                  </Link>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/passport/${t.id}`}
+                      className="font-semibold text-midnight underline decoration-slate/30 hover:decoration-teal"
+                    >
+                      {t.display_name ?? "AdorWorks talent"}
+                    </Link>
+                    <VerificationBadge tier={t.verification_tier} />
+                  </div>
                   <p className="text-xs text-slate">{t.headline}</p>
                 </div>
                 <AddToShortlistButton opportunityId={id} talentId={t.id} />
