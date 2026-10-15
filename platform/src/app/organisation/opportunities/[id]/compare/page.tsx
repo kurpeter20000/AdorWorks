@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { StatusBadge } from "@/components/status-badge";
 import { APPLICATION_STATES } from "@/lib/domain/states";
 import { SCORECARD_CRITERIA } from "@/lib/domain/scorecard";
+import { VerificationBadge } from "@/components/verification-badge";
 
 export const metadata: Metadata = { title: "Compare candidates" };
 
@@ -95,9 +96,12 @@ export default async function CompareCandidatesPage({ params }: { params: Promis
                 return (
                   <tr key={a.id} className="border-b border-slate/10">
                     <td className="py-2 pe-3">
-                      <Link href={`/passport/${a.talent_id}`} className="font-semibold text-midnight underline decoration-slate/30 hover:decoration-teal">
-                        {talent?.display_name ?? "AdorWorks talent"}
-                      </Link>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Link href={`/passport/${a.talent_id}`} className="font-semibold text-midnight underline decoration-slate/30 hover:decoration-teal">
+                          {talent?.display_name ?? "AdorWorks talent"}
+                        </Link>
+                        {talent?.verification_tier && <VerificationBadge tier={talent.verification_tier} />}
+                      </div>
                       <p className="text-xs text-slate">{talent?.headline}</p>
                     </td>
                     <td className="py-2 pe-3">

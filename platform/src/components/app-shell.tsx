@@ -36,6 +36,41 @@ export async function AppShell({ children }: { children: ReactNode }) {
   const mode: SwitchableMode | null =
     dashboardKind === "talent" || dashboardKind === "employer" ? dashboardKind : null;
 
+  // Account-menu avatar: the talent's own photo, or their org's logo —
+  // one extra query, only for the role that actually has one, not fired
+  // for staff (dashboardKind is neither) since this wrapper renders on
+  // every authenticated page.
+  let avatarUrl: string | null = null;
+  let profileHref: string | null = null;
+  if (dashboardKind === "talent") {
+    profileHref = "/passport";
+    const { data: profile } = await supabase
+      .from("talent_profiles")
+      .select("avatar_path")
+      .eq("id", session.userId)
+      .maybeSingle();
+    if (profile?.avatar_path) {
+      avatarUrl = supabase.storage.from("talent-avatars").getPublicUrl(profile.avatar_path).data.publicUrl;
+    }
+  } else if (dashboardKind === "employer") {
+    profileHref = "/organisation";
+    const { data: membership } = await supabase
+      .from("organisation_members")
+      .select("organisation_id")
+      .eq("user_id", session.userId)
+      .maybeSingle();
+    if (membership) {
+      const { data: org } = await supabase
+        .from("organisations")
+        .select("logo_path")
+        .eq("id", membership.organisation_id)
+        .maybeSingle();
+      if (org?.logo_path) {
+        avatarUrl = supabase.storage.from("org-logos").getPublicUrl(org.logo_path).data.publicUrl;
+      }
+    }
+  }
+
   return (
     <AppShellClient
       actions={experience.actions}
@@ -44,6 +79,8 @@ export async function AppShell({ children }: { children: ReactNode }) {
       displayName={session.fullName || session.email || "Account"}
       unreadCount={unreadCount ?? 0}
       marketingSiteUrl={MARKETING_SITE_URL}
+      avatarUrl={avatarUrl}
+      profileHref={profileHref}
     >
       {children}
     </AppShellClient>
