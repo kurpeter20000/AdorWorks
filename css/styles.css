@@ -361,9 +361,44 @@ p { margin: 0 0 1em; }
 .hero p.lede { font-size: 1rem; max-width: 60ch; color: rgba(255,255,255,0.9); }
 .hero-ctas { display: flex; flex-wrap: wrap; gap: 0.65rem; margin-top: 1.5rem; }
 .hero-ctas .btn { min-height: 38px; padding: 0.55em 1.1em; font-size: 0.88rem; }
-.hero-login-note { color: rgba(255,255,255,0.85); }
-.hero-login-note a { color: #fff; text-decoration: underline; font-weight: 700; }
-.hero-login-note a:hover { color: var(--color-accent); }
+/* Account card: replaces the old plain-text "New here? / already
+   registered?" line with an actual card so the signup/login path reads
+   as a real, considered feature rather than fine print. Translucent +
+   blurred so it sits comfortably over both a plain-color hero (.hero)
+   and a photo hero (.hero-photo) without needing two versions. */
+.auth-cta {
+  margin-top: 1.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 640px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 14px;
+  padding: 1.05rem 1.3rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.auth-cta-copy { flex: 1 1 260px; }
+.auth-cta-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--color-accent);
+  margin-bottom: 0.3em;
+}
+.auth-cta-text { margin: 0; font-size: 0.88rem; line-height: 1.4; color: rgba(255,255,255,0.88); }
+.auth-cta-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; flex: none; }
+.auth-cta-actions .btn { min-height: 38px; padding: 0.55em 1.15em; font-size: 0.85rem; white-space: nowrap; }
+@media (max-width: 520px) {
+  .auth-cta { flex-direction: column; align-items: stretch; }
+  .auth-cta-copy { flex-basis: auto; }
+  .auth-cta-actions { width: 100%; }
+  .auth-cta-actions .btn { flex: 1; text-align: center; }
+}
 
 /* Hero audience toggle, search and category chips (competitive-research
    pattern: a clear two-path entry point above a real search input, with
@@ -417,6 +452,7 @@ p { margin: 0 0 1em; }
 .hero-search .btn { min-height: 40px; padding: 0.55em 1.3em; font-size: 0.88rem; border-radius: 999px; }
 
 .hero-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.85rem; }
+.hero-centered .hero-chips { justify-content: center; }
 .chip {
   display: inline-flex;
   align-items: center;
@@ -432,14 +468,18 @@ p { margin: 0 0 1em; }
 }
 .chip:hover { background: rgba(255,255,255,0.24); }
 .chip.is-match { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+/* .hero-chips (flex) and .btn (inline-flex) both set their own `display`,
+   which otherwise beats the browser's default `[hidden]{display:none}` at
+   equal specificity by source order -- this rule comes later, so the
+   hidden audience's chip row actually disappears instead of just losing
+   its box model. */
+.hero-audience [hidden] { display: none; }
 
 /* Landing highlight for a category card matched from the homepage's hero
    search (js/main.js reads ?q= and adds this class) -- confirms the
    search actually went somewhere, rather than dropping the visitor on
    the page with no sign anything happened. */
 .category-card.is-match { border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(0,168,143,0.25); }
-
-.hero-trustline { margin-top: 1.85rem; margin-bottom: 0; font-size: 0.85rem; color: rgba(255,255,255,0.65); }
 
 /* Hero entrance: each top-level block fades/rises in on load, cascading
    top to bottom -- restrained (no bounce, short distance/duration), and
@@ -464,56 +504,50 @@ p { margin: 0 0 1em; }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* .hero-chips (flex) and .btn (inline-flex) both set their own `display`,
-   which otherwise beats the browser's default `[hidden]{display:none}` at
-   equal specificity by source order -- this rule comes later, so hidden
-   audience-toggle elements actually disappear instead of just losing
-   their box model. */
-.hero-audience [hidden] { display: none; }
-
-/* Homepage hero carousel: three full-bleed photos physically slide past
-   each other (not a crossfade) behind a single, fixed copy block whose
-   text is swapped in sync -- js/main.js's hero carousel owns the
-   direction/timing, this just owns the transform. The search bar/
-   toggle/chips below never move, by design (feedback: the photo+
+/* Homepage hero carousel: three full-bleed photos slowly cross-dissolve
+   into one another (one fades out as the next fades in on top) behind a
+   single, fixed copy block whose text is swapped in sync -- js/main.js's
+   hero carousel just toggles .is-active, this owns the fade. The search
+   bar/toggle/chips below never move, by design (feedback: the photo+
    headline should feel alive, the "what do I do here" controls should
-   feel stable). Three states instead of a simple hidden/shown toggle
-   so a slide can be parked off either edge, ready to enter from
-   whichever side motion is coming from (js/main.js's isForward). */
-.hero-slide { position: absolute; inset: 0; transition: transform 1s cubic-bezier(0.65, 0.05, 0.36, 1); }
-.hero-slide.is-park-right { transform: translateX(100%); }
-.hero-slide.is-park-left { transform: translateX(-100%); }
-.hero-slide.is-active { transform: translateX(0); }
-.hero-slide.no-transition { transition: none; }
-.hero-home .container { padding-block: clamp(3rem, 6.5vw, 5rem); }
+   feel stable). */
+.hero-slide { position: absolute; inset: 0; opacity: 0; transition: opacity 1.6s ease; z-index: 0; }
+.hero-slide.is-active { opacity: 1; z-index: 1; }
+.hero-home .container { padding-block: clamp(3.5rem, 8vw, 6rem); }
+
+/* Centered, single-statement layout (replaces the old left-aligned
+   text-beside-photo arrangement): headline, subtext and search all sit
+   on their own centered column so the photo reads as a full backdrop
+   rather than being pushed to one side. */
+.hero-centered { text-align: center; }
+.hero-centered .hero-copy,
+.hero-centered .hero-audience { margin-left: auto; margin-right: auto; }
+.hero-home .hero-audience-toggle { margin-inline: auto; }
 
 /* Scaled down from the original single-headline design: three rotating
    headlines in the same slot read as noisy/oversized at the old 3.9rem
-   ceiling, and the tighter max-width keeps every variant's line count
+   ceiling, and the capped max-width keeps every variant's line count
    steady so the layout doesn't jump as text changes. */
-.hero-home h1 { max-width: 15ch; font-size: clamp(1.9rem, 4.4vw, 3.05rem); line-height: 1.12; }
-.hero-home .lede { max-width: 52ch; }
-.hero-copy { transition: opacity 0.25s ease; }
+.hero-home h1 {
+  max-width: 19ch;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 1.12;
+  text-shadow: 0 2px 16px rgba(10,16,24,0.4);
+}
+.hero-home .lede { max-width: 48ch; margin-left: auto; margin-right: auto; text-shadow: 0 1px 10px rgba(10,16,24,0.35); }
+.hero-copy { transition: opacity 0.6s ease; }
 .hero-copy.is-fading { opacity: 0; }
-.hero-dots { display: flex; gap: 0.5rem; margin-top: 1.5rem; }
-.hero-dots button {
-  width: 28px;
-  height: 4px;
-  border-radius: 999px;
-  border: none;
-  padding: 0;
-  background: rgba(255,255,255,0.3);
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-.hero-dots button[aria-selected="true"] { background: var(--color-accent); }
-.hero-dots button:hover { background: rgba(255,255,255,0.55); }
 .hero-home::before {
-  background: linear-gradient(90deg, rgba(24,34,48,0.94) 0%, rgba(24,34,48,0.82) 48%, rgba(24,34,48,0.38) 100%);
+  background: radial-gradient(ellipse 65% 75% at center, rgba(16,24,34,0.6) 0%, rgba(16,24,34,0.42) 60%, rgba(16,24,34,0.58) 100%);
 }
+.hero-mini-login { margin-top: 1.5rem; margin-bottom: 0; font-size: 0.85rem; color: rgba(255,255,255,0.78); }
+.hero-mini-login a { color: #fff; text-decoration: underline; font-weight: 700; }
+.hero-mini-login a:hover { color: var(--color-accent); }
 @media (max-width: 699px) {
-  .hero-home::before { background: linear-gradient(180deg, rgba(24,34,48,0.78), rgba(24,34,48,0.94)); }
-  .hero-home h1 { max-width: 13ch; }
+  .hero-home::before { background: radial-gradient(ellipse 90% 60% at center, rgba(16,24,34,0.62) 0%, rgba(16,24,34,0.72) 100%); }
+  .hero-home h1 { max-width: 16ch; }
 }
 @media (prefers-reduced-motion: reduce) {
   .hero-slide { transition: none; }
