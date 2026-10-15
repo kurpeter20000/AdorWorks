@@ -6,11 +6,30 @@
 // median ("representative") run per URL straight into the CI log, so
 // the next failure gives real data from the environment the budget is
 // actually measured against, instead of another guess.
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 const dir = process.argv[2] || ".lighthouseci";
-const manifest = JSON.parse(readFileSync(path.join(dir, "manifest.json"), "utf8"));
+const manifestPath = path.join(dir, "manifest.json");
+
+// This step runs with `if: always()`, specifically so it still prints
+// something when the run is red -- but manifest.json is written by lhci's
+// *upload* phase, which only happens after collect succeeds. If collect
+// itself failed (Chrome never launched, the app never responded, etc.),
+// there's nothing here to diagnose yet, and the previously-unguarded
+// readFileSync crashed with a raw ENOENT that masked that real failure.
+// Print a clear pointer back to the actual failing step instead of a stack
+// trace, and exit non-zero so the job still shows red for the right reason.
+if (!existsSync(manifestPath)) {
+  console.error(
+    `No Lighthouse report found at ${manifestPath}. This means the "npx lhci autorun" step ` +
+      `(or the "Start the app" step before it) failed before Lighthouse could collect any runs -- ` +
+      `check THAT step's log for the real error, not this one.`
+  );
+  process.exit(1);
+}
+
+const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 const representative = manifest.filter((entry) => entry.isRepresentativeRun);
 
 for (const entry of representative) {
