@@ -451,30 +451,11 @@ p { margin: 0 0 1em; }
 .hero-search:focus-within { outline: 3px solid var(--color-accent); outline-offset: 2px; }
 .hero-search .btn { min-height: 40px; padding: 0.55em 1.3em; font-size: 0.88rem; border-radius: 999px; }
 
-.hero-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.85rem; }
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  background: rgba(255,255,255,0.14);
-  color: #fff;
-  font-size: 0.82rem;
-  font-weight: 700;
-  padding: 0.4rem 0.85rem;
-  border-radius: 999px;
-  text-decoration: none;
-  transition: background 0.15s ease;
-}
-.chip:hover { background: rgba(255,255,255,0.24); }
-.chip.is-match { outline: 2px solid var(--color-accent); outline-offset: 2px; }
-
 /* Landing highlight for a category card matched from the homepage's hero
    search (js/main.js reads ?q= and adds this class) -- confirms the
    search actually went somewhere, rather than dropping the visitor on
    the page with no sign anything happened. */
 .category-card.is-match { border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(0,168,143,0.25); }
-
-.hero-trustline { margin-top: 1.85rem; margin-bottom: 0; font-size: 0.85rem; color: rgba(255,255,255,0.65); }
 
 /* Hero entrance: each top-level block fades/rises in on load, cascading
    top to bottom -- restrained (no bounce, short distance/duration), and
@@ -499,13 +480,6 @@ p { margin: 0 0 1em; }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* .hero-chips (flex) and .btn (inline-flex) both set their own `display`,
-   which otherwise beats the browser's default `[hidden]{display:none}` at
-   equal specificity by source order -- this rule comes later, so hidden
-   audience-toggle elements actually disappear instead of just losing
-   their box model. */
-.hero-audience [hidden] { display: none; }
-
 /* Homepage hero carousel: three full-bleed photos slowly cross-dissolve
    into one another (one fades out as the next fades in on top) behind a
    single, fixed copy block whose text is swapped in sync -- js/main.js's
@@ -515,22 +489,41 @@ p { margin: 0 0 1em; }
    feel stable). */
 .hero-slide { position: absolute; inset: 0; opacity: 0; transition: opacity 1.6s ease; z-index: 0; }
 .hero-slide.is-active { opacity: 1; z-index: 1; }
-.hero-home .container { padding-block: clamp(3rem, 6.5vw, 5rem); }
+.hero-home .container { padding-block: clamp(3.5rem, 8vw, 6rem); }
+
+/* Centered, single-statement layout (replaces the old left-aligned
+   text-beside-photo arrangement): headline, subtext and search all sit
+   on their own centered column so the photo reads as a full backdrop
+   rather than being pushed to one side. */
+.hero-centered { text-align: center; }
+.hero-centered .hero-copy,
+.hero-centered .hero-audience { margin-left: auto; margin-right: auto; }
+.hero-home .hero-audience-toggle { margin-inline: auto; }
 
 /* Scaled down from the original single-headline design: three rotating
    headlines in the same slot read as noisy/oversized at the old 3.9rem
-   ceiling, and the tighter max-width keeps every variant's line count
+   ceiling, and the capped max-width keeps every variant's line count
    steady so the layout doesn't jump as text changes. */
-.hero-home h1 { max-width: 15ch; font-size: clamp(1.9rem, 4.4vw, 3.05rem); line-height: 1.12; }
-.hero-home .lede { max-width: 52ch; }
+.hero-home h1 {
+  max-width: 19ch;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 1.12;
+  text-shadow: 0 2px 16px rgba(10,16,24,0.4);
+}
+.hero-home .lede { max-width: 48ch; margin-left: auto; margin-right: auto; text-shadow: 0 1px 10px rgba(10,16,24,0.35); }
 .hero-copy { transition: opacity 0.6s ease; }
 .hero-copy.is-fading { opacity: 0; }
 .hero-home::before {
-  background: linear-gradient(90deg, rgba(24,34,48,0.94) 0%, rgba(24,34,48,0.82) 48%, rgba(24,34,48,0.38) 100%);
+  background: radial-gradient(ellipse 65% 75% at center, rgba(16,24,34,0.6) 0%, rgba(16,24,34,0.42) 60%, rgba(16,24,34,0.58) 100%);
 }
+.hero-mini-login { margin-top: 1.5rem; margin-bottom: 0; font-size: 0.85rem; color: rgba(255,255,255,0.78); }
+.hero-mini-login a { color: #fff; text-decoration: underline; font-weight: 700; }
+.hero-mini-login a:hover { color: var(--color-accent); }
 @media (max-width: 699px) {
-  .hero-home::before { background: linear-gradient(180deg, rgba(24,34,48,0.78), rgba(24,34,48,0.94)); }
-  .hero-home h1 { max-width: 13ch; }
+  .hero-home::before { background: radial-gradient(ellipse 90% 60% at center, rgba(16,24,34,0.62) 0%, rgba(16,24,34,0.72) 100%); }
+  .hero-home h1 { max-width: 16ch; }
 }
 @media (prefers-reduced-motion: reduce) {
   .hero-slide { transition: none; }
