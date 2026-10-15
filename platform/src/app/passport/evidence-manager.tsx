@@ -8,6 +8,13 @@ import type { TalentEvidenceRow } from "@/lib/database.types";
 const MAX_SIZE_BYTES = 8 * 1024 * 1024; // 8MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 
+// References are link/text-only (just the referee's name and how to reach
+// them — no document to upload) and capped: three real references is
+// plenty to check, and an unbounded list just makes the reviewer's job
+// slower. Credentials/assessment evidence (the other evidenceType this
+// component handles) keeps the original file-upload, uncapped behaviour.
+const MAX_REFERENCES = 3;
+
 const STATUS_LABEL: Record<string, string> = {
   pending: "Awaiting review",
   approved: "Approved",
@@ -29,10 +36,13 @@ export function EvidenceManager({
   const [status, setStatus] = useState<{ kind: "error" | "success"; message: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const allowFile = evidenceType !== "reference";
+  const atLimit = evidenceType === "reference" && items.length >= MAX_REFERENCES;
+
   async function handleAdd() {
     setStatus(null);
     if (!notes.trim() && !file) {
-      setStatus({ kind: "error", message: "Add a note or upload a document." });
+      setStatus({ kind: "error", message: allowFile ? "Add a note or upload a document." : "Add the referee's name and contact details." });
       return;
     }
     if (file && !ALLOWED_TYPES.includes(file.type)) {
@@ -110,33 +120,41 @@ export function EvidenceManager({
         </ul>
       )}
 
-      <div className="mt-3 space-y-2 rounded-lg border border-slate/15 bg-cloud/40 p-3">
-        <textarea
-          placeholder={notesPlaceholder}
-          rows={2}
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
-        />
-        <input
-          type="file"
-          aria-label={evidenceType === "reference" ? "Reference document" : "Credential document"}
-          accept="image/jpeg,image/png,image/webp,application/pdf"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          className="w-full text-sm"
-        />
-        {status && (
-          <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`} role={status.kind === "error" ? "alert" : "status"}>{status.message}</p>
-        )}
-        <button
-          type="button"
-          disabled={busy}
-          onClick={handleAdd}
-          className="w-full rounded-lg bg-teal px-4 py-2 text-sm font-bold text-midnight disabled:opacity-60"
-        >
-          {busy ? "Submitting…" : "Submit"}
-        </button>
-      </div>
+      {atLimit ? (
+        <p className="mt-3 text-xs text-slate">
+          You&rsquo;ve added {MAX_REFERENCES} of {MAX_REFERENCES} references — remove one to add a different referee.
+        </p>
+      ) : (
+        <div className="mt-3 space-y-2 rounded-lg border border-slate/15 bg-cloud/40 p-3">
+          <textarea
+            placeholder={notesPlaceholder}
+            rows={2}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
+          />
+          {allowFile && (
+            <input
+              type="file"
+              aria-label="Credential document"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              className="w-full text-sm"
+            />
+          )}
+          {status && (
+            <p className={`text-sm ${status.kind === "error" ? "text-coral-ink" : "text-teal-ink"}`} role={status.kind === "error" ? "alert" : "status"}>{status.message}</p>
+          )}
+          <button
+            type="button"
+            disabled={busy}
+            onClick={handleAdd}
+            className="w-full rounded-lg bg-teal px-4 py-2 text-sm font-bold text-midnight disabled:opacity-60"
+          >
+            {busy ? "Submitting…" : "Submit"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

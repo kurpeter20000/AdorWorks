@@ -5,6 +5,8 @@ import { saveBasics } from "@/lib/actions/onboarding";
 import type { FormState } from "@/lib/actions/auth";
 import type { TalentProfileRow } from "@/lib/database.types";
 import { SkillsInput } from "@/components/skills-input";
+import { ProfessionInput } from "@/components/profession-input";
+import { PROFESSION_SUGGESTIONS } from "@/lib/skills";
 import { useT } from "@/i18n/client";
 
 const initialState: FormState = {};
@@ -74,13 +76,13 @@ export function BasicsForm({
         <label htmlFor="headline" className="text-sm font-semibold text-midnight">
           {t("Professional headline")}
         </label>
-        <input
+        <ProfessionInput
           id="headline"
           name="headline"
           placeholder={t("e.g. Graphic designer, Web developer, Translator")}
           defaultValue={initial?.headline ?? ""}
           required
-          className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
+          suggestions={PROFESSION_SUGGESTIONS}
         />
         {state.errors?.headline && <p className="mt-1 text-sm text-coral-ink">{err(state.errors.headline)}</p>}
       </div>

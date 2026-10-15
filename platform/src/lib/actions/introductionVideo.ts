@@ -3,45 +3,34 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
+import { isValidYoutubeUrl } from "@/lib/domain/youtube";
 
 /**
- * Stage 6: talent introduction video (0055). Upsert on talent_id (the
- * table's primary key — one video per talent, not a gallery): replacing
- * an existing video resets it to 'pending' regardless of its previous
+ * Stage 6: talent introduction video (0055), now a YouTube link rather
+ * than a Supabase-Storage upload (0105) — no file handling here at all,
+ * just validating and storing a URL. Upsert on talent_id (the table's
+ * primary key — one video per talent, not a gallery): replacing an
+ * existing video resets it to 'pending' regardless of its previous
  * status, since RLS's update/insert policies both require status =
- * 'pending' on the new row. Old storage objects are cleaned up
- * best-effort after the row write succeeds — a failed cleanup leaves an
- * orphaned file, not a broken video, so it doesn't block the user.
- *
- * Gap-check fix: the video (and thumbnail) are already sitting in
- * storage by the time this runs — if the row write itself fails, that
- * upload is genuine garbage (nothing will ever reference it), so it's
- * cleaned up here rather than left to accumulate. This is different from
- * the old-video cleanup below: here nothing succeeded yet, so there's no
- * "don't block the real action" concern — the real action IS this write.
+ * 'pending' on the new row.
  */
 export async function submitIntroductionVideo(input: {
-  videoPath: string;
-  thumbnailPath: string | null;
+  youtubeUrl: string;
   transcript: string | null;
-  durationSeconds: number | null;
 }): Promise<{ error?: string }> {
   const session = await requireRole("talent");
+
+  const youtubeUrl = input.youtubeUrl.trim();
+  if (!isValidYoutubeUrl(youtubeUrl)) {
+    return { error: "That doesn't look like a YouTube video link — paste the full URL from YouTube." };
+  }
+
   const supabase = await createClient();
-
-  const { data: existing } = await supabase
-    .from("talent_introduction_videos")
-    .select("video_path, thumbnail_path")
-    .eq("talent_id", session.userId)
-    .maybeSingle();
-
   const { error } = await supabase.from("talent_introduction_videos").upsert(
     {
       talent_id: session.userId,
-      video_path: input.videoPath,
-      thumbnail_path: input.thumbnailPath,
+      youtube_url: youtubeUrl,
       transcript: input.transcript,
-      duration_seconds: input.durationSeconds,
       status: "pending",
       rejection_reason: null,
       reviewed_by: null,
@@ -50,20 +39,7 @@ export async function submitIntroductionVideo(input: {
     },
     { onConflict: "talent_id" }
   );
-  if (error) {
-    const justUploaded = [input.videoPath, input.thumbnailPath].filter((p): p is string => !!p);
-    await supabase.storage.from("talent-videos").remove(justUploaded);
-    return { error: error.message };
-  }
-
-  if (existing) {
-    const staleObjects = [existing.video_path, existing.thumbnail_path].filter(
-      (p): p is string => !!p && p !== input.videoPath && p !== input.thumbnailPath
-    );
-    if (staleObjects.length > 0) {
-      await supabase.storage.from("talent-videos").remove(staleObjects);
-    }
-  }
+  if (error) return { error: error.message };
 
   revalidatePath("/passport");
   revalidatePath(`/passport/${session.userId}`);
@@ -74,29 +50,8 @@ export async function deleteIntroductionVideo(): Promise<{ error?: string }> {
   const session = await requireRole("talent");
   const supabase = await createClient();
 
-  const { data: existing } = await supabase
-    .from("talent_introduction_videos")
-    .select("video_path, thumbnail_path")
-    .eq("talent_id", session.userId)
-    .maybeSingle();
-  if (!existing) return {};
-
   const { error } = await supabase.from("talent_introduction_videos").delete().eq("talent_id", session.userId);
   if (error) return { error: error.message };
-
-  // The row is already gone, so the video is fully removed from the
-  // talent's own perspective regardless of what happens next — a storage
-  // cleanup failure here shouldn't be reported as if their delete failed
-  // (it didn't), but gap-check found this was previously swallowed
-  // entirely with no trace anywhere. Logged so it's at least visible
-  // server-side instead of silently accumulating.
-  const objects = [existing.video_path, existing.thumbnail_path].filter((p): p is string => !!p);
-  if (objects.length > 0) {
-    const { error: removeError } = await supabase.storage.from("talent-videos").remove(objects);
-    if (removeError) {
-      console.error(`talent-videos cleanup failed for ${session.userId}:`, removeError.message);
-    }
-  }
 
   revalidatePath("/passport");
   revalidatePath(`/passport/${session.userId}`);

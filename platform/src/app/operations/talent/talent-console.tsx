@@ -26,6 +26,7 @@ import {
   useAction,
   useStaffData,
 } from "../_components/staff-ui";
+import { youtubeEmbedUrl } from "@/lib/domain/youtube";
 
 const CATEGORIES: [string, string][] = [
   ["creative_media", "Creative & media"],
@@ -182,8 +183,19 @@ function TalentDetailBody({ id, d, reload, onChanged }: { id: string; d: Row; re
                 {v.status === "rejected" && v.rejection_reason ? ` — ${v.rejection_reason}` : ""}
               </p>
               {v.transcript && <p className="mt-1 text-xs text-slate">Transcript: {v.transcript}</p>}
+              {youtubeEmbedUrl(v.youtube_url) && (
+                <div className="mt-2 aspect-video w-full max-w-sm overflow-hidden rounded-lg border border-slate/15 bg-midnight">
+                  <iframe
+                    src={youtubeEmbedUrl(v.youtube_url)!}
+                    title="Introduction video"
+                    className="h-full w-full"
+                    allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              )}
               <ActionRow>
-                <Btn onClick={() => open("talent-videos", v.video_path)}>View video</Btn>
+                <Btn onClick={() => window.open(v.youtube_url, "_blank", "noopener,noreferrer")}>Open on YouTube</Btn>
                 {v.status === "pending" && (
                   <Btn
                     variant="primary"

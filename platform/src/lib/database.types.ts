@@ -143,6 +143,7 @@ export type TalentPortfolioItemRow = {
   description: string | null;
   external_url: string | null;
   file_path: string | null;
+  image_url: string | null;
   sort_order: number;
   created_at: string;
 }
@@ -176,10 +177,8 @@ export type TalentVideoStatus = "pending" | "approved" | "rejected";
 
 export type TalentIntroductionVideoRow = {
   talent_id: string;
-  video_path: string;
-  thumbnail_path: string | null;
+  youtube_url: string;
   transcript: string | null;
-  duration_seconds: number | null;
   status: TalentVideoStatus;
   rejection_reason: string | null;
   reviewed_by: string | null;
@@ -867,7 +866,7 @@ export type Database = {
       };
       talent_introduction_videos: {
         Row: TalentIntroductionVideoRow;
-        Insert: Partial<TalentIntroductionVideoRow> & { talent_id: string; video_path: string };
+        Insert: Partial<TalentIntroductionVideoRow> & { talent_id: string; youtube_url: string };
         Update: Partial<TalentIntroductionVideoRow>;
         Relationships: [];
       };
