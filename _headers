@@ -13,12 +13,30 @@
 # removes the interleaved comments as the most likely culprit and adds a
 # CSP fallback for the framing protection in case X-Frame-Options really
 # is filtered rather than just a parsing casualty.
+#
+# css/*, js/*: this site has no content-hashed filenames (css/styles.css
+# is always css/styles.css), so with no explicit Cache-Control a browser
+# falls back to heuristic caching and can keep serving a stylesheet from
+# before the last deploy for a long time -- confirmed directly: a CSS fix
+# looked live in a fresh incognito window but not in an already-open
+# regular tab. no-cache (not no-store) still lets the browser cache the
+# file, it just forces a revalidation request every time, which Cloudflare
+# answers with a cheap 304 off the same ETag when the file hasn't
+# actually changed -- so this trades a little freshness-check overhead
+# for every deploy being visible on the next real page load instead of
+# needing a hard refresh.
 
 /*
   X-Frame-Options: DENY
   Content-Security-Policy: frame-ancestors 'none'
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
+
+/css/*
+  Cache-Control: no-cache
+
+/js/*
+  Cache-Control: no-cache
 
 /staff/*
   X-Robots-Tag: noindex, nofollow
