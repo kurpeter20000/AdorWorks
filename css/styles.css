@@ -640,6 +640,12 @@ p { margin: 0 0 1em; }
 .section-alt { background: var(--color-surface-alt); }
 .section-header { max-width: 70ch; margin-bottom: 2rem; }
 .section-header p { color: var(--color-muted); font-size: 1.05rem; }
+/* Scoped widener, not a change to .section-header's own 70ch (that cap
+   is deliberate for paragraph reading width and used across many
+   sections) -- for a heading short enough to read fine on one line,
+   where 70ch's bold-heading character width was wrapping it one word
+   early. */
+.section-header-wide { max-width: 90ch; }
 .eyebrow {
   margin: 0 0 0.55rem;
   color: var(--color-accent-text);
