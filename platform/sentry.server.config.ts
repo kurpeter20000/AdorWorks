@@ -9,6 +9,20 @@ if (dsn) {
   Sentry.init({
     dsn,
     tracesSampleRate: 0.1,
-    sendDefaultPii: false,
+    // v11 replaced sendDefaultPii with per-category controls that default
+    // to "collect everything" when omitted (opposite of v10's behavior) --
+    // this app handles real personal and payment-adjacent data, so every
+    // category that could carry PII stays off instead of silently
+    // inheriting that permissive default.
+    dataCollection: {
+      userInfo: false,
+      cookies: false,
+      httpHeaders: false,
+      httpBodies: [],
+      urlQueryParams: false,
+      databaseQueryData: false,
+      genAI: { inputs: false, outputs: false },
+      stackFrameVariables: false,
+    },
   });
 }
