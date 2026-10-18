@@ -24,7 +24,13 @@
 # answers with a cheap 304 off the same ETag when the file hasn't
 # actually changed -- so this trades a little freshness-check overhead
 # for every deploy being visible on the next real page load instead of
-# needing a hard refresh.
+# needing a hard refresh. This alone is NOT enough on its own, though --
+# sw.js (this site's service worker) precaches css/*, js/* and every page
+# shell and serves them cache-first, intercepting the request before it
+# ever reaches HTTP cache or the network. A hard refresh does not clear
+# that cache. Any deploy that changes a precached file must also bump
+# CACHE_VERSION in sw.js, or visitors with it already installed keep
+# seeing the old version indefinitely regardless of these headers.
 
 /*
   X-Frame-Options: DENY
@@ -36,6 +42,9 @@
   Cache-Control: no-cache
 
 /js/*
+  Cache-Control: no-cache
+
+/sw.js
   Cache-Control: no-cache
 
 /staff/*
