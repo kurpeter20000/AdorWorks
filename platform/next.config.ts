@@ -26,5 +26,11 @@ const nextConfig: NextConfig = {
 export default withSentryConfig(nextConfig, {
   silent: true,
   widenClientFileUpload: false,
-  disableLogger: true,
+  // v11 moved disableLogger under webpack and dropped the top-level flag
+  // (it was already a no-op under Turbopack, which this app builds with).
+  webpack: {
+    treeshake: {
+      removeDebugLogging: true,
+    },
+  },
 });
