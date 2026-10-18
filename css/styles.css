@@ -565,7 +565,13 @@ p { margin: 0 0 1em; }
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, rgba(24,34,48,0.82), rgba(24,34,48,0.90));
-  z-index: 1;
+  /* Must outrank .hero-slide.is-active's z-index:1 -- a pseudo-element
+     paints first among its siblings in tree order, so at equal z-index
+     the later-painted active slide image was covering this overlay
+     entirely, no matter how opaque its background was. 2 still sits
+     below .hero-photo .container's z-index:2, which wins that tie by
+     coming later in the DOM, so hero text stays on top. */
+  z-index: 2;
 }
 .hero-photo-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
 .hero-photo .container { position: relative; z-index: 2; }
