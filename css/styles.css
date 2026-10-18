@@ -1980,6 +1980,13 @@ input[type="checkbox"], input[type="radio"] {
 @media (min-width: 1024px) {
   .opportunity-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+@media (min-width: 1240px) {
+  .opportunity-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  /* Same truncation already used under 640px -- at 4 columns a card is
+     narrow enough (~260px) that 5+ skill tags wrap into a tall, uneven
+     card instead of the compact, tidy row this layout is going for. */
+  .opportunity-skills li:nth-child(n + 4) { display: none; }
+}
 @media (max-width: 639px) {
   .opportunity-card { padding: 1rem 1.1rem; }
   .opportunity-brief { -webkit-line-clamp: 2; line-clamp: 2; margin-top: 0.5rem; }
