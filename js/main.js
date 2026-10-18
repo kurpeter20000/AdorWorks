@@ -119,6 +119,70 @@
       });
     }
 
+    // Services mega-menu: a disclosure (button + controlled panel), not an
+    // ARIA menu -- Tab/Shift+Tab walk its real links in document order,
+    // which is the accessible baseline a full roving-tabindex tab pattern
+    // would add complexity for without changing what a keyboard user can
+    // actually reach. Desktop opens on hover (with a short close delay so
+    // moving the mouse from trigger to panel doesn't drop it) and on
+    // click/Enter for keyboard and touch; under 960px it's an inline
+    // disclosure inside the already-open mobile drawer instead of a flyout,
+    // since a hover panel makes no sense on a touch screen.
+    document.querySelectorAll("[data-nav-megamenu]").forEach(function (item) {
+      var trigger = item.querySelector("[data-megamenu-trigger]");
+      var panel = item.querySelector("[data-megamenu-panel]");
+      if (!trigger || !panel) return;
+
+      var catButtons = Array.from(panel.querySelectorAll("[data-megamenu-cat]"));
+      var catGroups = Array.from(panel.querySelectorAll("[data-megamenu-items]"));
+      var desktopQuery = window.matchMedia("(min-width: 960px)");
+      var closeTimer = null;
+
+      function showCategory(key) {
+        catButtons.forEach(function (b) {
+          b.setAttribute("aria-selected", String(b.getAttribute("data-megamenu-cat") === key));
+        });
+        catGroups.forEach(function (g) {
+          g.hidden = g.getAttribute("data-megamenu-items") !== key;
+        });
+      }
+      catButtons.forEach(function (b) {
+        var key = b.getAttribute("data-megamenu-cat");
+        b.addEventListener("mouseenter", function () { showCategory(key); });
+        b.addEventListener("focus", function () { showCategory(key); });
+        b.addEventListener("click", function () { showCategory(key); });
+      });
+
+      function open() {
+        clearTimeout(closeTimer);
+        item.classList.add("is-open");
+        trigger.setAttribute("aria-expanded", "true");
+      }
+      function close() {
+        item.classList.remove("is-open");
+        trigger.setAttribute("aria-expanded", "false");
+      }
+
+      item.addEventListener("mouseenter", function () { if (desktopQuery.matches) open(); });
+      item.addEventListener("mouseleave", function () {
+        if (desktopQuery.matches) closeTimer = setTimeout(close, 200);
+      });
+      trigger.addEventListener("click", function (e) {
+        e.preventDefault();
+        item.classList.contains("is-open") ? close() : open();
+      });
+      item.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && item.classList.contains("is-open")) {
+          close();
+          trigger.focus();
+        }
+      });
+      document.addEventListener("click", function (e) {
+        if (!item.contains(e.target)) close();
+      });
+      desktopQuery.addEventListener("change", function () { close(); });
+    });
+
     // Hero background video: decorative only (muted, looping, no controls),
     // not the talent-facing video feature, so none of that consent/caption
     // handling applies here. Skipped on narrow screens, reduced-motion or a
@@ -359,6 +423,25 @@
       // openService) once it is. Passing this function in keeps the
       // modal itself unaware that coverflow exists.
       initServiceCoverflows(serviceGroups, openService);
+
+      // Deep link from the Services mega-menu: ?service=<exact data-title>
+      // opens straight into that service's detail modal instead of
+      // landing on the category section and making the visitor click
+      // again. Matches on data-title text, same as the request-form
+      // preselect above, so it stays correct if a modal label is ever
+      // reworded without this link list being updated in lockstep.
+      var deepLinkService = new URLSearchParams(window.location.search).get("service");
+      if (deepLinkService) {
+        outer: for (var gi = 0; gi < serviceGroups.length; gi++) {
+          var tiles = serviceGroups[gi].tiles;
+          for (var ti = 0; ti < tiles.length; ti++) {
+            if (tiles[ti].getAttribute("data-title") === deepLinkService) {
+              openService(serviceGroups[gi], ti);
+              break outer;
+            }
+          }
+        }
+      }
 
       modalPrev.addEventListener("click", function () { step(-1); });
       modalNext.addEventListener("click", function () { step(1); });

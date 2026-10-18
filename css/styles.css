@@ -314,6 +314,142 @@ p { margin: 0 0 1em; }
   .site-nav ul li:not(.nav-cta) a[aria-current="page"]::after { transform: scaleX(1) !important; }
 }
 
+/* Services mega-menu: a disclosure button + controlled panel (see
+   js/main.js's data-nav-megamenu handler for the open/close and
+   category-switch logic). Desktop is a flyout positioned under the
+   trigger; under 960px the same markup becomes an inline accordion
+   inside the mobile drawer instead -- a hover flyout has no equivalent
+   on a touch screen, and stacking everything is more natural to
+   scroll than trying to preserve tab-switching on a narrow phone. */
+.nav-megamenu { position: relative; }
+.nav-megamenu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: none;
+  padding: 0.25rem 0;
+  margin: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+.nav-megamenu-caret { width: 14px; height: 14px; transition: transform 0.2s ease; }
+.nav-megamenu.is-open .nav-megamenu-caret { transform: rotate(180deg); }
+/* Same current-page treatment as a plain .site-nav a[aria-current="page"]
+   (see line ~146) -- services.html sets this on the trigger button
+   itself since there's no <a> here to carry it. */
+.nav-megamenu-trigger[aria-current="page"] { color: var(--color-accent-text); border-bottom: 2px solid var(--color-accent); }
+
+.services-megamenu {
+  display: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+.nav-megamenu.is-open .services-megamenu { display: block; }
+
+.services-megamenu-cats { display: flex; flex-direction: column; }
+.services-megamenu-cat {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--color-ink);
+  font: inherit;
+  font-weight: 700;
+}
+.services-megamenu-cat-icon { flex: none; display: flex; color: var(--color-muted); }
+.services-megamenu-cat-icon svg { width: 20px; height: 20px; }
+.services-megamenu-cat-label { flex: 1; }
+.services-megamenu-cat-arrow { flex: none; width: 16px; height: 16px; color: var(--color-border); }
+.services-megamenu-cat[aria-selected="true"] { background: var(--color-surface-alt); color: var(--color-accent-text); }
+.services-megamenu-cat[aria-selected="true"] .services-megamenu-cat-icon,
+.services-megamenu-cat[aria-selected="true"] .services-megamenu-cat-arrow { color: var(--color-accent-text); }
+
+/* :not([hidden]), not a bare selector -- an unconditional `display`
+   here would beat the UA [hidden]{display:none} rule (author origin
+   always outranks UA origin, regardless of specificity) and make every
+   category's items show at once instead of just the one JS selected. */
+.services-megamenu-items-group:not([hidden]) { display: grid; }
+.services-megamenu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 10px;
+}
+.services-megamenu-item img { flex: none; object-fit: cover; border-radius: 8px; display: block; }
+.services-megamenu-item strong { display: block; color: var(--color-ink); font-size: 0.92rem; }
+.services-megamenu-item small { display: block; color: var(--color-muted); font-size: 0.8rem; font-weight: 400; }
+.services-megamenu-item:hover,
+.services-megamenu-item:focus-visible { background: var(--color-surface-alt); }
+.services-megamenu-item:hover strong,
+.services-megamenu-item:focus-visible strong { color: var(--color-accent-text); }
+
+.services-megamenu-group-heading { display: none; }
+
+.services-megamenu-footer { display: flex; flex-wrap: wrap; }
+.services-megamenu-footer a { color: var(--color-accent-text); font-weight: 700; font-size: 0.9rem; text-decoration: none; }
+.services-megamenu-footer a:hover { text-decoration: underline; }
+
+@media (min-width: 960px) {
+  .services-megamenu {
+    position: absolute;
+    top: calc(100% + 0.75rem);
+    left: 50%;
+    transform: translateX(-50%) translateY(-6px);
+    width: min(760px, calc(100vw - 2.5rem));
+    box-shadow: 0 18px 48px rgba(24,34,48,0.16);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    z-index: 60;
+  }
+  .nav-megamenu.is-open .services-megamenu {
+    display: block;
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+  }
+  .services-megamenu-grid { display: flex; }
+  .services-megamenu-cats { flex: none; width: 240px; padding: 1rem; border-right: 1px solid var(--color-border); gap: 0.15rem; }
+  .services-megamenu-cat { padding: 0.65rem 0.75rem; border-radius: 8px; }
+  .services-megamenu-items { flex: 1; padding: 1rem 1.25rem; }
+  .services-megamenu-items-group { grid-template-columns: repeat(2, 1fr); gap: 0.25rem 1rem; }
+  .services-megamenu-item { padding: 0.6rem; }
+  .services-megamenu-item img { width: 56px; height: 56px; }
+  .services-megamenu-footer { gap: 1.5rem; padding: 0.85rem 1.25rem; border-top: 1px solid var(--color-border); }
+  @media (prefers-reduced-motion: reduce) {
+    .services-megamenu { transition: none; }
+  }
+}
+
+@media (max-width: 959px) {
+  .nav-megamenu-trigger { width: 100%; justify-content: space-between; padding: 0.6rem 0.25rem; border-bottom: 1px solid var(--color-border); }
+  .services-megamenu { border: none; border-radius: 0; }
+  .nav-megamenu.is-open .services-megamenu { display: block; }
+  .services-megamenu-cats { display: none; }
+  .services-megamenu-items { display: flex; flex-direction: column; gap: 1.25rem; padding: 0.85rem 0.25rem; }
+  /* Not scoped to [hidden] -- this must also apply to the one group that
+     starts visible, and beats the UA [hidden]{display:none} default on
+     the other two regardless, since author CSS always outranks UA
+     defaults at equal specificity (no !important needed there), while
+     this element selector's specificity alone already outranks the
+     attribute-selector UA rule. */
+  .services-megamenu-items-group { display: flex; flex-direction: column; gap: 0.25rem; }
+  .services-megamenu-group-heading { display: block; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-muted); margin-bottom: 0.4rem; }
+  .services-megamenu-item { padding: 0.5rem 0.25rem; }
+  .services-megamenu-item img { width: 44px; height: 44px; }
+  .services-megamenu-footer { flex-direction: column; gap: 0.6rem; padding: 0.85rem 0.25rem 0.5rem; border-top: 1px solid var(--color-border); }
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;

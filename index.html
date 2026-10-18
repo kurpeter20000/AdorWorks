@@ -60,7 +60,97 @@
         <li><a href="index.html" aria-current="page">Home</a></li>
         <li><a href="jobs-projects.html">Find Jobs</a></li>
         <li><a href="for-employers.html">Find Talent</a></li>
-        <li><a href="services.html">Services</a></li>
+        <li class="nav-megamenu" data-nav-megamenu>
+          <button type="button" class="nav-megamenu-trigger" data-megamenu-trigger aria-expanded="false" aria-controls="services-megamenu">
+            Services
+            <svg class="nav-megamenu-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="services-megamenu" id="services-megamenu" data-megamenu-panel>
+            <div class="services-megamenu-grid">
+              <div class="services-megamenu-cats" role="tablist" aria-label="Service categories">
+                <button type="button" class="services-megamenu-cat" data-megamenu-cat="creative" role="tab" aria-selected="true">
+                  <span class="services-megamenu-cat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.4-.3-.4-.5-.9-.5-1.4 0-1.1.9-2 2-2h2a4 4 0 0 0 4-4C21 5.8 17 3 12 3z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="12" cy="7.5" r="1"/><circle cx="16.5" cy="10.5" r="1"/></svg></span>
+                  <span class="services-megamenu-cat-label">Creative &amp; media</span>
+                  <svg class="services-megamenu-cat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+                </button>
+                <button type="button" class="services-megamenu-cat" data-megamenu-cat="digital" role="tab" aria-selected="false">
+                  <span class="services-megamenu-cat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m8 9-4 3 4 3M16 9l4 3-4 3M13 6l-2 12"/></svg></span>
+                  <span class="services-megamenu-cat-label">Digital &amp; technology</span>
+                  <svg class="services-megamenu-cat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+                </button>
+                <button type="button" class="services-megamenu-cat" data-megamenu-cat="business" role="tab" aria-selected="false">
+                  <span class="services-megamenu-cat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18"/></svg></span>
+                  <span class="services-megamenu-cat-label">Business &amp; project support</span>
+                  <svg class="services-megamenu-cat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+                </button>
+              </div>
+              <div class="services-megamenu-items">
+                <div class="services-megamenu-items-group" data-megamenu-items="creative">
+                  <p class="services-megamenu-group-heading">Creative &amp; media</p>
+                  <a class="services-megamenu-item" href="services.html?service=Brand%20%26%20graphic%20design#service-deck-creative">
+                    <picture><source type="image/webp" srcset="img/photos/tile-brand-design-480.webp"><img src="img/photos/tile-brand-design-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
+                    <span><strong>Brand &amp; graphic design</strong><small>Logos, brand marks and print-ready collateral</small></span>
+                  </a>
+                  <a class="services-megamenu-item" href="services.html?service=Photography%20%26%20video%20production#service-deck-creative">
+                    <picture><source type="image/webp" srcset="img/photos/tile-photo-video-480.webp"><img src="img/photos/tile-photo-video-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
+                    <span><strong>Photography &amp; video production</strong><small>Shoot days with fully edited assets</small></span>
+                  </a>
+                  <a class="services-megamenu-item" href="services.html?service=Editing%20%26%20animation#service-deck-creative">
+                    <picture><source type="image/webp" srcset="img/photos/tile-editing-animation-480.webp"><img src="img/photos/tile-editing-animation-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
+                    <span><strong>Editing &amp; animation</strong><small>Video editing, motion graphics and animation</small></span>
+                  </a>
+                  <a class="services-megamenu-item" href="services.html?service=Content%20creation%20%26%20copywriting#service-deck-creative">
+                    <picture><source type="image/webp" srcset="img/photos/tile-content-copy-480.webp"><img src="img/photos/tile-content-copy-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
+                    <span><strong>Content creation &amp; copywriting</strong><small>Written and social content, on-brief</small></span>
+                  </a>
+                </div>
+                <div class="services-megamenu-items-group" data-megamenu-items="digital" hidden>
+                  <p class="services-megamenu-group-heading">Digital &amp; technology</p>
+                  <a class="services-megamenu-item" href="services.html?service=Web%20development#service-deck-digital">
+                    <picture><source type="image/webp" srcset="img/photos/tile-web-dev-480.webp"><img src="img/photos/tile-web-dev-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
+                    <span><strong>Web development</strong><small>Websites and web apps, built and handed over working</small></span>
+                  </a>
+                  <a class="services-megamenu-item" href="services.html?service=Data%20support%20%26%20analytics#service-deck-digital">
+                    <picture><source type="image/webp" srcset="img/photos/tile-data-analytics-480.webp"><img src="img/photos/tile-data-analytics-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
+                    <span><strong>Data support &amp; analytics</strong><small>Cleaned datasets, dashboards and analysis</small></span>
+                  </a>
+                  <a class="services-megamenu-item" href="services.html?service=Digital%20advertising#service-deck-digital">
+                    <picture><source type="image/webp" srcset="img/photos/tile-digital-ads-480.webp"><img src="img/photos/tile-digital-ads-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
+                    <span><strong>Digital advertising</strong><small>Set-up and managed ad campaigns</small></span>
+                  </a>
+                  <a class="services-megamenu-item" href="services.html?service=IT%20%26%20software%20support#service-deck-digital">
+                    <picture><source type="image/webp" srcset="img/photos/tile-it-support-480.webp"><img src="img/photos/tile-it-support-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
+                    <span><strong>IT &amp; software support</strong><small>Scoped fixes, integrations and small builds</small></span>
+                  </a>
+                </div>
+                <div class="services-megamenu-items-group" data-megamenu-items="business" hidden>
+                  <p class="services-megamenu-group-heading">Business &amp; project support</p>
+                  <a class="services-megamenu-item" href="services.html?service=Virtual%20assistance%20%26%20bookkeeping#service-deck-business">
+                    <picture><source type="image/webp" srcset="img/photos/tile-virtual-assistance-480.webp"><img src="img/photos/tile-virtual-assistance-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
+                    <span><strong>Virtual assistance &amp; bookkeeping</strong><small>Ongoing admin and bookkeeping support</small></span>
+                  </a>
+                  <a class="services-megamenu-item" href="services.html?service=Research%20%26%20enumeration#service-deck-business">
+                    <picture><source type="image/webp" srcset="img/photos/tile-research-480.webp"><img src="img/photos/tile-research-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
+                    <span><strong>Research &amp; enumeration</strong><small>Research reports and field data collection</small></span>
+                  </a>
+                  <a class="services-megamenu-item" href="services.html?service=Transcription%20%26%20translation#service-deck-business">
+                    <picture><source type="image/webp" srcset="img/photos/tile-translation-480.webp"><img src="img/photos/tile-translation-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
+                    <span><strong>Transcription &amp; translation</strong><small>Transcribed and translated documents or audio</small></span>
+                  </a>
+                  <a class="services-megamenu-item" href="services.html?service=Project%20administration#service-deck-business">
+                    <picture><source type="image/webp" srcset="img/photos/tile-project-admin-480.webp"><img src="img/photos/tile-project-admin-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
+                    <span><strong>Project administration</strong><small>Scheduling, reporting and vendor liaison</small></span>
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="services-megamenu-footer">
+              <a href="services.html">Browse all services &rarr;</a>
+              <a href="pricing.html">How pricing works &rarr;</a>
+              <a href="how-it-works.html">See how it works &rarr;</a>
+            </div>
+          </div>
+        </li>
         <li><a href="how-it-works.html">How It Works</a></li>
         <li><a href="trust-safety.html">Trust &amp; Safety</a></li>
         <li class="nav-cta"><a href="for-employers.html#brief-form" class="btn btn-primary">Post a project</a></li>
