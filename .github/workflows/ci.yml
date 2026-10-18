@@ -20,6 +20,23 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: platform/package-lock.json
+      # Without this, every run fetches next/font/google's font files
+      # fresh over the network with no retry -- confirmed directly: an
+      # identical build failed once with "Module not found:
+      # @vercel/turbopack-next/internal/font/google/font" (a transient
+      # fetch to fonts.googleapis.com/fonts.gstatic.com failing) then
+      # succeeded immediately after on a rerun with nothing else
+      # changed. Restoring .next/cache (which Next's font loader uses)
+      # makes a cache-hit run skip that fetch entirely. Keyed on the
+      # lockfile (deps affect the build) and source files (content
+      # affects what needs rebuilding); restore-keys falls back to the
+      # newest same-lockfile cache on a miss rather than building cold.
+      - uses: actions/cache@v6
+        with:
+          path: platform/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('platform/package-lock.json') }}-${{ hashFiles('platform/src/**', 'platform/*.config.*') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('platform/package-lock.json') }}-
       - run: npm ci
       - run: npm run lint
       - run: npm run test
@@ -71,6 +88,12 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: platform/package-lock.json
+      - uses: actions/cache@v6
+        with:
+          path: platform/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('platform/package-lock.json') }}-${{ hashFiles('platform/src/**', 'platform/*.config.*') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('platform/package-lock.json') }}-
       - run: npm ci
       - run: npm run build
         env:
