@@ -12,7 +12,7 @@ reportsRouter.use(requireAuth, requireStaff);
 // to also allow 'talent_video'/'portfolio_item' — this list (used only
 // to validate the optional ?target_type= filter below, not to gate
 // creation) already matches that.
-const TARGET_TYPES = ["opportunity", "talent_service", "talent_profile", "organisation", "talent_video", "portfolio_item"];
+const TARGET_TYPES = ["opportunity", "talent_service", "talent_profile", "organisation", "talent_video", "portfolio_item", "vouch"];
 const STATUSES = ["open", "reviewed", "dismissed", "actioned"];
 const SEVERITIES = ["low", "medium", "high", "critical"];
 

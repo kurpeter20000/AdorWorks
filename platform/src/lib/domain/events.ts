@@ -48,6 +48,9 @@ export const DOMAIN_EVENTS = {
   // GET /api/people/audit-events activity log, not a second new surface.
   NOTIFICATION_DELIVERY_FAILED: "communication.notification.delivery_failed",
   EMAIL_DELIVERY_FAILED: "communication.email.delivery_failed",
+  // 0107: digitized personal referrals.
+  VOUCH_REQUESTED: "trust.vouch.requested",
+  VOUCH_RESPONDED: "trust.vouch.responded",
 } as const;
 
 export type DomainEventName = (typeof DOMAIN_EVENTS)[keyof typeof DOMAIN_EVENTS];

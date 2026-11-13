@@ -679,7 +679,8 @@ export type ReportTargetType =
   | "talent_profile"
   | "organisation"
   | "talent_video"
-  | "portfolio_item";
+  | "portfolio_item"
+  | "vouch";
 export type ReportReason = "spam" | "scam" | "inappropriate" | "misleading" | "safeguarding" | "other";
 export type ReportStatus = "open" | "reviewed" | "dismissed" | "actioned";
 
@@ -769,6 +770,24 @@ export type PublicOrganisationNameRow = {
   id: string;
   name: string;
   verification_status: "pending" | "verified" | "rejected" | "suspended";
+}
+
+export type PublicProfileNameRow = {
+  id: string;
+  full_name: string | null;
+}
+
+export type VouchStatus = "pending" | "confirmed" | "declined";
+
+export type VouchRow = {
+  id: string;
+  talent_id: string;
+  voucher_id: string;
+  relationship: string;
+  statement: string | null;
+  status: VouchStatus;
+  created_at: string;
+  responded_at: string | null;
 }
 
 export type PublicTalentProfileRow = {
@@ -1151,6 +1170,12 @@ export type Database = {
         Update: Partial<NotificationRow>;
         Relationships: [];
       };
+      vouches: {
+        Row: VouchRow;
+        Insert: Partial<VouchRow> & { talent_id: string; voucher_id: string; relationship: string };
+        Update: Partial<VouchRow>;
+        Relationships: [];
+      };
       partner_hubs: {
         Row: PartnerHubRow;
         Insert: Partial<PartnerHubRow> & { name: string };
@@ -1205,6 +1230,10 @@ export type Database = {
       };
       public_organisation_names: {
         Row: PublicOrganisationNameRow;
+        Relationships: [];
+      };
+      public_profile_names: {
+        Row: PublicProfileNameRow;
         Relationships: [];
       };
     };

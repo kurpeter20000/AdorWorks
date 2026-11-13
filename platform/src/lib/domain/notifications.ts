@@ -42,6 +42,9 @@ export const NOTIFICATION_TYPES = {
   SUPPORT_MESSAGE_RECEIVED: "support_message_received",
   // Stage 16 step 4
   ESCROW_RELEASED: "escrow_released",
+  // 0107: digitized personal referrals.
+  VOUCH_REQUESTED: "vouch_requested",
+  VOUCH_RESPONDED: "vouch_responded",
 } as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];
