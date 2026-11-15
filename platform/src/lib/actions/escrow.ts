@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole, STAFF_ROLES } from "@/lib/dal/session";
+import { requireRole, FINANCE_ROLES } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getActivePayoutProvider } from "@/lib/payoutProviders.server";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
@@ -27,27 +27,33 @@ import type { FormState } from "./auth";
  * an unreviewed bulk release.
  */
 export async function releaseEscrowedPayment(paymentEventId: string): Promise<FormState & { released?: boolean }> {
-  const session = await requireRole(...STAFF_ROLES);
+  const session = await requireRole(...FINANCE_ROLES);
   const admin = createAdminClient();
 
-  const { data: payment } = await admin
+  const { data: payment, error: paymentLookupError } = await admin
     .from("payment_events")
     .select("id, contract_id, net_amount, currency, escrow_status, dispute_window_ends_at")
     .eq("id", paymentEventId)
     .maybeSingle();
+  if (paymentLookupError) return { message: `Could not load the payment: ${paymentLookupError.message}` };
   if (!payment) return { message: "Payment not found." };
   if (payment.escrow_status !== "held") return { message: "This payment isn't currently held in escrow." };
 
   const { data: contract } = await admin.from("contracts").select("talent_id").eq("id", payment.contract_id).maybeSingle();
   if (!contract) return { message: "Contract not found." };
 
-  const { data: openDispute } = await admin
+  // limit(1), not maybeSingle(): maybeSingle() errors (data: null) when a
+  // contract has MORE than one unresolved dispute, which would read as
+  // "no dispute" and let the payout through. Errors also block release —
+  // never pay out on a dispute check we couldn't complete.
+  const { data: openDisputes, error: disputeError } = await admin
     .from("disputes")
     .select("id")
     .eq("contract_id", payment.contract_id)
     .neq("status", "resolved")
-    .maybeSingle();
-  if (openDispute) return { message: "This contract has an open dispute — resolve it before releasing the payout." };
+    .limit(1);
+  if (disputeError) return { message: `Could not check for open disputes: ${disputeError.message}` };
+  if (openDisputes && openDisputes.length > 0) return { message: "This contract has an open dispute — resolve it before releasing the payout." };
 
   if (payment.dispute_window_ends_at && new Date(payment.dispute_window_ends_at) > new Date()) {
     return { message: "The dispute window for this payment hasn't passed yet." };
@@ -58,7 +64,24 @@ export async function releaseEscrowedPayment(paymentEventId: string): Promise<Fo
     return { message: "This talent has no phone number on file — can't disburse by mobile money." };
   }
 
-  await admin.from("payment_events").update({ disbursement_status: "pending" }).eq("id", paymentEventId);
+  // Atomic claim before any money moves. The "held" check above is only a
+  // read — two staff (or two tabs) can both pass it. This update only
+  // matches a row that is still held AND not already mid-disbursement, so
+  // exactly one request proceeds to provider.payout(); the other stops.
+  // A row stuck in "pending" (crash mid-payout) is deliberately NOT
+  // retried automatically: whether the money left is unknown, so it needs
+  // a human to check the MoMo statement first.
+  const { data: claimed, error: claimError } = await admin
+    .from("payment_events")
+    .update({ disbursement_status: "pending", disbursement_failure_reason: null })
+    .eq("id", paymentEventId)
+    .eq("escrow_status", "held")
+    .or("disbursement_status.is.null,disbursement_status.eq.failed")
+    .select("id");
+  if (claimError) return { message: `Could not start the payout: ${claimError.message}` };
+  if (!claimed || claimed.length === 0) {
+    return { message: "This payout is already being processed or was released. Refresh the page — if it stays stuck, check the mobile-money statement before retrying." };
+  }
 
   const provider = await getActivePayoutProvider("mtn_momo");
   const result = provider

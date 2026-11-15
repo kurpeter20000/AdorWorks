@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireRole, STAFF_ROLES } from "@/lib/dal/session";
+import { requireRole, STAFF_ROLES, canMoveMoney } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { getEscrowRates } from "@/lib/dal/settings";
 import { PayoutsConsole } from "./payouts-console";
@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Payouts — Operations" };
  * this is the actual release mechanism today, not just a status screen.
  */
 export default async function OperationsPayoutsPage() {
-  await requireRole(...STAFF_ROLES);
+  const session = await requireRole(...STAFF_ROLES);
   const supabase = await createClient();
   const escrow = await getEscrowRates();
 
@@ -37,7 +37,7 @@ export default async function OperationsPayoutsPage() {
         {!escrow.enabled && <span className="font-semibold text-slate">Escrow is currently switched off — new payments release instantly.</span>}
       </p>
 
-      <PayoutsConsole eligible={eligible ?? []} notYetDue={notYetDue} />
+      <PayoutsConsole eligible={eligible ?? []} notYetDue={notYetDue} canRelease={canMoveMoney(session.role)} />
     </main>
   );
 }

@@ -15,20 +15,20 @@ interface InvoiceRow {
   organisationName: string;
 }
 
-export function InvoicesConsole({ rows }: { rows: InvoiceRow[] }) {
+export function InvoicesConsole({ rows, canConfirm }: { rows: InvoiceRow[]; canConfirm: boolean }) {
   if (rows.length === 0) {
     return <p className="mt-8 text-sm text-slate">Nothing awaiting confirmation right now.</p>;
   }
   return (
     <ul className="mt-6 space-y-3">
       {rows.map((row) => (
-        <InvoiceRowItem key={row.id} row={row} />
+        <InvoiceRowItem key={row.id} row={row} canConfirm={canConfirm} />
       ))}
     </ul>
   );
 }
 
-function InvoiceRowItem({ row }: { row: InvoiceRow }) {
+function InvoiceRowItem({ row, canConfirm }: { row: InvoiceRow; canConfirm: boolean }) {
   const router = useRouter();
   const [bankReference, setBankReference] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +72,8 @@ function InvoiceRowItem({ row }: { row: InvoiceRow }) {
         </div>
       </div>
 
-      {!confirmed && (
+      {!confirmed && !canConfirm && <div className="mt-3"><p className="text-xs font-semibold text-slate">Only finance or admin staff can confirm payments.</p></div>}
+      {!confirmed && canConfirm && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <label htmlFor={`bank-ref-${row.id}`} className="sr-only">
             Bank transaction reference
