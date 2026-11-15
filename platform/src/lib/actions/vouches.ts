@@ -132,11 +132,15 @@ export async function respondToVouch(vouchId: string, accept: boolean): Promise<
     return { error: msg("This request has already been responded to.") };
   }
 
-  const { error } = await admin
+  // Conditional on still-pending so a double-tap can't confirm-then-decline.
+  const { data: updated, error } = await admin
     .from("vouches")
     .update({ status: accept ? "confirmed" : "declined", responded_at: new Date().toISOString() })
-    .eq("id", vouchId);
+    .eq("id", vouchId)
+    .eq("status", "pending")
+    .select("id");
   if (error) return { error: error.message };
+  if (!updated || updated.length === 0) return { error: msg("This request has already been responded to.") };
 
   const { data: fullVouch } = await admin.from("vouches").select("talent_id").eq("id", vouchId).maybeSingle();
   if (fullVouch) {
