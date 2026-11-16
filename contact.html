@@ -31,6 +31,7 @@
 <link rel="stylesheet" href="css/themes.css">
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/pages.css">
 <script src="js/i18n-early.js"></script>
 </head>
 <body>
@@ -105,101 +106,96 @@
   </div>
 </header>
 
-<main id="main">
+<main id="main" class="page">
 
-  <section class="hero">
+  <section class="page-hero">
     <div class="container">
-      <h1>Get in touch.</h1>
-      <p class="lede">General enquiries, partnerships, press or a custom enterprise quote — if you have a specific brief or application, use the employer or talent forms instead so it reaches the right queue faster.</p>
+      <div class="page-hero-copy">
+        <p class="eyebrow rise">Contact</p>
+        <h1 class="rise rise-1">Get in <em>touch.</em></h1>
+        <p class="lede rise rise-2">General enquiries, partnerships, press or a custom enterprise quote. If you have a specific brief or application, use the employer or talent forms instead so it reaches the right queue faster.</p>
+      </div>
     </div>
   </section>
 
-  <section class="section">
-    <div class="container">
-      <div class="grid contact-grid">
-
-        <div>
-          <h2>Send a message</h2>
-          <form class="js-form" name="adorworks-contact" data-form-id="general-contact" method="POST" data-netlify="true" data-netlify-honeypot="bot-field" novalidate>
-            <input type="hidden" name="form-name" value="adorworks-contact">
-            <p class="netlify-honeypot" aria-hidden="true">
-              <label>Leave this field blank: <input name="bot-field" tabindex="-1" autocomplete="off"></label>
-            </p>
-            <div class="form-grid">
-              <div class="form-grid form-grid-2">
-                <div>
-                  <label for="ct-name">Name</label>
-                  <input type="text" id="ct-name" name="name" autocomplete="name" required>
-                </div>
-                <div>
-                  <label for="ct-org">Organisation (if applicable)</label>
-                  <input type="text" id="ct-org" name="organisation" autocomplete="organization">
-                </div>
-              </div>
-              <div class="form-grid form-grid-2">
-                <div>
-                  <label for="ct-email">Email</label>
-                  <input type="email" id="ct-email" name="email" autocomplete="email" required>
-                </div>
-                <div>
-                  <label for="ct-role">I am a</label>
-                  <select id="ct-role" name="i_am_a">
-                    <option>Employer</option>
-                    <option>Professional / jobseeker</option>
-                    <option>Partner / donor</option>
-                    <option>Press</option>
-                    <option>Other</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label for="ct-topic">Topic</label>
-                <select id="ct-topic" name="topic" required>
-                  <option value="">Choose a topic</option>
-                  <option>General enquiry</option>
-                  <option>Privacy / data request</option>
-                  <option>Terms question</option>
-                  <option>Cancellation / refund</option>
-                  <option>Trust &amp; Safety concern</option>
-                  <option>Partnership / press</option>
-                </select>
-              </div>
-              <div>
-                <label for="ct-message">Message</label>
-                <textarea id="ct-message" name="message" required></textarea>
-              </div>
-            </div>
-            <button type="submit" class="btn btn-primary" style="margin-top:1.25rem;">Send message</button>
-            <div class="form-status" role="status"></div>
-          </form>
-          <div class="pending" style="margin-top:1.5rem;">
-            <span class="pending-label">Content pending</span>
-            <p class="mt-0 mb-0">Response-time promise (e.g. "we reply within 1–2 business days") will be added here once the team's actual capacity to respond is confirmed.</p>
+  <section class="page-section page-section-tight">
+    <div class="container request-grid">
+      <aside class="contact-aside site-reveal">
+        <h2>Other ways to reach us</h2>
+        <ul class="contact-options">
+          <li>
+            <span class="contact-option-name">Email</span>
+            <a href="mailto:info@adorworks.net">info@adorworks.net</a>
+          </li>
+          <li>
+            <span class="contact-option-name">WhatsApp and phone</span>
+            <span class="contact-option-note">Coming soon. We'll add verified numbers here once they're set up.</span>
+          </li>
+          <li>
+            <span class="contact-option-name">In person</span>
+            <a href="assisted-hiring.html">Ask for in-person help &rarr;</a>
+          </li>
+        </ul>
+        <h2>Looking for something specific?</h2>
+        <ul class="contact-links">
+          <li><a href="for-employers.html#brief-form">Submit an employer brief &rarr;</a></li>
+          <li><a href="for-talent.html#talent-form">Build a talent profile &rarr;</a></li>
+          <li><a href="trust-safety.html#report">Report a Trust &amp; Safety concern &rarr;</a></li>
+        </ul>
+      </aside>
+      <form class="js-form site-form site-form-card site-reveal" name="adorworks-contact" data-form-id="general-contact" method="POST" data-netlify="true" data-netlify-honeypot="bot-field" novalidate>
+        <input type="hidden" name="form-name" value="adorworks-contact">
+          <p class="netlify-honeypot" aria-hidden="true">
+            <label>Leave this field blank: <input name="bot-field" tabindex="-1" autocomplete="off"></label>
+          </p>
+        <fieldset>
+          <legend>Send a message</legend>
+          <div class="field">
+            <label for="ct-name">Name</label>
+            <input type="text" id="ct-name" name="name" autocomplete="name" required>
           </div>
-        </div>
-
-        <aside>
-          <h2>Direct options</h2>
-          <p class="muted">Prefer not to fill in a form? WhatsApp and phone will both be offered directly once verified numbers are set up — every enquiry, however it arrives, is logged so nothing gets missed.</p>
-          <div class="direct-options">
-            <div class="pending">
-              <span class="pending-label">Content pending</span>
-              <p class="mt-0 mb-0"><strong>WhatsApp</strong><br>Add the verified business WhatsApp number, then wire this tile to <code>https://wa.me/&lt;number&gt;</code>.</p>
-            </div>
-            <div class="pending">
-              <span class="pending-label">Content pending</span>
-              <p class="mt-0 mb-0"><strong>Phone</strong><br>Add the verified business phone number, then wire this tile to <code>tel:+&lt;number&gt;</code>.</p>
-            </div>
+          <div class="field">
+            <label for="ct-org">Organisation (if applicable)</label>
+            <input type="text" id="ct-org" name="organisation" autocomplete="organization">
           </div>
-          <h2 class="mt-1">Looking for something specific?</h2>
-          <ul class="footer-list" style="color:inherit;">
-            <li><a href="for-employers.html#brief-form">Submit an employer brief &rarr;</a></li>
-            <li><a href="for-talent.html#talent-form">Build a talent profile &rarr;</a></li>
-            <li><a href="trust-safety.html">Report a Trust &amp; Safety concern &rarr;</a></li>
-          </ul>
-        </aside>
-
-      </div>
+          <div class="field">
+            <label for="ct-email">Email</label>
+            <input type="email" id="ct-email" name="email" autocomplete="email" required>
+          </div>
+          <div class="field">
+            <label for="ct-role">I am a</label>
+            <select id="ct-role" name="i_am_a">
+              <option>Employer</option>
+              <option>Professional / jobseeker</option>
+              <option>Partner / donor</option>
+              <option>Press</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="field field-full">
+            <label for="ct-topic">Topic</label>
+            <select id="ct-topic" name="topic" required>
+              <option value="">Choose a topic</option>
+              <option>General enquiry</option>
+              <option>Privacy / data request</option>
+              <option>Terms question</option>
+              <option>Cancellation / refund</option>
+              <option>Trust &amp; Safety concern</option>
+              <option>Partnership / press</option>
+            </select>
+          </div>
+          <div class="field field-full">
+            <label for="ct-message">Message</label>
+            <textarea id="ct-message" name="message" rows="5" required></textarea>
+          </div>
+        </fieldset>
+        <label class="consent">
+          <input type="checkbox" name="consent" value="yes" required>
+          <span>I agree to AdorWorks storing these details to reply to my message (<a href="privacy.html">Privacy Policy</a>).</span>
+        </label>
+        <button type="submit" class="btn btn-primary form-submit">Send message</button>
+        <div class="form-status" role="status"></div>
+      </form>
     </div>
   </section>
 
