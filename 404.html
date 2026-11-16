@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="css/themes.css">
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/pages.css">
 <script src="js/i18n-early.js"></script>
 </head>
 <body>
@@ -94,28 +95,33 @@
   </div>
 </header>
 
-<main id="main">
-  <section class="hero">
+<main id="main" class="page">
+
+  <section class="page-hero page-hero-centred">
     <div class="container">
-      <p class="hero-kicker">404</p>
-      <h1>That page doesn't exist.</h1>
-      <p class="lede">The link might be old, or the address was mistyped. Try the homepage, or one of the pages below.</p>
-      <div class="hero-ctas">
-        <a href="index.html" class="btn btn-primary">Back to home</a>
-        <a href="contact.html" class="btn btn-outline-light">Contact us</a>
+      <div class="page-hero-copy">
+        <p class="eyebrow rise">404</p>
+        <h1 class="rise rise-1">That page <em>doesn't exist.</em></h1>
+        <p class="lede rise rise-2">The link might be old, or the address was mistyped. Try the homepage, or one of the pages below.</p>
+        <div class="page-actions rise rise-3">
+          <a href="index.html" class="btn btn-primary">Back to home</a>
+          <a href="contact.html" class="btn btn-ghost">Contact us</a>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="section">
+  <section class="page-section page-section-tight">
     <div class="container">
-      <div class="grid grid-3">
-        <div class="card"><a href="for-employers.html"><h3>For Employers</h3></a></div>
-        <div class="card"><a href="for-talent.html"><h3>For Talent</h3></a></div>
-        <div class="card"><a href="services.html"><h3>Services</h3></a></div>
+      <div class="policy-grid">
+        <a href="jobs-projects.html" class="policy-card"><span class="policy-name">Find work</span><span class="policy-desc">Freelance projects, contracts and jobs, checked by people.</span><span class="policy-read">Go &rarr;</span></a>
+        <a href="for-employers.html" class="policy-card"><span class="policy-name">Find talent</span><span class="policy-desc">Verified people, matched to your brief.</span><span class="policy-read">Go &rarr;</span></a>
+        <a href="services.html" class="policy-card"><span class="policy-name">Services</span><span class="policy-desc">12 packaged outcomes with a price agreed up front.</span><span class="policy-read">Go &rarr;</span></a>
+        <a href="help.html" class="policy-card"><span class="policy-name">Help &amp; FAQ</span><span class="policy-desc">Quick answers about fees, verification and payments.</span><span class="policy-read">Go &rarr;</span></a>
       </div>
     </div>
   </section>
+
 </main>
 
 <footer class="site-footer">

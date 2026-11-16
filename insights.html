@@ -31,6 +31,7 @@
 <link rel="stylesheet" href="css/themes.css">
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/pages.css">
 <script src="js/i18n-early.js"></script>
 </head>
 <body>
@@ -105,45 +106,57 @@
   </div>
 </header>
 
-<main id="main">
-  <section class="hero">
-    <div class="container">
-      <h1>Insights</h1>
-      <p class="lede">Career guidance for professionals, hiring guidance for employers, and honest market education about work in South Sudan — coming as our pilot generates real, evidenced lessons worth sharing.</p>
-    </div>
-  </section>
+<main id="main" class="page">
 
-  <section class="section">
+  <section class="page-hero">
     <div class="container">
-      <div class="pending">
-        <span class="pending-label">Coming soon</span>
-        <p class="mt-0 mb-0">We'd rather publish fewer articles that are genuinely useful than fill this page early. Leave your email below and we'll let you know when the first pieces are live.</p>
+      <div class="page-hero-copy">
+        <p class="eyebrow rise">Insights</p>
+        <h1 class="rise rise-1">Lessons from the work, <em>when they're real.</em></h1>
+        <p class="lede rise rise-2">Career guidance for professionals, hiring guidance for employers, and honest market education about work in South Sudan — coming as our pilot generates real, evidenced lessons worth sharing.</p>
       </div>
-
-      <form class="js-form mt-1" name="adorworks-insights-subscribe" data-form-id="insights-subscribe" data-success-message="Thanks — we'll let you know when Insights launches." method="POST" data-netlify="true" data-netlify-honeypot="bot-field" novalidate>
-        <input type="hidden" name="form-name" value="adorworks-insights-subscribe">
-        <p class="netlify-honeypot" aria-hidden="true">
-          <label>Leave this field blank: <input name="bot-field" tabindex="-1" autocomplete="off"></label>
-        </p>
-        <div class="form-grid form-grid-2" style="align-items:end;">
-          <div>
-            <label for="in-email">Email</label>
-            <input type="email" id="in-email" name="email" autocomplete="email" required>
-          </div>
-          <div>
-            <label for="in-role">I am a</label>
-            <select id="in-role" name="role">
-              <option>Professional / jobseeker</option>
-              <option>Employer</option>
-              <option>Partner / press</option>
-            </select>
-          </div>
-        </div>
-        <button type="submit" class="btn btn-primary" style="margin-top:1.25rem;">Notify me</button>
-        <div class="form-status" role="status"></div>
-      </form>
     </div>
   </section>
+
+  <section class="page-section page-section-tight">
+    <div class="container">
+      <div class="form-panel site-reveal">
+        <div class="form-panel-intro">
+          <p class="eyebrow">Coming soon</p>
+          <h2>Get the first pieces when they're live.</h2>
+          <p>We'd rather publish fewer articles that are genuinely useful than fill this page early. Leave your email below and we'll let you know when the first pieces are live.</p>
+        </div>
+        <form class="js-form site-form" name="adorworks-insights-subscribe" data-form-id="insights-subscribe" data-success-message="Thanks — we'll let you know when Insights launches." method="POST" data-netlify="true" data-netlify-honeypot="bot-field" novalidate>
+          <input type="hidden" name="form-name" value="adorworks-insights-subscribe">
+          <p class="netlify-honeypot" aria-hidden="true">
+            <label>Leave this field blank: <input name="bot-field" tabindex="-1" autocomplete="off"></label>
+          </p>
+          <fieldset>
+            <legend class="visually-hidden">Notify me</legend>
+            <div class="field">
+              <label for="in-email">Email</label>
+              <input type="email" id="in-email" name="email" autocomplete="email" required>
+            </div>
+            <div class="field">
+              <label for="in-role">I am a</label>
+              <select id="in-role" name="role">
+                <option>Professional / jobseeker</option>
+                <option>Employer</option>
+                <option>Partner / press</option>
+              </select>
+            </div>
+          </fieldset>
+          <label class="consent">
+            <input type="checkbox" name="consent" value="yes" required>
+            <span>I agree to AdorWorks storing my email to tell me when Insights launches (<a href="privacy.html">Privacy Policy</a>).</span>
+          </label>
+          <button type="submit" class="btn btn-primary form-submit">Notify me</button>
+          <div class="form-status" role="status"></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <footer class="site-footer">

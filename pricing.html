@@ -31,6 +31,7 @@
 <link rel="stylesheet" href="css/themes.css">
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/pages.css">
 <script src="js/i18n-early.js"></script>
 </head>
 <body>
@@ -105,59 +106,93 @@
   </div>
 </header>
 
-<main id="main">
+<main id="main" class="page">
 
-  <section class="hero">
+  <section class="page-hero page-hero-centred">
     <div class="container">
-      <h1>Simple principle: employers pay for reduced risk. Talent never pays to work.</h1>
-      <p class="lede">Today, AdorWorks charges a 0% platform fee while we're in our founding pilot — nothing is deducted from any payment. The model below is what we're validating for later, not a live price list.</p>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="container">
-      <div class="notice notice-violet">
-        <span class="notice-label">Fair recruitment</span>
-        <p class="mt-0 mb-0">Basic talent registration and access to legitimate employment opportunities is free, and always will be. This follows ILO guidance that workers and jobseekers should not be charged recruitment fees or related costs.</p>
-      </div>
-      <div class="notice mt-1">
-        <span class="notice-label">Right now</span>
-        <p class="mt-0 mb-0">AdorWorks is not currently charging a platform fee. Employers pay talent and contractors the full agreed amount directly, with no percentage held back. The table below describes the pricing model we're testing for when fees go live — none of it is in effect today, and we'll announce clearly before that changes.</p>
+      <div class="page-hero-copy">
+        <p class="eyebrow rise">Pricing</p>
+        <h1 class="rise rise-1">Employers pay for reduced risk. <em>Talent never pays to work.</em></h1>
+        <p class="lede rise rise-2">Today, AdorWorks charges a 0% platform fee while we're in our founding pilot — nothing is deducted from any payment. The model below is what we're validating for later, not a live price list.</p>
       </div>
     </div>
   </section>
 
-  <section class="section section-alt">
+  <section class="page-section page-section-tight">
     <div class="container">
-      <div class="section-header">
+      <div class="price-now site-reveal">
+        <div class="price-big"><span>0%</span><small>platform fee today</small></div>
+        <div class="price-notes">
+          <div>
+            <p class="eyebrow">Right now</p>
+            <p>AdorWorks is not currently charging a platform fee. Employers pay talent and contractors the full agreed amount directly, with no percentage held back. The table below describes the pricing model we're testing for when fees go live — none of it is in effect today, and we'll announce clearly before that changes.</p>
+          </div>
+          <div>
+            <p class="eyebrow">Fair recruitment</p>
+            <p>Basic talent registration and access to legitimate employment opportunities is free, and always will be. This follows ILO guidance that workers and jobseekers should not be charged recruitment fees or related costs.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page-section page-band">
+    <div class="container">
+      <div class="section-intro site-reveal">
+        <p class="eyebrow">Not yet charged</p>
         <h2>How employer fees would work, once active</h2>
       </div>
-      <div class="table-wrap">
-        <table class="compare">
-          <thead>
-            <tr><th>Fee</th><th>Who pays</th><th>Model being tested (not yet charged)</th><th>What it covers</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><strong>Marketplace project fee</strong></td><td>Employer</td><td>8–12% of project value</td><td>Matching, contracting, tracking and support</td></tr>
-            <tr><td><strong>Managed project margin</strong></td><td>Employer</td><td>15–25%</td><td>Scoping, team assembly, quality control and accountability</td></tr>
-            <tr><td><strong>Full-time placement</strong></td><td>Employer</td><td>8–15% of first-year compensation, or a fixed fee</td><td>Search, screening and shortlist</td></tr>
-            <tr><td><strong>Contractor administration</strong></td><td>Employer</td><td>5–10% monthly</td><td>Contract, time, invoice and payment coordination</td></tr>
-            <tr><td><strong>Employer subscription</strong></td><td>Employer</td><td>Tiered monthly/annual plan</td><td>Listings, search, priority matching and reporting</td></tr>
-            <tr><td><strong>Sponsored talent programme</strong></td><td>Partner or donor</td><td>Programme budget</td><td>Assessment, training, placement and impact reporting</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="mt-1 text-sm muted">None of the rates above are active — AdorWorks charges 0% today. If and when a fee is switched on for a category, it will be confirmed with you before any engagement is booked, and nothing will ever be charged without your agreement.</p>
+      <ul class="fee-list">
+        <li class="site-reveal">
+          <span class="fee-name">Marketplace project fee</span>
+          <span class="fee-cell"><span class="fee-label">Who pays</span>Employer</span>
+          <span class="fee-cell"><span class="fee-label">Model being tested</span><strong>8–12% of project value</strong></span>
+          <span class="fee-cell"><span class="fee-label">What it covers</span>Matching, contracting, tracking and support</span>
+        </li>
+        <li class="site-reveal">
+          <span class="fee-name">Managed project margin</span>
+          <span class="fee-cell"><span class="fee-label">Who pays</span>Employer</span>
+          <span class="fee-cell"><span class="fee-label">Model being tested</span><strong>15–25%</strong></span>
+          <span class="fee-cell"><span class="fee-label">What it covers</span>Scoping, team assembly, quality control and accountability</span>
+        </li>
+        <li class="site-reveal">
+          <span class="fee-name">Full-time placement</span>
+          <span class="fee-cell"><span class="fee-label">Who pays</span>Employer</span>
+          <span class="fee-cell"><span class="fee-label">Model being tested</span><strong>8–15% of first-year compensation, or a fixed fee</strong></span>
+          <span class="fee-cell"><span class="fee-label">What it covers</span>Search, screening and shortlist</span>
+        </li>
+        <li class="site-reveal">
+          <span class="fee-name">Contractor administration</span>
+          <span class="fee-cell"><span class="fee-label">Who pays</span>Employer</span>
+          <span class="fee-cell"><span class="fee-label">Model being tested</span><strong>5–10% monthly</strong></span>
+          <span class="fee-cell"><span class="fee-label">What it covers</span>Contract, time, invoice and payment coordination</span>
+        </li>
+        <li class="site-reveal">
+          <span class="fee-name">Employer subscription</span>
+          <span class="fee-cell"><span class="fee-label">Who pays</span>Employer</span>
+          <span class="fee-cell"><span class="fee-label">Model being tested</span><strong>Tiered monthly/annual plan</strong></span>
+          <span class="fee-cell"><span class="fee-label">What it covers</span>Listings, search, priority matching and reporting</span>
+        </li>
+        <li class="site-reveal">
+          <span class="fee-name">Sponsored talent programme</span>
+          <span class="fee-cell"><span class="fee-label">Who pays</span>Partner or donor</span>
+          <span class="fee-cell"><span class="fee-label">Model being tested</span><strong>Programme budget</strong></span>
+          <span class="fee-cell"><span class="fee-label">What it covers</span>Assessment, training, placement and impact reporting</span>
+        </li>
+      </ul>
+      <p class="fine-print site-reveal">None of the rates above are active — AdorWorks charges 0% today. If and when a fee is switched on for a category, it will be confirmed with you before any engagement is booked, and nothing will ever be charged without your agreement.</p>
     </div>
   </section>
 
-  <section class="section">
+  <section class="page-section">
     <div class="container">
-      <div class="section-header">
-        <h2>Enterprise and framework pricing</h2>
-        <p>NGOs, larger companies and agencies running recurring needs — talent squads, framework agreements, contractor-of-record support — usually make more sense on a custom arrangement than a per-project fee.</p>
+      <div class="bigger-band site-reveal">
+        <div>
+          <h2>Enterprise and framework pricing</h2>
+          <p>NGOs, larger companies and agencies running recurring needs — talent squads, framework agreements, contractor-of-record support — usually make more sense on a custom arrangement than a per-project fee.</p>
+        </div>
+        <a href="contact.html" class="btn btn-primary">Request a custom quote</a>
       </div>
-      <p><a href="contact.html" class="btn btn-primary">Request a custom quote</a></p>
     </div>
   </section>
 
