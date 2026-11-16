@@ -175,112 +175,16 @@ p { margin: 0 0 1em; }
     border-left: 1px solid var(--color-border);
   }
 
-  /* Each primary nav link gets its own hover motion instead of one
-     shared underline -- picked by position (nth-child), so it works
-     unmodified across every page since the nav markup/order is
-     identical everywhere. Kept deliberately varied in *mechanism* (not
-     just color) while staying within the same restrained vocabulary as
-     the rest of the site: short (200-300ms), small distance, no
-     bounce/rotation/looping. */
-
-  /* 1. Home -- underline sweeps in from the left. */
-  .site-nav ul li:nth-child(1) a { position: relative; }
-  .site-nav ul li:nth-child(1) a::after {
-    content: "";
-    position: absolute;
-    left: 0; right: 0; bottom: -2px;
-    height: 2px;
-    background: var(--color-accent);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.25s ease;
-  }
-  .site-nav ul li:nth-child(1) a:hover::after,
-  .site-nav ul li:nth-child(1) a:focus-visible::after { transform: scaleX(1); }
-
-  /* 2. Services -- letters spread slightly, like the word "opening up". */
-  .site-nav ul li:nth-child(2) a { transition: letter-spacing 0.25s ease, color 0.2s ease; }
-  .site-nav ul li:nth-child(2) a:hover,
-  .site-nav ul li:nth-child(2) a:focus-visible { letter-spacing: 0.04em; color: var(--color-accent-text); }
-
-  /* 3. For Employers -- a small arrow grows in after the label, hinting
-     forward motion toward the employer flow. max-width (not width) so
-     an auto-width inline element can still transition smoothly. */
-  .site-nav ul li:nth-child(3) a::after {
-    content: "\2192";
-    display: inline-block;
-    max-width: 0;
-    margin-left: 0;
-    overflow: hidden;
-    opacity: 0;
-    vertical-align: middle;
-    transition: max-width 0.25s ease, opacity 0.2s ease, margin-left 0.25s ease;
-  }
-  .site-nav ul li:nth-child(3) a:hover::after,
-  .site-nav ul li:nth-child(3) a:focus-visible::after { max-width: 1em; opacity: 1; margin-left: 0.3em; }
-
-  /* 4. For Talent -- underline grows outward from the centre, a
-     different geometry from Home's left-sweep. */
-  .site-nav ul li:nth-child(4) a { position: relative; }
-  .site-nav ul li:nth-child(4) a::after {
-    content: "";
-    position: absolute;
-    left: 50%; right: 50%; bottom: -2px;
-    height: 2px;
-    background: var(--color-secondary);
-    transition: left 0.25s ease, right 0.25s ease;
-  }
-  .site-nav ul li:nth-child(4) a:hover::after,
-  .site-nav ul li:nth-child(4) a:focus-visible::after { left: 0; right: 0; }
-
-  /* 5. Trust & Safety -- lifts into a soft badge/pill, evoking the
-     verified-badge theme of the page itself. Horizontal padding is
-     constant (not just added on hover) so the pill reveal never shifts
-     neighbouring links. */
-  .site-nav ul li:nth-child(5) a {
-    padding-inline: 0.6em;
-    border-radius: 999px;
-    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
-  }
-  .site-nav ul li:nth-child(5) a:hover,
-  .site-nav ul li:nth-child(5) a:focus-visible {
-    background: rgba(0,168,143,0.12);
-    color: var(--color-accent-text);
-    transform: translateY(-2px);
-  }
-
-  /* 6. About -- the softest treatment (lowest-priority link): a gentle
-     fade and scale, no underline/pill at all. */
-  .site-nav ul li:nth-child(6) a { transition: opacity 0.2s ease, transform 0.2s ease, color 0.2s ease; }
-  .site-nav ul li:nth-child(6) a:hover,
-  .site-nav ul li:nth-child(6) a:focus-visible { opacity: 0.72; transform: scale(1.04); color: var(--color-accent-text); }
-
-  /* 7. Post a project -- the CTA button gets a lift distinct from the
-     six text links, on top of .btn-primary's existing shadow hover. */
-  .site-nav .nav-cta .btn { transition: transform 0.15s ease, box-shadow 0.15s ease; }
-  .site-nav .nav-cta .btn:hover,
-  .site-nav .nav-cta .btn:focus-visible { transform: translateY(-2px); }
-
-  @media (prefers-reduced-motion: reduce) {
-    .site-nav ul li a,
-    .site-nav ul li a::after,
-    .site-nav .nav-cta .btn {
-      transition: none;
-    }
-    .site-nav ul li:nth-child(1) a:hover::after,
-    .site-nav ul li:nth-child(5) a:hover,
-    .site-nav ul li:nth-child(6) a:hover,
-    .site-nav .nav-cta .btn:hover {
-      transform: none;
-    }
-  }
+  /* (The per-position hover animations that used to live here were
+     removed in the 2026 redesign: they depended on the old menu order.
+     One consistent underline, below, applies to every top-level link.) */
 }
 
 /* The homepage navigation is outcome-led, so every text link uses one
    consistent interaction instead of relying on a link's position. This
    also keeps the treatment correct if the navigation order changes. */
 @media (min-width: 960px) {
-  .site-nav ul li:not(.nav-cta) a {
+  .site-nav > ul > li:not(.nav-cta) > a {
     position: relative !important;
     padding-inline: 0 !important;
     border-radius: 0 !important;
@@ -289,7 +193,7 @@ p { margin: 0 0 1em; }
     transform: none !important;
     background: transparent !important;
   }
-  .site-nav ul li:not(.nav-cta) a::after {
+  .site-nav > ul > li:not(.nav-cta) > a::after {
     content: "" !important;
     position: absolute !important;
     display: block !important;
@@ -307,11 +211,11 @@ p { margin: 0 0 1em; }
     transform-origin: center !important;
     transition: transform 0.2s ease !important;
   }
-  .site-nav ul li:not(.nav-cta) a:hover,
-  .site-nav ul li:not(.nav-cta) a:focus-visible { color: var(--color-accent-text); }
-  .site-nav ul li:not(.nav-cta) a:hover::after,
-  .site-nav ul li:not(.nav-cta) a:focus-visible::after,
-  .site-nav ul li:not(.nav-cta) a[aria-current="page"]::after { transform: scaleX(1) !important; }
+  .site-nav > ul > li:not(.nav-cta) > a:hover,
+  .site-nav > ul > li:not(.nav-cta) > a:focus-visible { color: var(--color-accent-text); }
+  .site-nav > ul > li:not(.nav-cta) > a:hover::after,
+  .site-nav > ul > li:not(.nav-cta) > a:focus-visible::after,
+  .site-nav > ul > li:not(.nav-cta) > a[aria-current="page"]::after { transform: scaleX(1) !important; }
 }
 
 /* Services mega-menu: a disclosure button + controlled panel (see
