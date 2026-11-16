@@ -7,6 +7,8 @@ import { StatePanel } from "@/components/state-panel";
 import { canOpenStaffPath, canUseStaffArea, STAFF_ROLE_DESCRIPTIONS } from "@/lib/domain/staffAccess";
 import { USER_ROLE_LABELS } from "@/lib/domain/roles";
 import { TrendBars } from "@/components/trend-bars";
+import { loadWorkQueue } from "@/lib/dal/workQueue";
+import { WorkList } from "./work-list";
 
 export const metadata: Metadata = { title: "Operations" };
 export const dynamic = "force-dynamic";
@@ -90,7 +92,8 @@ export default async function OperationsPage() {
   trendCutoff.setDate(trendCutoff.getDate() - (TREND_DAYS - 1));
   const trendCutoffIso = trendCutoff.toISOString().slice(0, 10);
 
-  const [counts, recent, newOpportunities, newApplications] = await Promise.all([
+  const [work, counts, recent, newOpportunities, newApplications] = await Promise.all([
+    loadWorkQueue(db, session.role),
     Promise.all(groups.map((g) => Promise.all(g.tiles.map(count)))),
     db
       .from("intake_submissions")
@@ -112,6 +115,8 @@ export default async function OperationsPage() {
         Your queues as {USER_ROLE_LABELS[session.role]}
         {STAFF_ROLE_DESCRIPTIONS[session.role] ? ` — ${STAFF_ROLE_DESCRIPTIONS[session.role].toLowerCase()}` : ""}. Every number is a live count.
       </p>
+
+      <WorkList items={work.items} failed={work.failed} now={work.now} />
 
       {failed.length > 0 && (
         <div className="mt-6">
