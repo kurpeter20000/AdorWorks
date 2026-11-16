@@ -830,6 +830,31 @@ export type InterviewSlotRow = {
   reminded_1h_at: string | null;
 };
 
+/** 0114: where a talent wants to be paid. */
+export type TalentPayoutMethodRow = {
+  talent_id: string;
+  method: "bank" | "mtn_momo" | "mgurush";
+  phone: string | null;
+  bank_name: string | null;
+  account_name: string | null;
+  account_number: string | null;
+  updated_at: string;
+};
+
+/** 0114: a person's alert settings. */
+export type AlertPreferencesRow = {
+  user_id: string;
+  whatsapp_enabled: boolean;
+  whatsapp_number: string | null;
+  application_updates: boolean;
+  new_matching_work: boolean;
+  messages: boolean;
+  quiet_from: string | null;
+  quiet_until: string | null;
+  timezone: string;
+  updated_at: string;
+};
+
 export type VouchRow = {
   id: string;
   talent_id: string;
@@ -1237,6 +1262,18 @@ export type Database = {
         Row: InterviewSlotRow;
         Insert: Partial<InterviewSlotRow> & { application_id: string; starts_at: string };
         Update: Partial<InterviewSlotRow>;
+        Relationships: [];
+      };
+      talent_payout_methods: {
+        Row: TalentPayoutMethodRow;
+        Insert: Partial<TalentPayoutMethodRow> & { talent_id: string; method: TalentPayoutMethodRow["method"] };
+        Update: Partial<TalentPayoutMethodRow>;
+        Relationships: [];
+      };
+      alert_preferences: {
+        Row: AlertPreferencesRow;
+        Insert: Partial<AlertPreferencesRow> & { user_id: string };
+        Update: Partial<AlertPreferencesRow>;
         Relationships: [];
       };
       vouches: {

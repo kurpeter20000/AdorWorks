@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Stepper } from "@/components/ui/status";
+import { MILESTONE_STEPS, milestoneTimelineStep } from "@/lib/domain/milestoneTimeline";
 import { ensureContractTerms } from "@/lib/dal/contractTerms";
 import { SignContractPanel, type SignatureState } from "./sign-contract-panel";
 import dynamic from "next/dynamic";
@@ -256,6 +258,21 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                 </div>
                 <StatusBadge state={MILESTONE_STATES[m.status]} className="whitespace-nowrap" />
               </div>
+              {(() => {
+                const step = milestoneTimelineStep(m.status, payment?.escrow_status);
+                if (step === null) return null;
+                return (
+                  <div className="mt-3 flex items-center gap-3">
+                    <Stepper
+                      className="w-full max-w-64"
+                      steps={[...MILESTONE_STEPS]}
+                      current={step}
+                      label={`Payment step ${step + 1} of ${MILESTONE_STEPS.length}: ${MILESTONE_STEPS[step]}`}
+                    />
+                    <span className="text-xs font-semibold whitespace-nowrap text-slate">{MILESTONE_STEPS[step]}</span>
+                  </div>
+                );
+              })()}
 
               {deliverable && (
                 <div className="mt-3 rounded-lg bg-cloud p-3 text-sm">
