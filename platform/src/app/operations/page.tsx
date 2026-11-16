@@ -9,6 +9,8 @@ import { USER_ROLE_LABELS } from "@/lib/domain/roles";
 import { TrendBars } from "@/components/trend-bars";
 import { loadWorkQueue } from "@/lib/dal/workQueue";
 import { WorkList } from "./work-list";
+import { HealthPanel } from "./health-panel";
+import { loadPlatformHealth } from "@/lib/dal/platformHealth";
 
 export const metadata: Metadata = { title: "Operations" };
 export const dynamic = "force-dynamic";
@@ -92,8 +94,9 @@ export default async function OperationsPage() {
   trendCutoff.setDate(trendCutoff.getDate() - (TREND_DAYS - 1));
   const trendCutoffIso = trendCutoff.toISOString().slice(0, 10);
 
-  const [work, counts, recent, newOpportunities, newApplications] = await Promise.all([
+  const [work, health, counts, recent, newOpportunities, newApplications] = await Promise.all([
     loadWorkQueue(db, session.role),
+    loadPlatformHealth(),
     Promise.all(groups.map((g) => Promise.all(g.tiles.map(count)))),
     db
       .from("intake_submissions")
@@ -117,6 +120,7 @@ export default async function OperationsPage() {
       </p>
 
       <WorkList items={work.items} failed={work.failed} now={work.now} />
+      <HealthPanel {...health} />
 
       {failed.length > 0 && (
         <div className="mt-6">
