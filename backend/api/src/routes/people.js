@@ -341,7 +341,7 @@ peopleRouter.post(
       // The status flip above already blocks every page/Server Action —
       // log this but don't fail the whole request over the session-
       // termination half, which is defense in depth, not the primary control.
-      console.error(`suspend: could not rotate password for ${req.params.id}: ${passwordError.message}`);
+      console.error("suspend: could not rotate password for %s: %s", req.params.id, passwordError.message);
     }
 
     await logAuditEvent(supabaseAdmin, {

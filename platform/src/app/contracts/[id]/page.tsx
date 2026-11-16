@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { ensureContractTerms } from "@/lib/dal/contractTerms";
+import { SignContractPanel, type SignatureState } from "./sign-contract-panel";
 import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
 import { StatusBadge } from "@/components/status-badge";
@@ -178,6 +180,24 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
     theirReview = (reviews ?? []).find((r) => r.reviewer_role !== myRole) ?? null;
   }
 
+  // 0113: who has signed the current written terms.
+  let signature: SignatureState | null = null;
+  if (isTalent || isEmployer) {
+    const terms = await ensureContractTerms(contract.id, session.userId);
+    if (terms) {
+      const { data: sigs } = await supabase
+        .from("contract_signatures")
+        .select("party, signed_at")
+        .eq("contract_id", contract.id)
+        .eq("terms_version", terms.version);
+      signature = {
+        termsVersion: terms.version,
+        talentSignedAt: sigs?.find((x) => x.party === "talent")?.signed_at ?? null,
+        organisationSignedAt: sigs?.find((x) => x.party === "organisation")?.signed_at ?? null,
+      };
+    }
+  }
+
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <h1 className="text-2xl font-extrabold text-midnight">{contractTitle ?? "Contract"}</h1>
@@ -191,6 +211,15 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
         </Link>
         <span className="text-slate"> — parties, work, duration and pay, ready to print.</span>
       </p>
+
+      {signature && (isTalent || isEmployer) && (
+        <SignContractPanel
+          contractId={contract.id}
+          viewerParty={isTalent ? "talent" : "organisation"}
+          state={signature}
+          names={{ talent: talent?.display_name ?? "Talent", organisation: org?.name ?? "Organisation" }}
+        />
+      )}
 
       {contract.status === "completed" && (
         <p className="mt-4 rounded-lg bg-violet/10 px-4 py-3 text-sm font-semibold text-violet">

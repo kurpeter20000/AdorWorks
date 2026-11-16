@@ -13,6 +13,7 @@ import { SendOfferForm } from "./send-offer-form";
 import { ShortlistingModeForm } from "./shortlisting-mode-form";
 import { ShortlistActions } from "./shortlist-actions";
 import { BulkDecisionPanel } from "./bulk-decision-panel";
+import { InterviewSlotsForm, type ExistingSlot } from "@/components/interview-slots-form";
 import { CHANGE_FIELDS, isChangeField } from "@/lib/domain/changeFields";
 import { RemoveFromShortlistButton } from "./remove-from-shortlist-button";
 import { OpportunityAttachments } from "./opportunity-attachments";
@@ -122,6 +123,18 @@ export default async function OpportunityDetailPage({
     notesByApplication.set(n.application_id, list);
   }
   const interviewByApplication = new Map((interviewDetails ?? []).map((i) => [i.id, i]));
+
+  // 0113: interview times offered or booked, per application.
+  const { data: slotRows } =
+    applicationIds.length > 0
+      ? await supabase.from("interview_slots").select("id, application_id, starts_at, mode, details, status").in("application_id", applicationIds).order("starts_at")
+      : { data: [] };
+  const slotsByApplication = new Map<string, ExistingSlot[]>();
+  for (const sl of slotRows ?? []) {
+    const list = slotsByApplication.get(sl.application_id) ?? [];
+    list.push(sl);
+    slotsByApplication.set(sl.application_id, list);
+  }
 
   const noteAuthorIds = [...new Set((notes ?? []).map((n) => n.author_id))];
   const { data: noteAuthors } =
@@ -327,6 +340,10 @@ export default async function OpportunityDetailPage({
                   ) : a.stage === "shortlisted" && a.source === "matched" ? (
                     <RemoveFromShortlistButton applicationId={a.id} opportunityId={opportunity.id} />
                   ) : null}
+
+                  {["shortlisted", "interviewing"].includes(a.stage) && !offer && (
+                    <InterviewSlotsForm applicationId={a.id} existing={slotsByApplication.get(a.id) ?? []} />
+                  )}
 
                   <ApplicantEvaluationPanel
                     applicationId={a.id}

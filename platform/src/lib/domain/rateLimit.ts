@@ -110,7 +110,7 @@ export async function checkAndRecordAttempt(
 
     return { allowed: allowed ?? true };
   } catch (err) {
-    console.error(`rate limit check failed for ${action}/${identifier}, failing open:`, err);
+    console.error("rate limit check failed for %s/%s, failing open:", action, identifier, err);
     return { allowed: true };
   }
 }

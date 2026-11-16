@@ -11,6 +11,7 @@ import { rich } from "@/i18n/rich";
 import { must } from "@/lib/dal/must";
 import { Stepper } from "@/components/ui/status";
 import { APPLICATION_STEPS, applicationProgress } from "@/lib/domain/applicationProgress";
+import { InterviewPicker, type PickableSlot } from "./interview-picker";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
@@ -68,6 +69,20 @@ export default async function ApplicationsPage({
   const orgNameById = new Map((orgs ?? []).map((o) => [o.id, o.name]));
 
   const applicationIds = (applications ?? []).map((a) => a.id);
+  // 0113: interview times offered or booked.
+  const { data: slotRows } = must(applicationIds.length > 0
+    ? await supabase
+        .from("interview_slots")
+        .select("id, application_id, starts_at, duration_minutes, mode, details, status")
+        .in("application_id", applicationIds)
+        .in("status", ["offered", "chosen"])
+        .order("starts_at")
+    : { data: [] }, "interview slots");
+  const slotsByApplication = new Map<string, PickableSlot[]>();
+  for (const sl of slotRows ?? []) {
+    if (sl.status === "offered" && Date.parse(sl.starts_at) < requestTime()) continue;
+    slotsByApplication.set(sl.application_id, [...(slotsByApplication.get(sl.application_id) ?? []), sl]);
+  }
   const { data: conversations } =
     must(applicationIds.length > 0
       ? await supabase.from("conversations").select("id, application_id").in("application_id", applicationIds)
@@ -195,6 +210,9 @@ export default async function ApplicationsPage({
                     t(progress.next, progress.vars)
                   )}
                 </p>
+                {(a.stage === "shortlisted" || a.stage === "interviewing") && (slotsByApplication.get(a.id) ?? []).length > 0 && (
+                  <InterviewPicker slots={slotsByApplication.get(a.id)!} />
+                )}
                 {/* The reason is written for the talent: the employer's kind
                     decline note, the 14-day auto-close note (0110) or the
                     "no longer accepting applications" cascade. */}

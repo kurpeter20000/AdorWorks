@@ -194,7 +194,7 @@ reportsRouter.patch(
         body: outcome.body(what),
         link: null,
       });
-      if (noteError) console.error(`reports: could not notify reporter of ${req.params.id}: ${noteError.message}`);
+      if (noteError) console.error("reports: could not notify reporter of %s: %s", req.params.id, noteError.message);
     }
 
     res.json({ data });

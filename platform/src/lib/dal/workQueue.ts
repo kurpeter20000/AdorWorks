@@ -333,7 +333,7 @@ export async function loadWorkQueue(db: SupabaseClient, role: UserRole): Promise
   results.forEach((r, i) => {
     if (r.status === "fulfilled") items.push(...r.value);
     else {
-      console.error(`[work-queue] "${queues[i].name}" failed:`, r.reason);
+      console.error("[work-queue] \"%s\" failed:", queues[i].name, r.reason);
       failed.push(queues[i].name);
     }
   });

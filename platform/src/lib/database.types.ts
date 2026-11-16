@@ -433,6 +433,8 @@ export type OfferRow = {
   created_by: string;
   created_at: string;
   responded_at: string | null;
+  /** 0113: the talent must answer by this time. */
+  expires_at: string | null;
 }
 
 export type ContractRow = {
@@ -800,6 +802,32 @@ export type AccountAppealRow = {
   decided_at: string | null;
   decision_note: string | null;
   created_at: string;
+};
+
+/** 0113: one side's confirmation of a contract's written terms. */
+export type ContractSignatureRow = {
+  id: string;
+  contract_id: string;
+  terms_version: number;
+  content_hash: string;
+  party: "talent" | "organisation";
+  signed_by: string | null;
+  signed_at: string;
+};
+
+/** 0113: a time offered for an interview. */
+export type InterviewSlotRow = {
+  id: string;
+  application_id: string;
+  starts_at: string;
+  duration_minutes: number;
+  mode: "video" | "phone" | "in_person";
+  details: string | null;
+  status: "offered" | "chosen" | "declined" | "cancelled";
+  created_by: string | null;
+  created_at: string;
+  reminded_24h_at: string | null;
+  reminded_1h_at: string | null;
 };
 
 export type VouchRow = {
@@ -1197,6 +1225,18 @@ export type Database = {
         Row: AccountAppealRow;
         Insert: Partial<AccountAppealRow> & { profile_id: string; message: string };
         Update: Partial<AccountAppealRow>;
+        Relationships: [];
+      };
+      contract_signatures: {
+        Row: ContractSignatureRow;
+        Insert: Partial<ContractSignatureRow> & { contract_id: string; terms_version: number; content_hash: string; party: "talent" | "organisation" };
+        Update: Partial<ContractSignatureRow>;
+        Relationships: [];
+      };
+      interview_slots: {
+        Row: InterviewSlotRow;
+        Insert: Partial<InterviewSlotRow> & { application_id: string; starts_at: string };
+        Update: Partial<InterviewSlotRow>;
         Relationships: [];
       };
       vouches: {

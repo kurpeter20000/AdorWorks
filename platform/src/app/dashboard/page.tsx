@@ -75,7 +75,7 @@ export default async function DashboardPage({
   // instead of a panel listing every field as missing.
   let readinessState = null;
   let recommendedOpportunities: { id: string; title: string; compensationLabel: string; orgName: string; matched: number; asked: number }[] = [];
-  const talentAttention: { href: string; label: string; count: number; tone: "warning" | "danger" | "info" }[] = [];
+  const talentAttention: { href: string; label: string; count: number; tone: "warning" | "danger" | "info"; meta?: string }[] = [];
   const employerPipeline: { href: string; label: string; count: number; tone: "warning" | "danger" | "info"; meta?: string }[] = [];
   // Real counts only (see the "skip the wallet card" decision) — every
   // number here comes from a query scoped to this org, same discipline as
@@ -122,8 +122,8 @@ export default async function DashboardPage({
         .limit(50),
       supabase.from("applications").select("opportunity_id").eq("talent_id", session.userId),
       supabase.from("dismissed_opportunities").select("opportunity_id").eq("talent_id", session.userId),
-      supabase.from("offers").select("id", { count: "exact", head: true }).eq("talent_id", session.userId).eq("status", "sent"),
-      supabase.from("contracts").select("id").eq("talent_id", session.userId),
+      supabase.from("offers").select("expires_at").eq("talent_id", session.userId).eq("status", "sent").not("opportunity_id", "is", null),
+      supabase.from("contracts").select("id, status").eq("talent_id", session.userId),
       supabase
         .from("applications")
         .select("id", { count: "exact", head: true })
@@ -137,7 +137,9 @@ export default async function DashboardPage({
     const openOpportunities = openOppsRes.data;
     const myApplications = myApplicationsRes.data;
     const dismissed = dismissedRes.data;
-    const pendingOffers = offersRes.count;
+    // 0113: offers past their deadline can't be accepted, so they aren't "waiting".
+    const liveOfferDeadlines = (offersRes.data ?? []).map((o) => o.expires_at).filter((e): e is string => !e || !isPast(e)).sort();
+    const pendingOffers = liveOfferDeadlines.length;
     const myContracts = contractsRes.data;
     const upcomingInterviews = interviewsRes.count;
 
@@ -163,6 +165,29 @@ export default async function DashboardPage({
     }
 
     const contractIds = (myContracts ?? []).map((c) => c.id);
+    const activeContractIds = (myContracts ?? []).filter((c) => c.status === "active").map((c) => c.id);
+    // 0113: interview times waiting for a pick, and contracts not yet signed.
+    const [slotsRes, mySignaturesRes] = await Promise.all([
+      supabase.from("interview_slots").select("application_id").eq("status", "offered").gt("starts_at", new Date().toISOString()),
+      activeContractIds.length > 0
+        ? supabase.from("contract_signatures").select("contract_id").eq("party", "talent").in("contract_id", activeContractIds)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+    if (slotsRes.error || mySignaturesRes.error) todayDataError = true;
+    const interviewsToPick = new Set((slotsRes.data ?? []).map((r) => r.application_id)).size;
+    const signedContracts = new Set((mySignaturesRes.data ?? []).map((r) => r.contract_id));
+    const unsignedContracts = activeContractIds.filter((id) => !signedContracts.has(id));
+    if (interviewsToPick > 0) {
+      talentAttention.push({ href: "/applications", label: msg("Interview times to pick"), count: interviewsToPick, tone: "warning" });
+    }
+    if (unsignedContracts.length > 0) {
+      talentAttention.push({
+        href: unsignedContracts.length === 1 ? `/contracts/${unsignedContracts[0]}` : "/contracts",
+        label: msg("Contracts to sign"),
+        count: unsignedContracts.length,
+        tone: "danger",
+      });
+    }
     const [revisionRes, awaitingSubmissionRes, serviceRequestsRes] = await Promise.all([
       contractIds.length > 0
         ? supabase.from("milestones").select("id", { count: "exact", head: true }).in("contract_id", contractIds).eq("status", "revision_requested")
@@ -186,7 +211,14 @@ export default async function DashboardPage({
     const serviceRequestsCount = serviceRequestsRes.count ?? 0;
     const upcomingInterviewsCount = upcomingInterviews ?? 0;
     if (pendingOffersCount > 0) {
-      talentAttention.push({ href: "/offers", label: msg("Offers awaiting your response"), count: pendingOffersCount, tone: "warning" });
+      const soonest = liveOfferDeadlines[0];
+      talentAttention.push({
+        href: "/offers",
+        label: msg("Offers awaiting your response"),
+        count: pendingOffersCount,
+        tone: "warning",
+        meta: soonest ? t("Respond by {date}", { date: formatDate(soonest, { weekday: "short", day: "numeric", month: "short" }) }) : undefined,
+      });
     }
     if (serviceRequestsCount > 0) {
       talentAttention.push({ href: "/passport/services/requests", label: msg("Service requests awaiting your response"), count: serviceRequestsCount, tone: "warning" });
@@ -266,7 +298,7 @@ export default async function DashboardPage({
       const [orgOppsRes, offersRes, orgContractsRes] = await Promise.all([
         supabase.from("opportunities").select("id, shortlisting_mode, title, status, type, created_at").eq("organisation_id", membership.org.id).order("created_at", { ascending: false }),
         supabase.from("offers").select("id", { count: "exact", head: true }).eq("organisation_id", membership.org.id).eq("status", "sent"),
-        supabase.from("contracts").select("id").eq("organisation_id", membership.org.id),
+        supabase.from("contracts").select("id, status").eq("organisation_id", membership.org.id),
       ]);
       if (orgOppsRes.error || offersRes.error || orgContractsRes.error) todayDataError = true;
       const orgOpportunities = orgOppsRes.data;
@@ -334,6 +366,26 @@ export default async function DashboardPage({
 
       if (applicationsAwaiting > 0) {
         employerPipeline.push({ href: "/organisation", label: msg("Applicants awaiting review"), count: applicationsAwaiting, tone: "info" });
+      }
+      // 0113: contracts the organisation hasn't signed yet.
+      const activeOrgContracts = (orgContracts ?? []).filter((c) => c.status === "active").map((c) => c.id);
+      if (activeOrgContracts.length > 0) {
+        const { data: orgSigs, error: orgSigsError } = await supabase
+          .from("contract_signatures")
+          .select("contract_id")
+          .eq("party", "organisation")
+          .in("contract_id", activeOrgContracts);
+        if (orgSigsError) todayDataError = true;
+        const signed = new Set((orgSigs ?? []).map((r) => r.contract_id));
+        const unsigned = activeOrgContracts.filter((id) => !signed.has(id));
+        if (unsigned.length > 0) {
+          employerPipeline.push({
+            href: unsigned.length === 1 ? `/contracts/${unsigned[0]}` : "/contracts",
+            label: msg("Contracts to sign"),
+            count: unsigned.length,
+            tone: "danger",
+          });
+        }
       }
       if (deliverablesToReview > 0) {
         employerPipeline.push({ href: "/contracts", label: msg("Deliverables awaiting your review"), count: deliverablesToReview, tone: "warning" });
@@ -729,12 +781,15 @@ function pickNextStep({
     kind === "employer"
       ? [
           { label: "Milestones ready to pay", title: t("Approve and pay a milestone"), cta: t("Review and pay"), tone: "urgent" },
+          { label: "Contracts to sign", title: t("Sign the contract"), cta: t("Read and sign"), tone: "urgent" },
           { label: "Deliverables awaiting your review", title: t("Review submitted work"), cta: t("Review work"), tone: "urgent" },
           { label: "Applicants awaiting review", title: t("Decide on your applicants"), cta: t("Review applicants"), tone: "waiting" },
           { label: "Opportunities with changes requested", title: t("Staff asked for changes to your opportunity"), cta: t("Fix and resubmit"), tone: "waiting" },
         ]
       : [
           { label: "Offers awaiting your response", title: t("Respond to your offer"), cta: t("Review offer"), tone: "urgent" },
+          { label: "Interview times to pick", title: t("Pick a time for your interview"), cta: t("Pick a time"), tone: "urgent" },
+          { label: "Contracts to sign", title: t("Sign your contract"), cta: t("Read and sign"), tone: "urgent" },
           { label: "Milestones needing a resubmission", title: t("Resubmit a milestone"), cta: t("Open contract"), tone: "urgent" },
           { label: "Upcoming interviews", title: t("Get ready for your interview"), cta: t("See details"), tone: "waiting" },
           { label: "Service requests awaiting your response", title: t("Reply to a service request"), cta: t("Respond"), tone: "waiting" },
@@ -769,6 +824,11 @@ function pickNextStep({
     );
   }
   return null;
+}
+
+/** Has this ISO time passed? (kept out of render: reads the clock) */
+function isPast(iso: string): boolean {
+  return Date.parse(iso) < Date.now();
 }
 
 /** Whole days since an ISO time (kept out of render: reads the clock). */
