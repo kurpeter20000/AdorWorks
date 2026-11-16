@@ -32,3 +32,16 @@ export function splitList(value) {
     .map((s) => s.trim())
     .filter(Boolean);
 }
+
+/**
+ * What a staff member typed into the lookup box: an email, an account id,
+ * a phone number (last 6+ digits are enough), or part of a name.
+ */
+export function lookupKind(raw) {
+  const value = raw.trim();
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return { kind: "email", value: value.toLowerCase() };
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) return { kind: "id", value: value.toLowerCase() };
+  const digits = value.replace(/[\s()+-]/g, "");
+  if (/^\d{6,15}$/.test(digits)) return { kind: "phone", value: digits.replace(/^0+/, "").slice(-9) };
+  return { kind: "name", value: value.replace(/[%_,()]/g, " ").trim() };
+}

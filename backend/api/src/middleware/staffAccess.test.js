@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { requireStaffArea, STAFF_API_ACCESS, STAFF_ROLES } from "./staffAccess.js";
+import { requireStaffArea, requireRoleIn, STAFF_API_ACCESS, STAFF_ROLES } from "./staffAccess.js";
 
 function call(area, role, method = "GET") {
   let status = 200;
@@ -51,5 +51,19 @@ describe("staff areas (Phase B2)", () => {
     for (const { read, write } of Object.values(STAFF_API_ACCESS)) {
       for (const role of [...read, ...write]) expect(STAFF_ROLES.has(role)).toBe(true);
     }
+  });
+
+  it("people: support roles look up and keep notes; only Trust & Safety suspends", () => {
+    expect(call("people", "field_support", "GET")).toBe(200);
+    expect(call("people", "field_support", "POST")).toBe(200); // notes
+    expect(call("people", "reviewer", "GET")).toBe(403);
+    const guard = (role) => {
+      let ok = false;
+      requireRoleIn("trust_safety")({ user: { role } }, { status() { return this; }, json() { return this; } }, () => { ok = true; });
+      return ok;
+    };
+    expect(guard("trust_safety")).toBe(true);
+    expect(guard("admin")).toBe(true);
+    expect(guard("field_support")).toBe(false);
   });
 });

@@ -2,16 +2,21 @@ import { Router } from "express";
 import { randomInt } from "crypto";
 import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
-import { requireAuth, requireAdmin } from "../middleware/auth.js";
-import { STAFF_ROLES } from "../middleware/staffAccess.js";
+import { requireAuth, requireAdmin, requireStaff } from "../middleware/auth.js";
+import { STAFF_ROLES, requireStaffArea, requireRoleIn } from "../middleware/staffAccess.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
 import { logAuditEvent } from "../audit.js";
 import { findUserByEmail } from "../findUserByEmail.js";
+import { lookupKind } from "../lookups.js";
 
 export const peopleRouter = Router();
-// Admin-only: this is a directory across every role (including other
-// staff), which is more than a reviewer/matcher/finance account needs.
-peopleRouter.use(requireAuth, requireAdmin);
+// Phase B3a: Trust & Safety and Field support can look people up and
+// keep notes (spec: "staff never need the database for support"); only
+// Trust & Safety and admins suspend, reinstate or decide appeals; staff
+// accounts, roles and the audit log stay admin-only. Non-admins never
+// see staff accounts in search results.
+peopleRouter.use(requireAuth, requireStaff, requireStaffArea("people"));
+const requireTrustSafety = requireRoleIn("trust_safety");
 
 const ROLES = [
   "talent",
@@ -33,7 +38,7 @@ const ROLES = [
 const listQuerySchema = z.object({
   role: z.enum(ROLES).optional(),
   status: z.enum(["active", "suspended", "deleted"]).optional(),
-  q: z.string().optional(), // matches full_name
+  q: z.string().trim().max(200).optional(), // name, email, phone or account id
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });
@@ -50,13 +55,26 @@ peopleRouter.get(
     // list can show it directly.
     let q = supabaseAdmin
       .from("profiles")
-      .select("id, role, status, full_name, phone, created_at, policy_consent_at, policy_version, policy_consent_source", { count: "exact" })
+      .select("id, role, status, full_name, phone, created_at, policy_consent_at, policy_version, policy_consent_source, suspended_reason", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(query.offset, query.offset + query.limit - 1);
 
     if (query.role) q = q.eq("role", query.role);
     if (query.status) q = q.eq("status", query.status);
-    if (query.q) q = q.ilike("full_name", `%${query.q}%`);
+    if (req.user.role !== "admin") q = q.not("role", "in", `(${[...STAFF_ROLES].join(",")})`);
+    const lookup = query.q ? lookupKind(query.q) : null;
+    if (lookup?.kind === "email") {
+      const { user, error: findError } = await findUserByEmail(supabaseAdmin, lookup.value);
+      if (findError) throw new HttpError(500, findError);
+      if (!user) return res.json({ data: [], count: 0 });
+      q = q.eq("id", user.id);
+    } else if (lookup?.kind === "id") {
+      q = q.eq("id", lookup.value);
+    } else if (lookup?.kind === "phone") {
+      q = q.ilike("phone", `%${lookup.value}%`);
+    } else if (lookup) {
+      q = q.ilike("full_name", `%${lookup.value}%`);
+    }
 
     const { data: profiles, error, count } = await q;
     if (error) throw new HttpError(500, error.message);
@@ -107,6 +125,7 @@ const addStaffSchema = z.object({
 // logged — the admin relays it to the person directly.
 peopleRouter.post(
   "/staff",
+  requireAdmin,
   asyncRoute(async (req, res) => {
     const v = addStaffSchema.parse(req.body);
 
@@ -205,6 +224,7 @@ const roleUpdateSchema = z.object({ role: z.enum(ROLES) });
 // non-staff-toggle role change.
 peopleRouter.patch(
   "/:id/role",
+  requireAdmin,
   asyncRoute(async (req, res) => {
     const { role } = roleUpdateSchema.parse(req.body);
     const { data: before } = await supabaseAdmin.from("profiles").select("role").eq("id", req.params.id).maybeSingle();
@@ -255,6 +275,7 @@ peopleRouter.patch(
 // admin a way to sign in as them.
 peopleRouter.post(
   "/:id/force-reauth",
+  requireAdmin,
   asyncRoute(async (req, res) => {
     const newPassword = generateTemporaryPassword(24);
     const { error } = await supabaseAdmin.auth.admin.updateUserById(req.params.id, { password: newPassword });
@@ -283,14 +304,18 @@ const suspendSchema = z.object({
 // attempt after their current access token would otherwise still work.
 peopleRouter.post(
   "/:id/suspend",
+  requireTrustSafety,
   asyncRoute(async (req, res) => {
     const { reason } = suspendSchema.parse(req.body);
     if (req.params.id === req.user.id) {
       throw new HttpError(400, "You can't suspend your own account.");
     }
 
-    const { data: before } = await supabaseAdmin.from("profiles").select("status").eq("id", req.params.id).maybeSingle();
+    const { data: before } = await supabaseAdmin.from("profiles").select("status, role").eq("id", req.params.id).maybeSingle();
     if (!before) throw new HttpError(404, "Account not found.");
+    if (STAFF_ROLES.has(before.role) && req.user.role !== "admin") {
+      throw new HttpError(403, "Only an admin can suspend a staff account.");
+    }
     if (before.status === "suspended") throw new HttpError(409, "This account is already suspended.");
     if (before.status === "deleted") throw new HttpError(409, "This account has been deleted.");
 
@@ -338,42 +363,143 @@ const reinstateSchema = z.object({
   reason: z.string().trim().min(10, "Explain why — at least 10 characters."),
 });
 
+async function reinstateAccount(profileId, actorId, reason) {
+  const { data: before } = await supabaseAdmin.from("profiles").select("status").eq("id", profileId).maybeSingle();
+  if (!before) throw new HttpError(404, "Account not found.");
+  if (before.status !== "suspended") throw new HttpError(409, "This account isn't currently suspended.");
+
+  const { data, error } = await supabaseAdmin
+    .from("profiles")
+    .update({ status: "active", reinstated_at: new Date().toISOString(), reinstated_by: actorId })
+    .eq("id", profileId)
+    .select("id, role, status, full_name, created_at")
+    .single();
+  if (error) throw new HttpError(400, error.message);
+
+  await logAuditEvent(supabaseAdmin, {
+    name: "identity.account.reinstated",
+    actorId,
+    subjectId: profileId,
+    entityType: "profiles",
+    entityId: profileId,
+    reason,
+    before: { status: "suspended" },
+    after: { status: "active" },
+  });
+  return data;
+}
+
 // POST /api/people/:id/reinstate — the reverse of suspend. Only valid
 // from 'suspended' — reinstating a 'deleted' account isn't the same
 // decision and isn't offered here.
 peopleRouter.post(
   "/:id/reinstate",
+  requireTrustSafety,
   asyncRoute(async (req, res) => {
     const { reason } = reinstateSchema.parse(req.body);
+    const data = await reinstateAccount(req.params.id, req.user.id, reason);
+    res.json({ data });
+  })
+);
 
-    const { data: before } = await supabaseAdmin.from("profiles").select("status").eq("id", req.params.id).maybeSingle();
-    if (!before) throw new HttpError(404, "Account not found.");
-    if (before.status !== "suspended") throw new HttpError(409, "This account isn't currently suspended.");
+// ---------------------------------------------------------------------
+// Staff notes on a person (0112): append-only, visible to staff only.
+// ---------------------------------------------------------------------
+const noteSchema = z.object({ body: z.string().trim().min(2, "Write a note.").max(4000) });
 
+peopleRouter.get(
+  "/:id/notes",
+  asyncRoute(async (req, res) => {
     const { data, error } = await supabaseAdmin
-      .from("profiles")
-      .update({
-        status: "active",
-        reinstated_at: new Date().toISOString(),
-        reinstated_by: req.user.id,
-      })
-      .eq("id", req.params.id)
-      .select("id, role, status, full_name, created_at")
+      .from("staff_notes")
+      .select("id, body, created_at, author_id, profiles!staff_notes_author_id_fkey(full_name)")
+      .eq("subject_id", req.params.id)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw new HttpError(500, error.message);
+    res.json({ data: data.map(({ profiles: author, ...n }) => ({ ...n, author_name: author?.full_name ?? "Staff" })) });
+  })
+);
+
+peopleRouter.post(
+  "/:id/notes",
+  asyncRoute(async (req, res) => {
+    const { body } = noteSchema.parse(req.body);
+    const { data, error } = await supabaseAdmin
+      .from("staff_notes")
+      .insert({ subject_id: req.params.id, author_id: req.user.id, body })
+      .select("id, body, created_at")
       .single();
     if (error) throw new HttpError(400, error.message);
-
     await logAuditEvent(supabaseAdmin, {
-      name: "identity.account.reinstated",
+      name: "case.staff_note.added",
       actorId: req.user.id,
       subjectId: req.params.id,
-      entityType: "profiles",
-      entityId: req.params.id,
-      reason,
-      before: { status: "suspended" },
-      after: { status: "active" },
+      entityType: "staff_notes",
+      entityId: data.id,
     });
+    res.status(201).json({ data });
+  })
+);
 
+// ---------------------------------------------------------------------
+// Suspension appeals (0112): written by the platform's public appeal
+// page; Trust & Safety decides them here.
+// ---------------------------------------------------------------------
+peopleRouter.get(
+  "/appeals",
+  requireTrustSafety,
+  asyncRoute(async (req, res) => {
+    const status = z.enum(["open", "upheld", "reinstated"]).default("open").parse(req.query.status ?? undefined);
+    const { data, error } = await supabaseAdmin
+      .from("account_appeals")
+      .select("id, profile_id, message, status, decision_note, decided_at, created_at, profiles!account_appeals_profile_id_fkey(full_name, role, suspended_reason, suspended_at)")
+      .eq("status", status)
+      .order("created_at", { ascending: true })
+      .limit(100);
+    if (error) throw new HttpError(500, error.message);
     res.json({ data });
+  })
+);
+
+const appealDecisionSchema = z.object({
+  decision: z.enum(["upheld", "reinstated"]),
+  note: z.string().trim().min(10, "Explain the decision — at least 10 characters.").max(2000),
+});
+
+peopleRouter.post(
+  "/appeals/:id/decide",
+  requireTrustSafety,
+  asyncRoute(async (req, res) => {
+    const { decision, note } = appealDecisionSchema.parse(req.body);
+    // Claim it first, so two staff can't decide the same appeal.
+    const { data: appeal, error } = await supabaseAdmin
+      .from("account_appeals")
+      .update({ status: decision, decided_by: req.user.id, decided_at: new Date().toISOString(), decision_note: note })
+      .eq("id", req.params.id)
+      .eq("status", "open")
+      .select("id, profile_id")
+      .maybeSingle();
+    if (error) throw new HttpError(400, error.message);
+    if (!appeal) throw new HttpError(409, "This appeal has already been decided.");
+
+    if (decision === "reinstated") {
+      try {
+        await reinstateAccount(appeal.profile_id, req.user.id, `Appeal accepted: ${note}`);
+      } catch (e) {
+        // Already active (e.g. reinstated by hand meanwhile) is fine.
+        if (!(e instanceof HttpError && e.status === 409)) throw e;
+      }
+    }
+    await logAuditEvent(supabaseAdmin, {
+      name: decision === "reinstated" ? "case.appeal.accepted" : "case.appeal.upheld",
+      actorId: req.user.id,
+      subjectId: appeal.profile_id,
+      entityType: "account_appeals",
+      entityId: appeal.id,
+      reason: note,
+    });
+    res.json({ data: { id: appeal.id, status: decision, profile_id: appeal.profile_id } });
   })
 );
 
@@ -381,6 +507,7 @@ peopleRouter.post(
 // awaiting a second admin's decision (0036).
 peopleRouter.get(
   "/role-requests",
+  requireAdmin,
   asyncRoute(async (req, res) => {
     const { data: requests, error } = await supabaseAdmin
       .from("role_change_requests")
@@ -413,6 +540,7 @@ const decisionSchema = z.object({ reason: z.string().max(2000).optional() });
 // here, never at request time.
 peopleRouter.post(
   "/role-requests/:id/approve",
+  requireAdmin,
   asyncRoute(async (req, res) => {
     const { reason } = decisionSchema.parse(req.body);
     const { data: request, error: fetchError } = await supabaseAdmin
@@ -461,6 +589,7 @@ peopleRouter.post(
 // self-cancelling isn't a privilege-escalation risk, only self-approving is).
 peopleRouter.post(
   "/role-requests/:id/reject",
+  requireAdmin,
   asyncRoute(async (req, res) => {
     const { reason } = decisionSchema.parse(req.body);
     const { data: request, error: fetchError } = await supabaseAdmin
@@ -505,6 +634,7 @@ const auditQuerySchema = z.object({
 // point, not a complete activity log.
 peopleRouter.get(
   "/audit-events",
+  requireAdmin,
   asyncRoute(async (req, res) => {
     const { limit } = auditQuerySchema.parse(req.query);
     const { data: events, error } = await supabaseAdmin

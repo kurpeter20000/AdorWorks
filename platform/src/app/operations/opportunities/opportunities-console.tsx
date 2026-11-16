@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Check, TriangleAlert } from "lucide-react";
 import { checkOpportunity } from "@/lib/domain/opportunityChecks";
+import { CHANGE_FIELDS, CHANGE_FIELD_KEYS, type ChangeField } from "@/lib/domain/changeFields";
 import { approveOpportunity, rejectOpportunity, requestOpportunityChanges } from "@/lib/actions/operations";
 import {
   ActionRow,
@@ -233,6 +234,72 @@ function CreateOpportunity({ onCreated }: { onCreated: () => void }) {
   );
 }
 
+/**
+ * Ask the employer for changes: tick what to fix (0112) and say why.
+ * Boxes start ticked where the automatic checks found a problem.
+ */
+function RequestChangesForm({ row, disabled, onSubmit }: { row: Row; disabled: boolean; onSubmit: (note: string, fields: ChangeField[]) => void }) {
+  const flagged = checkOpportunity(row, row.organisations?.verification_status);
+  const start = new Set<ChangeField>();
+  for (const c of flagged) {
+    if (c.ok) continue;
+    if (c.key === "pay") start.add("pay");
+    if (c.key === "no_fee") start.add("fees");
+    if (c.key === "no_contact") start.add("contact");
+  }
+  const [open, setOpen] = useState(false);
+  const [fields, setFields] = useState<Set<ChangeField>>(start);
+  const [note, setNote] = useState("");
+  if (!open) {
+    return (
+      <Btn variant="secondary" disabled={disabled} onClick={() => setOpen(true)}>
+        Request changes
+      </Btn>
+    );
+  }
+  return (
+    <fieldset className="space-y-2 rounded-xl border border-slate/15 bg-white p-3">
+      <legend className="px-1 text-sm font-semibold text-midnight">What should the employer fix?</legend>
+      <div className="grid gap-1 sm:grid-cols-2">
+        {CHANGE_FIELD_KEYS.map((k) => (
+          <label key={k} className="flex min-h-10 items-start gap-2 text-sm text-midnight">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4"
+              checked={fields.has(k)}
+              onChange={() =>
+                setFields((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(k)) next.delete(k);
+                  else next.add(k);
+                  return next;
+                })
+              }
+            />
+            {CHANGE_FIELDS[k]}
+          </label>
+        ))}
+      </div>
+      <textarea
+        aria-label="Note to the employer"
+        className={inputClass}
+        rows={3}
+        placeholder="Note to the employer (at least 10 characters)"
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+      />
+      <div className="flex gap-2">
+        <Btn variant="primary" disabled={disabled || note.trim().length < 10} onClick={() => onSubmit(note.trim(), CHANGE_FIELD_KEYS.filter((k) => fields.has(k)))}>
+          Send back for changes
+        </Btn>
+        <Btn disabled={disabled} onClick={() => setOpen(false)}>
+          Cancel
+        </Btn>
+      </div>
+    </fieldset>
+  );
+}
+
 /** Spec "automatic checks": flags for the reviewer, never a decision. */
 function AutomaticChecks({ row }: { row: Row }) {
   const checks = checkOpportunity(row, row.organisations?.verification_status);
@@ -289,6 +356,9 @@ function OpportunityDetail({ row, onChanged }: { row: Row; onChanged: () => void
               ...(row.status === "changes_required" || row.status === "paused"
                 ? ([[row.status === "paused" ? "Pause note" : "Requested changes", row.status_note || "—"]] as [string, string][])
                 : []),
+              ...(row.status === "changes_required" && (row.changes_fields ?? []).length > 0
+                ? ([["Fields to fix", (row.changes_fields as ChangeField[]).map((f) => CHANGE_FIELDS[f] ?? f).join("; ")]] as [string, string][])
+                : []),
             ]}
           />
           {row.status === "open" && (
@@ -316,12 +386,14 @@ function OpportunityDetail({ row, onChanged }: { row: Row; onChanged: () => void
                 disabled={pending}
                 onSubmit={(reason) => run(() => viaAction(rejectOpportunity(row.id, {}, formData({ reason }))), "Rejected.")}
               />
-              <ReasonAction
-                label="Request changes"
-                variant="secondary"
-                placeholder="What needs to change (at least 10 characters)"
+              <RequestChangesForm
+                row={row}
                 disabled={pending}
-                onSubmit={(note) => run(() => viaAction(requestOpportunityChanges(row.id, {}, formData({ note }))), "Changes requested.")}
+                onSubmit={(note, fields) => {
+                  const fd = formData({ note });
+                  for (const f of fields) fd.append("fields", f);
+                  return run(() => viaAction(requestOpportunityChanges(row.id, {}, fd)), "Changes requested.");
+                }}
               />
             </div>
           )}

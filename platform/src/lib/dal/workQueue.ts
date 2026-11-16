@@ -204,6 +204,25 @@ const QUEUES: Queue[] = [
       })),
   },
   {
+    name: "Suspension appeals",
+    area: "people",
+    roles: ["admin", "trust_safety"],
+    load: async (db) =>
+      (
+        await rows(
+          db.from("account_appeals").select("id, created_at, profiles!account_appeals_profile_id_fkey(full_name)").eq("status", "open").order("created_at").limit(LIMIT)
+        )
+      ).map((r) => ({
+        key: `appeal-account-${r.id}`,
+        area: "people",
+        kind: "Suspension appeal",
+        title: r.profiles?.full_name ?? "Suspended account",
+        href: "/operations/people",
+        since: r.created_at,
+        targetHours: 48,
+      })),
+  },
+  {
     name: "Disputes",
     area: "contracts",
     roles: ["admin", "trust_safety"],

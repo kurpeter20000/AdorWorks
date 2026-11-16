@@ -8,9 +8,10 @@ import type { UserRole } from "@/lib/database.types";
  *   reviewer       opportunities (publish / request changes / reject /
  *                  appeals), services, intake
  *   verifier       talent and organisation verification
- *   trust_safety   reports, support messages, disputes
+ *   trust_safety   reports, support messages, disputes, person lookup,
+ *                  suspensions and appeals
  *   finance        payouts, invoices, contracts and refunds, settings
- *   field_support  assisted onboarding, support messages
+ *   field_support  assisted onboarding, support messages, person lookup
  *   matcher        shortlists (from the opportunities console) and
  *                  engagements
  *   admin          everything, including people and staff roles
@@ -48,7 +49,9 @@ export const STAFF_AREA_ROLES: Record<StaffArea, readonly UserRole[]> = {
   invoices: ["finance"],
   settings: ["finance"],
   "assisted-onboarding": ["field_support"],
-  people: [],
+  // Lookup and notes for support roles; suspensions are Trust & Safety's;
+  // staff accounts and roles stay admin-only (enforced by the staff API).
+  people: ["trust_safety", "field_support"],
 };
 
 /**

@@ -45,6 +45,9 @@ export const NOTIFICATION_TYPES = {
   // 0107: digitized personal referrals.
   VOUCH_REQUESTED: "vouch_requested",
   VOUCH_RESPONDED: "vouch_responded",
+  // 0112: written by backend/api's reports.js when staff resolve a
+  // report — the reporter is told the outcome, never the details.
+  REPORT_RESOLVED: "report_resolved",
 } as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];

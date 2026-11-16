@@ -13,6 +13,7 @@ import { SendOfferForm } from "./send-offer-form";
 import { ShortlistingModeForm } from "./shortlisting-mode-form";
 import { ShortlistActions } from "./shortlist-actions";
 import { BulkDecisionPanel } from "./bulk-decision-panel";
+import { CHANGE_FIELDS, isChangeField } from "@/lib/domain/changeFields";
 import { RemoveFromShortlistButton } from "./remove-from-shortlist-button";
 import { OpportunityAttachments } from "./opportunity-attachments";
 import { VerificationBadge } from "@/components/verification-badge";
@@ -178,6 +179,16 @@ export default async function OpportunityDetailPage({
       {opportunity.status === "changes_required" && (
         <div className="mt-4 rounded-lg bg-violet/10 px-4 py-3 text-sm text-midnight">
           {opportunity.status_note && <p>Staff requested changes: {opportunity.status_note}</p>}
+          {(opportunity.changes_fields ?? []).length > 0 && (
+            <>
+              <p className="mt-2 font-semibold">To fix before it can be published:</p>
+              <ul className="mt-1 list-disc ps-5">
+                {opportunity.changes_fields.filter(isChangeField).map((f) => (
+                  <li key={f}>{CHANGE_FIELDS[f]}</li>
+                ))}
+              </ul>
+            </>
+          )}
           <Link
             href={`/organisation/opportunities/${opportunity.id}/edit`}
             className="mt-2 inline-block font-semibold text-teal-ink underline"

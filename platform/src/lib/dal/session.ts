@@ -94,7 +94,7 @@ export async function requireSessionWithoutMfaGate(): Promise<VerifiedSession> {
     redirect(await loginPathForCurrentRequest());
   }
   if (session.status !== "active") {
-    redirect("/login");
+    redirect(session.status === "suspended" ? "/login?reason=suspended" : "/login");
   }
   return session;
 }

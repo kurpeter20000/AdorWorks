@@ -81,6 +81,8 @@ export type ProfileRow = {
   phone_verified: boolean;
   email_verified: boolean;
   status: "active" | "suspended" | "deleted";
+  suspended_reason: string | null;
+  suspended_at: string | null;
   consent_terms_at: string | null;
   policy_consent_at: string | null;
   policy_version: string | null;
@@ -279,6 +281,8 @@ export type OpportunityRow = {
   status_note: string | null;
   appeal_note: string | null;
   appealed_at: string | null;
+  /** 0112: fields staff asked the employer to fix (lib/domain/changeFields). */
+  changes_fields: string[];
   service_package_id: string | null;
   shortlisting_mode: "self_service" | "staff_assisted";
   created_at: string;
@@ -786,6 +790,18 @@ export type PublicProfileNameRow = {
 
 export type VouchStatus = "pending" | "confirmed" | "declined";
 
+/** 0112: a suspended person's appeal; written and decided by the backend only. */
+export type AccountAppealRow = {
+  id: string;
+  profile_id: string;
+  message: string;
+  status: "open" | "upheld" | "reinstated";
+  decided_by: string | null;
+  decided_at: string | null;
+  decision_note: string | null;
+  created_at: string;
+};
+
 export type VouchRow = {
   id: string;
   talent_id: string;
@@ -1175,6 +1191,12 @@ export type Database = {
         Row: NotificationRow;
         Insert: Partial<NotificationRow> & { user_id: string; type: string; title: string };
         Update: Partial<NotificationRow>;
+        Relationships: [];
+      };
+      account_appeals: {
+        Row: AccountAppealRow;
+        Insert: Partial<AccountAppealRow> & { profile_id: string; message: string };
+        Update: Partial<AccountAppealRow>;
         Relationships: [];
       };
       vouches: {
