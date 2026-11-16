@@ -42,6 +42,11 @@ export const DOMAIN_EVENTS = {
   // Stage 16 (0096)
   PLATFORM_SETTINGS_CHANGED: "platform.settings_changed",
   CONTRACT_TERMS_ISSUED: "contract.terms_issued",
+  // 0113: one side confirmed the contract's written terms.
+  CONTRACT_SIGNED: "contract.signed",
+  // 0113: interview times offered / picked.
+  INTERVIEW_TIMES_OFFERED: "interview.times_offered",
+  INTERVIEW_TIME_CHOSEN: "interview.time_chosen",
   ASSISTANCE_SESSION_STARTED: "assistance.session.started",
   // S11-06: a failed send is no longer silent (console.error only) — it's
   // also written here so it's staff-visible via the existing

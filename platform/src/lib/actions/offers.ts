@@ -36,6 +36,11 @@ const OfferSchema = z.object({
  * performed as one already-sent row rather than a draft a client would
  * still need a second privileged step to send.
  */
+function respondWithinDays(raw: FormDataEntryValue | null): number {
+  const n = Number(raw);
+  return n === 3 || n === 14 ? n : 7;
+}
+
 export async function sendOffer(
   applicationId: string,
   _prevState: FormState,
@@ -100,6 +105,9 @@ export async function sendOffer(
       status: "sent",
       created_by: session.userId,
       responded_at: null,
+      // 0113: the talent must answer by this date; the database refuses a
+      // later acceptance. 3, 7 or 14 days; anything else means 7.
+      expires_at: new Date(Date.now() + respondWithinDays(formData.get("respondWithinDays")) * 86_400_000).toISOString(),
     })
     .select("id")
     .single();

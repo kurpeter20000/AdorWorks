@@ -64,6 +64,21 @@ export function SendOfferForm({ applicationId }: { applicationId: string }) {
         )}
       </div>
       <div>
+        <label htmlFor={`respond-within-${applicationId}`} className="text-xs font-semibold text-midnight">
+          They can accept until
+        </label>
+        <select
+          id={`respond-within-${applicationId}`}
+          name="respondWithinDays"
+          defaultValue="7"
+          className="mt-1 w-full rounded-lg border border-slate/25 px-2 py-1.5 text-sm"
+        >
+          <option value="3">3 days from now</option>
+          <option value="7">7 days from now</option>
+          <option value="14">14 days from now</option>
+        </select>
+      </div>
+      <div>
         <label className="text-xs font-semibold text-midnight">Message (optional)</label>
         <textarea
           name="message"

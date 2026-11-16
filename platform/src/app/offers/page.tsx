@@ -5,7 +5,13 @@ import { requireRole } from "@/lib/dal/session";
 import { OFFER_STATES } from "@/lib/domain/states";
 import { createClient } from "@/lib/supabase/server";
 import { OfferActions } from "./offer-actions";
+import { formatDateTime } from "@/lib/domain/format";
 import { must } from "@/lib/dal/must";
+
+/** Read once per request, outside render (React purity rule). */
+function requestTime(): number {
+  return Date.now();
+}
 
 export const metadata: Metadata = { title: "My offers" };
 
@@ -21,7 +27,7 @@ export default async function OffersPage() {
   // incoming service requests.
   const { data: offers } = must(await supabase
     .from("offers")
-    .select("id, opportunity_id, payment_basis, compensation_amount, currency, message, status, created_at")
+    .select("id, opportunity_id, payment_basis, compensation_amount, currency, message, status, created_at, expires_at")
     .eq("talent_id", session.userId)
     .not("opportunity_id", "is", null)
     .order("created_at", { ascending: false }), "offers");
@@ -45,6 +51,8 @@ export default async function OffersPage() {
       : { data: [] }, "contracts");
   const contractIdByOffer = new Map((contracts ?? []).map((c) => [c.offer_id, c.id]));
 
+  const now = requestTime();
+
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <h1 className="text-2xl font-extrabold text-midnight">My offers</h1>
@@ -55,6 +63,8 @@ export default async function OffersPage() {
         <ul className="mt-6 space-y-4">
           {offers.map((o) => {
             const opp = opportunityById.get(o.opportunity_id);
+            // 0113: an offer has a deadline; after it, it can't be accepted.
+            const expired = o.status === "sent" && !!o.expires_at && Date.parse(o.expires_at) < now;
             return (
               <li key={o.id} className="rounded-xl border border-slate/15 bg-white p-5">
                 <div className="flex items-start justify-between gap-4">
@@ -69,9 +79,16 @@ export default async function OffersPage() {
                   </span>
                 </div>
                 {o.message && <p className="mt-2 text-sm text-slate">&ldquo;{o.message}&rdquo;</p>}
+                {o.status === "sent" && o.expires_at && (
+                  <p className={`mt-2 text-sm font-semibold ${expired ? "text-slate" : "text-coral-ink"}`}>
+                    {expired
+                      ? "This offer has expired. Message the employer if you're still interested."
+                      : `Respond by ${formatDateTime(o.expires_at, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}`}
+                  </p>
+                )}
                 <div className="mt-3 flex items-center justify-between">
                   <StatusBadge state={OFFER_STATES[o.status]} />
-                  {o.status === "sent" && <OfferActions offerId={o.id} />}
+                  {o.status === "sent" && !expired && <OfferActions offerId={o.id} />}
                   {o.status === "accepted" && contractIdByOffer.has(o.id) && (
                     <Link
                       href={`/contracts/${contractIdByOffer.get(o.id)}`}

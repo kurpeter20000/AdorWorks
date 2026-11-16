@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Check, TriangleAlert } from "lucide-react";
 import { checkOpportunity } from "@/lib/domain/opportunityChecks";
+import { StaffInterviewPanel } from "./staff-interview-panel";
 import { CHANGE_FIELDS, CHANGE_FIELD_KEYS, type ChangeField } from "@/lib/domain/changeFields";
 import { approveOpportunity, rejectOpportunity, requestOpportunityChanges } from "@/lib/actions/operations";
 import {
@@ -49,7 +50,7 @@ const FILTERS: [string, string][] = [
 const OPP_STATUSES = ["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected", "changes_required", "paused", "expired"];
 const STAGES = ["submitted", "shortlisted", "interviewing", "offered", "accepted", "rejected", "withdrawn"];
 
-export function OpportunitiesConsole({ initialFilter }: { initialFilter: string }) {
+export function OpportunitiesConsole({ initialFilter, canRunInterviews = false }: { initialFilter: string; canRunInterviews?: boolean }) {
   const [filter, setFilter] = useState(initialFilter);
   const [creating, setCreating] = useState(false);
   const list = useStaffData<{ data: Row[] }>(`/api/opportunities${qs({ status: filter, limit: 100 })}`);
@@ -91,7 +92,7 @@ export function OpportunitiesConsole({ initialFilter }: { initialFilter: string 
           <Badge key="s" value={r.status} />,
           fmtDate(r.created_at),
         ]}
-        detail={(r) => <OpportunityDetail row={r} onChanged={list.reload} />}
+        detail={(r) => <OpportunityDetail row={r} onChanged={list.reload} canRunInterviews={canRunInterviews} />}
         empty="No opportunities match this filter."
       />
     </>
@@ -330,7 +331,7 @@ function AutomaticChecks({ row }: { row: Row }) {
   );
 }
 
-function OpportunityDetail({ row, onChanged }: { row: Row; onChanged: () => void }) {
+function OpportunityDetail({ row, onChanged, canRunInterviews }: { row: Row; onChanged: () => void; canRunInterviews: boolean }) {
   const { run, pending, status } = useAction(onChanged);
   const [newStatus, setNewStatus] = useState<string>(row.status);
   const [pauseNote, setPauseNote] = useState("");
@@ -442,13 +443,13 @@ function OpportunityDetail({ row, onChanged }: { row: Row; onChanged: () => void
           <ActionStatus status={status} />
         </div>
 
-        <Shortlist opportunity={row} />
+        <Shortlist opportunity={row} canRunInterviews={canRunInterviews} />
       </Grid2>
     </div>
   );
 }
 
-function Shortlist({ opportunity }: { opportunity: Row }) {
+function Shortlist({ opportunity, canRunInterviews }: { opportunity: Row; canRunInterviews: boolean }) {
   const apps = useStaffData<{ data: Row[] }>(`/api/applications${qs({ opportunity_id: opportunity.id, limit: 100 })}`);
   const suggested = useStaffData<{ data: Row[] }>(
     opportunity.category ? `/api/talent${qs({ category: opportunity.category, limit: 100 })}` : null
@@ -497,6 +498,7 @@ function Shortlist({ opportunity }: { opportunity: Row }) {
               <Badge value={a.talent_profiles?.verification_tier} />
             </p>
             {a.interview_scheduled_at && <p className="mt-1 text-xs text-slate">Interview: {fmtDateTime(a.interview_scheduled_at)}</p>}
+            {canRunInterviews && ["shortlisted", "interviewing"].includes(a.stage) && <StaffInterviewPanel applicationId={a.id} />}
             <ActionRow>
               <select
                 aria-label="Application stage"
