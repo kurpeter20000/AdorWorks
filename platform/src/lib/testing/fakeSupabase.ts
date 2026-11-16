@@ -11,7 +11,7 @@
  */
 type Row = Record<string, unknown>;
 type Filter = (row: Row) => boolean;
-type Result = { data: unknown; error: { message: string } | null };
+type Result = { data: unknown; error: { message: string } | null; count?: number };
 
 let nextId = 1;
 
@@ -27,6 +27,7 @@ export function createFakeSupabase(tables: Record<string, Row[]>) {
     let returning = false;
     let single: "maybe" | "one" | null = null;
     let limit: number | null = null;
+    let countOnly = false;
     const filters: Filter[] = [];
 
     function parseValue(v: string): unknown {
@@ -37,9 +38,9 @@ export function createFakeSupabase(tables: Record<string, Row[]>) {
     }
 
     const builder = {
-      select() {
-        if (op === "select") op = "select";
-        else returning = true;
+      select(_cols?: string, opts?: { count?: string; head?: boolean }) {
+        if (op !== "select") returning = true;
+        if (opts?.head) countOnly = true;
         return builder;
       },
       insert(rows: Row | Row[]) {
@@ -121,6 +122,7 @@ export function createFakeSupabase(tables: Record<string, Row[]>) {
         if (!returning) return { data: null, error: null };
       } else {
         out = rows.filter(match);
+        if (countOnly) return { data: null, error: null, count: out.length } as Result;
       }
       if (limit !== null) out = out.slice(0, limit);
       const copies = out.map((r) => ({ ...r }));

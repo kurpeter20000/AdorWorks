@@ -5,6 +5,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireRole, requireSession } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { findUserByEmail } from "@/lib/supabase/findUserByEmail";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
@@ -51,9 +52,8 @@ export async function requestVouch(_prevState: FormState, formData: FormData): P
   // from someone who's already a real, accountable AdorWorks member;
   // auto-provisioning a stranger's account to vouch for someone would
   // make the signal meaningless.
-  const { data: existingUsers, error: listError } = await admin.auth.admin.listUsers();
-  if (listError) return { message: msg(`Could not look up that account: ${listError.message}`) };
-  const voucher = existingUsers.users.find((u) => u.email?.toLowerCase() === v.email.toLowerCase());
+  const { user: voucher, error: listError } = await findUserByEmail(admin, v.email);
+  if (listError) return { message: msg(`Could not look up that account: ${listError}`) };
   if (!voucher) {
     return {
       message: msg("That person doesn't have an AdorWorks account yet. Ask them to sign up first, then send the request again."),

@@ -5,6 +5,7 @@ import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
 import { logAuditEvent } from "../audit.js";
+import { findUserByEmail } from "../findUserByEmail.js";
 
 export const peopleRouter = Router();
 // Admin-only: this is a directory across every role (including other
@@ -105,9 +106,8 @@ peopleRouter.post(
   asyncRoute(async (req, res) => {
     const v = addStaffSchema.parse(req.body);
 
-    const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-    if (listError) throw new HttpError(500, listError.message);
-    const existing = existingUsers.users.find((u) => u.email?.toLowerCase() === v.email);
+    const { user: existing, error: listError } = await findUserByEmail(supabaseAdmin, v.email);
+    if (listError) throw new HttpError(500, listError);
 
     let userId;
     let temporaryPassword;
