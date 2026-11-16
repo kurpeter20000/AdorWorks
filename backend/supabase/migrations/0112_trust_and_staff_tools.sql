@@ -102,7 +102,14 @@ create trigger staff_notes_append_only before update or delete on staff_notes
 -- ---------------------------------------------------------------------
 -- 4. The public appeal page is rate limited like login (per email and
 --    per IP), so it can't be used to probe which emails are suspended.
+--    Keeps every action already allowed (0104's full list) and adds
+--    'account_appeal' — leaving any out breaks that feature, and the
+--    change is refused if existing rows use them.
 -- ---------------------------------------------------------------------
 alter table auth_rate_limit_attempts drop constraint if exists auth_rate_limit_attempts_action_check;
 alter table auth_rate_limit_attempts add constraint auth_rate_limit_attempts_action_check
-  check (action in ('login', 'signup', 'password_reset_request', 'mfa_challenge', 'report', 'invitation', 'account_appeal'));
+  check (action in (
+    'login', 'signup', 'password_reset_request', 'mfa_challenge',
+    'report', 'invitation', 'file_upload', 'public_chat',
+    'account_appeal'
+  ));

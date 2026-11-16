@@ -93,3 +93,11 @@ describe("staff notes (0112 §3)", () => {
     expect((await one("select author_id from staff_notes where id = $1", [id])).author_id).toBeNull();
   });
 });
+
+describe("rate-limit actions (0112 §4)", () => {
+  it("keeps every action that existed before, and adds account_appeal", async () => {
+    for (const action of ["login", "signup", "password_reset_request", "mfa_challenge", "report", "invitation", "file_upload", "public_chat", "account_appeal"]) {
+      await expect(db.query("insert into auth_rate_limit_attempts (action, identifier) values ($1, 'x')", [action]), action).resolves.toBeTruthy();
+    }
+  });
+});
