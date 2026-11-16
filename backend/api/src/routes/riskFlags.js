@@ -2,13 +2,14 @@ import { Router } from "express";
 import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff } from "../middleware/auth.js";
+import { requireStaffArea } from "../middleware/staffAccess.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
 import { logAuditEvent } from "../audit.js";
 
 // S10-11: proactive fraud/scam indicators — separate from the reactive,
 // user-submitted `reports` table (see 0083's own comment for why).
 export const riskFlagsRouter = Router();
-riskFlagsRouter.use(requireAuth, requireStaff);
+riskFlagsRouter.use(requireAuth, requireStaff, requireStaffArea("riskFlags"));
 
 const TARGET_TYPES = ["organisation", "opportunity", "talent_profile", "talent_service", "file"];
 const INDICATORS = ["fraud", "scam", "fake_identity", "payment_risk", "other"];

@@ -32,7 +32,10 @@ export type UserRole =
   | "org_member"
   | "org_admin"
   | "onboarding_agent"
-  | "partner_hub_admin";
+  | "partner_hub_admin"
+  | "verifier"
+  | "trust_safety"
+  | "field_support";
 
 export type VerificationTier =
   | "registered"

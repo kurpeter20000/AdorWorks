@@ -1,6 +1,7 @@
 import type { UserRole } from "@/lib/database.types";
 import { getDashboardKind, type DashboardKind } from "./roles";
 import { msg } from "@/i18n/config";
+import { canOpenStaffPath } from "./staffAccess";
 
 export interface DashboardAction {
   href: string;
@@ -108,7 +109,10 @@ const experiences: Record<DashboardKind, Omit<DashboardExperience, "kind">> = {
 
 export function getDashboardExperience(role: UserRole): DashboardExperience {
   const kind = getDashboardKind(role);
-  return { kind, ...experiences[kind] };
+  const experience = experiences[kind];
+  if (kind !== "operations") return { kind, ...experience };
+  // Each staff role sees only the areas it works (lib/domain/staffAccess).
+  return { kind, ...experience, actions: experience.actions.filter((a) => canOpenStaffPath(role, a.href)) };
 }
 
 export interface NavLink {

@@ -2,12 +2,13 @@ import { Router } from "express";
 import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff } from "../middleware/auth.js";
+import { requireStaffArea } from "../middleware/staffAccess.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
 import { normalizeCategory, normalizeOpportunityType, splitList } from "../lookups.js";
 import { logAuditEvent } from "../audit.js";
 
 export const intakeRouter = Router();
-intakeRouter.use(requireAuth, requireStaff);
+intakeRouter.use(requireAuth, requireStaff, requireStaffArea("intake"));
 
 const listQuerySchema = z.object({
   status: z.enum(["new", "in_review", "converted", "archived"]).optional(),

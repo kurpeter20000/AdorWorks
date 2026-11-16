@@ -2,11 +2,12 @@ import { Router } from "express";
 import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff } from "../middleware/auth.js";
+import { requireStaffArea } from "../middleware/staffAccess.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
 import { logAuditEvent } from "../audit.js";
 
 export const reportsRouter = Router();
-reportsRouter.use(requireAuth, requireStaff);
+reportsRouter.use(requireAuth, requireStaff, requireStaffArea("reports"));
 
 // Stage 6 gap-check (0056) widened reports.target_type at the DB layer
 // to also allow 'talent_video'/'portfolio_item' — this list (used only

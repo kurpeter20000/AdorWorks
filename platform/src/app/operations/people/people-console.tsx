@@ -20,11 +20,13 @@ import {
   useAction,
   useStaffData,
 } from "../_components/staff-ui";
+import { STAFF_ACCOUNT_ROLES, USER_ROLE_LABELS } from "@/lib/domain/roles";
+import { STAFF_ROLE_DESCRIPTIONS } from "@/lib/domain/staffAccess";
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- staff API payloads are untyped JSON from backend/api */
 type Row = any;
 
-const ROLES = ["talent", "individual_client", "employer", "org_admin", "org_member", "reviewer", "matcher", "finance", "admin", "onboarding_agent", "partner_hub_admin"];
+const ROLES = ["talent", "individual_client", "employer", "org_admin", "org_member", "reviewer", "verifier", "trust_safety", "finance", "field_support", "matcher", "admin", "onboarding_agent", "partner_hub_admin"];
 const ROLE_FILTER: [string, string][] = [
   ["talent", "Talent"],
   ["individual_client", "Individual client"],
@@ -32,13 +34,16 @@ const ROLE_FILTER: [string, string][] = [
   ["org_admin", "Company admin"],
   ["org_member", "Company team member"],
   ["reviewer", "Staff — reviewer"],
-  ["matcher", "Staff — matcher"],
+  ["verifier", "Staff — verifier"],
+  ["trust_safety", "Staff — trust & safety"],
   ["finance", "Staff — finance"],
+  ["field_support", "Staff — field support"],
+  ["matcher", "Staff — matcher"],
   ["admin", "Staff — admin"],
   ["onboarding_agent", "Onboarding agent"],
   ["partner_hub_admin", "Partner hub admin"],
 ];
-const STAFF_ROLE_OPTIONS = ["reviewer", "matcher", "finance", "admin"];
+const STAFF_ROLE_OPTIONS = STAFF_ACCOUNT_ROLES;
 
 export function PeopleConsole() {
   const [role, setRole] = useState("");
@@ -213,7 +218,7 @@ function AddStaff({ onAdded }: { onAdded: () => void }) {
           <select className={inputClass} value={role} onChange={(e) => setRole(e.target.value)}>
             {STAFF_ROLE_OPTIONS.map((r) => (
               <option key={r} value={r}>
-                {humanize(r)}
+                {USER_ROLE_LABELS[r]} — {STAFF_ROLE_DESCRIPTIONS[r]}
               </option>
             ))}
           </select>
@@ -251,7 +256,7 @@ function PersonActions({ row, onChanged }: { row: Row; onChanged: () => void }) 
           <select className={`${inputClass} sm:w-56`} value={role} onChange={(e) => setRole(e.target.value)}>
             {ROLES.map((r) => (
               <option key={r} value={r}>
-                {humanize(r)}
+                {ROLE_FILTER.find(([v]) => v === r)?.[1] ?? humanize(r)}
               </option>
             ))}
           </select>

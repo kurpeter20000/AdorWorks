@@ -3,6 +3,7 @@ import { randomInt } from "crypto";
 import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
+import { STAFF_ROLES } from "../middleware/staffAccess.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
 import { logAuditEvent } from "../audit.js";
 import { findUserByEmail } from "../findUserByEmail.js";
@@ -19,8 +20,11 @@ const ROLES = [
   "org_member",
   "org_admin",
   "reviewer",
-  "matcher",
+  "verifier",
+  "trust_safety",
   "finance",
+  "field_support",
+  "matcher",
   "admin",
   "onboarding_agent",
   "partner_hub_admin",
@@ -70,7 +74,7 @@ peopleRouter.get(
   })
 );
 
-const STAFF_ROLES = ["reviewer", "matcher", "finance", "admin"];
+const STAFF_ROLE_LIST = [...STAFF_ROLES];
 
 // Stage 2 maker-checker: promoting anyone TO one of these two roles needs
 // a second, different admin's approval (0036/role_change_requests).
@@ -93,7 +97,7 @@ function generateTemporaryPassword(length = 10) {
 const addStaffSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   fullName: z.string().trim().min(2).optional(),
-  role: z.enum(STAFF_ROLES),
+  role: z.enum(STAFF_ROLE_LIST),
 });
 
 // POST /api/people/staff — creates (or promotes) a staff account in one
