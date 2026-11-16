@@ -9,13 +9,18 @@ import { ApplicationThreadPanel } from "./application-thread-panel";
 import { getT } from "@/i18n/server";
 import { rich } from "@/i18n/rich";
 import { must } from "@/lib/dal/must";
+import { Stepper } from "@/components/ui/status";
+import { APPLICATION_STEPS, applicationProgress } from "@/lib/domain/applicationProgress";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   return { title: t("My applications") };
 }
 
-const CLOSED_OPPORTUNITY_STATUSES = new Set(["closed", "cancelled", "expired", "filled"]);
+/** Read once per request, outside render (React purity rule). */
+function requestTime(): number {
+  return Date.now();
+}
 
 export default async function ApplicationsPage({
   searchParams,
@@ -29,14 +34,14 @@ export default async function ApplicationsPage({
 
   const { data: applications } = must(await supabase
     .from("applications")
-    .select("id, opportunity_id, stage, decision_reason, created_at")
+    .select("id, opportunity_id, stage, decision_reason, created_at, viewed_at, stage_changed_at")
     .eq("talent_id", session.userId)
     .order("created_at", { ascending: false }), "applications");
 
   const opportunityIds = [...new Set((applications ?? []).map((a) => a.opportunity_id))];
   const { data: opportunities } =
     must(opportunityIds.length > 0
-      ? await supabase.from("opportunities").select("id, title, organisation_id, status").in("id", opportunityIds)
+      ? await supabase.from("opportunities").select("id, title, organisation_id, status, shortlisting_mode").in("id", opportunityIds)
       : { data: [] }, "opportunities");
 
   const orgIds = [...new Set((opportunities ?? []).map((o) => o.organisation_id))];
@@ -76,6 +81,9 @@ export default async function ApplicationsPage({
     );
   }
 
+  const now = requestTime();
+  const steps = APPLICATION_STEPS.map((s) => t(s));
+
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <div className="flex items-center justify-between">
@@ -110,11 +118,14 @@ export default async function ApplicationsPage({
         <ul className="mt-6 space-y-2">
           {applications.map((a) => {
             const opp = opportunityById.get(a.opportunity_id);
-            const opportunityEnded = opp ? CLOSED_OPPORTUNITY_STATUSES.has(opp.status) : false;
+            const progress = applicationProgress(
+              { stage: a.stage, viewedAt: a.viewed_at, stageChangedAt: a.stage_changed_at, staffAssisted: opp?.shortlisting_mode === "staff_assisted" },
+              now
+            );
             return (
               <li key={a.id} className="rounded-xl border border-slate/15 bg-white p-4">
                 <div className="flex items-center justify-between gap-4">
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-semibold text-midnight">{opp?.title ?? t("Opportunity")}</p>
                     <p className="text-xs text-slate">
                       {opp ? (orgNameById.get(opp.organisation_id) ?? t("AdorWorks employer")) : ""}
@@ -125,8 +136,31 @@ export default async function ApplicationsPage({
                     <WithdrawActions applicationId={a.id} stage={a.stage} opportunityOpen={opp?.status === "open"} />
                   </div>
                 </div>
-                {opportunityEnded && a.stage === "rejected" && a.decision_reason && (
-                  <p className="mt-2 text-xs text-slate">{a.decision_reason}</p>
+                {progress.step !== null && (
+                  <div className="mt-3 flex items-center gap-3">
+                    <Stepper
+                      className="w-full max-w-56"
+                      steps={steps}
+                      current={progress.step}
+                      label={t("Step {n} of {total}: {step}", { n: progress.step + 1, total: steps.length, step: steps[progress.step] })}
+                    />
+                    <span className="text-xs font-semibold whitespace-nowrap text-slate">{steps[progress.step]}</span>
+                  </div>
+                )}
+                <p className="mt-2 text-sm text-slate">
+                  {progress.href ? (
+                    <Link href={progress.href} className="font-semibold text-teal-ink underline">
+                      {t(progress.next, progress.vars)}
+                    </Link>
+                  ) : (
+                    t(progress.next, progress.vars)
+                  )}
+                </p>
+                {/* The reason is written for the talent: the employer's kind
+                    decline note, the 14-day auto-close note (0110) or the
+                    "no longer accepting applications" cascade. */}
+                {a.stage === "rejected" && a.decision_reason && (
+                  <p className="mt-2 rounded-lg bg-cloud px-3 py-2 text-sm text-midnight">{a.decision_reason}</p>
                 )}
                 <ApplicationThreadPanel
                   applicationId={a.id}
