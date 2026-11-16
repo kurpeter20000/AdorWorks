@@ -19,7 +19,7 @@ export function ReadinessPanel({ state, completeHref }: { state: ReadinessState;
   const done = readiness.total - readiness.missing.length;
 
   return (
-    <section aria-labelledby="profile-status-title" className="rounded-card border border-slate/10 bg-white shadow-card">
+    <section aria-labelledby="profile-status-title" className="rounded-card border border-line bg-white shadow-card">
       <h2 id="profile-status-title" className="px-5 pt-5 text-base font-extrabold text-midnight">
         {t("Your profile")}
       </h2>
@@ -60,7 +60,7 @@ export function ReadinessPanel({ state, completeHref }: { state: ReadinessState;
         )}
       </div>
 
-      <div className="border-t border-slate/10 px-5 py-4">
+      <div className="border-t border-line px-5 py-4">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-sm font-bold text-midnight">{t("Trust")}</h3>
           <Badge variant="accent">{t(trust.label)}</Badge>
@@ -68,7 +68,7 @@ export function ReadinessPanel({ state, completeHref }: { state: ReadinessState;
         {trust.nextStep && <p className="mt-1.5 text-sm text-slate">{t(trust.nextStep)}</p>}
       </div>
 
-      <div className="border-t border-slate/10 px-5 py-4">
+      <div className="border-t border-line px-5 py-4">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-sm font-bold text-midnight">{t("Visibility")}</h3>
           <Badge variant={visibility.visible ? "success" : "neutral"}>{visibility.visible ? t("Public") : t("Not public yet")}</Badge>

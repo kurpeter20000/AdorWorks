@@ -21,35 +21,52 @@ export function AppSidebar({
   const t = useT();
 
   const toItem = (a: DashboardAction) => ({ href: a.href, label: a.label, external: Boolean(a.external) });
-  const mainItems = [{ href: "/dashboard", label: msg("Dashboard"), external: false }, ...actions.filter((a) => !a.section).map(toItem)];
-  const supportItems = [
-    ...actions.filter((a) => a.section === "support").map(toItem),
-    // S13-12 — always visible regardless of role, unlike the per-role
-    // actions above: the platform app previously had no visible support
-    // contact anywhere at all.
-    { href: CONTACT_URL, label: msg("Help & Support"), external: true },
+  // Group by job (DashboardAction.group), keeping first-appearance order.
+  // Roles whose links carry no group (staff, agents) keep the older flat
+  // list with a "Support" section, unchanged.
+  const grouped = actions.some((a) => a.group);
+  const groups: { title: string | null; items: ReturnType<typeof toItem>[] }[] = [
+    { title: null, items: [{ href: "/dashboard", label: msg("Dashboard"), external: false }] },
   ];
+  for (const action of actions) {
+    const title = grouped ? (action.group ?? null) : action.section === "support" ? msg("Support") : null;
+    const existing = groups.find((g) => g.title === title);
+    if (existing) existing.items.push(toItem(action));
+    else groups.push({ title, items: [toItem(action)] });
+  }
+  // S13-12 — always visible regardless of role: the platform app
+  // previously had no visible support contact anywhere at all.
+  const helpTitle = grouped ? msg("Help") : msg("Support");
+  const helpGroup = groups.find((g) => g.title === helpTitle) ?? (groups.push({ title: helpTitle, items: [] }), groups[groups.length - 1]);
+  helpGroup.items.push({ href: CONTACT_URL, label: msg("Help & Support"), external: true });
 
   // Longest matching href wins, so /opportunities isn't also highlighted
   // while /opportunities/saved is the page actually open.
-  const allHrefs = [...mainItems, ...supportItems].filter((i) => !i.external).map((i) => i.href);
+  const allHrefs = groups.flatMap((g) => g.items).filter((i) => !i.external).map((i) => i.href);
   const activeHref = allHrefs
     .filter((href) => pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`)))
     .sort((a, b) => b.length - a.length)[0];
 
   return (
     <nav aria-label={t("Primary")} className="flex flex-col gap-0.5 p-3">
-      {mainItems.map(renderItem)}
-      <p className="mt-4 mb-1 px-3 text-[11px] font-bold tracking-wide text-slate uppercase">{t("Support")}</p>
-      {supportItems.map(renderItem)}
+      {groups.map((g, i) => (
+        <div key={g.title ?? `top-${i}`} className={g.title ? "mt-4" : undefined} role={g.title ? "group" : undefined} aria-labelledby={g.title ? `nav-group-${i}` : undefined}>
+          {g.title && (
+            <p id={`nav-group-${i}`} className="mb-1 px-3 text-[11px] font-extrabold tracking-wider text-slate uppercase">
+              {t(g.title)}
+            </p>
+          )}
+          <div className="flex flex-col gap-0.5">{g.items.map(renderItem)}</div>
+        </div>
+      ))}
     </nav>
   );
 
   function renderItem(item: { href: string; label: string; external: boolean }) {
     const Icon = ICONS[item.href] ?? Circle;
     const active = !item.external && item.href === activeHref;
-    const className = `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-      active ? "bg-teal/10 text-teal-ink" : "text-slate hover:bg-cloud hover:text-midnight"
+    const className = `flex min-h-10 items-center gap-3 rounded-control px-3 text-sm font-bold transition-colors ${
+      active ? "bg-teal/12 text-teal-ink" : "text-midnight/80 hover:bg-cloud hover:text-midnight"
     }`;
     if (item.external) {
       return (

@@ -5,18 +5,18 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-lg font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60",
+  "inline-flex items-center justify-center gap-2 rounded-control font-extrabold transition-colors disabled:cursor-not-allowed disabled:opacity-60",
   {
     variants: {
       variant: {
-        primary: "bg-teal text-midnight hover:bg-accent-hover active:bg-accent-active",
-        secondary: "border-2 border-midnight text-midnight bg-transparent hover:bg-cloud",
+        primary: "bg-primary text-white hover:bg-primary-hover",
+        secondary: "border border-slate/30 bg-white text-midnight hover:bg-cloud",
         ghost: "text-midnight bg-transparent hover:bg-cloud",
       },
       size: {
-        sm: "h-9 px-3 text-sm",
-        md: "h-11 px-4 text-sm",
-        lg: "h-12 px-6 text-base",
+        sm: "min-h-10 px-3 text-sm",
+        md: "min-h-11 px-4 text-sm",
+        lg: "min-h-12 px-6 text-base",
       },
     },
     defaultVariants: { variant: "primary", size: "md" },

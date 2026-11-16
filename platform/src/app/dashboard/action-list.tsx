@@ -20,7 +20,7 @@ const DOT: Record<ActionItem["tone"], string> = {
 };
 const COUNT: Record<ActionItem["tone"], string> = {
   danger: "bg-coral/12 text-coral-ink",
-  warning: "bg-warning/15 text-warning-ink",
+  warning: "bg-amber-tint text-warning-ink",
   info: "bg-violet/10 text-violet",
 };
 
@@ -34,14 +34,14 @@ export function ActionList({ items, emptyMessage }: { items: ActionItem[]; empty
   const t = useT();
   if (items.length === 0) {
     return (
-      <div className="flex items-center gap-3 rounded-card border border-slate/10 bg-white p-5 text-sm text-slate shadow-card">
+      <div className="flex items-center gap-3 rounded-card border border-line bg-white p-5 text-sm text-slate shadow-card">
         <CheckCircle2 className="size-5 shrink-0 text-teal" aria-hidden="true" />
         {emptyMessage}
       </div>
     );
   }
   return (
-    <ul className="divide-y divide-slate/10 overflow-hidden rounded-card border border-slate/10 bg-white shadow-card">
+    <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-white shadow-card">
       {items.map((item) => (
         <li key={`${item.href}:${item.label}`}>
           <Link href={item.href} className="flex items-center gap-3 px-4 py-3.5 text-sm transition-colors hover:bg-cloud sm:px-5">

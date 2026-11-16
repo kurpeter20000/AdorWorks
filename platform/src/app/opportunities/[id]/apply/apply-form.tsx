@@ -88,7 +88,7 @@ export function ApplyForm({
         <button
           type="submit"
           disabled={pending}
-          className="flex-1 rounded-lg bg-teal px-4 py-2.5 text-sm font-bold text-midnight disabled:opacity-60"
+          className="min-h-11 flex-1 rounded-control bg-primary px-4 text-sm font-extrabold text-white hover:bg-primary-hover disabled:opacity-60"
         >
           {pending ? t("Submitting…") : t("Submit application")}
         </button>
@@ -96,7 +96,7 @@ export function ApplyForm({
           type="button"
           onClick={saveDraft}
           disabled={draftPending}
-          className="rounded-lg border border-slate/25 px-4 py-2.5 text-sm font-semibold text-midnight disabled:opacity-60"
+          className="min-h-11 rounded-control border border-slate/30 bg-white px-4 text-sm font-bold text-midnight hover:bg-cloud disabled:opacity-60"
         >
           {draftPending ? t("Saving…") : t("Save draft")}
         </button>

@@ -1,5 +1,8 @@
 import {
+  BadgeCheck,
   Bell,
+  Briefcase,
+  History,
   Bookmark,
   Building2,
   ClipboardList,
@@ -30,7 +33,10 @@ import { CONTACT_URL } from "@/lib/domain/marketingSite";
 /** One icon per nav destination, shared by the sidebar and dashboard shortcuts. */
 export const NAV_ICONS: Record<string, LucideIcon> = {
   "/dashboard": LayoutDashboard,
-  "/organisation": Building2,
+  "/organisation": Briefcase,
+  "/organisation/details": Building2,
+  "/organisation/verification": BadgeCheck,
+  "/organisation/activity": History,
   "/organisation/opportunities/new": FilePlus2,
   "/organisation/opportunities/brief": NotebookPen,
   "/organisation/team": Users,

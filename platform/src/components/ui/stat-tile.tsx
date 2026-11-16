@@ -7,36 +7,44 @@ const TONE = {
   teal: "bg-teal/12 text-teal-ink",
   violet: "bg-violet/10 text-violet",
   coral: "bg-coral/12 text-coral-ink",
+  amber: "bg-amber-tint text-warning-ink",
 } as const;
 
-/** A single headline number that links to where it can be acted on. Real counts only. */
+/**
+ * A headline number that links to the list it counts (spec: "4 numbers,
+ * each a link to its list"). Real counts only; a zero shows 0 with a
+ * hint in `note`, never a blank.
+ */
 export function StatTile({
   label,
   value,
   href,
+  note,
   icon: Icon,
   tone = "neutral",
 }: {
   label: string;
-  value: number;
+  value: number | string;
   href: string;
+  note?: string;
   icon?: LucideIcon;
   tone?: keyof typeof TONE;
 }) {
   return (
     <Link
       href={href}
-      className="group flex items-center gap-3 rounded-card border border-slate/10 bg-white p-4 shadow-card transition hover:-translate-y-0.5 hover:shadow-raised"
+      className="group flex min-w-0 flex-col gap-2 rounded-card border border-line bg-white p-4 shadow-card transition hover:-translate-y-0.5 hover:shadow-raised"
     >
-      {Icon && (
-        <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-control", TONE[tone])}>
-          <Icon className="size-5" aria-hidden="true" />
-        </span>
-      )}
-      <span className="min-w-0">
-        <span className="block text-2xl leading-none font-extrabold text-midnight tabular-nums">{value}</span>
-        <span className="mt-1 block text-xs leading-snug font-semibold text-slate">{label}</span>
+      <span className="flex items-center justify-between gap-2">
+        <span className="text-xs leading-snug font-bold text-slate">{label}</span>
+        {Icon && (
+          <span className={cn("flex size-[30px] shrink-0 items-center justify-center rounded-[9px]", TONE[tone])}>
+            <Icon className="size-4" aria-hidden="true" />
+          </span>
+        )}
       </span>
+      <span className="text-2xl leading-none font-extrabold break-words text-midnight tabular-nums sm:text-[28px]">{value}</span>
+      {note && <span className="text-xs leading-snug text-slate">{note}</span>}
     </Link>
   );
 }

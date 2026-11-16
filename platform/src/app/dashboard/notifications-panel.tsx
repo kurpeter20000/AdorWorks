@@ -30,7 +30,7 @@ export function NotificationsPanel({ notifications, unreadCount }: { notificatio
   if (notifications.length === 0) return null;
 
   return (
-    <section className="rounded-card border border-slate/10 bg-white p-5 shadow-card">
+    <section className="rounded-card border border-line bg-white p-5 shadow-card">
       <div className="flex items-center justify-between">
         <h2 className="text-base font-extrabold text-midnight">
           {t("Notifications")}
