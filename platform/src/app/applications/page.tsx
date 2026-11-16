@@ -38,7 +38,18 @@ export default async function ApplicationsPage({
     .eq("talent_id", session.userId)
     .order("created_at", { ascending: false }), "applications");
 
-  const opportunityIds = [...new Set((applications ?? []).map((a) => a.opportunity_id))];
+  // Spec "saved drafts": applications started but not sent yet, so a
+  // dropped connection never loses them. Drafts for jobs that have
+  // closed are left out — they can't be sent any more.
+  const { data: draftRows } = must(await supabase
+    .from("application_drafts")
+    .select("opportunity_id, updated_at")
+    .eq("talent_id", session.userId)
+    .order("updated_at", { ascending: false }), "drafts");
+  const appliedTo = new Set((applications ?? []).map((a) => a.opportunity_id));
+  const pendingDrafts = (draftRows ?? []).filter((d) => !appliedTo.has(d.opportunity_id));
+
+  const opportunityIds = [...new Set([...(applications ?? []).map((a) => a.opportunity_id), ...pendingDrafts.map((d) => d.opportunity_id)])];
   const { data: opportunities } =
     must(opportunityIds.length > 0
       ? await supabase.from("opportunities").select("id, title, organisation_id, status, shortlisting_mode").in("id", opportunityIds)
@@ -103,6 +114,34 @@ export default async function ApplicationsPage({
           {t("Your application was submitted. You'll see it below, and the employer will be notified.")}
         </div>
       )}
+
+      {(() => {
+        const drafts = pendingDrafts.filter((d) => opportunityById.get(d.opportunity_id)?.status === "open");
+        if (drafts.length === 0) return null;
+        return (
+          <section aria-labelledby="drafts-h" className="mt-6">
+            <h2 id="drafts-h" className="text-sm font-bold tracking-wide text-slate uppercase">
+              {t("Not sent yet")}
+            </h2>
+            <ul className="mt-2 space-y-2">
+              {drafts.map((d) => {
+                const opp = opportunityById.get(d.opportunity_id)!;
+                return (
+                  <li key={d.opportunity_id} className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-slate/30 bg-white p-4">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-midnight">{opp.title}</p>
+                      <p className="text-xs text-slate">{orgNameById.get(opp.organisation_id) ?? t("AdorWorks employer")}</p>
+                    </div>
+                    <Link href={`/opportunities/${d.opportunity_id}/apply`} className="shrink-0 rounded-control bg-primary px-4 py-2.5 text-sm font-extrabold text-white hover:bg-primary-hover">
+                      {t("Continue")}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        );
+      })()}
 
       {!applications || applications.length === 0 ? (
         <p className="mt-8 text-sm text-slate">

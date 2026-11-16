@@ -777,7 +777,7 @@ function daysSince(iso: string): number {
 }
 
 function oldestWaitingLabel(days: number, t: Translate): string {
-  if (days === 0) return t("Oldest waiting since today");
+  if (days === 0) return t("Arrived today");
   return days === 1 ? t("Oldest waiting 1 day") : t("Oldest waiting {n} days", { n: days });
 }
 
