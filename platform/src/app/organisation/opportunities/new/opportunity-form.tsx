@@ -97,7 +97,6 @@ function formatPreviewCompensation(p: PreviewSnapshot) {
   if (p.compensationMin && p.compensationMax) {
     return `${currency} ${Number(p.compensationMin).toLocaleString()}–${Number(p.compensationMax).toLocaleString()}`;
   }
-  if (p.paymentBasis === "negotiable") return "Negotiable";
   return "Paid — details on application";
 }
 
@@ -393,7 +392,7 @@ export function OpportunityForm({
                 id="paymentBasis"
                 name="paymentBasis"
                 required
-                defaultValue={opportunity?.payment_basis ?? undefined}
+                defaultValue={opportunity?.payment_basis === "negotiable" ? undefined : (opportunity?.payment_basis ?? undefined)}
                 className="mt-1 w-full rounded-lg border border-slate/25 px-2 py-2 text-sm"
               >
                 <option value="fixed">Fixed price</option>
@@ -401,7 +400,6 @@ export function OpportunityForm({
                 <option value="hourly">Hourly</option>
                 <option value="daily">Daily</option>
                 <option value="monthly">Monthly</option>
-                <option value="negotiable">Negotiable</option>
               </select>
             </div>
             <div>

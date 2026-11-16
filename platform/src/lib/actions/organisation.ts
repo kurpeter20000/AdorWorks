@@ -131,7 +131,10 @@ const OpportunitySchema = z
       ["freelance", "fixed_term_contract", "full_time", "internship", "apprenticeship", "managed_service"],
       { message: "Choose an engagement type." }
     ),
-    paymentBasis: z.enum(["fixed", "milestone", "hourly", "daily", "monthly", "negotiable"], {
+    // "negotiable" removed (owner decision 2026-11-16): every opportunity
+    // states real pay — an amount, or a min–max range. Enforced again in
+    // the database (0110 guard_opportunity_pay).
+    paymentBasis: z.enum(["fixed", "milestone", "hourly", "daily", "monthly"], {
       message: "Choose how this is paid.",
     }),
     compensationAmount: z.string().trim().optional(),
@@ -147,10 +150,11 @@ const OpportunitySchema = z
       const amount = Number(v.compensationAmount || 0);
       const min = Number(v.compensationMin || 0);
       const max = Number(v.compensationMax || 0);
-      return amount > 0 || min > 0 || max > 0;
+      // An amount, or a full range (minimum AND maximum, max ≥ min).
+      return amount > 0 || (min > 0 && max >= min);
     },
     {
-      message: "AdorWorks only lists paid opportunities — enter an amount or a range.",
+      message: "AdorWorks only lists paid opportunities — enter an amount, or both a minimum and a maximum.",
       path: ["compensationAmount"],
     }
   );
@@ -323,7 +327,7 @@ const BatchSharedSchema = z.object({
     ["freelance", "fixed_term_contract", "full_time", "internship", "apprenticeship", "managed_service"],
     { message: "Choose an engagement type." }
   ),
-  paymentBasis: z.enum(["fixed", "milestone", "hourly", "daily", "monthly", "negotiable"], { message: "Choose how this is paid." }),
+  paymentBasis: z.enum(["fixed", "milestone", "hourly", "daily", "monthly"], { message: "Choose how this is paid." }),
   currency: z.string().trim().min(1).default("SSP"),
   applicationDeadline: z.string().trim().optional(),
   shortlistingMode: z.enum(["self_service", "staff_assisted"]).default("staff_assisted"),
