@@ -26,6 +26,9 @@
 }
 
 body { background: var(--site-bg); color: var(--site-ink); }
+/* Layout rules (display: flex/grid) must never un-hide something the
+   page or a script has hidden. */
+[hidden] { display: none !important; }
 a { color: var(--site-teal); }
 a:hover { color: var(--site-teal-dark); }
 a:focus-visible,
@@ -238,17 +241,19 @@ h1 em, h2 em { font-style: italic; color: var(--site-teal); }
 .lede { font-size: 1.15rem; color: var(--site-muted); max-width: 34em; }
 .site-card { background: #fff; border: 1px solid var(--site-line); border-radius: 24px; }
 
-/* Entrance and scroll-reveal motion (opt-in per element). */
+/* Entrance and scroll-reveal motion (opt-in per element). Named
+   .site-reveal: styles.css already has a .reveal (hidden until main.js
+   reveals its own targets). */
 @keyframes site-rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
 .rise { animation: site-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .rise-1 { animation-delay: 0.08s; }
 .rise-2 { animation-delay: 0.18s; }
 .rise-3 { animation-delay: 0.28s; }
 @supports (animation-timeline: view()) {
-  .reveal { animation: site-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 40%; }
+  .site-reveal { animation: site-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 40%; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .rise, .reveal { animation: none !important; }
+  .rise, .site-reveal { animation: none !important; }
   .services-megamenu { transition: none !important; }
 }
 
