@@ -14,6 +14,7 @@ import { sendEmailSafely, getUserEmail } from "@/lib/email";
 import { renderEmail, escapeHtml } from "@/lib/emailTemplate";
 import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
 import type { FormState } from "./auth";
+import { BULK_DECISION_LIMIT } from "@/lib/domain/decisions";
 
 const PitchSchema = z.object({
   pitch: z.string().trim().min(30, msg("Tell them a bit more about why you're a fit — at least 30 characters.")),
@@ -254,6 +255,52 @@ export async function setApplicationStage(
 
   revalidatePath(`/organisation/opportunities/${actualOpportunityId}`);
   return {};
+}
+
+const BulkSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(BULK_DECISION_LIMIT),
+  opportunityId: z.string().uuid(),
+  stage: z.enum(["shortlisted", "rejected"]),
+  reason: z.string().trim().max(2000).optional(),
+});
+
+/**
+ * Spec "one-tap shortlist and kind decline … bulk select works on up to
+ * 50 applicants". Each applicant goes through setApplicationStage, so
+ * RLS, the audit log, the notification and the email are exactly the
+ * same as deciding one at a time. Only applications still 'submitted'
+ * on this opportunity are touched, so a stale page can't decide twice.
+ */
+export async function bulkSetApplicationStage(input: {
+  ids: string[];
+  opportunityId: string;
+  stage: "shortlisted" | "rejected";
+  reason?: string;
+}): Promise<{ done: number; skipped: number; failed: number; error?: string }> {
+  await requireRole(...CLIENT_ROLES);
+  const parsed = BulkSchema.safeParse({ ...input, ids: [...new Set(input.ids)] });
+  if (!parsed.success) {
+    return { done: 0, skipped: 0, failed: 0, error: `Choose between 1 and ${BULK_DECISION_LIMIT} applicants.` };
+  }
+  const { ids, opportunityId, stage, reason } = parsed.data;
+
+  const supabase = await createClient();
+  const { data: rows, error } = await supabase.from("applications").select("id, stage, opportunity_id").in("id", ids);
+  if (error) return { done: 0, skipped: 0, failed: 0, error: error.message };
+  const eligible = (rows ?? []).filter((r) => r.stage === "submitted" && r.opportunity_id === opportunityId).map((r) => r.id);
+
+  let done = 0;
+  let failed = 0;
+  // A few at a time: each one also sends an email.
+  for (let i = 0; i < eligible.length; i += 5) {
+    const results = await Promise.all(eligible.slice(i, i + 5).map((id) => setApplicationStage(id, opportunityId, stage, reason)));
+    for (const r of results) {
+      if (r.error) failed += 1;
+      else done += 1;
+    }
+  }
+  revalidatePath(`/organisation/opportunities/${opportunityId}`);
+  return { done, skipped: ids.length - eligible.length, failed };
 }
 
 /**

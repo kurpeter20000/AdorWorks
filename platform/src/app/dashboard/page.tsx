@@ -12,7 +12,7 @@ import { Briefcase, Circle, ClipboardList, FileCheck2, FileSignature, Mail, Plus
 import { NextStepCard } from "@/components/ui/status";
 import { HelpCard } from "@/components/help-card";
 import { ApplicationsList, type TalentApplication } from "./applications-list";
-import { OpportunitiesList, type EmployerOpportunity } from "./opportunities-list";
+import { OpportunitiesList, opportunityGroup, OPPORTUNITY_GROUPS, type EmployerOpportunity, type OpportunityGroup } from "./opportunities-list";
 import { StatePanel } from "@/components/state-panel";
 import { PageContainer, PageHeader, Section } from "@/components/ui/page";
 import { StatTile } from "@/components/ui/stat-tile";
@@ -35,7 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; onboarding?: string }>;
+  searchParams: Promise<{ error?: string; onboarding?: string; opps?: string }>;
 }) {
   const session = await requireSession();
   const query = await searchParams;
@@ -92,6 +92,8 @@ export default async function DashboardPage({
   let talentApps: TalentApplication[] = [];
   let talentStats: { applications: number; movedForward: number; offers: number; invitations: number; pendingRelease: string | null } | null = null;
   let employerOpps: EmployerOpportunity[] = [];
+  let oppGroup: OpportunityGroup = "live";
+  const oppGroupCounts: Record<OpportunityGroup, number> = { live: 0, review: 0, closed: 0 };
   let employerInReview = 0;
   let orgName: string | null = null;
   let talentSkillCount = 0;
@@ -388,8 +390,17 @@ export default async function DashboardPage({
           meta: needsChanges.length === 1 ? needsChanges[0].title : undefined,
         });
       }
+      // Live / In review / Closed (spec). Counts cover every opportunity;
+      // the list shows the five newest in the chosen group. With no
+      // choice made, open the first group that has something in it.
+      for (const o of allOrgOpps) {
+        const g = opportunityGroup(o.status);
+        if (g) oppGroupCounts[g] += 1;
+      }
+      const asked = OPPORTUNITY_GROUPS.find((g) => g === query.opps);
+      oppGroup = asked ?? OPPORTUNITY_GROUPS.find((g) => oppGroupCounts[g] > 0) ?? "live";
       employerOpps = allOrgOpps
-        .filter((o) => !["cancelled", "rejected"].includes(o.status))
+        .filter((o) => opportunityGroup(o.status) === oppGroup)
         .slice(0, 5)
         .map((o) => {
           const apps = (orgApps ?? []).filter((a) => a.opportunity_id === o.id);
@@ -636,7 +647,7 @@ export default async function DashboardPage({
                 </Link>
               }
             >
-              <OpportunitiesList opportunities={employerOpps} />
+              <OpportunitiesList opportunities={employerOpps} group={oppGroup} groupCounts={oppGroupCounts} />
             </Section>
             <NotificationsPanel notifications={notifications ?? []} unreadCount={unreadCount ?? 0} />
           </div>
