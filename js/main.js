@@ -137,6 +137,9 @@
       var catGroups = Array.from(panel.querySelectorAll("[data-megamenu-items]"));
       var desktopQuery = window.matchMedia("(min-width: 960px)");
       var closeTimer = null;
+      // When the pointer opened it a moment ago, the click that follows is
+      // the same intent ("show me the menu"), not a request to close it.
+      var hoverOpenedAt = 0;
 
       function showCategory(key) {
         catButtons.forEach(function (b) {
@@ -163,12 +166,18 @@
         trigger.setAttribute("aria-expanded", "false");
       }
 
-      item.addEventListener("mouseenter", function () { if (desktopQuery.matches) open(); });
+      item.addEventListener("mouseenter", function () {
+        if (desktopQuery.matches && !item.classList.contains("is-open")) {
+          open();
+          hoverOpenedAt = Date.now();
+        }
+      });
       item.addEventListener("mouseleave", function () {
         if (desktopQuery.matches) closeTimer = setTimeout(close, 200);
       });
       trigger.addEventListener("click", function (e) {
         e.preventDefault();
+        if (item.classList.contains("is-open") && Date.now() - hoverOpenedAt < 600) return;
         item.classList.contains("is-open") ? close() : open();
       });
       item.addEventListener("keydown", function (e) {
