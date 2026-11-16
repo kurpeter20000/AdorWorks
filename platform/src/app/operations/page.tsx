@@ -4,6 +4,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireRole, STAFF_ROLES } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { StatePanel } from "@/components/state-panel";
+import { canOpenStaffPath, canUseStaffArea, STAFF_ROLE_DESCRIPTIONS } from "@/lib/domain/staffAccess";
+import { USER_ROLE_LABELS } from "@/lib/domain/roles";
 import { TrendBars } from "@/components/trend-bars";
 
 export const metadata: Metadata = { title: "Operations" };
@@ -64,8 +66,11 @@ function bucketByDay(timestamps: string[], numDays: number): { label: string; co
 }
 
 export default async function OperationsPage() {
-  await requireRole(...STAFF_ROLES);
+  const session = await requireRole(...STAFF_ROLES);
   const supabase = await createClient();
+  // Each role sees the queues it works (lib/domain/staffAccess); admins see all.
+  const groups = GROUPS.map((g) => ({ ...g, tiles: g.tiles.filter((t) => canOpenStaffPath(session.role, t.href)) })).filter((g) => g.tiles.length > 0);
+  const seesIntake = canUseStaffArea(session.role, "intake");
 
   // Some of these tables (intake_submissions, reports, disputes, …) aren't
   // in the hand-maintained database.types.ts, and the table names are data
@@ -86,7 +91,7 @@ export default async function OperationsPage() {
   const trendCutoffIso = trendCutoff.toISOString().slice(0, 10);
 
   const [counts, recent, newOpportunities, newApplications] = await Promise.all([
-    Promise.all(GROUPS.map((g) => Promise.all(g.tiles.map(count)))),
+    Promise.all(groups.map((g) => Promise.all(g.tiles.map(count)))),
     db
       .from("intake_submissions")
       .select("id, form_type, status, created_at, payload")
@@ -96,14 +101,17 @@ export default async function OperationsPage() {
     db.from("opportunities").select("created_at").gte("created_at", trendCutoffIso),
     db.from("applications").select("created_at").gte("created_at", trendCutoffIso),
   ]);
-  const failed = GROUPS.flatMap((g, gi) => g.tiles.filter((_, ti) => counts[gi][ti] === null).map((t) => t.label));
+  const failed = groups.flatMap((g, gi) => g.tiles.filter((_, ti) => counts[gi][ti] === null).map((t) => t.label));
   const opportunityTrend = bucketByDay((newOpportunities.data ?? []).map((r) => r.created_at as string), TREND_DAYS);
   const applicationTrend = bucketByDay((newApplications.data ?? []).map((r) => r.created_at as string), TREND_DAYS);
 
   return (
     <div>
       <h1 className="text-2xl font-extrabold text-midnight">Operations</h1>
-      <p className="mt-1 text-sm text-slate">Everything staff work on, in one place. Every number is a live count.</p>
+      <p className="mt-1 text-sm text-slate">
+        Your queues as {USER_ROLE_LABELS[session.role]}
+        {STAFF_ROLE_DESCRIPTIONS[session.role] ? ` — ${STAFF_ROLE_DESCRIPTIONS[session.role].toLowerCase()}` : ""}. Every number is a live count.
+      </p>
 
       {failed.length > 0 && (
         <div className="mt-6">
@@ -113,7 +121,7 @@ export default async function OperationsPage() {
         </div>
       )}
 
-      {GROUPS.map((group, gi) => (
+      {groups.map((group, gi) => (
         <section key={group.title} className="mt-6">
           <h2 className="mb-2 text-sm font-bold tracking-wide text-slate uppercase">{group.title}</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -142,6 +150,7 @@ export default async function OperationsPage() {
         </div>
       </section>
 
+      {seesIntake && (
       <section className="mt-8">
         <div className="mb-2 flex items-baseline justify-between gap-3">
           <h2 className="text-sm font-bold tracking-wide text-slate uppercase">Recent submissions</h2>
@@ -175,6 +184,7 @@ export default async function OperationsPage() {
           )}
         </div>
       </section>
+      )}
     </div>
   );
 }

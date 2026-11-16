@@ -79,7 +79,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
     isOtherOrgMember = !!membership;
   }
   const canView = isTalent || isEmployer || isOtherOrgMember;
-  if (!canView && !["reviewer", "matcher", "finance", "admin"].includes(session.role)) {
+  if (!canView && !["reviewer", "matcher", "finance", "trust_safety", "admin"].includes(session.role)) {
     notFound();
   }
 

@@ -2,7 +2,8 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { requireRole, STAFF_ROLES } from "@/lib/dal/session";
+import { requireRole } from "@/lib/dal/session";
+import { OPPORTUNITY_REVIEW_ROLES } from "@/lib/domain/staffAccess";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/domain/audit";
@@ -55,7 +56,7 @@ function revalidateOpportunity(opportunityId: string) {
 }
 
 export async function approveOpportunity(opportunityId: string): Promise<FormState> {
-  const session = await requireRole(...STAFF_ROLES);
+  const session = await requireRole(...OPPORTUNITY_REVIEW_ROLES);
 
   const found = await loadOpportunityForReview(opportunityId);
   if (!found) return { message: "Opportunity not found." };
@@ -123,7 +124,7 @@ export async function rejectOpportunity(
   _prevState: FormState,
   formData: FormData
 ): Promise<FormState> {
-  const session = await requireRole(...STAFF_ROLES);
+  const session = await requireRole(...OPPORTUNITY_REVIEW_ROLES);
 
   const validated = ReasonSchema.safeParse({ reason: formData.get("reason") });
   if (!validated.success) {
@@ -191,7 +192,7 @@ export async function requestOpportunityChanges(
   _prevState: FormState,
   formData: FormData
 ): Promise<FormState> {
-  const session = await requireRole(...STAFF_ROLES);
+  const session = await requireRole(...OPPORTUNITY_REVIEW_ROLES);
 
   const validated = NoteSchema.safeParse({ note: formData.get("note") });
   if (!validated.success) {

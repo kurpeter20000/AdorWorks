@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { requireRole, STAFF_ROLES } from "@/lib/dal/session";
+import { requireRole } from "@/lib/dal/session";
+import { staffAreaRoles } from "@/lib/domain/staffAccess";
 import { StatePanel } from "@/components/state-panel";
 import { PeopleConsole } from "./people-console";
 
 export const metadata: Metadata = { title: "People — Operations" };
 
 export default async function OperationsPeoplePage() {
-  const session = await requireRole(...STAFF_ROLES);
+  const session = await requireRole(...staffAreaRoles("people"));
   // The staff API enforces admin-only on every /api/people route; this is
   // just a clearer message than a page of permission errors.
   if (session.role !== "admin") {

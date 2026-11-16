@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { requireRole, STAFF_ROLES, canMoveMoney } from "@/lib/dal/session";
+import { requireRole, canMoveMoney } from "@/lib/dal/session";
+import { staffAreaRoles } from "@/lib/domain/staffAccess";
 import { createClient } from "@/lib/supabase/server";
 import { getEscrowRates } from "@/lib/dal/settings";
 import { PayoutsConsole } from "./payouts-console";
@@ -14,7 +15,7 @@ export const metadata: Metadata = { title: "Payouts — Operations" };
  * this is the actual release mechanism today, not just a status screen.
  */
 export default async function OperationsPayoutsPage() {
-  const session = await requireRole(...STAFF_ROLES);
+  const session = await requireRole(...staffAreaRoles("payouts"));
   const supabase = await createClient();
   const escrow = await getEscrowRates();
 
