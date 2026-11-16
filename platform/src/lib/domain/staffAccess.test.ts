@@ -29,8 +29,8 @@ describe("staff access (Phase B2)", () => {
   it("menus show each role only its own work", () => {
     const hrefs = (role: Parameters<typeof getDashboardExperience>[0]) => getDashboardExperience(role).actions.map((a) => a.href);
     expect(hrefs("verifier")).toEqual(["/operations", "/operations/talent", "/operations/organisations"]);
-    expect(hrefs("trust_safety")).toEqual(["/operations", "/operations/reports", "/operations/contracts", "/operations/support"]);
-    expect(hrefs("field_support")).toEqual(["/operations", "/operations/assisted-onboarding", "/operations/support"]);
+    expect(hrefs("trust_safety")).toEqual(["/operations", "/operations/reports", "/operations/contracts", "/operations/people", "/operations/support"]);
+    expect(hrefs("field_support")).toEqual(["/operations", "/operations/assisted-onboarding", "/operations/people", "/operations/support"]);
     expect(hrefs("finance")).toEqual(["/operations", "/operations/contracts", "/operations/invoices", "/operations/payouts", "/operations/settings"]);
     expect(hrefs("reviewer")).toEqual(["/operations", "/operations/intake", "/operations/opportunities", "/operations/services"]);
     expect(hrefs("matcher")).toEqual(["/operations", "/operations/opportunities", "/operations/engagements"]);

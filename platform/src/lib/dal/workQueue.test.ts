@@ -40,10 +40,10 @@ describe("staff work list", () => {
     expect(names("reviewer")).toEqual(["Opportunities to review", "Appeals", "Services to review", "Intake"]);
     expect(names("matcher")).toEqual(["Candidates to shortlist"]);
     expect(names("verifier")).toEqual(["Talent evidence", "Introduction videos", "Organisation checks"]);
-    expect(names("trust_safety")).toEqual(["Reports", "Disputes", "Support messages"]);
+    expect(names("trust_safety")).toEqual(["Reports", "Suspension appeals", "Disputes", "Support messages"]);
     expect(names("finance")).toEqual(["Payouts", "Invoices"]);
     expect(names("field_support")).toEqual(["Support messages", "Help requests"]);
-    expect(names("admin")).toHaveLength(14);
+    expect(names("admin")).toHaveLength(15);
   });
 
   it("puts late items first, then oldest first", () => {
@@ -116,7 +116,7 @@ describe("staff work list", () => {
   });
 
   it("names a queue that failed instead of hiding it", async () => {
-    const db = fakeDb({ reports: new Error("boom"), disputes: [], conversations: [] });
+    const db = fakeDb({ reports: new Error("boom"), account_appeals: [], disputes: [], conversations: [] });
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     const { failed, items } = await loadWorkQueue(db, "trust_safety");
     spy.mockRestore();

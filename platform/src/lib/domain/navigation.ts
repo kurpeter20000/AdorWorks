@@ -93,7 +93,7 @@ const experiences: Record<DashboardKind, Omit<DashboardExperience, "kind">> = {
       { href: "/operations/engagements", label: msg("Engagements"), description: msg("Delivery tracking, milestones, finance records and disputes.") },
       { href: "/operations/contracts", label: msg("Contracts"), description: msg("Contract oversight: disputes, refunds and invoice reconciliation.") },
       { href: "/operations/assisted-onboarding", label: msg("Assisted onboarding"), description: msg("Partner hubs, onboarding agents and in-person help requests.") },
-      { href: "/operations/people", label: msg("People"), description: msg("Accounts, roles, suspensions and staff (admins only).") },
+      { href: "/operations/people", label: msg("People"), description: msg("Find a person by name, email, phone or ID; notes, suspensions, appeals and staff roles.") },
       { href: "/operations/invoices", label: msg("Invoices"), description: msg("Institutional invoices awaiting bank-transfer confirmation.") },
       { href: "/operations/payouts", label: msg("Payouts"), description: msg("Escrow-held milestone payments due for release to talent.") },
       { href: "/operations/settings", label: msg("Settings"), description: msg("Platform fees and other settings (finance and admins).") },

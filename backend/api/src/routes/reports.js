@@ -120,6 +120,29 @@ reportsRouter.patch(
   })
 );
 
+const TARGET_WORDS = {
+  opportunity: "an opportunity",
+  talent_service: "a service",
+  talent_profile: "a profile",
+  organisation: "an organisation",
+  introduction_video: "an introduction video",
+};
+
+export const REPORT_OUTCOME_NOTICE = {
+  actioned: {
+    title: "We acted on your report",
+    body: (what) => `Thank you for reporting ${what}. We reviewed it and took action under our Community Standards.`,
+  },
+  reviewed: {
+    title: "We reviewed your report",
+    body: (what) => `Thank you for reporting ${what}. We reviewed it and are keeping an eye on it.`,
+  },
+  dismissed: {
+    title: "We reviewed your report",
+    body: (what) => `Thank you for reporting ${what}. We reviewed it and didn't find a breach of our Community Standards. Thank you for looking out for others.`,
+  },
+};
+
 const updateSchema = z.object({
   status: z.enum(["reviewed", "dismissed", "actioned"]),
   // S10-06/S10-13/S10-14 gap-check (2026-09-19): this endpoint previously
@@ -157,6 +180,22 @@ reportsRouter.patch(
       after: { status },
       metadata: { target_type: data.target_type, target_id: data.target_id },
     });
+
+    // Spec: "tell the reporter the outcome". Only the outcome — never
+    // what happened to the other person or which staff member decided.
+    // Best-effort: a failed notice never undoes the decision.
+    const outcome = REPORT_OUTCOME_NOTICE[status];
+    if (outcome && data.reporter_id) {
+      const what = TARGET_WORDS[data.target_type] ?? "something on AdorWorks";
+      const { error: noteError } = await supabaseAdmin.from("notifications").insert({
+        user_id: data.reporter_id,
+        type: "report_resolved",
+        title: outcome.title,
+        body: outcome.body(what),
+        link: null,
+      });
+      if (noteError) console.error(`reports: could not notify reporter of ${req.params.id}: ${noteError.message}`);
+    }
 
     res.json({ data });
   })

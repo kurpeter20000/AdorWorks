@@ -33,7 +33,22 @@ export const STAFF_API_ACCESS = {
   disputes: { read: [], write: ["trust_safety", "finance"] },
   reviews: { read: ["reviewer", "matcher", "trust_safety"], write: [] },
   assistedOnboarding: { read: [], write: ["field_support"] },
+  // Person lookup and notes (spec: "staff never need the database for
+  // support"). Suspensions, staff accounts and roles have their own,
+  // stricter checks on top (people.js).
+  people: { read: [], write: ["trust_safety", "field_support"] },
 };
+
+/** Only these roles (admin always included), on top of the area check. */
+export function requireRoleIn(...roles) {
+  const allowed = new Set(["admin", ...roles]);
+  return function roleGuard(req, res, next) {
+    if (!req.user || !allowed.has(req.user.role)) {
+      return res.status(403).json({ error: "Your staff role doesn't cover this. Ask an admin if you need access.", code: "staff_area_forbidden" });
+    }
+    next();
+  };
+}
 
 const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 

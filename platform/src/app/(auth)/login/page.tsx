@@ -80,6 +80,15 @@ export default async function LoginPage({
           {t("You were signed out after 10 minutes of inactivity. Sign in again to continue.")}
         </p>
       )}
+      {reason === "suspended" && (
+        <p className="mt-2 rounded-lg bg-coral/10 px-3 py-2 text-sm text-midnight" role="status">
+          {t("This account is suspended. If you think that's a mistake, you can")}{" "}
+          <Link href="/appeal" prefetch={false} className="font-semibold text-teal-ink underline">
+            {t("appeal the decision")}
+          </Link>
+          .
+        </p>
+      )}
       {intent && <p className="mt-1 text-sm text-slate">{t(INTENT_COPY[intent])}</p>}
       <LoginForm next={returnTo} />
       <p className="mt-4 text-center text-sm text-slate">
