@@ -1,20 +1,9 @@
-import { Fraunces } from "next/font/google";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { CONTACT_URL, MARKETING_SITE_URL } from "@/lib/domain/marketingSite";
-import { HeroVideoBackground } from "@/components/hero-video-background";
+import { HeroVideoBackgroundFrom } from "@/components/hero-video-background";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { msg } from "@/i18n/config";
 import { getT } from "@/i18n/server";
-
-// The public site's display face, loaded only for the sign-in pages (a
-// nested layout's next/font is preloaded on these routes alone, so the
-// rest of the app pays nothing for it).
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  style: ["normal", "italic"],
-});
 
 // Same three value props on both sides of the marketplace — the auth
 // pages are the one place login/signup for talent and employers share a
@@ -46,17 +35,17 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
   const t = await getT();
   return (
     <div
-      className={`${fraunces.variable} flex flex-1 flex-col bg-[#f7f3ec] text-midnight lg:flex-row`}
+      className={`flex flex-1 flex-col bg-[#f7f3ec] text-midnight lg:flex-row`}
       // Fraunces has no Arabic letters, so Arabic headings fall through to
       // the app's Arabic face rather than a random system font.
       style={{ "--font-auth-display": "var(--font-fraunces), var(--font-arabic), Georgia, serif" } as React.CSSProperties}
     >
-      {/* The poster is the brand panel's background; it only shows from the
-          lg breakpoint up, so it's only preloaded there. */}
-      <link rel="preload" as="image" href="/hero/hero-poster.jpg" media="(min-width: 1024px)" fetchPriority="high" />
+      {/* The poster is the brand panel's background; the panel only shows
+          from the lg breakpoint up, so the poster is only fetched there. */}
+      <link rel="preload" as="image" href="/hero/hero-poster.jpg" media="(min-width: 1024px)" />
 
       <aside className="relative isolate hidden min-h-dvh flex-col overflow-hidden bg-midnight text-[#f7f3ec] lg:flex lg:w-[46%]">
-        <HeroVideoBackground className="absolute inset-0 -z-20 h-full w-full object-cover" />
+        <HeroVideoBackgroundFrom query="(min-width: 1024px)" className="absolute inset-0 -z-20 h-full w-full object-cover" />
         <div aria-hidden className="absolute inset-0 -z-10 bg-[#10171f]/70" />
         <div className="flex flex-1 flex-col gap-6 px-12 py-9 xl:px-16">
           <a href={MARKETING_SITE_URL} className="self-start text-lg font-extrabold text-[#f7f3ec]">
