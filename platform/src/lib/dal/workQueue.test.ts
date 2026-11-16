@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 vi.mock("server-only", () => ({}));
@@ -28,6 +28,13 @@ function fakeDb(tables: Record<string, unknown[] | Error>): SupabaseClient {
 }
 
 describe("staff work list", () => {
+  // Loaders read the clock; pin it so ages are the same on every run.
+  beforeAll(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(NOW);
+  });
+  afterAll(() => vi.useRealTimers());
+
   it("gives each role only its own queues", () => {
     const names = (role: Parameters<typeof workQueuesFor>[0]) => workQueuesFor(role).map((q) => q.name);
     expect(names("reviewer")).toEqual(["Opportunities to review", "Appeals", "Services to review", "Intake"]);
@@ -91,6 +98,21 @@ describe("staff work list", () => {
       ["Driver", "1 candidate waiting"],
     ]);
     expect(Date.parse(items[0].deadline!) - Date.parse(hoursAgo(200))).toBe(14 * 86_400_000);
+  });
+
+  it("treats a suspected scam report as urgent (2 h) and others as 24 h", async () => {
+    const db = fakeDb({
+      reports: [
+        { id: "r1", target_type: "opportunity", reason: "scam", created_at: hoursAgo(3) },
+        { id: "r2", target_type: "talent_profile", reason: "spam", created_at: hoursAgo(10) },
+      ],
+    });
+    const { items, now } = await loadWorkQueue(db, "trust_safety");
+    expect(items.map((i) => [i.key, i.targetHours])).toEqual([
+      ["report-r1", 2],
+      ["report-r2", 24],
+    ]);
+    expect(workItemState(items[0], now).overdue).toBe(true);
   });
 
   it("names a queue that failed instead of hiding it", async () => {

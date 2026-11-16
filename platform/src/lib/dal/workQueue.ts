@@ -25,6 +25,11 @@ async function rows(q: PromiseLike<{ data: Row[] | null; error: unknown }>): Pro
 }
 
 /**
+ * Target times follow the build spec's suggestions, which the owner
+ * approved on 2026-11-16: review 24 h, verification 48 h, reports 24 h
+ * (2 h for a suspected scam), payments 48 h, in-person help 72 h,
+ * support 24 h.
+ *
  * Every queue staff work, each read with the signed-in staff member's own
  * session (staff RLS applies). Each loader is independent: one failing
  * doesn't hide the others, and the page says which one failed.
@@ -142,7 +147,7 @@ const QUEUES: Queue[] = [
         title: String(r.evidence_type).replace(/_/g, " "),
         href: "/operations/talent",
         since: r.created_at,
-        targetHours: 72,
+        targetHours: 48,
       })),
   },
   {
@@ -156,7 +161,7 @@ const QUEUES: Queue[] = [
         title: "Talent introduction video",
         href: "/operations/talent",
         since: r.updated_at,
-        targetHours: 72,
+        targetHours: 48,
       })),
   },
   {
@@ -179,7 +184,7 @@ const QUEUES: Queue[] = [
         title: r.organisations?.name ?? "Organisation",
         href: "/operations/organisations",
         since: r.updated_at,
-        targetHours: 72,
+        targetHours: 48,
       })),
   },
   {
@@ -189,12 +194,13 @@ const QUEUES: Queue[] = [
       (await rows(db.from("reports").select("id, target_type, reason, created_at").eq("status", "open").order("created_at").limit(LIMIT))).map((r) => ({
         key: `report-${r.id}`,
         area: "reports",
-        kind: "Report to handle",
+        // A suspected scam (e.g. a fee to apply) can hurt someone today: 2 h.
+        kind: r.reason === "scam" ? "Urgent report: suspected scam" : "Report to handle",
         title: `${String(r.target_type).replace(/_/g, " ")} reported`,
         detail: `Reason: ${r.reason}`,
         href: "/operations/reports",
         since: r.created_at,
-        targetHours: 24,
+        targetHours: r.reason === "scam" ? 2 : 24,
       })),
   },
   {
@@ -259,7 +265,7 @@ const QUEUES: Queue[] = [
         title: `${Number(r.net_amount).toLocaleString("en-GB")} ${r.currency}`,
         href: "/operations/payouts",
         since: r.dispute_window_ends_at,
-        targetHours: 24,
+        targetHours: 48,
       })),
   },
   {
@@ -275,7 +281,7 @@ const QUEUES: Queue[] = [
         title: `${Number(r.amount).toLocaleString("en-GB")} ${r.currency ?? ""}`.trim(),
         href: "/operations/invoices",
         since: r.created_at,
-        targetHours: 72,
+        targetHours: 48,
       })),
   },
   {
@@ -290,7 +296,7 @@ const QUEUES: Queue[] = [
         detail: r.preferred_language ? `Language: ${r.preferred_language}` : undefined,
         href: "/operations/assisted-onboarding",
         since: r.created_at,
-        targetHours: 24,
+        targetHours: 72,
       })),
   },
 ];
