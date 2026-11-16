@@ -12,6 +12,7 @@ import { ReopenOpportunityButton } from "./reopen-opportunity-button";
 import { SendOfferForm } from "./send-offer-form";
 import { ShortlistingModeForm } from "./shortlisting-mode-form";
 import { ShortlistActions } from "./shortlist-actions";
+import { BulkDecisionPanel } from "./bulk-decision-panel";
 import { RemoveFromShortlistButton } from "./remove-from-shortlist-button";
 import { OpportunityAttachments } from "./opportunity-attachments";
 import { VerificationBadge } from "@/components/verification-badge";
@@ -240,6 +241,19 @@ export default async function OpportunityDetailPage({
             ? "You're shortlisting this one yourself — every applicant appears below as they apply, or search and add candidates directly."
             : "Only shows once AdorWorks staff have shortlisted an applicant — this is the same curated-shortlist review every opportunity goes through."}
         </p>
+
+        {opportunity.shortlisting_mode === "self_service" &&
+          (applications ?? []).filter((a) => a.stage === "submitted").length >= 2 && (
+            <BulkDecisionPanel
+              opportunityId={opportunity.id}
+              applicants={(applications ?? [])
+                .filter((a) => a.stage === "submitted")
+                .map((a) => {
+                  const talent = talentById.get(a.talent_id);
+                  return { id: a.id, name: talent?.display_name ?? "AdorWorks talent", headline: talent?.headline ?? null };
+                })}
+            />
+          )}
 
         {!applications || applications.length === 0 ? (
           <p className="mt-4 text-sm text-slate">

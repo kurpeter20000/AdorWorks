@@ -59,7 +59,7 @@ export default async function ApplyPage({ params }: { params: Promise<{ id: stri
     supabase.from("screening_questions").select("id, question, required").eq("opportunity_id", id).order("sequence", { ascending: true }),
     supabase.from("application_drafts").select("pitch, answers").eq("opportunity_id", id).maybeSingle(),
     supabase.from("public_organisation_names").select("name, verification_status").eq("id", opportunity.organisation_id).maybeSingle(),
-    supabase.from("talent_profiles").select("skills").eq("id", session.userId).maybeSingle(),
+    supabase.from("talent_profiles").select("skills, headline, location").eq("id", session.userId).maybeSingle(),
   ]);
 
   const admin = createAdminClient();
@@ -214,10 +214,20 @@ export default async function ApplyPage({ params }: { params: Promise<{ id: stri
         <aside className="min-w-0 space-y-4 lg:col-span-2">
           <section aria-labelledby="apply-h" className="rounded-card border border-line bg-white p-5 shadow-raised">
             <h2 id="apply-h" className="text-lg font-extrabold text-midnight">
-              {t("Apply")}
+              {t("Apply in 3 steps")}
             </h2>
-            <p className="mt-1 text-[13px] text-slate">{t("Not ready yet? Save a draft and finish later — your answers will be here.")}</p>
-            <ApplyForm opportunityId={opportunity.id} questions={questions ?? []} initialPitch={draft?.pitch ?? ""} initialAnswers={draft?.answers ?? {}} />
+            <ApplyForm
+              opportunityId={opportunity.id}
+              questions={questions ?? []}
+              initialPitch={draft?.pitch ?? ""}
+              initialAnswers={draft?.answers ?? {}}
+              passport={{
+                name: session.fullName ?? null,
+                headline: talentProfile?.headline ?? null,
+                location: talentProfile?.location ?? null,
+                skills: talentProfile?.skills ?? [],
+              }}
+            />
             <div className="mt-4 flex items-center gap-3 border-t border-line pt-4">
               <ShareButton opportunityId={opportunity.id} />
             </div>

@@ -12,7 +12,7 @@ import { Briefcase, Circle, ClipboardList, FileCheck2, FileSignature, Mail, Plus
 import { NextStepCard } from "@/components/ui/status";
 import { HelpCard } from "@/components/help-card";
 import { ApplicationsList, type TalentApplication } from "./applications-list";
-import { OpportunitiesList, type EmployerOpportunity } from "./opportunities-list";
+import { OpportunitiesList, opportunityGroup, OPPORTUNITY_GROUPS, type EmployerOpportunity, type OpportunityGroup } from "./opportunities-list";
 import { StatePanel } from "@/components/state-panel";
 import { PageContainer, PageHeader, Section } from "@/components/ui/page";
 import { StatTile } from "@/components/ui/stat-tile";
@@ -35,7 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; onboarding?: string }>;
+  searchParams: Promise<{ error?: string; onboarding?: string; opps?: string }>;
 }) {
   const session = await requireSession();
   const query = await searchParams;
@@ -76,11 +76,11 @@ export default async function DashboardPage({
   let readinessState = null;
   let recommendedOpportunities: { id: string; title: string; compensationLabel: string; orgName: string; matched: number; asked: number }[] = [];
   const talentAttention: { href: string; label: string; count: number; tone: "warning" | "danger" | "info" }[] = [];
-  const employerPipeline: { href: string; label: string; count: number; tone: "warning" | "danger" | "info" }[] = [];
+  const employerPipeline: { href: string; label: string; count: number; tone: "warning" | "danger" | "info"; meta?: string }[] = [];
   // Real counts only (see the "skip the wallet card" decision) — every
   // number here comes from a query scoped to this org, same discipline as
   // employerPipeline above. Drives the stat tiles in the employer view.
-  let employerStats: { openOpportunities: number; activeContracts: number; applicantsAwaiting: number; milestonesToPay: number } | null = null;
+  let employerStats: { openOpportunities: number; activeContracts: number; applicantsAwaiting: number; oldestWaitingDays: number | null; milestonesToPay: number } | null = null;
   // Gap-check note: the Today widgets' whole point is asserting an absence
   // ("nothing needs your attention" / "pipeline caught up") -- a silently
   // swallowed query error would be indistinguishable from a real empty
@@ -92,6 +92,8 @@ export default async function DashboardPage({
   let talentApps: TalentApplication[] = [];
   let talentStats: { applications: number; movedForward: number; offers: number; invitations: number; pendingRelease: string | null } | null = null;
   let employerOpps: EmployerOpportunity[] = [];
+  let oppGroup: OpportunityGroup = "live";
+  const oppGroupCounts: Record<OpportunityGroup, number> = { live: 0, review: 0, closed: 0 };
   let employerInReview = 0;
   let orgName: string | null = null;
   let talentSkillCount = 0;
@@ -360,11 +362,45 @@ export default async function DashboardPage({
       employerInReview = allOrgOpps.filter((o) => o.status === "pending_review").length;
       const { data: orgApps, error: orgAppsError } =
         opportunityIds.length > 0
-          ? await supabase.from("applications").select("opportunity_id, stage").in("opportunity_id", opportunityIds)
+          ? await supabase.from("applications").select("opportunity_id, stage, stage_changed_at").in("opportunity_id", opportunityIds)
           : { data: [], error: null };
       if (orgAppsError) todayDataError = true;
+
+      // "Applicants waiting longest" (spec next-step card): the oldest
+      // application still waiting on this employer — shortlisted or in
+      // interview anywhere, or new on a self-service opportunity.
+      const selfService = new Set(selfServiceOpportunityIds);
+      const waitingSince = (orgApps ?? [])
+        .filter((a) => ["shortlisted", "interviewing"].includes(a.stage) || (a.stage === "submitted" && selfService.has(a.opportunity_id)))
+        .map((a) => a.stage_changed_at)
+        .sort()[0];
+      const oldestWaitingDays = waitingSince ? daysSince(waitingSince) : null;
+      const applicantsItem = employerPipeline.find((i) => i.label === "Applicants awaiting review");
+      if (applicantsItem && oldestWaitingDays !== null) applicantsItem.meta = oldestWaitingLabel(oldestWaitingDays, t);
+
+      // Staff asked for changes on a post (spec): the employer fixes and
+      // resubmits from the opportunity's own page.
+      const needsChanges = allOrgOpps.filter((o) => o.status === "changes_required");
+      if (needsChanges.length > 0) {
+        employerPipeline.push({
+          href: needsChanges.length === 1 ? `/organisation/opportunities/${needsChanges[0].id}` : "/organisation",
+          label: msg("Opportunities with changes requested"),
+          count: needsChanges.length,
+          tone: "warning",
+          meta: needsChanges.length === 1 ? needsChanges[0].title : undefined,
+        });
+      }
+      // Live / In review / Closed (spec). Counts cover every opportunity;
+      // the list shows the five newest in the chosen group. With no
+      // choice made, open the first group that has something in it.
+      for (const o of allOrgOpps) {
+        const g = opportunityGroup(o.status);
+        if (g) oppGroupCounts[g] += 1;
+      }
+      const asked = OPPORTUNITY_GROUPS.find((g) => g === query.opps);
+      oppGroup = asked ?? OPPORTUNITY_GROUPS.find((g) => oppGroupCounts[g] > 0) ?? "live";
       employerOpps = allOrgOpps
-        .filter((o) => !["cancelled", "rejected"].includes(o.status))
+        .filter((o) => opportunityGroup(o.status) === oppGroup)
         .slice(0, 5)
         .map((o) => {
           const apps = (orgApps ?? []).filter((a) => a.opportunity_id === o.id);
@@ -384,6 +420,7 @@ export default async function DashboardPage({
         openOpportunities: allOrgOpps.filter((o) => o.status === "open").length,
         activeContracts: (orgContracts ?? []).length,
         applicantsAwaiting: applicationsAwaiting,
+        oldestWaitingDays,
         milestonesToPay,
       };
     }
@@ -580,7 +617,13 @@ export default async function DashboardPage({
             href="/organisation"
             icon={Users}
             tone="violet"
-            note={employerStats.applicantsAwaiting > 0 ? t("Waiting for your decision") : t("None waiting")}
+            note={
+              employerStats.applicantsAwaiting === 0
+                ? t("None waiting")
+                : employerStats.oldestWaitingDays !== null
+                  ? oldestWaitingLabel(employerStats.oldestWaitingDays, t)
+                  : t("Waiting for your decision")
+            }
           />
           <StatTile label={t("Active contracts")} value={employerStats.activeContracts} href="/contracts" icon={FileSignature} tone="neutral" note={t("Work in progress")} />
           <StatTile
@@ -604,7 +647,7 @@ export default async function DashboardPage({
                 </Link>
               }
             >
-              <OpportunitiesList opportunities={employerOpps} />
+              <OpportunitiesList opportunities={employerOpps} group={oppGroup} groupCounts={oppGroupCounts} />
             </Section>
             <NotificationsPanel notifications={notifications ?? []} unreadCount={unreadCount ?? 0} />
           </div>
@@ -671,8 +714,8 @@ function pickNextStep({
   t,
 }: {
   kind: string;
-  talentAttention: { href: string; label: string; count: number }[];
-  employerPipeline: { href: string; label: string; count: number }[];
+  talentAttention: { href: string; label: string; count: number; meta?: string }[];
+  employerPipeline: { href: string; label: string; count: number; meta?: string }[];
   invitations: number;
   readinessGap: string | null;
   t: Translate;
@@ -688,6 +731,7 @@ function pickNextStep({
           { label: "Milestones ready to pay", title: t("Approve and pay a milestone"), cta: t("Review and pay"), tone: "urgent" },
           { label: "Deliverables awaiting your review", title: t("Review submitted work"), cta: t("Review work"), tone: "urgent" },
           { label: "Applicants awaiting review", title: t("Decide on your applicants"), cta: t("Review applicants"), tone: "waiting" },
+          { label: "Opportunities with changes requested", title: t("Staff asked for changes to your opportunity"), cta: t("Fix and resubmit"), tone: "waiting" },
         ]
       : [
           { label: "Offers awaiting your response", title: t("Respond to your offer"), cta: t("Review offer"), tone: "urgent" },
@@ -698,7 +742,10 @@ function pickNextStep({
         ];
   for (const rule of rules) {
     const hit = find(rule.label);
-    if (hit) return <NextStepCard eyebrow={eyebrow} title={rule.title} meta={many(hit.count)} primary={{ href: hit.href, label: rule.cta }} tone={rule.tone} />;
+    if (hit) {
+      const meta = [many(hit.count), hit.meta].filter(Boolean).join(" · ") || undefined;
+      return <NextStepCard eyebrow={eyebrow} title={rule.title} meta={meta} primary={{ href: hit.href, label: rule.cta }} tone={rule.tone} />;
+    }
   }
   if (kind === "talent" && invitations > 0) {
     return (
@@ -722,6 +769,16 @@ function pickNextStep({
     );
   }
   return null;
+}
+
+/** Whole days since an ISO time (kept out of render: reads the clock). */
+function daysSince(iso: string): number {
+  return Math.max(0, Math.floor((Date.now() - Date.parse(iso)) / 86_400_000));
+}
+
+function oldestWaitingLabel(days: number, t: Translate): string {
+  if (days === 0) return t("Arrived today");
+  return days === 1 ? t("Oldest waiting 1 day") : t("Oldest waiting {n} days", { n: days });
 }
 
 /** A navigation shortcut: compact (icon + label, for the side column) or full (with description). */

@@ -3,9 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { setApplicationStage } from "@/lib/actions/applications";
+import { KIND_DECLINE } from "@/lib/domain/decisions";
 
-const KIND_DECLINE =
-  "Thank you for applying. We've decided to move forward with other candidates whose experience more closely matches this role. We appreciate your time and wish you well.";
 
 export function ShortlistActions({ applicationId, opportunityId }: { applicationId: string; opportunityId: string }) {
   const router = useRouter();

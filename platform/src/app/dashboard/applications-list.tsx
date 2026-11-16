@@ -5,6 +5,7 @@ import { formatDate } from "@/lib/domain/format";
 import { getT } from "@/i18n/server";
 import { msg } from "@/i18n/config";
 import { StatusPill, Stepper, type StatusTone } from "@/components/ui/status";
+import { APPLICATION_STEPS } from "@/lib/domain/applicationProgress";
 
 export interface TalentApplication {
   id: string;
@@ -16,10 +17,10 @@ export interface TalentApplication {
   viewedAt: string | null;
 }
 
-// Plain-word steps, as the spec names them: Applied → Viewed →
-// Shortlisted → Offer. "Viewed" comes from applications.viewed_at (0110);
-// an interview sits on the Shortlisted step (its pill says "Interview").
-const STEPS = [msg("Applied"), msg("Viewed"), msg("Shortlisted"), msg("Offer")];
+// Plain-word steps, shared with /applications (lib/domain/applicationProgress).
+// "Viewed" comes from applications.viewed_at (0110); an interview sits on
+// the Shortlisted step (its pill says "Interview").
+const STEPS = APPLICATION_STEPS;
 
 const STAGE: Record<ApplicationStage, { step: number; pill: string; tone: StatusTone }> = {
   submitted: { step: 0, pill: msg("In review"), tone: "info" },

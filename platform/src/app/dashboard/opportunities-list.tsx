@@ -20,6 +20,7 @@ const STATUS: Record<string, { label: string; tone: StatusTone }> = {
   filled: { label: msg("Filled"), tone: "done" },
   closed: { label: msg("Closed"), tone: "neutral" },
   expired: { label: msg("Expired"), tone: "neutral" },
+  rejected: { label: msg("Not published"), tone: "neutral" },
 };
 
 const TYPE: Record<string, string> = {
@@ -30,6 +31,23 @@ const TYPE: Record<string, string> = {
   squad: msg("Team project"),
 };
 
+/** The spec's three filters: Live / In review / Closed. */
+export type OpportunityGroup = "live" | "review" | "closed";
+export const OPPORTUNITY_GROUPS: OpportunityGroup[] = ["live", "review", "closed"];
+const GROUP_LABEL: Record<OpportunityGroup, string> = { live: msg("Live"), review: msg("In review"), closed: msg("Closed") };
+const GROUP_EMPTY: Record<OpportunityGroup, string> = {
+  live: msg("Nothing published right now."),
+  review: msg("Nothing waiting for staff review or changes."),
+  closed: msg("No closed opportunities yet."),
+};
+
+export function opportunityGroup(status: string): OpportunityGroup | null {
+  if (status === "open" || status === "paused") return "live";
+  if (status === "draft" || status === "pending_review" || status === "changes_required") return "review";
+  if (status === "filled" || status === "closed" || status === "expired" || status === "rejected") return "closed";
+  return null; // cancelled: left off the home screen
+}
+
 // Applicant bar segments: one hue family per step so the bar reads left→right.
 const SEGMENTS = [
   { key: "new", label: msg("New"), className: "bg-slate/25" },
@@ -38,9 +56,18 @@ const SEGMENTS = [
   { key: "contracted", label: msg("Contracted"), className: "bg-primary" },
 ] as const;
 
-export async function OpportunitiesList({ opportunities }: { opportunities: EmployerOpportunity[] }) {
+export async function OpportunitiesList({
+  opportunities,
+  group,
+  groupCounts,
+}: {
+  opportunities: EmployerOpportunity[];
+  group: OpportunityGroup;
+  groupCounts: Record<OpportunityGroup, number>;
+}) {
   const t = await getT();
-  if (opportunities.length === 0) {
+  const total = groupCounts.live + groupCounts.review + groupCounts.closed;
+  if (total === 0) {
     return (
       <p className="rounded-card border border-line bg-white p-5 text-sm text-slate shadow-card">
         {t("You haven't posted an opportunity yet.")}{" "}
@@ -52,6 +79,22 @@ export async function OpportunitiesList({ opportunities }: { opportunities: Empl
   }
   return (
     <div className="overflow-hidden rounded-card border border-line bg-white shadow-card">
+      <nav aria-label={t("Filter opportunities")} className="flex gap-1 border-b border-line bg-cloud/60 p-1.5">
+        {OPPORTUNITY_GROUPS.map((g) => (
+          <Link
+            key={g}
+            href={`/dashboard?opps=${g}`}
+            scroll={false}
+            aria-current={g === group ? "page" : undefined}
+            className={`inline-flex min-h-10 flex-1 items-center justify-center rounded-control px-3 text-sm font-bold transition-colors sm:flex-none ${
+              g === group ? "bg-white text-midnight shadow-card" : "text-slate hover:text-midnight"
+            }`}
+          >
+            {t(GROUP_LABEL[g])} · {groupCounts[g]}
+          </Link>
+        ))}
+      </nav>
+      {opportunities.length === 0 && <p className="px-4 py-5 text-sm text-slate sm:px-5">{t(GROUP_EMPTY[group])}</p>}
       <ul className="divide-y divide-line">
         {opportunities.map((o) => {
           const status = STATUS[o.status] ?? { label: o.status, tone: "neutral" as StatusTone };
