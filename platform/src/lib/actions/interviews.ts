@@ -28,8 +28,11 @@ export type SlotInput = z.input<typeof SlotSchema>;
  * database checks who may schedule and that times are in the future
  * (0113); it also notifies the talent in the app — this adds an email.
  */
+const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function offerInterviewSlots(applicationId: string, slots: SlotInput[]): Promise<{ error?: string }> {
   const session = await requireSession();
+  if (!ID.test(applicationId)) return { error: "Application not found." };
   const parsed = SlotsSchema.safeParse(slots);
   if (!parsed.success) return { error: "Offer between 1 and 5 times, each with a date and time." };
 
@@ -69,6 +72,7 @@ export async function offerInterviewSlots(applicationId: string, slots: SlotInpu
 /** The talent picks one of the offered times; the application moves to the interview stage (0113). */
 export async function chooseInterviewSlot(slotId: string): Promise<{ error?: string }> {
   const session = await requireSession();
+  if (!ID.test(slotId)) return { error: "That time is no longer available." };
   const supabase = (await createClient()) as unknown as SupabaseClient;
   const { data, error } = await supabase.rpc("choose_interview_slot", { p_slot_id: slotId });
   if (error) return { error: error.message };

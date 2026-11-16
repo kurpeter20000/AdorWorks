@@ -26,6 +26,8 @@ vi.mock("@/lib/unsubscribeToken", () => ({ buildUnsubscribeUrl: () => "" }));
 const { offerInterviewSlots } = await import("./interviews");
 const { staffMessageApplicant } = await import("./messages");
 
+// Real ids are UUIDs; the actions refuse anything else.
+const A_SHORT = "00000000-0000-4000-8000-000000000001";
 const at = (h: number) => new Date(Date.now() + h * 3_600_000).toISOString();
 
 beforeEach(() => {
@@ -47,18 +49,22 @@ beforeEach(() => {
 
 describe("offering interview times", () => {
   it("sends 1–5 times to the database", async () => {
-    expect(await offerInterviewSlots("a-short", [{ starts_at: at(30) }, { starts_at: at(50), mode: "phone" }])).toEqual({});
-    expect(state.rpc).toHaveBeenCalledWith("offer_interview_slots", expect.objectContaining({ p_application_id: "a-short" }));
+    expect(await offerInterviewSlots(A_SHORT, [{ starts_at: at(30) }, { starts_at: at(50), mode: "phone" }])).toEqual({});
+    expect(state.rpc).toHaveBeenCalledWith("offer_interview_slots", expect.objectContaining({ p_application_id: A_SHORT }));
   });
   it("refuses none, more than five, or a time that isn't a time", async () => {
-    expect((await offerInterviewSlots("a-short", [])).error).toBeTruthy();
-    expect((await offerInterviewSlots("a-short", Array.from({ length: 6 }, (_, i) => ({ starts_at: at(30 + i) })))).error).toBeTruthy();
-    expect((await offerInterviewSlots("a-short", [{ starts_at: "tomorrow at 3" }])).error).toBeTruthy();
+    expect((await offerInterviewSlots(A_SHORT, [])).error).toBeTruthy();
+    expect((await offerInterviewSlots(A_SHORT, Array.from({ length: 6 }, (_, i) => ({ starts_at: at(30 + i) })))).error).toBeTruthy();
+    expect((await offerInterviewSlots(A_SHORT, [{ starts_at: "tomorrow at 3" }])).error).toBeTruthy();
+    expect(state.rpc).not.toHaveBeenCalled();
+  });
+  it("refuses an id that isn't a UUID before touching the database", async () => {
+    expect((await offerInterviewSlots("x'); drop table", [{ starts_at: at(30) }])).error).toBeTruthy();
     expect(state.rpc).not.toHaveBeenCalled();
   });
   it("passes on the database's refusal", async () => {
     state.rpc.mockResolvedValue({ data: null, error: { message: "You can't schedule interviews for this application." } });
-    expect((await offerInterviewSlots("a-short", [{ starts_at: at(30) }])).error).toMatch(/can't schedule/);
+    expect((await offerInterviewSlots(A_SHORT, [{ starts_at: at(30) }])).error).toMatch(/can't schedule/);
   });
 });
 

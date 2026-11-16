@@ -15,8 +15,11 @@ import { DOMAIN_EVENTS } from "@/lib/domain/events";
  * side the caller is on and refuses anyone else; signing the same
  * version twice changes nothing.
  */
+const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function signContract(contractId: string): Promise<{ error?: string }> {
   const session = await requireSession();
+  if (!ID.test(contractId)) return { error: "Contract not found." };
   // Make sure the latest written terms are on record before signing them.
   await ensureContractTerms(contractId, session.userId);
   const supabase = (await createClient()) as unknown as SupabaseClient;

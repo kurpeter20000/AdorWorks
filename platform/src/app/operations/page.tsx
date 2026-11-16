@@ -84,7 +84,7 @@ export default async function OperationsPage() {
     let q = db.from(t.table).select("*", { count: "exact", head: true });
     q = Array.isArray(t.value) ? q.in(t.column, t.value) : q.eq(t.column, t.value);
     const { count: n, error } = await q;
-    if (error) console.error(`[operations] count "${t.label}" failed:`, error);
+    if (error) console.error("[operations] count \"%s\" failed:", t.label, error);
     return error ? null : (n ?? 0);
   };
 

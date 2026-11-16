@@ -58,7 +58,7 @@ export const verifySession = cache(async (): Promise<VerifiedSession | null> => 
   if (!profile) {
     // A valid session with no profiles row is a data-integrity problem, not
     // "signed out" — callers can't tell the two apart, so log it.
-    console.error(`verifySession: authenticated user ${user.id} has no matching profiles row`, profileError);
+    console.error("verifySession: authenticated user %s has no matching profiles row", user.id, profileError);
     return null;
   }
 

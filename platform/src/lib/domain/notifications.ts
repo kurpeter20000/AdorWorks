@@ -90,7 +90,7 @@ export async function notifyUser(
           .upsert({ ...row, dedupe_key: input.dedupeKey }, { onConflict: "user_id,type,dedupe_key", ignoreDuplicates: true })
       : await admin.from("notifications").insert(row);
     if (error) {
-      console.error(`notifications insert failed for ${input.type}:`, error.message);
+      console.error("notifications insert failed for %s:", input.type, error.message);
       await logAuditEvent(admin, {
         name: DOMAIN_EVENTS.NOTIFICATION_DELIVERY_FAILED,
         actorId: null,
@@ -104,7 +104,7 @@ export async function notifyUser(
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`notifications insert threw for ${input.type}:`, err);
+    console.error("notifications insert threw for %s:", input.type, err);
     await logAuditEvent(admin, {
       name: DOMAIN_EVENTS.NOTIFICATION_DELIVERY_FAILED,
       actorId: null,

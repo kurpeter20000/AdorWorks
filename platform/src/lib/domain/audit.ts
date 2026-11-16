@@ -31,8 +31,8 @@ export async function logAuditEvent(
       after: event.after ?? null,
       metadata: event.metadata ?? {},
     });
-    if (error) console.error(`audit_events insert failed for ${event.name}:`, error.message);
+    if (error) console.error("audit_events insert failed for %s:", event.name, error.message);
   } catch (err) {
-    console.error(`audit_events insert threw for ${event.name}:`, err);
+    console.error("audit_events insert threw for %s:", event.name, err);
   }
 }
