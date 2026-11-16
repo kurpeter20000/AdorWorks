@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Check, TriangleAlert } from "lucide-react";
+import { checkOpportunity } from "@/lib/domain/opportunityChecks";
 import { approveOpportunity, rejectOpportunity, requestOpportunityChanges } from "@/lib/actions/operations";
 import {
   ActionRow,
@@ -231,6 +233,36 @@ function CreateOpportunity({ onCreated }: { onCreated: () => void }) {
   );
 }
 
+/** Spec "automatic checks": flags for the reviewer, never a decision. */
+function AutomaticChecks({ row }: { row: Row }) {
+  const checks = checkOpportunity(row, row.organisations?.verification_status);
+  const flagged = checks.filter((c) => !c.ok).length;
+  return (
+    <div className="mt-4">
+      <SubHeading>Automatic checks</SubHeading>
+      <p className="text-xs text-slate">{flagged === 0 ? "Nothing flagged. Still read the post yourself." : `${flagged} to look at before you decide.`}</p>
+      <ul className="mt-2 divide-y divide-slate/10 rounded-xl border border-slate/15 bg-white">
+        {checks.map((c) => (
+          <li key={c.key} className="flex items-start gap-3 px-3 py-2">
+            <span
+              className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full ${c.ok ? "bg-teal/15 text-teal-ink" : "bg-coral/15 text-coral-ink"}`}
+            >
+              {c.ok ? <Check className="size-3.5" aria-hidden="true" /> : <TriangleAlert className="size-3.5" aria-hidden="true" />}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-midnight">
+                {c.label}
+                <span className="sr-only">{c.ok ? " — passed" : " — needs a look"}</span>
+              </span>
+              <span className="block text-xs text-slate">{c.note}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function OpportunityDetail({ row, onChanged }: { row: Row; onChanged: () => void }) {
   const { run, pending, status } = useAction(onChanged);
   const [newStatus, setNewStatus] = useState<string>(row.status);
@@ -246,7 +278,12 @@ function OpportunityDetail({ row, onChanged }: { row: Row; onChanged: () => void
               ...(row.service_packages ? ([["Package", row.service_packages.title]] as [string, string][]) : []),
               ["Skills", (row.skills || []).join(", ") || "—"],
               ["Location", row.location || "—"],
-              ["Budget", `${row.budget_min || "—"}–${row.budget_max || "—"} ${row.currency || ""}`],
+              // Pay lives in compensation_* (what talent see); budget_* is
+              // the older brief field, shown only when it was filled in.
+              ["Pay", checkOpportunity(row, row.organisations?.verification_status)[0].note],
+              ...(row.budget_min || row.budget_max
+                ? ([["Budget (brief)", `${row.budget_min || "—"}–${row.budget_max || "—"} ${row.currency || ""}`]] as [string, string][])
+                : []),
               ...(row.status === "rejected" ? ([["Rejection reason", row.rejection_reason || "—"]] as [string, string][]) : []),
               ...(row.status === "rejected" && row.appeal_note ? ([["Appeal", row.appeal_note]] as [string, string][]) : []),
               ...(row.status === "changes_required" || row.status === "paused"
@@ -260,6 +297,10 @@ function OpportunityDetail({ row, onChanged }: { row: Row; onChanged: () => void
                 View public job page
               </Link>
             </p>
+          )}
+
+          {["pending_review", "changes_required", "open", "paused"].includes(row.status) && (
+            <AutomaticChecks row={row} />
           )}
 
           {row.status === "pending_review" && (
