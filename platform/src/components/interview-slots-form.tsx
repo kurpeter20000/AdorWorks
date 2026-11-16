@@ -27,7 +27,7 @@ const blank = (): Row => ({ when: "", mode: "video", details: "" });
  * the employer's own timezone; the browser turns them into an exact
  * moment, so the talent sees the same moment in theirs.
  */
-export function InterviewSlotsForm({ applicationId, existing }: { applicationId: string; existing: ExistingSlot[] }) {
+export function InterviewSlotsForm({ applicationId, existing, onSent }: { applicationId: string; existing: ExistingSlot[]; onSent?: () => void }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<Row[]>([blank(), blank()]);
@@ -53,6 +53,7 @@ export function InterviewSlotsForm({ applicationId, existing }: { applicationId:
         setOpen(false);
         setRows([blank(), blank()]);
         router.refresh();
+        onSent?.();
       }
     });
   }

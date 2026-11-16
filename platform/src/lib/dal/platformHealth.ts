@@ -44,7 +44,13 @@ export async function loadPlatformHealth(now = Date.now()): Promise<{ lines: Hea
       pair("opportunities", "approved_at"),
       pair("applications", "created_at"),
       pair("contracts", "created_at"),
-      admin.from("payment_events").select("net_amount, currency, escrow_status, disbursed_at, created_at").eq("status", "succeeded").gte("created_at", lastWeek),
+      // Released this week: escrow released this week (whenever it was
+      // paid in), or paid straight through this week (escrow off).
+      admin
+        .from("payment_events")
+        .select("net_amount, currency, escrow_status, disbursed_at, created_at")
+        .eq("status", "succeeded")
+        .or(`and(escrow_status.eq.released,disbursed_at.gte.${thisWeek}),and(escrow_status.eq.not_applicable,created_at.gte.${thisWeek})`),
       admin.from("applications").select("created_at, viewed_at").gte("created_at", month).not("viewed_at", "is", null),
       admin.from("opportunities").select("id, title, payment_basis, compensation_amount, compensation_min, compensation_max").eq("status", "open"),
     ]);

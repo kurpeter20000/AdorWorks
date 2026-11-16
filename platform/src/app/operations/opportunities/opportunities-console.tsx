@@ -50,7 +50,7 @@ const FILTERS: [string, string][] = [
 const OPP_STATUSES = ["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected", "changes_required", "paused", "expired"];
 const STAGES = ["submitted", "shortlisted", "interviewing", "offered", "accepted", "rejected", "withdrawn"];
 
-export function OpportunitiesConsole({ initialFilter, canRunInterviews = false }: { initialFilter: string; canRunInterviews?: boolean }) {
+export function OpportunitiesConsole({ initialFilter, canRunInterviews = false, canReview = false }: { initialFilter: string; canRunInterviews?: boolean; canReview?: boolean }) {
   const [filter, setFilter] = useState(initialFilter);
   const [creating, setCreating] = useState(false);
   const list = useStaffData<{ data: Row[] }>(`/api/opportunities${qs({ status: filter, limit: 100 })}`);
@@ -92,7 +92,7 @@ export function OpportunitiesConsole({ initialFilter, canRunInterviews = false }
           <Badge key="s" value={r.status} />,
           fmtDate(r.created_at),
         ]}
-        detail={(r) => <OpportunityDetail row={r} onChanged={list.reload} canRunInterviews={canRunInterviews} />}
+        detail={(r) => <OpportunityDetail row={r} onChanged={list.reload} canRunInterviews={canRunInterviews} canReview={canReview} />}
         empty="No opportunities match this filter."
       />
     </>
@@ -331,7 +331,7 @@ function AutomaticChecks({ row }: { row: Row }) {
   );
 }
 
-function OpportunityDetail({ row, onChanged, canRunInterviews }: { row: Row; onChanged: () => void; canRunInterviews: boolean }) {
+function OpportunityDetail({ row, onChanged, canRunInterviews, canReview }: { row: Row; onChanged: () => void; canRunInterviews: boolean; canReview: boolean }) {
   const { run, pending, status } = useAction(onChanged);
   const [newStatus, setNewStatus] = useState<string>(row.status);
   const [pauseNote, setPauseNote] = useState("");
@@ -374,7 +374,8 @@ function OpportunityDetail({ row, onChanged, canRunInterviews }: { row: Row; onC
             <AutomaticChecks row={row} />
           )}
 
-          {row.status === "pending_review" && (
+          {/* Publishing decisions are the reviewer's (and admin's). */}
+          {canReview && row.status === "pending_review" && (
             <div className="mt-4 space-y-2">
               <SubHeading>Review</SubHeading>
               <p className="text-xs text-slate">The employer is notified in the app and by email for each decision.</p>
@@ -498,7 +499,9 @@ function Shortlist({ opportunity, canRunInterviews }: { opportunity: Row; canRun
               <Badge value={a.talent_profiles?.verification_tier} />
             </p>
             {a.interview_scheduled_at && <p className="mt-1 text-xs text-slate">Interview: {fmtDateTime(a.interview_scheduled_at)}</p>}
-            {canRunInterviews && ["shortlisted", "interviewing"].includes(a.stage) && <StaffInterviewPanel applicationId={a.id} />}
+            {canRunInterviews && opportunity.shortlisting_mode === "staff_assisted" && ["shortlisted", "interviewing"].includes(a.stage) && (
+              <StaffInterviewPanel applicationId={a.id} />
+            )}
             <ActionRow>
               <select
                 aria-label="Application stage"

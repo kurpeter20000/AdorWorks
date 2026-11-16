@@ -13,8 +13,10 @@ const noop = () => () => {};
 export function LocalTime({ iso, className }: { iso: string; className?: string }) {
   const local = useSyncExternalStore(
     noop,
-    () => format(iso, undefined),
-    () => format(iso, "UTC")
+    () => format(iso, undefined, undefined),
+    // The server and the first browser render must match exactly, so
+    // both use a fixed locale and UTC; then the browser's own takes over.
+    () => format(iso, "en-GB", "UTC")
   );
   return (
     <time dateTime={iso} className={className}>
@@ -23,8 +25,8 @@ export function LocalTime({ iso, className }: { iso: string; className?: string 
   );
 }
 
-function format(iso: string, timeZone: string | undefined): string {
-  return new Intl.DateTimeFormat(undefined, {
+function format(iso: string, locale: string | undefined, timeZone: string | undefined): string {
+  return new Intl.DateTimeFormat(locale, {
     weekday: "short",
     day: "numeric",
     month: "short",

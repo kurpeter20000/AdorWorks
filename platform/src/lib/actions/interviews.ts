@@ -11,6 +11,7 @@ import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import { sendEmailSafely, getUserEmail } from "@/lib/email";
 import { renderEmail } from "@/lib/emailTemplate";
 import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
+import { sendWhatsAppAlert } from "@/lib/whatsapp";
 
 const SlotSchema = z.object({
   starts_at: z.string().datetime({ offset: true }),
@@ -51,6 +52,8 @@ export async function offerInterviewSlots(applicationId: string, slots: SlotInpu
   });
   const { data: app } = await admin.from("applications").select("talent_id, opportunity_id").eq("id", applicationId).maybeSingle();
   if (app) {
+    // The database wrote the in-app notification; add the WhatsApp copy.
+    await sendWhatsAppAlert(admin, { userId: app.talent_id, type: "interview_times_offered", title: "Pick a time for your interview" });
     await sendEmailSafely(
       await getUserEmail(admin, app.talent_id),
       "Pick a time for your AdorWorks interview",
@@ -76,7 +79,16 @@ export async function chooseInterviewSlot(slotId: string): Promise<{ error?: str
   const supabase = (await createClient()) as unknown as SupabaseClient;
   const { data, error } = await supabase.rpc("choose_interview_slot", { p_slot_id: slotId });
   if (error) return { error: error.message };
-  await logAuditEvent(createAdminClient(), {
+  const admin = createAdminClient();
+  if (data?.application_id) {
+    const { data: app } = await admin.from("applications").select("opportunity_id").eq("id", data.application_id).maybeSingle();
+    const { data: opp } = app ? await admin.from("opportunities").select("organisation_id").eq("id", app.opportunity_id).maybeSingle() : { data: null };
+    const { data: org } = opp ? await admin.from("organisations").select("representative_id").eq("id", opp.organisation_id).maybeSingle() : { data: null };
+    if (org?.representative_id) {
+      await sendWhatsAppAlert(admin, { userId: org.representative_id, type: "interview_time_chosen", title: "An applicant picked an interview time" });
+    }
+  }
+  await logAuditEvent(admin, {
     name: DOMAIN_EVENTS.INTERVIEW_TIME_CHOSEN,
     actorId: session.userId,
     entityType: "applications",

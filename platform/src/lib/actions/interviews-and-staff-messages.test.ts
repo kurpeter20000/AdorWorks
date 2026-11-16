@@ -28,6 +28,8 @@ const { staffMessageApplicant } = await import("./messages");
 
 // Real ids are UUIDs; the actions refuse anything else.
 const A_SHORT = "00000000-0000-4000-8000-000000000001";
+const A_NEW = "00000000-0000-4000-8000-000000000002";
+const A_SELF = "00000000-0000-4000-8000-000000000003";
 const at = (h: number) => new Date(Date.now() + h * 3_600_000).toISOString();
 
 beforeEach(() => {
@@ -36,10 +38,14 @@ beforeEach(() => {
   state.rpc.mockResolvedValue({ data: null, error: null });
   state.fake = createFakeSupabase({
     applications: [
-      { id: "a-short", stage: "shortlisted", talent_id: "t-1", opportunity_id: "o-1" },
-      { id: "a-new", stage: "submitted", talent_id: "t-2", opportunity_id: "o-1" },
+      { id: A_SHORT, stage: "shortlisted", talent_id: "t-1", opportunity_id: "o-1" },
+      { id: A_NEW, stage: "submitted", talent_id: "t-2", opportunity_id: "o-1" },
+      { id: A_SELF, stage: "shortlisted", talent_id: "t-3", opportunity_id: "o-2" },
     ],
-    opportunities: [{ id: "o-1", organisation_id: "g-1" }],
+    opportunities: [
+      { id: "o-1", organisation_id: "g-1", shortlisting_mode: "staff_assisted" },
+      { id: "o-2", organisation_id: "g-1", shortlisting_mode: "self_service" },
+    ],
     organisations: [{ id: "g-1", representative_id: "rep-1" }],
     conversations: [],
     conversation_members: [],
@@ -71,19 +77,23 @@ describe("offering interview times", () => {
 describe("staff messaging an applicant", () => {
   it("is for matchers and admins only", async () => {
     state.role = "reviewer";
-    await expect(staffMessageApplicant("a-short", "Hello")).rejects.toThrow(/forbidden/);
+    await expect(staffMessageApplicant(A_SHORT, "Hello")).rejects.toThrow(/forbidden/);
   });
   it("works once shortlisted, marked as from AdorWorks", async () => {
     state.role = "matcher";
-    expect(await staffMessageApplicant("a-short", "Can you do Thursday?")).toEqual({});
+    expect(await staffMessageApplicant(A_SHORT, "Can you do Thursday?")).toEqual({});
     expect(state.fake!.db.messages[0].body).toBe("AdorWorks team: Can you do Thursday?");
   });
   it("not before they're shortlisted", async () => {
     state.role = "matcher";
-    expect((await staffMessageApplicant("a-new", "Hello")).error).toMatch(/shortlisted/);
+    expect((await staffMessageApplicant(A_NEW, "Hello")).error).toMatch(/shortlisted/);
+  });
+  it("only on staff-assisted roles (the employer runs self-service hiring)", async () => {
+    state.role = "matcher";
+    expect((await staffMessageApplicant(A_SELF, "Hello")).error).toMatch(/staff-assisted/);
   });
   it("blocks contact details, like every pre-contract message", async () => {
     state.role = "matcher";
-    expect((await staffMessageApplicant("a-short", "Call me on 0912 345 678")).error).toBeTruthy();
+    expect((await staffMessageApplicant(A_SHORT, "Call me on 0912 345 678")).error).toBeTruthy();
   });
 });

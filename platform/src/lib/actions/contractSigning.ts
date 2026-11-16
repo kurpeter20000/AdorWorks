@@ -5,7 +5,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSession } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { ensureContractTerms } from "@/lib/dal/contractTerms";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
 
@@ -17,13 +16,15 @@ import { DOMAIN_EVENTS } from "@/lib/domain/events";
  */
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export async function signContract(contractId: string): Promise<{ error?: string }> {
+export async function signContract(contractId: string, termsVersion: number): Promise<{ error?: string }> {
   const session = await requireSession();
   if (!ID.test(contractId)) return { error: "Contract not found." };
-  // Make sure the latest written terms are on record before signing them.
-  await ensureContractTerms(contractId, session.userId);
+  if (!Number.isInteger(termsVersion) || termsVersion < 1) return { error: "Open the contract page and try again." };
+  // Signs exactly the version the person was shown; the database refuses
+  // if the terms changed since (0115). The contract page has already put
+  // the latest terms on record for the people allowed to see it.
   const supabase = (await createClient()) as unknown as SupabaseClient;
-  const { data, error } = await supabase.rpc("sign_contract", { p_contract_id: contractId });
+  const { data, error } = await supabase.rpc("sign_contract", { p_contract_id: contractId, p_terms_version: termsVersion });
   if (error) return { error: error.message };
   await logAuditEvent(createAdminClient(), {
     name: DOMAIN_EVENTS.CONTRACT_SIGNED,
