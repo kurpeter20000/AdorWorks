@@ -122,7 +122,10 @@ describe("interview slots (0113 §3)", () => {
     expect(notMine.error?.message).toMatch(/isn't yours/);
   });
 
-  it("lets a matcher (staff) offer times on a staff-assisted role", async () => {
+  it("lets a matcher (staff) offer times on a staff-assisted role only (0115)", async () => {
+    const selfService = await asUser(db, U.matcher, { aal: "aal2" }, (tx) => tx.query("select offer_interview_slots($1, $2::jsonb)", [app, JSON.stringify([{ starts_at: hours(40) }])]));
+    expect(selfService.error?.message).toMatch(/can't schedule/);
+    await db.query("update opportunities set shortlisting_mode = 'staff_assisted' where id = $1", [opp]);
     const r = await asUser(db, U.matcher, { aal: "aal2" }, (tx) => tx.query("select count(*)::int as n from offer_interview_slots($1, $2::jsonb)", [app, JSON.stringify([{ starts_at: hours(40) }])]));
     expect(r.error).toBeNull();
     expect(r.result.rows[0].n).toBe(1);
