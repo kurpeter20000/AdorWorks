@@ -5,13 +5,8 @@
 .home-section { padding-block: clamp(4rem, 9vw, 6.5rem); }
 .home-section-tight { padding-top: 0; }
 .home-band { background: var(--site-bg-soft); border-block: 1px solid var(--site-line); }
-.text-link { font-weight: 800; text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }
 .eyebrow-muted { color: var(--site-muted); }
 .eyebrow-mint { color: var(--site-mint); }
-.btn-bright { background: var(--site-teal-bright); color: #08221e; }
-.btn-bright:hover { background: var(--site-mint); color: #08221e; }
-.btn-ghost { border: 1px solid var(--site-ink); color: var(--site-ink); background: transparent; }
-.btn-ghost:hover { background: var(--site-sand); color: var(--site-ink); }
 .home-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
 
 /* ---------- Hero ---------- */

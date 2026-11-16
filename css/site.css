@@ -53,6 +53,11 @@ h1 em, h2 em { font-style: italic; color: var(--site-teal); }
 .btn-primary { background: var(--site-teal); color: #fff; }
 .btn-primary:hover { background: var(--site-teal-dark); color: #fff; }
 .btn-secondary { border-radius: 999px; }
+.btn-bright { background: var(--site-teal-bright); color: #08221e; }
+.btn-bright:hover { background: var(--site-mint); color: #08221e; }
+.btn-ghost { border: 1px solid var(--site-ink); color: var(--site-ink); background: transparent; }
+.btn-ghost:hover { background: var(--site-sand); color: var(--site-ink); }
+.text-link { font-weight: 800; text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }
 
 /* ------------------------------------------------------------------
    Header
