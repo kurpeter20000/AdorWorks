@@ -9,8 +9,15 @@ export interface DashboardAction {
   primary?: boolean;
   /** Opens in a new tab instead of client-side routing — for links to a different deployment (e.g. the staff console) rather than a route in this app. */
   external?: boolean;
-  /** Setup/help links, grouped under "Support" at the foot of the sidebar and left off the dashboard's action grid. */
+  /** Setup/help links, left off the dashboard's shortcut grid (they live in the menu and the help card). */
   section?: "support";
+  /**
+   * Sidebar heading this link sits under. Pages are grouped by the job
+   * people are doing (canvas Foundations: "Find work, My work, Money,
+   * Profile, Help"), so the menu reads as tasks, not a flat list.
+   * Ungrouped links render at the top, under the Dashboard link.
+   */
+  group?: string;
 }
 
 export interface DashboardExperience {
@@ -27,35 +34,38 @@ const experiences: Record<DashboardKind, Omit<DashboardExperience, "kind">> = {
     // Notifications isn't listed: the bell in the top bar (with its unread
     // count) is the one entry point, on every screen size.
     actions: [
-      { href: "/opportunities", label: msg("Find work"), description: msg("Browse open, paid opportunities."), primary: true },
-      { href: "/opportunities/saved", label: msg("Saved"), description: msg("Return to opportunities saved for later.") },
-      { href: "/applications", label: msg("Applications"), description: msg("Track the applications you have submitted.") },
-      { href: "/opportunities/invited", label: msg("Invitations"), description: msg("Employers who've asked you specifically to apply.") },
-      { href: "/offers", label: msg("Offers"), description: msg("Review and respond to offers.") },
-      { href: "/contracts", label: msg("Contracts"), description: msg("Deliver work, message clients, and view payments.") },
-      { href: "/finance", label: msg("Finance"), description: msg("What you've earned and what's pending release.") },
-      { href: "/passport/services/requests", label: msg("Service requests"), description: msg("Respond to employers who've requested one of your services.") },
-      { href: "/passport", label: msg("Your Passport"), description: msg("Manage your photo, links, evidence, and portfolio.") },
-      { href: "/onboarding", label: msg("Profile setup"), description: msg("Complete or review your verification steps."), section: "support" },
-      { href: "/trust-safety", label: msg("Trust & Safety"), description: msg("Free orientation on staying safe on AdorWorks."), section: "support" },
-      { href: "/assistance/request", label: msg("In-person help"), description: msg("Get someone to help you finish your profile at a partner hub."), section: "support" },
-      { href: "/support", label: msg("Message support"), description: msg("Talk directly with AdorWorks staff."), section: "support" },
+      { href: "/opportunities", label: msg("Find work"), description: msg("Browse open, paid opportunities."), primary: true, group: msg("Find work") },
+      { href: "/opportunities/saved", label: msg("Saved"), description: msg("Return to opportunities saved for later."), group: msg("Find work") },
+      { href: "/opportunities/invited", label: msg("Invitations"), description: msg("Employers who've asked you specifically to apply."), group: msg("Find work") },
+      { href: "/applications", label: msg("Applications"), description: msg("Track the applications you have submitted."), group: msg("My work") },
+      { href: "/offers", label: msg("Offers"), description: msg("Review and respond to offers."), group: msg("My work") },
+      { href: "/contracts", label: msg("Contracts"), description: msg("Deliver work, message clients, and view payments."), group: msg("My work") },
+      { href: "/passport/services/requests", label: msg("Service requests"), description: msg("Respond to employers who've requested one of your services."), group: msg("My work") },
+      { href: "/finance", label: msg("Finance"), description: msg("What you've earned and what's pending release."), group: msg("Money") },
+      { href: "/passport", label: msg("Your Passport"), description: msg("Manage your photo, links, evidence, and portfolio."), group: msg("Profile") },
+      { href: "/onboarding", label: msg("Profile setup"), description: msg("Complete or review your verification steps."), section: "support", group: msg("Profile") },
+      { href: "/support", label: msg("Message support"), description: msg("Talk directly with AdorWorks staff."), section: "support", group: msg("Help") },
+      { href: "/assistance/request", label: msg("In-person help"), description: msg("Get someone to help you finish your profile at a partner hub."), section: "support", group: msg("Help") },
+      { href: "/trust-safety", label: msg("Trust & Safety"), description: msg("Free orientation on staying safe on AdorWorks."), section: "support", group: msg("Help") },
     ],
   },
   employer: {
     title: msg("Hire and manage work on AdorWorks"),
     description: msg("Manage your organisation, publish paid opportunities, review candidates, and oversee delivery."),
     actions: [
-      { href: "/organisation", label: msg("Organisation"), description: msg("Open your organisation workspace."), primary: true },
-      { href: "/organisation/opportunities/new", label: msg("Post an opportunity"), description: msg("Submit a paid role or project for review.") },
-      { href: "/organisation/opportunities/brief", label: msg("Quick project brief"), description: msg("Just have an outcome in mind? Save a short brief and fill in the rest later.") },
-      { href: "/services", label: msg("Browse services"), description: msg("Discover defined, ready-to-book services from AdorWorks talent.") },
-      { href: "/organisation/service-requests", label: msg("Service requests"), description: msg("Track requests you've sent to talent and their proposals.") },
-      { href: "/organisation/team", label: msg("Team"), description: msg("Review organisation membership and access.") },
-      { href: "/contracts", label: msg("Contracts"), description: msg("Manage active and completed work.") },
-      { href: "/finance", label: msg("Finance"), description: msg("Spend, pending invoices, and milestones owed.") },
-      { href: "/assistance/request", label: msg("In-person help"), description: msg("Get someone to help you finish your profile at a partner hub."), section: "support" },
-      { href: "/support", label: msg("Message support"), description: msg("Talk directly with AdorWorks staff."), section: "support" },
+      { href: "/organisation", label: msg("Your opportunities"), description: msg("Your opportunities and their applicants."), primary: true, group: msg("Hire") },
+      { href: "/organisation/opportunities/new", label: msg("Post an opportunity"), description: msg("Submit a paid role or project for review."), group: msg("Hire") },
+      { href: "/organisation/opportunities/brief", label: msg("Quick project brief"), description: msg("Just have an outcome in mind? Save a short brief and fill in the rest later."), group: msg("Hire") },
+      { href: "/services", label: msg("Browse services"), description: msg("Discover defined, ready-to-book services from AdorWorks talent."), group: msg("Services") },
+      { href: "/organisation/service-requests", label: msg("Service requests"), description: msg("Track requests you've sent to talent and their proposals."), group: msg("Services") },
+      { href: "/contracts", label: msg("Contracts"), description: msg("Manage active and completed work."), group: msg("Work and pay") },
+      { href: "/finance", label: msg("Finance"), description: msg("Spend, pending invoices, and milestones owed."), group: msg("Work and pay") },
+      { href: "/organisation/details", label: msg("Organisation details"), description: msg("Name, sector, website and billing details."), section: "support", group: msg("Organisation") },
+      { href: "/organisation/verification", label: msg("Verification"), description: msg("Registration evidence and verification status."), section: "support", group: msg("Organisation") },
+      { href: "/organisation/team", label: msg("Team"), description: msg("Review organisation membership and access."), group: msg("Organisation") },
+      { href: "/organisation/activity", label: msg("Activity"), description: msg("Who on your team did what, and when."), section: "support", group: msg("Organisation") },
+      { href: "/support", label: msg("Message support"), description: msg("Talk directly with AdorWorks staff."), section: "support", group: msg("Help") },
+      { href: "/assistance/request", label: msg("In-person help"), description: msg("Get someone to help you finish your profile at a partner hub."), section: "support", group: msg("Help") },
     ],
   },
   assistance: {

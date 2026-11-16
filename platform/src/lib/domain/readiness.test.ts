@@ -36,12 +36,15 @@ describe("talent readiness", () => {
       "Add a profile photo",
       "Complete the free Trust & Safety orientation",
     ]);
+    // total must equal the number of checks, or "4 of 7 done" would lie.
+    expect(result.readiness.total).toBe(result.readiness.missing.length);
   });
 
   it("is complete once every field is present, independent of verification/visibility", () => {
     const result = getTalentReadiness(completeProfile);
     expect(result.readiness.complete).toBe(true);
     expect(result.readiness.missing).toEqual([]);
+    expect(result.readiness.total).toBeGreaterThanOrEqual(result.readiness.missing.length);
   });
 
   it("keeps readiness, trust, and visibility as three independent signals", () => {
