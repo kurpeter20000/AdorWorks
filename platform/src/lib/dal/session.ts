@@ -142,6 +142,17 @@ export async function requireRole(...roles: UserRole[]): Promise<VerifiedSession
 
 export const STAFF_ROLES: UserRole[] = [...STAFF_ACCOUNT_ROLES];
 
+/**
+ * Staff who may move money: release escrow payouts, confirm bank
+ * transfers, change fees. Matches backend/api's FINANCE_ROLES
+ * (middleware/auth.js) so the two apps agree on who can touch funds —
+ * reviewers and matchers can see the finance queues but not act on them.
+ */
+export const FINANCE_ROLES: UserRole[] = ["finance", "admin"];
+export function canMoveMoney(role: UserRole): boolean {
+  return FINANCE_ROLES.includes(role);
+}
+
 // The organisation/employer side, across both onboarding paths: the
 // self-service signup flow assigns 'individual_client' (auth.ts), but the
 // staff-assisted intake conversion flow (backend/api's

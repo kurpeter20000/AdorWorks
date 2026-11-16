@@ -23,7 +23,7 @@ interface HeldRow {
   disbursement_failure_reason: string | null;
 }
 
-export function PayoutsConsole({ eligible, notYetDue }: { eligible: EligibleRow[]; notYetDue: HeldRow[] }) {
+export function PayoutsConsole({ eligible, notYetDue, canRelease }: { eligible: EligibleRow[]; notYetDue: HeldRow[]; canRelease: boolean }) {
   return (
     <div className="mt-6 space-y-8">
       <section>
@@ -33,7 +33,7 @@ export function PayoutsConsole({ eligible, notYetDue }: { eligible: EligibleRow[
         ) : (
           <ul className="mt-3 space-y-2">
             {eligible.map((row) => (
-              <EligibleRowItem key={row.payment_event_id} row={row} />
+              <EligibleRowItem key={row.payment_event_id} row={row} canRelease={canRelease} />
             ))}
           </ul>
         )}
@@ -67,7 +67,7 @@ export function PayoutsConsole({ eligible, notYetDue }: { eligible: EligibleRow[
   );
 }
 
-function EligibleRowItem({ row }: { row: EligibleRow }) {
+function EligibleRowItem({ row, canRelease }: { row: EligibleRow; canRelease: boolean }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -95,6 +95,7 @@ function EligibleRowItem({ row }: { row: EligibleRow }) {
           </p>
           <p className="text-xs text-slate">Dispute window ended {formatDate(row.dispute_window_ends_at)}</p>
         </div>
+        {canRelease ? (
         <button
           type="button"
           disabled={pending || released}
@@ -103,6 +104,9 @@ function EligibleRowItem({ row }: { row: EligibleRow }) {
         >
           {released ? "Released" : pending ? "Releasing…" : "Release payout"}
         </button>
+        ) : (
+          <p className="text-xs font-semibold text-slate">Only finance or admin staff can release payouts.</p>
+        )}
       </div>
       {error && <p className="mt-2 text-xs text-coral-ink">{error}</p>}
     </li>

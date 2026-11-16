@@ -142,6 +142,34 @@ export async function sendOffer(
   redirect(`/organisation/opportunities/${opportunity.id}?offered=1`);
 }
 
+type AdminClient = ReturnType<typeof createAdminClient>;
+
+/**
+ * Atomically moves an offer from "sent" to "accepted". Returns
+ * { error: "gone" } when the row was no longer "sent" by the time the
+ * update ran (someone else accepted/declined/withdrew it first).
+ */
+async function claimOffer(admin: AdminClient, offerId: string): Promise<{ error?: string }> {
+  const { data, error } = await admin
+    .from("offers")
+    .update({ status: "accepted", responded_at: new Date().toISOString() })
+    .eq("id", offerId)
+    .eq("status", "sent")
+    .select("id");
+  if (error) return { error: error.message };
+  if (!data || data.length === 0) return { error: "gone" };
+  return {};
+}
+
+/** Undoes a half-finished acceptance so it can be retried cleanly. */
+async function rollbackAcceptance(admin: AdminClient, offerId: string, contractId?: string): Promise<void> {
+  if (contractId) {
+    await admin.from("milestones").delete().eq("contract_id", contractId);
+    await admin.from("contracts").delete().eq("id", contractId);
+  }
+  await admin.from("offers").update({ status: "sent", responded_at: null }).eq("id", offerId).eq("status", "accepted");
+}
+
 /**
  * Talent accepting an offer. offers_update RLS doesn't grant talent any
  * direct-update path at all (only org-while-draft, or staff) — by
@@ -171,19 +199,12 @@ export async function acceptOffer(offerId: string): Promise<{ error?: string }> 
     return { error: "This offer can no longer be accepted." };
   }
 
-  const { error: offerUpdateError } = await admin
-    .from("offers")
-    .update({ status: "accepted", responded_at: new Date().toISOString() })
-    .eq("id", offerId);
-  if (offerUpdateError) {
-    return { error: offerUpdateError.message };
-  }
-
-  // Guaranteed non-null: the service_request_id check above already ruled
-  // out a service proposal reaching this point, and 0080's origin check
-  // constraint guarantees application_id is set whenever service_request_id
-  // isn't.
-  await admin.from("applications").update({ stage: "accepted" }).eq("id", offer.application_id!);
+  // Conditional claim: only flips the row if it is STILL "sent". The status
+  // check above is a read; two requests (double-tap, two tabs) can both pass
+  // it before either writes. Whichever update lands second matches zero rows
+  // and stops here, so exactly one contract is ever created per offer.
+  const claimed = await claimOffer(admin, offerId);
+  if (claimed.error) return { error: claimed.error === "gone" ? "This offer can no longer be accepted." : claimed.error };
 
   const { data: contract, error: contractError } = await admin
     .from("contracts")
@@ -196,32 +217,44 @@ export async function acceptOffer(offerId: string): Promise<{ error?: string }> 
     .select("id")
     .single();
   if (contractError || !contract) {
+    await rollbackAcceptance(admin, offerId);
     return { error: contractError?.message ?? "Could not create the contract." };
   }
 
   const plan = Array.isArray(offer.milestone_plan) ? offer.milestone_plan : [];
-  if (plan.length > 0) {
-    await admin.from("milestones").insert(
-      plan.map((m, i) => {
-        const entry = m as { title?: string; amount?: number; sequence?: number };
-        return {
+  const { error: milestoneError } =
+    plan.length > 0
+      ? await admin.from("milestones").insert(
+          plan.map((m, i) => {
+            const entry = m as { title?: string; amount?: number; sequence?: number };
+            return {
+              contract_id: contract.id,
+              title: entry.title || `Milestone ${i + 1}`,
+              amount: entry.amount ?? 0,
+              currency: offer.currency,
+              sequence: entry.sequence ?? i,
+            };
+          })
+        )
+      : await admin.from("milestones").insert({
           contract_id: contract.id,
-          title: entry.title || `Milestone ${i + 1}`,
-          amount: entry.amount ?? 0,
+          title: "Full payment",
+          amount: offer.compensation_amount ?? 0,
           currency: offer.currency,
-          sequence: entry.sequence ?? i,
-        };
-      })
-    );
-  } else {
-    await admin.from("milestones").insert({
-      contract_id: contract.id,
-      title: "Full payment",
-      amount: offer.compensation_amount ?? 0,
-      currency: offer.currency,
-      sequence: 0,
-    });
+          sequence: 0,
+        });
+  if (milestoneError) {
+    // A contract with no milestones can never be paid — undo the whole
+    // acceptance so the talent can simply try again.
+    await rollbackAcceptance(admin, offerId, contract.id);
+    return { error: "Could not set up the contract's milestones. Nothing was accepted — please try again." };
   }
+
+  // Only now that the contract fully exists. Guaranteed non-null: the
+  // service_request_id check above already ruled out a service proposal
+  // reaching this point, and 0080's origin check constraint guarantees
+  // application_id is set whenever service_request_id isn't.
+  await admin.from("applications").update({ stage: "accepted" }).eq("id", offer.application_id!);
 
   await logAuditEvent(admin, {
     name: DOMAIN_EVENTS.OFFER_RESPONDED,
@@ -364,13 +397,10 @@ export async function acceptServiceProposal(offerId: string): Promise<{ error?: 
     return { error: "This proposal can no longer be accepted." };
   }
 
-  const { error: offerUpdateError } = await admin
-    .from("offers")
-    .update({ status: "accepted", responded_at: new Date().toISOString() })
-    .eq("id", offerId);
-  if (offerUpdateError) return { error: offerUpdateError.message };
-
-  await admin.from("service_requests").update({ status: "accepted" }).eq("id", offer.service_request_id);
+  // Same conditional claim as acceptOffer — two org members accepting at
+  // once must not produce two contracts.
+  const claimed = await claimOffer(admin, offerId);
+  if (claimed.error) return { error: claimed.error === "gone" ? "This proposal can no longer be accepted." : claimed.error };
 
   const { data: contract, error: contractError } = await admin
     .from("contracts")
@@ -383,16 +413,23 @@ export async function acceptServiceProposal(offerId: string): Promise<{ error?: 
     .select("id")
     .single();
   if (contractError || !contract) {
+    await rollbackAcceptance(admin, offerId);
     return { error: contractError?.message ?? "Could not create the contract." };
   }
 
-  await admin.from("milestones").insert({
+  const { error: milestoneError } = await admin.from("milestones").insert({
     contract_id: contract.id,
     title: "Full payment",
     amount: offer.compensation_amount ?? 0,
     currency: offer.currency,
     sequence: 0,
   });
+  if (milestoneError) {
+    await rollbackAcceptance(admin, offerId, contract.id);
+    return { error: "Could not set up the contract's milestones. Nothing was accepted — please try again." };
+  }
+
+  await admin.from("service_requests").update({ status: "accepted" }).eq("id", offer.service_request_id);
 
   await logAuditEvent(admin, {
     name: DOMAIN_EVENTS.OFFER_RESPONDED,

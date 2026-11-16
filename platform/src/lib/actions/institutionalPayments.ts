@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { requireRole, STAFF_ROLES } from "@/lib/dal/session";
+import { requireRole, FINANCE_ROLES } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { calculateFees } from "@/lib/domain/fees";
 import { disputeWindowEndsAt } from "@/lib/domain/escrow";
@@ -43,7 +43,7 @@ export async function confirmInstitutionalPayment(
   _prevState: FormState,
   formData: FormData
 ): Promise<FormState & { confirmed?: boolean }> {
-  const session = await requireRole(...STAFF_ROLES);
+  const session = await requireRole(...FINANCE_ROLES);
   const admin = createAdminClient();
 
   const validated = ConfirmSchema.safeParse({ bankReference: formData.get("bankReference") });
@@ -71,6 +71,20 @@ export async function confirmInstitutionalPayment(
     .maybeSingle();
   if (existingPayment) return { message: "This milestone has already been paid." };
 
+  // Atomic claim: flip the invoice pending -> confirmed BEFORE recording a
+  // payment. Two finance users confirming the same invoice at once would
+  // otherwise both pass the "pending"/"already paid" reads above and
+  // insert two payment_events rows (two escrow payouts). Only one update
+  // matches; the other stops here.
+  const { data: claimed, error: claimError } = await admin
+    .from("finance_records")
+    .update({ status: "confirmed", bank_reference: validated.data.bankReference, confirmed_by: session.userId, confirmed_at: new Date().toISOString() })
+    .eq("id", invoiceId)
+    .eq("status", "pending")
+    .select("id");
+  if (claimError) return { message: `Could not confirm the invoice: ${claimError.message}` };
+  if (!claimed || claimed.length === 0) return { message: "This invoice was already confirmed by someone else. Refresh the page." };
+
   const fee = calculateFees(invoice.amount, await getFeeSettings());
   const escrow = await getEscrowSettings();
   const escrowEndsAt = escrow.enabled ? disputeWindowEndsAt(escrow) : null;
@@ -95,12 +109,15 @@ export async function confirmInstitutionalPayment(
     escrow_status: escrow.enabled ? "held" : "not_applicable",
     dispute_window_ends_at: escrowEndsAt ? escrowEndsAt.toISOString() : null,
   });
-  if (paymentError) return { message: `Could not record the payment: ${paymentError.message}` };
-
-  await admin
-    .from("finance_records")
-    .update({ status: "confirmed", bank_reference: validated.data.bankReference, confirmed_by: session.userId, confirmed_at: new Date().toISOString() })
-    .eq("id", invoiceId);
+  if (paymentError) {
+    // Release the claim so the invoice can be confirmed again.
+    await admin
+      .from("finance_records")
+      .update({ status: "pending", bank_reference: null, confirmed_by: null, confirmed_at: null })
+      .eq("id", invoiceId)
+      .eq("status", "confirmed");
+    return { message: `Could not record the payment: ${paymentError.message}` };
+  }
   await admin.from("milestones").update({ status: "paid" }).eq("id", invoice.milestone_id);
 
   await logAuditEvent(admin, {
