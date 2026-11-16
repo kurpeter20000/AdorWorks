@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { PhoneVerificationWidget } from "@/components/phone-verification-widget";
 import { NotificationsList } from "./notifications-list";
 import { EmailPreferenceToggle } from "./email-preference-toggle";
+import { AlertPreferencesForm } from "./alert-preferences-form";
+import { isWhatsAppConfigured } from "@/lib/whatsapp";
 import { getT } from "@/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -30,6 +32,8 @@ export default async function NotificationsPage() {
     .eq("id", session.userId)
     .single();
 
+  const { data: alertPrefs } = await supabase.from("alert_preferences").select("*").eq("user_id", session.userId).maybeSingle();
+
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <div className="flex items-center justify-between">
@@ -42,6 +46,7 @@ export default async function NotificationsPage() {
       {!session.phoneVerified && <PhoneVerificationWidget />}
 
       <EmailPreferenceToggle initialEnabled={profile?.email_notifications_enabled ?? true} />
+      <AlertPreferencesForm current={alertPrefs ?? null} whatsappLive={isWhatsAppConfigured()} />
 
       {!notifications || notifications.length === 0 ? (
         <p className="mt-8 text-sm text-slate">{t("Nothing yet — you'll see updates here as things happen.")}</p>
