@@ -31,6 +31,7 @@
 <link rel="stylesheet" href="css/themes.css">
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/pages.css">
 <script src="js/i18n-early.js"></script>
 </head>
 <body>
@@ -105,66 +106,82 @@
   </div>
 </header>
 
-<main id="main">
+<main id="main" class="page">
 
-  <section class="hero">
-    <div class="container">
-      <h1>From brief to completed work.</h1>
-      <p class="lede">AdorWorks is a curated, human-assisted marketplace: every engagement is checked by a person at each step, not just routed by an algorithm.</p>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="container">
-      <div class="section-header"><h2>For employers</h2></div>
-      <div class="steps steps-4">
-        <div class="step"><span class="step-number">1</span><h3>Submit a brief</h3><p>Tell us the role, project or service — budget, timing and any location or safety requirements.</p></div>
-        <div class="step"><span class="step-number">2</span><h3>Get verified</h3><p>We confirm your organisation, representative and decision authority before we share candidates.</p></div>
-        <div class="step"><span class="step-number">3</span><h3>Review a shortlist</h3><p>An AdorWorks matcher searches verified supply and recommends three to five suitable candidates, or a managed team.</p></div>
-        <div class="step"><span class="step-number">4</span><h3>Select and contract</h3><p>We support interviews, confirm scope and put the right project, contract or placement agreement in place.</p></div>
-        <div class="step"><span class="step-number">5</span><h3>Track delivery</h3><p>Milestones, risks, approvals and changes are tracked through to completion, with a named account contact.</p></div>
-        <div class="step"><span class="step-number">6</span><h3>Complete and review</h3><p>Acceptance is recorded, invoices issued, and both sides leave a review — the basis for future matching.</p></div>
+  <div data-how>
+  <section class="page-hero">
+    <div class="container how-hero">
+      <div class="page-hero-copy">
+        <p class="eyebrow rise">How it works</p>
+        <h1 class="rise rise-1">From brief to <em>completed work.</em></h1>
+        <p class="lede rise rise-2">A person checks every engagement at each step, from the first brief to the final payment.</p>
+      </div>
+      <div class="pill-tabs rise rise-3" role="tablist" aria-label="Show the journey for">
+        <button type="button" role="tab" id="journey-tab-employer" aria-controls="journey-employer" aria-selected="true" tabindex="0" data-how-tab="employer">For employers</button>
+        <button type="button" role="tab" id="journey-tab-talent" aria-controls="journey-talent" aria-selected="false" tabindex="-1" data-how-tab="talent">For talent</button>
       </div>
     </div>
   </section>
 
-  <section class="section section-alt">
+  <section class="page-section page-section-tight">
     <div class="container">
-      <div class="section-header"><h2>For talent</h2></div>
-      <div class="steps steps-4">
-        <div class="step"><span class="step-number">1</span><h3>Create your profile</h3><p>Sign up, confirm your phone/email and agree to AdorWorks' code of conduct.</p></div>
-        <div class="step"><span class="step-number">2</span><h3>Submit your evidence</h3><p>Identity, portfolio and references — the foundation of every badge above "Registered".</p></div>
-        <div class="step"><span class="step-number">3</span><h3>Complete an assessment</h3><p>A practical, category-specific evaluation — not a certificate-only check.</p></div>
-        <div class="step"><span class="step-number">4</span><h3>Get matched</h3><p>You're considered for briefs that fit your skills, availability and rate — reviewed by a person, not blasted to everyone.</p></div>
-        <div class="step"><span class="step-number">5</span><h3>Deliver with support</h3><p>Clear scope, milestone tracking and an AdorWorks contact if anything needs resolving.</p></div>
-        <div class="step"><span class="step-number">6</span><h3>Get paid and grow</h3><p>Documented payout after client approval, plus feedback that strengthens your next application.</p></div>
+      <div class="journey" data-how-steps="employer" role="tabpanel" id="journey-employer" aria-labelledby="journey-tab-employer">
+        <picture class="photo-slot journey-photo">
+          <source type="image/webp" srcset="img/photos/tile-project-admin-480.webp 480w, img/photos/tile-project-admin-960.webp 960w" sizes="(min-width: 900px) 42vw, 100vw">
+          <img src="img/photos/tile-project-admin-960.jpg" srcset="img/photos/tile-project-admin-480.jpg 480w, img/photos/tile-project-admin-960.jpg 960w" sizes="(min-width: 900px) 42vw, 100vw" alt="A presenter leading a team meeting" loading="lazy">
+        </picture>
+        <ol class="journey-steps" aria-label="Employer journey">
+          <li class="site-reveal"><span class="journey-num">1</span><div><h2>Submit a brief</h2><p>The role, project or service, with budget, timing and any location or safety needs.</p></div></li>
+          <li class="site-reveal"><span class="journey-num">2</span><div><h2>Get verified</h2><p>We confirm your organisation, your representative and who can decide, before sharing anyone.</p></div></li>
+          <li class="site-reveal"><span class="journey-num">3</span><div><h2>Review a shortlist</h2><p>A matcher recommends three to five candidates, or a managed team.</p></div></li>
+          <li class="site-reveal"><span class="journey-num">4</span><div><h2>Select and contract</h2><p>Interview support, a confirmed scope, and a project, contract or placement agreement.</p></div></li>
+          <li class="site-reveal"><span class="journey-num">5</span><div><h2>Track delivery</h2><p>Milestones, risks, approvals and changes, with a named account contact.</p></div></li>
+          <li class="site-reveal"><span class="journey-num">6</span><div><h2>Complete and review</h2><p>Acceptance is recorded, invoices issued, and both sides leave a review.</p></div></li>
+        </ol>
+      </div>
+      <div class="journey" data-how-steps="talent" role="tabpanel" id="journey-talent" aria-labelledby="journey-tab-talent" hidden>
+        <picture class="photo-slot journey-photo">
+          <source type="image/webp" srcset="img/photos/tile-translation-480.webp 480w, img/photos/tile-translation-960.webp 960w" sizes="(min-width: 900px) 42vw, 100vw">
+          <img src="img/photos/tile-translation-960.jpg" srcset="img/photos/tile-translation-480.jpg 480w, img/photos/tile-translation-960.jpg 960w" sizes="(min-width: 900px) 42vw, 100vw" alt="A young professional working through a task on a whiteboard" loading="lazy">
+        </picture>
+        <ol class="journey-steps" aria-label="Talent journey">
+          <li class="site-reveal"><span class="journey-num">1</span><div><h2>Create your profile</h2><p>Sign up, confirm your phone or email, and agree to the code of conduct.</p></div></li>
+          <li class="site-reveal"><span class="journey-num">2</span><div><h2>Submit your evidence</h2><p>Identity, portfolio and references. This earns your Registered badge.</p></div></li>
+          <li class="site-reveal"><span class="journey-num">3</span><div><h2>Complete an assessment</h2><p>A practical test made for your category of work.</p></div></li>
+          <li class="site-reveal"><span class="journey-num">4</span><div><h2>Get matched</h2><p>Considered for briefs that fit your skills, time and rate, reviewed by a person.</p></div></li>
+          <li class="site-reveal"><span class="journey-num">5</span><div><h2>Deliver with support</h2><p>A clear scope, milestone tracking and an AdorWorks contact.</p></div></li>
+          <li class="site-reveal"><span class="journey-num">6</span><div><h2>Get paid and grow</h2><p>Documented payout after the client approves, plus feedback that builds your profile.</p></div></li>
+        </ol>
       </div>
     </div>
   </section>
+  </div>
 
-  <section class="section">
+  <section class="page-section page-dark">
     <div class="container">
-      <div class="section-header">
-        <h2>If something goes wrong</h2>
-        <p>Disputes are handled deliberately, not silently dropped.</p>
+      <div class="section-head site-reveal">
+        <div>
+          <p class="eyebrow">If something goes wrong</p>
+          <h2>A calm, written process. Nobody is left guessing.</h2>
+        </div>
+        <a class="text-link dark-link" href="trust-safety.html">Read the Trust &amp; Safety policy &rarr;</a>
       </div>
-      <ol class="check-list">
-        <li>The affected milestone is paused and both parties are acknowledged.</li>
-        <li>We review the brief, contract, messages, files, approvals and timeline.</li>
-        <li>We attempt facilitated resolution — correction, a revised milestone, partial acceptance or replacement.</li>
-        <li>Material fraud, safety, harassment or legal concerns are escalated to authorised leadership and advisers.</li>
-        <li>The outcome is recorded, confidential information is protected, and the underlying policy is improved.</li>
+      <ol class="outline-cards">
+        <li class="site-reveal"><span class="num">01</span><p>The affected milestone is paused and both sides are told.</p></li>
+        <li class="site-reveal"><span class="num">02</span><p>We review the brief, contract, messages, files and timeline.</p></li>
+        <li class="site-reveal"><span class="num">03</span><p>We help agree a fix: a correction, a new milestone, partial acceptance or a replacement.</p></li>
+        <li class="site-reveal"><span class="num">04</span><p>Fraud, safety, harassment or legal concerns go to leadership and advisers.</p></li>
+        <li class="site-reveal"><span class="num">05</span><p>The outcome is recorded, private details protected, and our policy improved.</p></li>
       </ol>
-      <p><a href="trust-safety.html">Read the full Trust &amp; Safety policy &rarr;</a></p>
     </div>
   </section>
 
-  <section class="cta-band">
-    <div class="container">
-      <h2>Ready to start?</h2>
-      <div class="hero-ctas justify-center" style="margin-top:1rem;">
-        <a href="for-employers.html#brief-form" class="btn btn-outline-light">Post a project</a>
-        <a href="for-talent.html#talent-form" class="btn btn-outline-light">Build your profile</a>
+  <section class="page-section">
+    <div class="container closing-cta site-reveal">
+      <h2>Ready to <em>start?</em></h2>
+      <div class="page-actions">
+        <a href="for-employers.html#brief-form" class="btn btn-primary">Post a project</a>
+        <a href="https://ador-works.vercel.app/signup" class="btn btn-ghost">Build your profile</a>
       </div>
     </div>
   </section>
@@ -208,7 +225,7 @@
         <ul class="footer-list">
           <li><a href="help.html">Help &amp; FAQ</a></li>
           <li><a href="contact.html">Contact us</a></li>
-          <li><a href="contact.html">Report a concern</a></li>
+          <li><a href="trust-safety.html#report">Report a concern</a></li>
           <li><a href="trust-safety.html#policies">Legal policies</a></li>
         </ul>
       </nav>
@@ -229,6 +246,7 @@
 <script src="js/api-config.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
+<script src="js/home.js"></script>
 <script src="js/analytics-config.js"></script>
 <script src="js/analytics.js"></script>
 <script src="js/chat-widget.js"></script>
