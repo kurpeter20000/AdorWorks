@@ -5,6 +5,11 @@ import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff, requireAdmin } from "../middleware/auth.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
 import { logAuditEvent } from "../audit.js";
+import { findUserByEmail } from "../findUserByEmail.js";
+
+// Roles an existing account may hold and still be turned into an agent
+// without a separate, deliberate role change from People.
+const AGENT_PROMOTABLE_ROLES = ["talent", "individual_client", "onboarding_agent"];
 
 // A random, easy-to-read-aloud temporary password — for a brand-new
 // account (an agent, or later an assisted person in Stage B) that a staff
@@ -120,9 +125,8 @@ assistedOnboardingRouter.post(
     if (hubError) throw new HttpError(500, hubError.message);
     if (!hub) throw new HttpError(404, "Partner hub not found.");
 
-    const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-    if (listError) throw new HttpError(500, listError.message);
-    const existing = existingUsers.users.find((u) => u.email?.toLowerCase() === body.email.toLowerCase());
+    const { user: existing, error: listError } = await findUserByEmail(supabaseAdmin, body.email);
+    if (listError) throw new HttpError(500, listError);
 
     // Unlike intake.js's provisionAccountSilently (a stopgap written when
     // there was no dashboard for anyone to log into), an agent needs to
@@ -134,6 +138,18 @@ assistedOnboardingRouter.post(
     let temporaryPassword;
     if (existing) {
       agentId = existing.id;
+      // Never silently overwrite a privileged role: promoting an admin or
+      // finance user's account to onboarding_agent would demote them.
+      const { data: existingProfile, error: profileError } = await supabaseAdmin
+        .from("profiles")
+        .select("role")
+        .eq("id", agentId)
+        .maybeSingle();
+      if (profileError) throw new HttpError(500, profileError.message);
+      const currentRole = existingProfile?.role;
+      if (currentRole && !AGENT_PROMOTABLE_ROLES.includes(currentRole)) {
+        throw new HttpError(409, `That account already has the "${currentRole}" role. Change it from People first if this is intended.`);
+      }
     } else {
       temporaryPassword = generateTemporaryPassword();
       const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -146,7 +162,8 @@ assistedOnboardingRouter.post(
       agentId = created.user.id;
     }
 
-    await supabaseAdmin.from("profiles").update({ role: "onboarding_agent" }).eq("id", agentId);
+    const { error: roleError } = await supabaseAdmin.from("profiles").update({ role: "onboarding_agent" }).eq("id", agentId);
+    if (roleError) throw new HttpError(500, `Could not set the onboarding agent role: ${roleError.message}`);
 
     const { data: agent, error: agentError } = await supabaseAdmin
       .from("onboarding_agents")

@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { findUserByEmail } from "@/lib/supabase/findUserByEmail";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
@@ -23,6 +24,30 @@ function generateTemporaryPassword(length = 10) {
   let out = "";
   for (let i = 0; i < length; i++) out += READABLE_CHARS[randomInt(READABLE_CHARS.length)];
   return out;
+}
+
+/**
+ * Server Action errors that are thrown get replaced by a generic message
+ * in production builds, so the team-management actions below return
+ * { error } instead of throwing for anything the user should read.
+ */
+async function checkOrgAdmin(organisationId: string) {
+  try {
+    return { session: await requireOrgAdmin(organisationId), error: null };
+  } catch (err) {
+    if (err instanceof Error && err.message === "Only a team admin can do this.") return { session: null, error: err.message };
+    throw err; // redirects (signed out, wrong role) must propagate
+  }
+}
+
+/** How many admins this organisation has right now. */
+async function countOrgAdmins(supabase: Awaited<ReturnType<typeof createClient>>, organisationId: string): Promise<number | null> {
+  const { count, error } = await supabase
+    .from("organisation_members")
+    .select("user_id", { count: "exact", head: true })
+    .eq("organisation_id", organisationId)
+    .eq("role", "admin");
+  return error ? null : (count ?? 0);
 }
 
 async function requireOrgAdmin(organisationId: string) {
@@ -88,9 +113,8 @@ export async function inviteTeamMember(
   const v = validated.data;
 
   const admin = createAdminClient();
-  const { data: existingUsers, error: listError } = await admin.auth.admin.listUsers();
-  if (listError) return { message: `Could not look up that account: ${listError.message}` };
-  const existing = existingUsers.users.find((u) => u.email?.toLowerCase() === v.email.toLowerCase());
+  const { user: existing, error: listError } = await findUserByEmail(admin, v.email);
+  if (listError) return { message: `Could not look up that account: ${listError}` };
 
   let temporaryPassword: string | undefined;
   if (!existing) {
@@ -183,24 +207,31 @@ export async function acceptTeamInvitation(token: string): Promise<{ error?: str
   return { organisationName: org?.name };
 }
 
-export async function revokeTeamInvitation(organisationId: string, invitationId: string): Promise<void> {
-  await requireOrgAdmin(organisationId);
+export async function revokeTeamInvitation(organisationId: string, invitationId: string): Promise<{ error?: string }> {
+  const check = await checkOrgAdmin(organisationId);
+  if (check.error) return { error: check.error };
   const supabase = await createClient();
-  await supabase
+  const { data, error } = await supabase
     .from("organisation_team_invitations")
     .update({ status: "revoked" })
     .eq("id", invitationId)
     .eq("organisation_id", organisationId)
-    .eq("status", "pending");
+    .eq("status", "pending")
+    .select("id");
+  if (error) return { error: `Could not revoke the invite: ${error.message}` };
   revalidatePath("/organisation/team");
+  if (!data || data.length === 0) return { error: "This invite was already accepted, revoked or has expired." };
+  return {};
 }
 
 export async function changeTeamMemberRole(
   organisationId: string,
   memberId: string,
   role: "member" | "admin" | "recruiter" | "hiring_manager" | "finance" | "viewer"
-): Promise<void> {
-  const session = await requireOrgAdmin(organisationId);
+): Promise<{ error?: string }> {
+  const check = await checkOrgAdmin(organisationId);
+  if (check.error || !check.session) return { error: check.error ?? "Only a team admin can do this." };
+  const session = check.session;
   const supabase = await createClient();
   const { data: before } = await supabase
     .from("organisation_members")
@@ -208,11 +239,24 @@ export async function changeTeamMemberRole(
     .eq("organisation_id", organisationId)
     .eq("user_id", memberId)
     .maybeSingle();
-  await supabase
+  if (!before) return { error: "That person is no longer on this team." };
+  if (before.role === role) return {};
+
+  // Never leave a team with no admin — nobody could manage it afterwards.
+  if (before.role === "admin") {
+    const admins = await countOrgAdmins(supabase, organisationId);
+    if (admins === null) return { error: "Could not check the team's admins. Please try again." };
+    if (admins <= 1) return { error: "Your team needs at least one admin. Make someone else an admin first." };
+  }
+
+  const { data: updated, error: updateError } = await supabase
     .from("organisation_members")
     .update({ role })
     .eq("organisation_id", organisationId)
-    .eq("user_id", memberId);
+    .eq("user_id", memberId)
+    .select("user_id");
+  if (updateError) return { error: `Could not update their role: ${updateError.message}` };
+  if (!updated || updated.length === 0) return { error: "Could not update their role. Please refresh and try again." };
 
   // S06-12: role changes previously left no trace in audit_events at all.
   const admin = createAdminClient();
@@ -231,7 +275,7 @@ export async function changeTeamMemberRole(
   // S11-02: previously no notification at all — a member could have their
   // role changed and only find out next time a permission behaved
   // differently than expected.
-  if (before && before.role !== role) {
+  {
     await notifyUser(admin, {
       userId: memberId,
       type: NOTIFICATION_TYPES.TEAM_ROLE_CHANGED,
@@ -255,15 +299,18 @@ export async function changeTeamMemberRole(
   }
 
   revalidatePath("/organisation/team");
+  return {};
 }
 
-export async function removeTeamMember(organisationId: string, memberId: string): Promise<void> {
-  const session = await requireOrgAdmin(organisationId);
+export async function removeTeamMember(organisationId: string, memberId: string): Promise<{ error?: string }> {
+  const check = await checkOrgAdmin(organisationId);
+  if (check.error || !check.session) return { error: check.error ?? "Only a team admin can do this." };
+  const session = check.session;
   const supabase = await createClient();
 
   const { data: org } = await supabase.from("organisations").select("representative_id").eq("id", organisationId).single();
   if (org?.representative_id === memberId) {
-    throw new Error("The original representative can't be removed from the team.");
+    return { error: "The original representative can't be removed from the team." };
   }
 
   const { data: before } = await supabase
@@ -272,8 +319,21 @@ export async function removeTeamMember(organisationId: string, memberId: string)
     .eq("organisation_id", organisationId)
     .eq("user_id", memberId)
     .maybeSingle();
+  if (!before) return { error: "That person is no longer on this team." };
+  if (before.role === "admin") {
+    const admins = await countOrgAdmins(supabase, organisationId);
+    if (admins === null) return { error: "Could not check the team's admins. Please try again." };
+    if (admins <= 1) return { error: "Your team needs at least one admin. Make someone else an admin first." };
+  }
 
-  await supabase.from("organisation_members").delete().eq("organisation_id", organisationId).eq("user_id", memberId);
+  const { data: removed, error: deleteError } = await supabase
+    .from("organisation_members")
+    .delete()
+    .eq("organisation_id", organisationId)
+    .eq("user_id", memberId)
+    .select("user_id");
+  if (deleteError) return { error: `Could not remove them: ${deleteError.message}` };
+  if (!removed || removed.length === 0) return { error: "Could not remove them. Please refresh and try again." };
 
   // S06-12: removals previously left no trace in audit_events at all.
   const admin = createAdminClient();
@@ -310,4 +370,5 @@ export async function removeTeamMember(organisationId: string, memberId: string)
   );
 
   revalidatePath("/organisation/team");
+  return {};
 }
