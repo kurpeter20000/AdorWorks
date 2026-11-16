@@ -103,7 +103,7 @@
   document.addEventListener("DOMContentLoaded", function () {
     // Pages with a sticky "on this page" menu need the header's height.
     var siteHeader = document.querySelector(".site-header");
-    if (siteHeader && document.querySelector(".section-nav")) {
+    if (siteHeader && document.querySelector(".section-nav, .journey-photo")) {
       var setHeaderH = function () {
         document.documentElement.style.setProperty("--site-header-h", siteHeader.offsetHeight + "px");
       };
