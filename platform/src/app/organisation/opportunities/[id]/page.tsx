@@ -47,6 +47,11 @@ export default async function OpportunityDetailPage({
     .eq("opportunity_id", opportunity.id)
     .order("created_at", { ascending: false }), "attachments");
 
+  // "Viewed" step (0110): the employer opening this page marks the
+  // applications they can see as viewed. Best-effort — a failure here
+  // must never stop the employer seeing their applicants.
+  await supabase.rpc("mark_applications_viewed", { p_opportunity_id: opportunity.id });
+
   const { data: applications } = must(await supabase
     .from("applications")
     .select("id, talent_id, stage, source, pitch, created_at")

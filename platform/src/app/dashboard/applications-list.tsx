@@ -12,15 +12,18 @@ export interface TalentApplication {
   orgName: string;
   stage: ApplicationStage;
   createdAt: string;
+  /** When the employer first saw it (0110); null = not yet. */
+  viewedAt: string | null;
 }
 
-// Plain-word steps over the stages the app really records. "Viewed" from
-// the canvas is left out until views are tracked (Phase B).
-const STEPS = [msg("Applied"), msg("Shortlisted"), msg("Interview"), msg("Offer")];
+// Plain-word steps, as the spec names them: Applied → Viewed →
+// Shortlisted → Offer. "Viewed" comes from applications.viewed_at (0110);
+// an interview sits on the Shortlisted step (its pill says "Interview").
+const STEPS = [msg("Applied"), msg("Viewed"), msg("Shortlisted"), msg("Offer")];
 
 const STAGE: Record<ApplicationStage, { step: number; pill: string; tone: StatusTone }> = {
   submitted: { step: 0, pill: msg("In review"), tone: "info" },
-  shortlisted: { step: 1, pill: msg("Shortlisted"), tone: "waiting" },
+  shortlisted: { step: 2, pill: msg("Shortlisted"), tone: "waiting" },
   interviewing: { step: 2, pill: msg("Interview"), tone: "waiting" },
   offered: { step: 3, pill: msg("Offer · respond"), tone: "urgent" },
   accepted: { step: 3, pill: msg("Hired"), tone: "done" },
@@ -45,6 +48,8 @@ export async function ApplicationsList({ applications }: { applications: TalentA
     <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-white shadow-card">
       {applications.map((a) => {
         const stage = STAGE[a.stage];
+        // A submitted application the employer has opened moves to "Viewed".
+        const step = a.stage === "submitted" && a.viewedAt ? 1 : stage.step;
         const closed = a.stage === "rejected" || a.stage === "withdrawn";
         return (
           <li key={a.id}>
@@ -63,10 +68,10 @@ export async function ApplicationsList({ applications }: { applications: TalentA
                   <Stepper
                     className="w-full max-w-48"
                     steps={steps}
-                    current={stage.step}
-                    label={t("Step {n} of {total}: {step}", { n: stage.step + 1, total: steps.length, step: steps[stage.step] })}
+                    current={step}
+                    label={t("Step {n} of {total}: {step}", { n: step + 1, total: steps.length, step: steps[step] })}
                   />
-                  <span className="text-xs font-semibold whitespace-nowrap text-slate sm:hidden">{steps[stage.step]}</span>
+                  <span className="text-xs font-semibold whitespace-nowrap text-slate sm:hidden">{steps[step]}</span>
                 </span>
               ) : (
                 <span className="hidden sm:order-2 sm:block" />

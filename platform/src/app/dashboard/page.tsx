@@ -203,7 +203,7 @@ export default async function DashboardPage({
     const [recentAppsRes, invitationsRes, financeRes] = await Promise.all([
       supabase
         .from("applications")
-        .select("id, opportunity_id, stage, created_at")
+        .select("id, opportunity_id, stage, created_at, viewed_at")
         .eq("talent_id", session.userId)
         .neq("stage", "withdrawn")
         .order("created_at", { ascending: false })
@@ -232,6 +232,7 @@ export default async function DashboardPage({
           orgName: (opp && appOrgName.get(opp.organisation_id)) ?? t("AdorWorks employer"),
           stage: a.stage,
           createdAt: a.created_at,
+          viewedAt: a.viewed_at ?? null,
         };
       });
     }

@@ -330,6 +330,10 @@ export type ApplicationRow = {
   decision_reason: string | null;
   interview_scheduled_at: string | null;
   interview_notes: string | null;
+  /** 0110: last stage change — the clock for the 14-day auto-close. */
+  stage_changed_at: string;
+  /** 0110: when the employer first saw this application ("Viewed" step). */
+  viewed_at: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -1265,6 +1269,10 @@ export type Database = {
           milestones_to_pay_count: number;
           milestones_to_pay_amount: number;
         }[];
+      };
+      mark_applications_viewed: {
+        Args: { p_opportunity_id: string };
+        Returns: number;
       };
       escrow_release_eligible: {
         Args: Record<string, never>;
