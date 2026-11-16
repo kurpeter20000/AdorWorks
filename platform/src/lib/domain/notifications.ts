@@ -89,14 +89,17 @@ export async function notifyUser(
       body: input.body ?? null,
       link: input.link ?? null,
     };
-    const { error } = input.dedupeKey
+    const { data: written, error } = input.dedupeKey
       ? await admin
           .from("notifications")
           .upsert({ ...row, dedupe_key: input.dedupeKey }, { onConflict: "user_id,type,dedupe_key", ignoreDuplicates: true })
-      : await admin.from("notifications").insert(row);
+          .select("id")
+      : await admin.from("notifications").insert(row).select("id");
     // 0114: a WhatsApp copy for people who asked for one (no-op until
-    // the WhatsApp Business account is connected).
-    if (!error) await sendWhatsAppAlert(admin, { userId: input.userId, type: input.type, title: input.title });
+    // the WhatsApp Business account is connected) — only when a new
+    // notification was actually written, so a retried action doesn't
+    // send a second message.
+    if (!error && (written ?? []).length > 0) await sendWhatsAppAlert(admin, { userId: input.userId, type: input.type, title: input.title });
     if (error) {
       console.error("notifications insert failed for %s:", input.type, error.message);
       await logAuditEvent(admin, {

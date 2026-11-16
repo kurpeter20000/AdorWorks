@@ -26,8 +26,12 @@ beforeAll(async () => {
 }, 120_000);
 
 describe("new staff roles (0111)", () => {
-  it("are staff once MFA is done", async () => {
-    for (const id of [U.verifier, U.trust, U.field]) {
+  it("trust & safety is full staff once MFA is done; the support roles are not (0115)", async () => {
+    for (const id of [U.verifier, U.field]) {
+      const { result } = await asUser(db, id, { aal: "aal2" }, (tx) => tx.query("select is_staff() as ok"));
+      expect(result.rows[0].ok).toBe(false);
+    }
+    for (const id of [U.trust]) {
       const { result, error } = await asUser(db, id, { aal: "aal2" }, (tx) => tx.query("select is_staff() as ok"));
       expect(error).toBeNull();
       expect(result.rows[0].ok).toBe(true);

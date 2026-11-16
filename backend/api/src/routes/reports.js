@@ -125,7 +125,9 @@ const TARGET_WORDS = {
   talent_service: "a service",
   talent_profile: "a profile",
   organisation: "an organisation",
-  introduction_video: "an introduction video",
+  talent_video: "an introduction video",
+  portfolio_item: "a portfolio item",
+  vouch: "a reference",
 };
 
 export const REPORT_OUTCOME_NOTICE = {
@@ -160,14 +162,19 @@ reportsRouter.patch(
   asyncRoute(async (req, res) => {
     const { status, resolution_notes } = updateSchema.parse(req.body);
     const { data: before } = await supabaseAdmin.from("reports").select("status").eq("id", req.params.id).maybeSingle();
+    if (!before) throw new HttpError(404, "Report not found.");
 
+    // Only from the status we just read: two staff deciding at once can't
+    // both win, and a repeat of the same decision changes nothing.
     const { data, error } = await supabaseAdmin
       .from("reports")
       .update({ status, resolution_notes, reviewed_by: req.user.id, reviewed_at: new Date().toISOString() })
       .eq("id", req.params.id)
+      .eq("status", before.status)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw new HttpError(400, error.message);
+    if (!data) throw new HttpError(409, "Someone else just updated this report. Refresh and check it again.");
 
     await logAuditEvent(supabaseAdmin, {
       name: "case.report.resolved",
@@ -184,7 +191,7 @@ reportsRouter.patch(
     // Spec: "tell the reporter the outcome". Only the outcome — never
     // what happened to the other person or which staff member decided.
     // Best-effort: a failed notice never undoes the decision.
-    const outcome = REPORT_OUTCOME_NOTICE[status];
+    const outcome = before.status !== status ? REPORT_OUTCOME_NOTICE[status] : null;
     if (outcome && data.reporter_id) {
       const what = TARGET_WORDS[data.target_type] ?? "something on AdorWorks";
       const { error: noteError } = await supabaseAdmin.from("notifications").insert({

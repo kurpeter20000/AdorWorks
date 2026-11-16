@@ -168,14 +168,23 @@ export default async function DashboardPage({
     const activeContractIds = (myContracts ?? []).filter((c) => c.status === "active").map((c) => c.id);
     // 0113: interview times waiting for a pick, and contracts not yet signed.
     const [slotsRes, mySignaturesRes] = await Promise.all([
-      supabase.from("interview_slots").select("application_id").eq("status", "offered").gt("starts_at", new Date().toISOString()),
+      supabase
+        .from("interview_slots")
+        .select("application_id, applications!inner(stage)")
+        .eq("status", "offered")
+        .gt("starts_at", new Date().toISOString())
+        .in("applications.stage", ["shortlisted", "interviewing"]),
       activeContractIds.length > 0
-        ? supabase.from("contract_signatures").select("contract_id").eq("party", "talent").in("contract_id", activeContractIds)
+        ? supabase.from("contract_signatures").select("contract_id, terms_version").eq("party", "talent").in("contract_id", activeContractIds)
         : Promise.resolve({ data: [], error: null }),
     ]);
+    const talentLatestTerms = await latestTermsVersions(supabase, activeContractIds);
     if (slotsRes.error || mySignaturesRes.error) todayDataError = true;
     const interviewsToPick = new Set((slotsRes.data ?? []).map((r) => r.application_id)).size;
-    const signedContracts = new Set((mySignaturesRes.data ?? []).map((r) => r.contract_id));
+    // Signed = signed the contract's latest written terms (a change needs a new signature).
+    const signedContracts = new Set(
+      (mySignaturesRes.data ?? []).filter((r) => r.terms_version === talentLatestTerms.get(r.contract_id)).map((r) => r.contract_id)
+    );
     const unsignedContracts = activeContractIds.filter((id) => !signedContracts.has(id));
     if (interviewsToPick > 0) {
       talentAttention.push({ href: "/applications", label: msg("Interview times to pick"), count: interviewsToPick, tone: "warning" });
@@ -370,13 +379,12 @@ export default async function DashboardPage({
       // 0113: contracts the organisation hasn't signed yet.
       const activeOrgContracts = (orgContracts ?? []).filter((c) => c.status === "active").map((c) => c.id);
       if (activeOrgContracts.length > 0) {
-        const { data: orgSigs, error: orgSigsError } = await supabase
-          .from("contract_signatures")
-          .select("contract_id")
-          .eq("party", "organisation")
-          .in("contract_id", activeOrgContracts);
+        const [{ data: orgSigs, error: orgSigsError }, orgLatestTerms] = await Promise.all([
+          supabase.from("contract_signatures").select("contract_id, terms_version").eq("party", "organisation").in("contract_id", activeOrgContracts),
+          latestTermsVersions(supabase, activeOrgContracts),
+        ]);
         if (orgSigsError) todayDataError = true;
-        const signed = new Set((orgSigs ?? []).map((r) => r.contract_id));
+        const signed = new Set((orgSigs ?? []).filter((r) => r.terms_version === orgLatestTerms.get(r.contract_id)).map((r) => r.contract_id));
         const unsigned = activeOrgContracts.filter((id) => !signed.has(id));
         if (unsigned.length > 0) {
           employerPipeline.push({
@@ -824,6 +832,15 @@ function pickNextStep({
     );
   }
   return null;
+}
+
+/** Latest written-terms version per contract (no terms yet = nothing signable). */
+async function latestTermsVersions(supabase: Awaited<ReturnType<typeof createClient>>, contractIds: string[]): Promise<Map<string, number>> {
+  const latest = new Map<string, number>();
+  if (contractIds.length === 0) return latest;
+  const { data } = await supabase.from("contract_terms").select("contract_id, version").in("contract_id", contractIds);
+  for (const r of data ?? []) latest.set(r.contract_id, Math.max(latest.get(r.contract_id) ?? 0, r.version));
+  return latest;
 }
 
 /** Has this ISO time passed? (kept out of render: reads the clock) */

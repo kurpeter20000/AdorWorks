@@ -23,7 +23,7 @@ export function StaffInterviewPanel({ applicationId }: { applicationId: string }
 
   return (
     <div className="mt-2 space-y-2">
-      {view && <InterviewSlotsForm applicationId={applicationId} existing={view.slots as ExistingSlot[]} />}
+      {view && <InterviewSlotsForm applicationId={applicationId} existing={view.slots as ExistingSlot[]} onSent={load} />}
       <div className="rounded-lg border border-slate/15 p-3">
         <p className="text-xs font-semibold tracking-wide text-slate uppercase">Messages with the applicant</p>
         {view && view.messages.length === 0 && <p className="mt-1 text-sm text-slate">No messages yet.</p>}

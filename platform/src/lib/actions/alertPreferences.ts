@@ -10,6 +10,17 @@ export type AlertPrefsState = { saved?: boolean; message?: string };
 
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
+/** A real IANA timezone, or Juba (an unknown one would break quiet hours). */
+function validTimeZone(raw: string): string {
+  const tz = raw.slice(0, 64);
+  try {
+    new Intl.DateTimeFormat("en-GB", { timeZone: tz });
+    return tz || "Africa/Juba";
+  } catch {
+    return "Africa/Juba";
+  }
+}
+
 /** Saves the person's own alert settings (0114). */
 export async function saveAlertPreferences(_prev: AlertPrefsState, formData: FormData): Promise<AlertPrefsState> {
   const session = await requireSession();
@@ -24,7 +35,7 @@ export async function saveAlertPreferences(_prev: AlertPrefsState, formData: For
   const from = String(formData.get("quiet_from") ?? "");
   const until = String(formData.get("quiet_until") ?? "");
   if (quiet && (!TIME.test(from) || !TIME.test(until))) return { message: msg("Choose when quiet hours start and end.") };
-  const tz = String(formData.get("timezone") ?? "Africa/Juba").slice(0, 64);
+  const tz = validTimeZone(String(formData.get("timezone") ?? ""));
 
   const supabase = await createClient();
   const { error } = await supabase.from("alert_preferences").upsert(

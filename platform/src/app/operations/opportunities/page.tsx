@@ -15,6 +15,7 @@ export default async function OperationsOpportunitiesPage({ searchParams }: { se
     <OpportunitiesConsole
       initialFilter={status !== undefined && FILTERS.has(status) ? status : "pending_review"}
       canRunInterviews={session.role === "matcher" || session.role === "admin"}
+      canReview={session.role === "reviewer" || session.role === "admin"}
     />
   );
 }

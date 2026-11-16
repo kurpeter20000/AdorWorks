@@ -363,22 +363,32 @@ const reinstateSchema = z.object({
   reason: z.string().trim().min(10, "Explain why — at least 10 characters."),
 });
 
-async function reinstateAccount(profileId, actorId, reason) {
-  const { data: before } = await supabaseAdmin.from("profiles").select("status").eq("id", profileId).maybeSingle();
+/**
+ * Reinstates a suspended account. Only from 'suspended' (guarded in the
+ * update itself, so a concurrent change can't be overwritten), and only
+ * an admin may reinstate a staff account — the same rule as suspending.
+ */
+async function reinstateAccount(profileId, actor, reason) {
+  const { data: before } = await supabaseAdmin.from("profiles").select("status, role").eq("id", profileId).maybeSingle();
   if (!before) throw new HttpError(404, "Account not found.");
+  if (STAFF_ROLES.has(before.role) && actor.role !== "admin") {
+    throw new HttpError(403, "Only an admin can reinstate a staff account.");
+  }
   if (before.status !== "suspended") throw new HttpError(409, "This account isn't currently suspended.");
 
   const { data, error } = await supabaseAdmin
     .from("profiles")
-    .update({ status: "active", reinstated_at: new Date().toISOString(), reinstated_by: actorId })
+    .update({ status: "active", reinstated_at: new Date().toISOString(), reinstated_by: actor.id })
     .eq("id", profileId)
+    .eq("status", "suspended")
     .select("id, role, status, full_name, created_at")
-    .single();
+    .maybeSingle();
   if (error) throw new HttpError(400, error.message);
+  if (!data) throw new HttpError(409, "This account isn't currently suspended.");
 
   await logAuditEvent(supabaseAdmin, {
     name: "identity.account.reinstated",
-    actorId,
+    actorId: actor.id,
     subjectId: profileId,
     entityType: "profiles",
     entityId: profileId,
@@ -389,6 +399,13 @@ async function reinstateAccount(profileId, actorId, reason) {
   return data;
 }
 
+/** Non-admins never see or act on staff accounts' private records. */
+async function assertNotStaffForNonAdmin(req, profileId) {
+  if (req.user.role === "admin") return;
+  const { data } = await supabaseAdmin.from("profiles").select("role").eq("id", profileId).maybeSingle();
+  if (!data || STAFF_ROLES.has(data.role)) throw new HttpError(404, "Account not found.");
+}
+
 // POST /api/people/:id/reinstate — the reverse of suspend. Only valid
 // from 'suspended' — reinstating a 'deleted' account isn't the same
 // decision and isn't offered here.
@@ -397,7 +414,7 @@ peopleRouter.post(
   requireTrustSafety,
   asyncRoute(async (req, res) => {
     const { reason } = reinstateSchema.parse(req.body);
-    const data = await reinstateAccount(req.params.id, req.user.id, reason);
+    const data = await reinstateAccount(req.params.id, req.user, reason);
     res.json({ data });
   })
 );
@@ -410,6 +427,7 @@ const noteSchema = z.object({ body: z.string().trim().min(2, "Write a note.").ma
 peopleRouter.get(
   "/:id/notes",
   asyncRoute(async (req, res) => {
+    await assertNotStaffForNonAdmin(req, req.params.id);
     const { data, error } = await supabaseAdmin
       .from("staff_notes")
       .select("id, body, created_at, author_id, profiles!staff_notes_author_id_fkey(full_name)")
@@ -425,6 +443,7 @@ peopleRouter.post(
   "/:id/notes",
   asyncRoute(async (req, res) => {
     const { body } = noteSchema.parse(req.body);
+    await assertNotStaffForNonAdmin(req, req.params.id);
     const { data, error } = await supabaseAdmin
       .from("staff_notes")
       .insert({ subject_id: req.params.id, author_id: req.user.id, body })
@@ -458,7 +477,8 @@ peopleRouter.get(
       .order("created_at", { ascending: true })
       .limit(100);
     if (error) throw new HttpError(500, error.message);
-    res.json({ data });
+    const visible = req.user.role === "admin" ? data : data.filter((a) => !STAFF_ROLES.has(a.profiles?.role));
+    res.json({ data: visible });
   })
 );
 
@@ -472,7 +492,12 @@ peopleRouter.post(
   requireTrustSafety,
   asyncRoute(async (req, res) => {
     const { decision, note } = appealDecisionSchema.parse(req.body);
-    // Claim it first, so two staff can't decide the same appeal.
+    const { data: pending } = await supabaseAdmin.from("account_appeals").select("id, profile_id, status").eq("id", req.params.id).maybeSingle();
+    if (!pending) throw new HttpError(404, "Appeal not found.");
+    if (pending.status !== "open") throw new HttpError(409, "This appeal has already been decided.");
+    await assertNotStaffForNonAdmin(req, pending.profile_id);
+
+    // Claim it, so two staff can't decide the same appeal.
     const { data: appeal, error } = await supabaseAdmin
       .from("account_appeals")
       .update({ status: decision, decided_by: req.user.id, decided_at: new Date().toISOString(), decision_note: note })
@@ -485,10 +510,18 @@ peopleRouter.post(
 
     if (decision === "reinstated") {
       try {
-        await reinstateAccount(appeal.profile_id, req.user.id, `Appeal accepted: ${note}`);
+        await reinstateAccount(appeal.profile_id, req.user, `Appeal accepted: ${note}`);
       } catch (e) {
-        // Already active (e.g. reinstated by hand meanwhile) is fine.
-        if (!(e instanceof HttpError && e.status === 409)) throw e;
+        const { data: now } = await supabaseAdmin.from("profiles").select("status").eq("id", appeal.profile_id).maybeSingle();
+        // Already active (reinstated by hand meanwhile) is fine; anything
+        // else puts the appeal back so it can be decided again.
+        if (now?.status !== "active") {
+          await supabaseAdmin
+            .from("account_appeals")
+            .update({ status: "open", decided_by: null, decided_at: null, decision_note: null })
+            .eq("id", appeal.id);
+          throw e;
+        }
       }
     }
     await logAuditEvent(supabaseAdmin, {

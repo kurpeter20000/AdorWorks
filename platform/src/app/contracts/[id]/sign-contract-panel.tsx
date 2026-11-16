@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { Check } from "lucide-react";
 import { signContract } from "@/lib/actions/contractSigning";
 import { buttonVariants } from "@/components/ui/button";
+import { formatDate } from "@/lib/domain/format";
 
 export interface SignatureState {
   termsVersion: number;
@@ -35,7 +36,7 @@ export function SignContractPanel({
         {at && <Check className="size-3.5" aria-hidden="true" />}
       </span>
       <span className="text-midnight">{label}</span>
-      <span className="text-slate">{at ? `signed ${new Date(at).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}` : "not signed yet"}</span>
+      <span className="text-slate">{at ? `signed ${formatDate(at, { day: "numeric", month: "short", year: "numeric" })}` : "not signed yet"}</span>
     </li>
   );
 
@@ -61,7 +62,7 @@ export function SignContractPanel({
           onClick={() =>
             start(async () => {
               setError(null);
-              const r = await signContract(contractId);
+              const r = await signContract(contractId, state.termsVersion);
               if (r.error) setError(r.error);
             })
           }

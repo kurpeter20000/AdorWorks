@@ -163,6 +163,17 @@ const STAFF_INTERVIEW_ROLES = ["matcher", "admin"] as const;
  * shortlisted). For staff-assisted hiring, where staff run the shortlist.
  * Same contact-detail filter as every pre-contract message.
  */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Staff interview tools are for staff-assisted roles only (the employer runs self-service hiring). */
+async function isStaffAssistedApplication(admin: ReturnType<typeof createAdminClient>, applicationId: string): Promise<boolean> {
+  if (!UUID.test(applicationId)) return false;
+  const { data } = await admin.from("applications").select("opportunity_id").eq("id", applicationId).maybeSingle();
+  if (!data) return false;
+  const { data: opp } = await admin.from("opportunities").select("shortlisting_mode").eq("id", data.opportunity_id).maybeSingle();
+  return opp?.shortlisting_mode === "staff_assisted";
+}
+
 export async function staffMessageApplicant(applicationId: string, body: string): Promise<{ error?: string }> {
   const session = await requireRole(...STAFF_INTERVIEW_ROLES);
   const validated = MessageSchema.safeParse({ body });
@@ -170,6 +181,7 @@ export async function staffMessageApplicant(applicationId: string, body: string)
   if (containsContactDetails(validated.data.body)) return { error: CONTACT_DETAIL_BLOCKED_MESSAGE };
 
   const admin = createAdminClient();
+  if (!(await isStaffAssistedApplication(admin, applicationId))) return { error: "Staff message applicants only on staff-assisted roles." };
   const { data: app } = await admin.from("applications").select("stage").eq("id", applicationId).maybeSingle();
   if (!app || !["shortlisted", "interviewing"].includes(app.stage)) {
     return { error: "Staff can message an applicant once they're shortlisted or interviewing." };
@@ -218,6 +230,7 @@ export async function getStaffInterviewView(applicationId: string): Promise<{
 }> {
   await requireRole(...STAFF_INTERVIEW_ROLES);
   const admin = createAdminClient();
+  if (!(await isStaffAssistedApplication(admin, applicationId))) return { slots: [], messages: [] };
   const [{ data: app }, { data: slots }, { data: conversation }] = await Promise.all([
     admin.from("applications").select("talent_id").eq("id", applicationId).maybeSingle(),
     admin.from("interview_slots").select("id, starts_at, mode, details, status").eq("application_id", applicationId).order("starts_at"),
