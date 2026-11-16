@@ -63,6 +63,19 @@
   --color-warning-ink: var(--color-warning-ink);
 
   --font-sans: var(--font-manrope), system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+
+  /* Design system (pilot) — one place for depth and shape, so pages stop
+     choosing their own. Three elevation levels, three corner sizes:
+       shadow-card   resting surfaces (cards, panels, list containers)
+       shadow-raised hover / focus lift on interactive cards
+       shadow-overlay menus, drawers, dialogs
+       rounded-control (inputs, buttons, chips) · rounded-card · rounded-panel (hero/feature blocks) */
+  --shadow-card: 0 1px 2px rgb(24 34 48 / 0.04), 0 1px 3px rgb(24 34 48 / 0.06);
+  --shadow-raised: 0 2px 4px rgb(24 34 48 / 0.05), 0 8px 20px rgb(24 34 48 / 0.08);
+  --shadow-overlay: 0 12px 32px rgb(24 34 48 / 0.16);
+  --radius-control: 0.625rem;
+  --radius-card: 1rem;
+  --radius-panel: 1.5rem;
 }
 
 body {

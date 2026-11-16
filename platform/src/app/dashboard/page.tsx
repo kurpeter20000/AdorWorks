@@ -8,7 +8,13 @@ import { getTalentReadiness, getEmployerReadiness } from "@/lib/domain/readiness
 import { getMyOrganisationMembership } from "@/lib/dal/organisation";
 import { rankBySkillOverlap } from "@/lib/domain/matching";
 import { formatCompensation } from "@/lib/domain/format";
+import { ArrowRight, Briefcase, Circle, FileSignature, Plus, Users, Wallet } from "lucide-react";
 import { StatePanel } from "@/components/state-panel";
+import { PageContainer, PageHeader, Section } from "@/components/ui/page";
+import { StatTile } from "@/components/ui/stat-tile";
+import { buttonVariants } from "@/components/ui/button";
+import { NAV_ICONS } from "@/components/nav-icons";
+import type { DashboardAction } from "@/lib/domain/navigation";
 import { AssistanceConsentWidget } from "./assistance-consent-widget";
 import { ReadinessPanel } from "./readiness-panel";
 import { NotificationsPanel } from "./notifications-panel";
@@ -289,29 +295,58 @@ export default async function DashboardPage({
     }
   }
 
+  const primaryAction = experience.actions.find((a) => a.primary && !a.section);
+  const shortcuts = experience.actions.filter((a) => !a.section && !a.primary);
+  const showShortcuts = dashboardKind !== "employer" || !employerStats;
+  // Talent gets a two-column layout (today's work + profile status); other
+  // roles keep a single column with their shortcuts as full cards.
+  const twoColumn = dashboardKind === "talent" || (dashboardKind === "employer" && !!employerStats);
+
+  const headerActions =
+    dashboardKind === "employer" && employerStats ? (
+      <>
+        <Link href="/organisation" className={buttonVariants({ variant: "secondary", size: "md" })}>
+          {t("Browse talent")}
+        </Link>
+        <Link href="/organisation/opportunities/new" className={buttonVariants({ variant: "primary", size: "md" })}>
+          <Plus className="size-4" aria-hidden="true" />
+          {t("Post an opportunity")}
+        </Link>
+      </>
+    ) : primaryAction ? (
+      <Link href={primaryAction.href} className={buttonVariants({ variant: "primary", size: "md" })}>
+        {t(primaryAction.label)}
+        <ArrowRight className="size-4 rtl:rotate-180" aria-hidden="true" />
+      </Link>
+    ) : null;
+
   return (
-    <main className="mx-auto max-w-6xl p-6 sm:p-8 lg:p-10">
-      <h1 className="text-2xl font-extrabold text-midnight">
-        {session.fullName ? t("Welcome, {name}", { name: session.fullName }) : t("Welcome")}
-      </h1>
+    <PageContainer width="wide">
+      <PageHeader
+        title={session.fullName ? t("Welcome, {name}", { name: session.fullName }) : t("Welcome")}
+        description={t(experience.description)}
+        actions={headerActions}
+      />
 
-      {query.error === "forbidden" && (
-        <div className="mt-6">
-          <StatePanel title={t("You do not have access to that workspace")} tone="danger" role="alert">
-            {t("Your account has been returned to the workspace available for its current role.")}
-          </StatePanel>
+      {(query.error === "forbidden" || query.onboarding === "submitted" || todayDataError) && (
+        <div className="mt-6 space-y-3">
+          {query.error === "forbidden" && (
+            <StatePanel title={t("You do not have access to that workspace")} tone="danger" role="alert">
+              {t("Your account has been returned to the workspace available for its current role.")}
+            </StatePanel>
+          )}
+          {query.onboarding === "submitted" && (
+            <StatePanel title={t("Onboarding submitted")} tone="success">
+              {t("Your details were received and can now move through the existing review workflow.")}
+            </StatePanel>
+          )}
+          {todayDataError && (
+            <StatePanel title={t("Couldn't load your full picture")} tone="danger" role="alert">
+              {t("Some of what's below may be incomplete — refresh the page to try again.")}
+            </StatePanel>
+          )}
         </div>
       )}
-
-      {query.onboarding === "submitted" && (
-        <div className="mt-6">
-          <StatePanel title={t("Onboarding submitted")} tone="success">
-            {t("Your details were received and can now move through the existing review workflow.")}
-          </StatePanel>
-        </div>
-      )}
-
-      <NotificationsPanel notifications={notifications ?? []} unreadCount={unreadCount ?? 0} />
 
       {pendingAssistance &&
         (pendingAssistance.status === "pending_consent" || pendingAssistance.status === "active") && (
@@ -322,109 +357,128 @@ export default async function DashboardPage({
           />
         )}
 
-      {readinessState && <ReadinessPanel state={readinessState} />}
-
-      {todayDataError && (
-        <div className="mt-6">
-          <StatePanel title={t("Couldn't load your full picture")} tone="danger" role="alert">
-            {t("Some of what's below may be incomplete — refresh the page to try again.")}
-          </StatePanel>
+      {dashboardKind === "employer" && employerStats && (
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          <StatTile label={t("Open opportunities")} value={employerStats.openOpportunities} href="/organisation" icon={Briefcase} tone="teal" />
+          <StatTile label={t("Applicants awaiting")} value={employerStats.applicantsAwaiting} href="/organisation" icon={Users} tone="violet" />
+          <StatTile label={t("Active contracts")} value={employerStats.activeContracts} href="/contracts" icon={FileSignature} tone="neutral" />
+          <StatTile label={t("Milestones to pay")} value={employerStats.milestonesToPay} href="/contracts" icon={Wallet} tone="coral" />
         </div>
       )}
 
-      {dashboardKind === "talent" && (
-        <>
-          <section className="mt-6">
-            <h2 className="text-lg font-extrabold text-midnight">{t("Needs your attention")}</h2>
-            <TalentAttentionList items={talentAttention} />
-          </section>
-          <section className="mt-6">
-            <h2 className="text-lg font-extrabold text-midnight">{t("Recommended for you")}</h2>
-            <p className="mt-1 text-xs text-slate">{t("Ranked by overlap with your Passport skills — never by pay or reputation.")}</p>
-            <RecommendedOpportunities opportunities={recommendedOpportunities} />
-          </section>
-        </>
-      )}
-
-      {dashboardKind === "employer" && employerStats && (
-        <section className="mt-6">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatTile label={t("Open opportunities")} value={employerStats.openOpportunities} href="/organisation" />
-            <StatTile label={t("Applicants awaiting")} value={employerStats.applicantsAwaiting} href="/organisation" />
-            <StatTile label={t("Active contracts")} value={employerStats.activeContracts} href="/contracts" />
-            <StatTile label={t("Milestones to pay")} value={employerStats.milestonesToPay} href="/contracts" />
+      {twoColumn ? (
+        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3 lg:items-start">
+          <div className="min-w-0 space-y-8 lg:col-span-2">
+            {dashboardKind === "talent" && (
+              <>
+                <Section title={t("Needs your attention")}>
+                  <TalentAttentionList items={talentAttention} />
+                </Section>
+                <Section
+                  title={t("Recommended for you")}
+                  description={t("Ranked by overlap with your Passport skills — never by pay or reputation.")}
+                  action={
+                    <Link href="/opportunities" className="text-teal-ink hover:underline">
+                      {t("See all")}
+                    </Link>
+                  }
+                >
+                  <RecommendedOpportunities opportunities={recommendedOpportunities} />
+                </Section>
+              </>
+            )}
+            {dashboardKind === "employer" && employerStats && (
+              <Section title={t("Hiring priorities")}>
+                <EmployerPipelineSummary items={employerPipeline} />
+              </Section>
+            )}
+            <NotificationsPanel notifications={notifications ?? []} unreadCount={unreadCount ?? 0} />
           </div>
 
-          <div className="mt-6 flex items-center justify-between">
-            <h2 className="text-lg font-extrabold text-midnight">{t("Hiring priorities")}</h2>
-            <div className="flex items-center gap-3 text-xs font-semibold">
-              <Link href="/organisation/opportunities/new" className="text-teal-ink underline">
-                {t("Post an opportunity")}
-              </Link>
-              <Link href="/organisation" className="text-slate underline">
-                {t("Browse talent")}
-              </Link>
-            </div>
-          </div>
-          <EmployerPipelineSummary items={employerPipeline} />
-        </section>
-      )}
-
-      {(dashboardKind !== "employer" || !employerStats) && (
-        <section className="mt-8">
-          <h2 className="text-xl font-extrabold text-midnight">{t(experience.title)}</h2>
-          <p className="mt-1 text-sm text-slate">{t(experience.description)}</p>
-
+          <aside className="min-w-0 space-y-6">
+            {readinessState && <ReadinessPanel state={readinessState} completeHref={dashboardKind === "employer" ? "/organisation/details" : "/passport"} />}
+            {showShortcuts && shortcuts.length > 0 && (
+              <section aria-labelledby="shortcuts-title" className="rounded-card border border-slate/10 bg-white p-5 shadow-card">
+                <h2 id="shortcuts-title" className="text-base font-extrabold text-midnight">
+                  {t("Shortcuts")}
+                </h2>
+                <ul className="mt-3 grid grid-cols-2 gap-2">
+                  {shortcuts.map((action) => (
+                    <li key={action.href}>
+                      <ShortcutLink action={action} label={t(action.label)} compact />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </aside>
+        </div>
+      ) : (
+        <div className="mt-8 space-y-8">
+          <NotificationsPanel notifications={notifications ?? []} unreadCount={unreadCount ?? 0} />
+          {readinessState && <ReadinessPanel state={readinessState} completeHref={dashboardKind === "employer" ? "/organisation/details" : "/passport"} />}
           {experience.actions.length > 0 ? (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {experience.actions.filter((action) => !action.section).map((action) => {
-                const className = `rounded-xl border p-4 transition-colors ${
-                  action.primary
-                    ? "border-teal bg-teal text-midnight hover:bg-teal/80"
-                    : "border-slate/20 bg-white hover:border-teal/50"
-                }`;
-                const content = (
-                  <>
-                    <span className="block font-bold">{t(action.label)}</span>
-                    {/* S12-07: text-slate on white is fine (5.4:1+) but the same
-                        gray on this card's own bright teal background measures
-                        only 2.04:1 — fails WCAG AA's 4.5:1. text-midnight (the
-                        title's own color, already proven to work here) covers
-                        the primary/teal case instead. */}
-                    <span className={`mt-1 block text-xs ${action.primary ? "text-midnight" : "text-slate"}`}>
-                      {t(action.description)}
-                    </span>
-                  </>
-                );
-                return action.external ? (
-                  <a key={action.href} href={action.href} target="_blank" rel="noopener noreferrer" className={className}>
-                    {content}
-                  </a>
-                ) : (
-                  <Link key={action.href} href={action.href} className={className}>
-                    {content}
-                  </Link>
-                );
-              })}
-            </div>
+            <Section title={t(experience.title)}>
+              <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {experience.actions
+                  .filter((action) => !action.section)
+                  .map((action) => (
+                    <li key={action.href}>
+                      <ShortcutLink action={action} label={t(action.label)} description={t(action.description)} />
+                    </li>
+                  ))}
+              </ul>
+            </Section>
           ) : (
-            <div className="mt-4">
-              <StatePanel title={t("Workspace unchanged")} tone="info">
-                {t("This role continues in its existing operational workspace while the integrated experience is built behind feature flags.")}
-              </StatePanel>
-            </div>
+            <StatePanel title={t("Workspace unchanged")} tone="info">
+              {t("This role continues in its existing operational workspace while the integrated experience is built behind feature flags.")}
+            </StatePanel>
           )}
-        </section>
+        </div>
       )}
-    </main>
+    </PageContainer>
   );
 }
 
-function StatTile({ label, value, href }: { label: string; value: number; href: string }) {
-  return (
-    <Link href={href} className="rounded-xl border border-slate/15 bg-white p-4 transition-colors hover:border-teal/40">
-      <span className="block text-2xl font-extrabold text-midnight">{value}</span>
-      <span className="mt-0.5 block text-xs font-semibold text-slate">{label}</span>
+/** A navigation shortcut: compact (icon + label, for the side column) or full (with description). */
+function ShortcutLink({
+  action,
+  label,
+  description,
+  compact = false,
+}: {
+  action: DashboardAction;
+  label: string;
+  description?: string;
+  compact?: boolean;
+}) {
+  const Icon = NAV_ICONS[action.href] ?? Circle;
+  const className = compact
+    ? "flex h-full items-center gap-2 rounded-control border border-slate/10 px-3 py-2.5 text-sm font-semibold text-midnight transition-colors hover:border-teal/40 hover:bg-teal/5"
+    : "flex h-full gap-3 rounded-card border border-slate/10 bg-white p-4 shadow-card transition hover:-translate-y-0.5 hover:shadow-raised";
+  const content = compact ? (
+    <>
+      <Icon className="size-4 shrink-0 text-teal-ink" aria-hidden="true" />
+      <span className="min-w-0 leading-tight">{label}</span>
+    </>
+  ) : (
+    <>
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-control bg-teal/12 text-teal-ink">
+        <Icon className="size-5" aria-hidden="true" />
+      </span>
+      <span className="min-w-0">
+        <span className="block font-bold text-midnight">{label}</span>
+        {description && <span className="mt-0.5 block text-xs text-slate">{description}</span>}
+      </span>
+    </>
+  );
+  return action.external ? (
+    <a href={action.href} target="_blank" rel="noopener noreferrer" className={className}>
+      {content}
+    </a>
+  ) : (
+    <Link href={action.href} className={className}>
+      {content}
     </Link>
   );
 }

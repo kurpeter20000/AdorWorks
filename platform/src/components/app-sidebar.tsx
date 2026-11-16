@@ -2,77 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Bell,
-  Bookmark,
-  Building2,
-  Circle,
-  ClipboardList,
-  Flag,
-  Handshake,
-  Settings,
-  FileCheck2,
-  FilePlus2,
-  FileSignature,
-  IdCard,
-  Inbox,
-  LayoutDashboard,
-  LifeBuoy,
-  ListChecks,
-  Mail,
-  MessageCircle,
-  NotebookPen,
-  Search,
-  ShieldCheck,
-  Receipt,
-  Sparkles,
-  Users,
-  Wallet,
-  type LucideIcon,
-} from "lucide-react";
+import { Circle } from "lucide-react";
+import { NAV_ICONS as ICONS } from "./nav-icons";
 import { CONTACT_URL } from "@/lib/domain/marketingSite";
 import type { DashboardAction } from "@/lib/domain/navigation";
 import { msg } from "@/i18n/config";
 import { useT } from "@/i18n/client";
 
-const ICONS: Record<string, LucideIcon> = {
-  "/dashboard": LayoutDashboard,
-  "/organisation": Building2,
-  "/organisation/opportunities/new": FilePlus2,
-  "/organisation/opportunities/brief": NotebookPen,
-  "/organisation/team": Users,
-  "/services": Sparkles,
-  "/contracts": FileSignature,
-  "/finance": Wallet,
-  "/notifications": Bell,
-  "/assistance/request": LifeBuoy,
-  "/opportunities": Search,
-  "/passport": IdCard,
-  "/applications": ClipboardList,
-  "/opportunities/invited": Mail,
-  "/offers": FileCheck2,
-  "/opportunities/saved": Bookmark,
-  "/onboarding": ListChecks,
-  "/trust-safety": ShieldCheck,
-  "/assist": LifeBuoy,
-  "/operations": LayoutDashboard,
-  "/operations/intake": Inbox,
-  "/operations/talent": IdCard,
-  "/operations/organisations": Building2,
-  "/operations/opportunities": Search,
-  "/operations/services": Sparkles,
-  "/operations/reports": Flag,
-  "/operations/engagements": Handshake,
-  "/operations/contracts": FileSignature,
-  "/operations/assisted-onboarding": LifeBuoy,
-  "/operations/people": Users,
-  "/operations/invoices": Receipt,
-  "/operations/payouts": Wallet,
-  "/operations/settings": Settings,
-  "/operations/support": MessageCircle,
-  "/support": MessageCircle,
-  [CONTACT_URL]: LifeBuoy,
-};
 
 export function AppSidebar({
   actions,
