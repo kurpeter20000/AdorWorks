@@ -8,6 +8,7 @@ import { WithdrawActions } from "./withdraw-actions";
 import { ApplicationThreadPanel } from "./application-thread-panel";
 import { getT } from "@/i18n/server";
 import { rich } from "@/i18n/rich";
+import { must } from "@/lib/dal/must";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
@@ -26,17 +27,17 @@ export default async function ApplicationsPage({
   const t = await getT();
   const supabase = await createClient();
 
-  const { data: applications } = await supabase
+  const { data: applications } = must(await supabase
     .from("applications")
     .select("id, opportunity_id, stage, decision_reason, created_at")
     .eq("talent_id", session.userId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }), "applications");
 
   const opportunityIds = [...new Set((applications ?? []).map((a) => a.opportunity_id))];
   const { data: opportunities } =
-    opportunityIds.length > 0
+    must(opportunityIds.length > 0
       ? await supabase.from("opportunities").select("id, title, organisation_id, status").in("id", opportunityIds)
-      : { data: [] };
+      : { data: [] }, "opportunities");
 
   const orgIds = [...new Set((opportunities ?? []).map((o) => o.organisation_id))];
   const { data: orgs } =
@@ -45,28 +46,28 @@ export default async function ApplicationsPage({
     // organisations they've applied to, so the base table's RLS returned
     // nothing and this silently fell back to a generic placeholder for
     // every single application (S08-05 gap-check finding).
-    orgIds.length > 0 ? await supabase.from("public_organisation_names").select("id, name").in("id", orgIds) : { data: [] };
+    must(orgIds.length > 0 ? await supabase.from("public_organisation_names").select("id, name").in("id", orgIds) : { data: [] }, "orgs");
 
   const opportunityById = new Map((opportunities ?? []).map((o) => [o.id, o]));
   const orgNameById = new Map((orgs ?? []).map((o) => [o.id, o.name]));
 
   const applicationIds = (applications ?? []).map((a) => a.id);
   const { data: conversations } =
-    applicationIds.length > 0
+    must(applicationIds.length > 0
       ? await supabase.from("conversations").select("id, application_id").in("application_id", applicationIds)
-      : { data: [] };
+      : { data: [] }, "conversations");
   const conversationIdByApplication = new Map(
     (conversations ?? []).filter((c): c is typeof c & { application_id: string } => c.application_id !== null).map((c) => [c.application_id, c.id])
   );
   const conversationIds = (conversations ?? []).map((c) => c.id);
   const { data: applicationMessages } =
-    conversationIds.length > 0
+    must(conversationIds.length > 0
       ? await supabase
           .from("messages")
           .select("id, conversation_id, sender_id, body, created_at")
           .in("conversation_id", conversationIds)
           .order("created_at", { ascending: true })
-      : { data: [] };
+      : { data: [] }, "application messages");
   const messagesByApplication = new Map<string, NonNullable<typeof applicationMessages>>();
   for (const [applicationId, conversationId] of conversationIdByApplication) {
     messagesByApplication.set(

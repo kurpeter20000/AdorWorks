@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/dal/session";
 import { OFFER_STATES } from "@/lib/domain/states";
 import { createClient } from "@/lib/supabase/server";
 import { OfferActions } from "./offer-actions";
+import { must } from "@/lib/dal/must";
 
 export const metadata: Metadata = { title: "My offers" };
 
@@ -18,30 +19,30 @@ export default async function OffersPage() {
   // received", so those are excluded here; they surface instead on
   // /passport/services/requests, the page for responding to and tracking
   // incoming service requests.
-  const { data: offers } = await supabase
+  const { data: offers } = must(await supabase
     .from("offers")
     .select("id, opportunity_id, payment_basis, compensation_amount, currency, message, status, created_at")
     .eq("talent_id", session.userId)
     .not("opportunity_id", "is", null)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }), "offers");
 
   const opportunityIds = [...new Set((offers ?? []).map((o) => o.opportunity_id).filter((id): id is string => id !== null))];
   const { data: opportunities } =
-    opportunityIds.length > 0
+    must(opportunityIds.length > 0
       ? await supabase.from("opportunities").select("id, title, organisation_id").in("id", opportunityIds)
-      : { data: [] };
+      : { data: [] }, "opportunities");
   const orgIds = [...new Set((opportunities ?? []).map((o) => o.organisation_id))];
   const { data: orgs } =
-    orgIds.length > 0 ? await supabase.from("public_organisation_names").select("id, name").in("id", orgIds) : { data: [] };
+    must(orgIds.length > 0 ? await supabase.from("public_organisation_names").select("id, name").in("id", orgIds) : { data: [] }, "orgs");
 
   const opportunityById = new Map((opportunities ?? []).map((o) => [o.id, o]));
   const orgNameById = new Map((orgs ?? []).map((o) => [o.id, o.name]));
 
   const offerIds = (offers ?? []).map((o) => o.id);
   const { data: contracts } =
-    offerIds.length > 0
+    must(offerIds.length > 0
       ? await supabase.from("contracts").select("id, offer_id").in("offer_id", offerIds)
-      : { data: [] };
+      : { data: [] }, "contracts");
   const contractIdByOffer = new Map((contracts ?? []).map((c) => [c.offer_id, c.id]));
 
   return (

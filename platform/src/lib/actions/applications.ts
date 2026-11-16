@@ -183,9 +183,13 @@ export async function setApplicationStage(
     // a manually rejected applicant got no explanation at all.
     .update(stage === "rejected" ? { stage, decision_reason: reason || null } : { stage })
     .eq("id", applicationId)
-    .select("talent_id")
+    .select("talent_id, opportunity_id")
     .single();
   if (error) return { error: error.message };
+  // Trust the application's own opportunity, not the client-supplied id —
+  // a stale or mismatched argument used to name the wrong job in the
+  // talent's shortlist/rejection email.
+  const actualOpportunityId = application.opportunity_id ?? opportunityId;
 
   const admin = createAdminClient();
   await logAuditEvent(admin, {
@@ -210,7 +214,7 @@ export async function setApplicationStage(
   // sitting in the app, so both outcomes also need an email (same
   // fail-open contract as the notification itself: never blocks the
   // real stage change above if the send fails).
-  const { data: opportunity } = await supabase.from("opportunities").select("title").eq("id", opportunityId).single();
+  const { data: opportunity } = await supabase.from("opportunities").select("title").eq("id", actualOpportunityId).single();
   const talentEmail = await getUserEmail(admin, application.talent_id);
   // S11-10: opportunity.title (employer-authored) and reason (employer's
   // free-text rejection note) both used to land straight in the HTML with
@@ -248,7 +252,7 @@ export async function setApplicationStage(
     );
   }
 
-  revalidatePath(`/organisation/opportunities/${opportunityId}`);
+  revalidatePath(`/organisation/opportunities/${actualOpportunityId}`);
   return {};
 }
 

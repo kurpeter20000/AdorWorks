@@ -30,6 +30,7 @@ export function CancelContractSection({ contractId }: { contractId: string }) {
         name="reason"
         rows={2}
         required
+        aria-label="Why are you cancelling?"
         placeholder="Why are you cancelling?"
         className="mt-2 w-full rounded-lg border border-slate/25 px-2 py-1.5 text-sm"
       />
