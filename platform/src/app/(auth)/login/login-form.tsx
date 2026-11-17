@@ -15,7 +15,7 @@ export function LoginForm({ next }: { next?: string | null }) {
   const t = useT();
 
   return (
-    <form action={formAction} className="mt-6 space-y-4">
+    <form action={formAction} className="mt-5 space-y-4">
       {next && <input type="hidden" name="next" value={next} />}
       <div>
         <label htmlFor="email" className="text-sm font-semibold text-midnight">
@@ -26,7 +26,7 @@ export function LoginForm({ next }: { next?: string | null }) {
             className="pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2 text-slate/50"
             aria-hidden="true"
           />
-          <Input id="email" name="email" type="email" autoComplete="email" required className="ps-10" />
+          <Input id="email" name="email" type="email" autoComplete="email" required className="h-[52px] rounded-[14px] border-[#d9d0bf] ps-10 text-base" />
         </div>
         {state.errors?.email && <p className="mt-1 text-sm text-coral-ink">{t(state.errors.email[0])}</p>}
       </div>
@@ -37,7 +37,7 @@ export function LoginForm({ next }: { next?: string | null }) {
             {t("Password")}
           </label>
           {/* prefetch off — see the matching comment in ../login/page.tsx (S12-12) */}
-          <Link href="/forgot-password" prefetch={false} className="text-xs font-semibold text-teal-ink hover:underline">
+          <Link href="/forgot-password" prefetch={false} className="text-sm font-extrabold text-teal-ink hover:underline">
             {t("Forgot password?")}
           </Link>
         </div>
@@ -52,7 +52,7 @@ export function LoginForm({ next }: { next?: string | null }) {
             type="password"
             autoComplete="current-password"
             required
-            className="ps-10"
+            className="h-[52px] rounded-[14px] border-[#d9d0bf] ps-10 text-base"
           />
         </div>
       </div>
@@ -67,7 +67,7 @@ export function LoginForm({ next }: { next?: string | null }) {
           Loader2 (components/ui/button.tsx) and disables the button for
           the duration of the pending Server Action — no separate spinner
           state needed here. */}
-      <Button type="submit" loading={pending} size="lg" className="w-full">
+      <Button type="submit" loading={pending} size="lg" className="h-[54px] w-full rounded-[14px] text-[17px] font-extrabold">
         {pending ? t("Signing in…") : t("Sign in")}
       </Button>
     </form>

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope, Noto_Sans_Arabic } from "next/font/google";
+import { Fraunces, Manrope, Noto_Sans_Arabic } from "next/font/google";
 import { ConnectivityBanner } from "@/components/connectivity-banner";
 import { InstallAppBanner } from "@/components/install-app-banner";
 import { PwaRegister } from "@/components/pwa-register";
@@ -20,6 +20,19 @@ const notoArabic = Noto_Sans_Arabic({
   variable: "--font-arabic",
   subsets: ["arabic"],
   weight: ["500", "600", "700", "800"],
+  preload: false,
+});
+
+// The public site's display face, used only for headings on the sign-in
+// pages. Declared here so its @font-face lands in the main stylesheet (a
+// font declared in a nested layout ships as an extra render-blocking CSS
+// file), and preload: false so nothing downloads unless a heading on the
+// page actually uses it.
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  style: ["normal", "italic"],
   preload: false,
 });
 
@@ -48,7 +61,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
   const t = await getT();
   return (
-    <html lang={locale} dir={dirOf(locale)} className={`${manrope.variable} ${notoArabic.variable} h-full antialiased`}>
+    <html lang={locale} dir={dirOf(locale)} className={`${manrope.variable} ${notoArabic.variable} ${fraunces.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-cloud text-midnight">
         <I18nProvider locale={locale} messages={getMessages(locale)}>
         <a
