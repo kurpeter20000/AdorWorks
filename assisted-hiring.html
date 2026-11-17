@@ -31,6 +31,7 @@
 <link rel="stylesheet" href="css/themes.css">
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/pages.css">
 <script src="js/i18n-early.js"></script>
 </head>
 <body>
@@ -105,70 +106,82 @@
   </div>
 </header>
 
-<main id="main">
+<main id="main" class="page">
 
-  <section class="hero">
-    <div class="container">
-      <p class="hero-kicker">How AdorWorks actually works today</p>
-      <h1>You don't have to do this yourself.</h1>
-      <p class="lede">AdorWorks isn't a self-service directory. A real person reviews every employer brief and every talent profile before anything is matched — and if getting online to even start is the hard part, someone can help with that too.</p>
+  <section class="page-hero">
+    <div class="container page-hero-grid">
+      <div class="page-hero-copy">
+        <p class="eyebrow rise">How AdorWorks actually works today</p>
+        <h1 class="rise rise-1">You don't have to do this <em>yourself.</em></h1>
+        <p class="lede rise rise-2">AdorWorks isn't a self-service directory. A real person reviews every employer brief and every talent profile before anything is matched — and if getting online to even start is the hard part, someone can help with that too.</p>
+        <div class="page-actions rise rise-3">
+          <a href="https://ador-works.vercel.app/assistance/request" class="btn btn-primary">Request in-person help</a>
+          <a href="for-employers.html#brief-form" class="btn btn-ghost">Post a project</a>
+        </div>
+      </div>
+      <picture class="photo-slot page-hero-photo rise rise-2">
+        <source type="image/webp" srcset="img/photos/tile-project-admin-480.webp 480w, img/photos/tile-project-admin-960.webp 960w" sizes="(min-width: 860px) 45vw, 100vw">
+        <img src="img/photos/tile-project-admin-960.jpg" srcset="img/photos/tile-project-admin-480.jpg 480w, img/photos/tile-project-admin-960.jpg 960w" sizes="(min-width: 860px) 45vw, 100vw" alt="A presenter leading a team meeting" width="960" height="640" fetchpriority="high">
+      </picture>
     </div>
   </section>
 
-  <section class="section">
+  <section class="page-section page-section-tight">
     <div class="container">
-      <div class="notice notice-violet">
-        <span class="notice-label">Where we are</span>
-        <p class="mt-0 mb-0">AdorWorks is in its founding pilot: a curated, human-assisted marketplace verifying its first cohort of professionals and working with founding employers before opening up self-service search. Assisted is the default today, not a premium add-on.</p>
+      <div class="inline-note site-reveal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+        <p><strong>Where we are.</strong> AdorWorks is in its founding pilot: a curated, human-assisted marketplace verifying its first cohort of professionals and working with founding employers before opening up self-service search. Assisted is the default today, not a premium add-on.</p>
       </div>
     </div>
   </section>
 
-  <section class="section section-alt">
+  <section class="page-section page-band">
     <div class="container">
-      <div class="section-header">
-        <h2>For employers: a matcher, not a search box</h2>
+      <div class="section-intro site-reveal">
+        <p class="eyebrow">For employers</p>
+        <h2>A matcher, not a search box.</h2>
         <p>Every hiring mode on AdorWorks — from a single service to a full managed team — goes through the same assisted process.</p>
       </div>
-      <div class="grid grid-3">
-        <div class="card card-accent-top">
-          <h3>1. Tell us what you need</h3>
-          <p>Submit a brief, role or service request with your budget and timing — no need to browse an open directory yourself.</p>
-        </div>
-        <div class="card card-accent-top">
-          <h3>2. A matcher reviews it</h3>
-          <p>An AdorWorks matcher checks the brief, searches verified talent, and rules out anyone who isn't a genuine fit before you ever see a name.</p>
-        </div>
-        <div class="card card-accent-top">
-          <h3>3. You get a qualified shortlist</h3>
-          <p>Review a short, checked list — not an unfiltered directory — and get delivery support through to completion.</p>
-        </div>
+      <ol class="numbered-row">
+        <li class="site-reveal"><span class="num">01</span><h3>Tell us what you need</h3><p>Submit a brief, role or service request with your budget and timing — no need to browse an open directory yourself.</p></li>
+        <li class="site-reveal"><span class="num">02</span><h3>A matcher reviews it</h3><p>An AdorWorks matcher checks the brief, searches verified talent, and rules out anyone who isn't a genuine fit before you ever see a name.</p></li>
+        <li class="site-reveal"><span class="num">03</span><h3>You get a qualified shortlist</h3><p>Review a short, checked list — not an unfiltered directory — and get delivery support through to completion.</p></li>
+      </ol>
+      <div class="page-actions section-actions">
+        <a href="for-employers.html#brief-form" class="btn btn-primary">Post a project</a>
+        <a href="for-employers.html" class="btn btn-ghost">See all hiring modes</a>
       </div>
-      <p class="mt-1"><a href="for-employers.html#brief-form" class="btn btn-primary">Post a project</a> <a href="for-employers.html" class="btn btn-secondary" style="margin-left:0.75rem;">See all hiring modes</a></p>
     </div>
   </section>
 
-  <section class="section">
+  <section class="page-section">
     <div class="container">
-      <div class="section-header">
-        <h2>For talent: in-person help if you need it</h2>
-        <p>Building a profile online assumes a device, data and confidence with forms — not everyone has all three right now.</p>
+      <div class="help-band site-reveal">
+        <picture class="help-band-photo">
+          <source type="image/webp" srcset="img/photos/tile-translation-480.webp 480w, img/photos/tile-translation-960.webp 960w" sizes="(min-width: 860px) 50vw, 100vw">
+          <img src="img/photos/tile-translation-960.jpg" srcset="img/photos/tile-translation-480.jpg 480w, img/photos/tile-translation-960.jpg 960w" sizes="(min-width: 860px) 50vw, 100vw" alt="A facilitator writing notes on a whiteboard" loading="lazy" width="960" height="640">
+        </picture>
+        <div class="help-band-copy">
+          <p class="eyebrow eyebrow-mint">For talent</p>
+          <h2>In-person help, <em>if you need it.</em></h2>
+          <p>Building a profile online assumes a device, data and confidence with forms — not everyone has all three right now.</p>
+          <p><strong>Real support, not a call centre.</strong> If you'd rather have someone help you finish your AdorWorks profile in person — at a partner cybercafe, school or NGO office — you can ask for that directly, whether or not you already have an account. AdorWorks staff arrange it from there.</p>
+          <div class="page-actions">
+            <a class="btn btn-bright" href="https://ador-works.vercel.app/assistance/request">Request in-person help</a>
+            <a class="text-link dark-link" href="for-talent.html">See the talent journey &rarr;</a>
+          </div>
+        </div>
       </div>
-      <div class="notice">
-        <span class="notice-label">Real support, not a call centre</span>
-        <p class="mt-0 mb-0">If you'd rather have someone help you finish your AdorWorks profile in person — at a partner cybercafe, school or NGO office — you can ask for that directly, whether or not you already have an account. AdorWorks staff arrange it from there.</p>
-      </div>
-      <p class="mt-1"><a href="https://ador-works.vercel.app/assistance/request" class="btn btn-primary">Request in-person help</a> <a href="for-talent.html" class="btn btn-secondary" style="margin-left:0.75rem;">See the talent journey</a></p>
     </div>
   </section>
 
-  <section class="cta-band">
-    <div class="container">
-      <h2>Prefer to do it yourself instead?</h2>
-      <p>Self-service is still there — build a profile or submit a brief directly, any time.</p>
-      <div class="hero-ctas justify-center" style="margin-top:1.5rem;">
-        <a href="https://ador-works.vercel.app/signup" class="btn btn-outline-light">Create your account</a>
-        <a href="how-it-works.html" class="btn btn-outline-light">See the full journey</a>
+  <section class="page-section page-section-tight">
+    <div class="container closing-cta site-reveal">
+      <h2>Prefer to do it <em>yourself instead?</em></h2>
+      <p class="lede">Self-service is still there — build a profile or submit a brief directly, any time.</p>
+      <div class="page-actions">
+        <a href="https://ador-works.vercel.app/signup" class="btn btn-primary">Create your account</a>
+        <a href="how-it-works.html" class="btn btn-ghost">See the full journey</a>
       </div>
     </div>
   </section>

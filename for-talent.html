@@ -31,6 +31,7 @@
 <link rel="stylesheet" href="css/themes.css">
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/pages.css">
 <script src="js/i18n-early.js"></script>
 </head>
 <body>
@@ -105,158 +106,157 @@
   </div>
 </header>
 
-<main id="main">
+<main id="main" class="page">
 
-  <section class="hero hero-photo">
-    <picture>
-      <source type="image/webp" srcset="img/photos/hero-talent-480.webp 480w, img/photos/hero-talent-960.webp 960w, img/photos/hero-talent-1440.webp 1440w" sizes="100vw">
-      <img class="hero-photo-img" src="img/photos/hero-talent-1440.jpg" srcset="img/photos/hero-talent-480.jpg 480w, img/photos/hero-talent-960.jpg 960w, img/photos/hero-talent-1440.jpg 1440w" sizes="100vw" alt="" fetchpriority="high">
-    </picture>
-    <div class="container">
-      <h1>Let your work speak for you.</h1>
-      <p class="lede">Build a professional profile, submit evidence of your ability, complete a relevant assessment and qualify for legitimate opportunities. Registration is free — work is earned through fit, readiness and performance.</p>
-      <div class="hero-ctas">
-        <a href="#talent-form" class="btn btn-primary">Start your profile</a>
-        <a href="#verification" class="btn btn-outline-light">See how verification works</a>
-      </div>
-      <div class="auth-cta">
-        <div class="auth-cta-copy">
-          <p class="auth-cta-eyebrow">Your AdorWorks account</p>
-          <p class="auth-cta-text">New here? Create a free account and start building your profile today — already registered? Welcome back.</p>
+  <section class="page-hero">
+    <div class="container page-hero-grid">
+      <div class="page-hero-copy">
+        <p class="eyebrow rise">For talent</p>
+        <h1 class="rise rise-1">Let your work <em>speak for you.</em></h1>
+        <p class="lede rise rise-2">Build a professional profile, submit evidence of your ability, complete a relevant assessment and qualify for legitimate opportunities. Registration is free — work is earned through fit, readiness and performance.</p>
+        <div class="page-actions rise rise-3">
+          <a href="#talent-form" class="btn btn-primary">Start your profile</a>
+          <a href="#verification" class="btn btn-ghost">See how verification works</a>
         </div>
-        <div class="auth-cta-actions">
-          <a href="https://ador-works.vercel.app/signup" class="btn btn-primary">Create your account</a>
-          <a href="https://ador-works.vercel.app/login" class="btn btn-outline-light">Log in</a>
+        <p class="page-hero-note rise rise-3">New here? <a href="https://ador-works.vercel.app/signup">Create a free account</a> and start building your profile today. Already registered? <a href="https://ador-works.vercel.app/login">Log in</a>.</p>
+      </div>
+      <div class="page-hero-media rise rise-2">
+        <picture class="photo-slot page-hero-photo">
+          <source type="image/webp" srcset="img/photos/hero-talent-480.webp 480w, img/photos/hero-talent-960.webp 960w, img/photos/hero-talent-1440.webp 1440w" sizes="(min-width: 860px) 45vw, 100vw">
+          <img src="img/photos/hero-talent-960.jpg" srcset="img/photos/hero-talent-480.jpg 480w, img/photos/hero-talent-960.jpg 960w, img/photos/hero-talent-1440.jpg 1440w" sizes="(min-width: 860px) 45vw, 100vw" alt="A bright workspace with a laptop surrounded by plants" width="960" height="640" fetchpriority="high">
+        </picture>
+        <div class="hero-stat">
+          <span class="hero-stat-num">0%</span>
+          <span class="hero-stat-text">fee to register<br>or to be considered</span>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="section">
+  <section class="page-section page-section-tight">
     <div class="container">
-      <div class="notice">
-        <span class="notice-label">Fair expectation</span>
-        <p class="mt-0 mb-0">Creating a profile does not guarantee work. AdorWorks assesses eligibility and fit for each opportunity. We do not sell access to legitimate employment, and we will never ask you to pay a recruitment fee to secure a job.</p>
+      <div class="inline-note site-reveal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4"/></svg>
+        <p><strong>Fair expectation.</strong> Creating a profile does not guarantee work. AdorWorks assesses eligibility and fit for each opportunity. We do not sell access to legitimate employment, and we will never ask you to pay a recruitment fee to secure a job.</p>
       </div>
     </div>
   </section>
 
-  <section class="section section-alt">
+  <section class="page-section page-band">
     <div class="container">
-      <div class="section-header">
-        <h2>Who this is for</h2>
+      <div class="section-intro site-reveal">
+        <p class="eyebrow">Who this is for</p>
+        <h2>Wherever you are in your career, there's a way in.</h2>
       </div>
-      <div class="grid grid-3">
-        <div class="card"><h3>Emerging talent</h3><p>High potential but limited work history. We support you with assessment, supervised projects and portfolio evidence.</p></div>
-        <div class="card"><h3>Market-ready freelancer</h3><p>You can work independently. We bring qualified demand, safer contracts and stronger visibility.</p></div>
-        <div class="card"><h3>Experienced professional</h3><p>Seeking contract or full-time work. We offer confidential matching and credible employers.</p></div>
-        <div class="card"><h3>Service business or team</h3><p>You can deliver a defined outcome. We provide a storefront, leads and transaction support.</p></div>
-        <div class="card"><h3>Diaspora or regional specialist</h3><p>You can contribute remotely or on assignment. We give you a structured way to engage.</p></div>
+      <div class="who-grid">
+        <article class="who-card site-reveal"><h3>Emerging talent</h3><p>High potential but limited work history. We support you with assessment, supervised projects and portfolio evidence.</p></article>
+        <article class="who-card site-reveal"><h3>Market-ready freelancer</h3><p>You can work independently. We bring qualified demand, safer contracts and stronger visibility.</p></article>
+        <article class="who-card site-reveal"><h3>Experienced professional</h3><p>Seeking contract or full-time work. We offer confidential matching and credible employers.</p></article>
+        <article class="who-card site-reveal"><h3>Service business or team</h3><p>You can deliver a defined outcome. We provide a storefront, leads and transaction support.</p></article>
+        <article class="who-card site-reveal"><h3>Diaspora or regional specialist</h3><p>You can contribute remotely or on assignment. We give you a structured way to engage.</p></article>
       </div>
     </div>
   </section>
 
-  <section class="section" id="verification">
+  <section class="page-section" id="verification">
     <div class="container">
-      <div class="section-header">
+      <div class="section-intro site-reveal">
+        <p class="eyebrow">Verification</p>
         <h2>What each verification tier means</h2>
         <p>Badges say what was actually checked — not a vague trust signal.</p>
       </div>
-      <div class="tier-grid">
-        <div class="tier-card">
-          <span class="tier-name">Registered</span>
-          <p>Phone/email confirmed, a minimum profile completed, and agreement to AdorWorks' code of conduct. A real account — capability not yet verified.</p>
-        </div>
-        <div class="tier-card">
-          <span class="tier-name">Identity verified</span>
-          <p>Government-issued identification checked and securely recorded. Identity has been reviewed.</p>
-        </div>
-        <div class="tier-card">
-          <span class="tier-name">AdorVerified</span>
-          <p>Identity, portfolio, references, an interview and a category-specific assessment. Evidence supports ability to perform the listed work.</p>
-        </div>
-        <div class="tier-card">
-          <span class="tier-name">AdorCertified</span>
-          <p>A live simulation, client-readiness assessment and a successful platform engagement. Demonstrated work quality and reliability.</p>
-        </div>
-        <div class="tier-card">
-          <span class="tier-name">Team lead</span>
-          <p>Multiple successful engagements, communication strength and a leadership review. Eligible to lead managed squads.</p>
-        </div>
-      </div>
-      <p class="mt-1 text-sm muted">We use realistic work samples rather than certificate-only screening, and every assessment includes a clear pass, development or re-assessment path. An automated score is never presented as a complete judgment of your worth or employability.</p>
+      <ol class="numbered-row tier-row">
+        <li class="site-reveal"><span class="num">01</span><h3>Registered</h3><p>Phone/email confirmed, a minimum profile completed, and agreement to AdorWorks' code of conduct. A real account — capability not yet verified.</p></li>
+        <li class="site-reveal"><span class="num">02</span><h3>Identity verified</h3><p>Government-issued identification checked and securely recorded. Identity has been reviewed.</p></li>
+        <li class="site-reveal"><span class="num">03</span><h3>AdorVerified</h3><p>Identity, portfolio, references, an interview and a category-specific assessment. Evidence supports ability to perform the listed work.</p></li>
+        <li class="site-reveal"><span class="num">04</span><h3>AdorCertified</h3><p>Documents verified and on record, a live simulation, a client-readiness assessment and a successful platform engagement. Eligible to work, with proven skills.</p></li>
+        <li class="site-reveal"><span class="num">05</span><h3>Team lead</h3><p>Multiple successful engagements, communication strength and a leadership review. Eligible to lead managed squads.</p></li>
+      </ol>
+      <p class="fine-print site-reveal">We use realistic work samples rather than certificate-only screening, and every assessment includes a clear pass, development or re-assessment path. An automated score is never presented as a complete judgment of your worth or employability.</p>
     </div>
   </section>
 
-  <section class="section section-alt">
-    <div class="container">
-      <div class="section-header">
-        <h2>Getting client-ready</h2>
-        <p>Before you apply, a strong profile makes the biggest difference.</p>
+  <section class="page-section page-dark">
+    <div class="container verify-grid">
+      <div class="site-reveal">
+        <p class="eyebrow">Getting client-ready</p>
+        <h2>Before you apply, a strong profile makes the biggest difference.</h2>
       </div>
-      <ul class="check-list">
+      <ol class="verify-list site-reveal">
         <li>A clear professional headline and summary — what you do and who you do it for.</li>
         <li>Real work samples, not just a list of skills — the portfolio is what gets you shortlisted.</li>
         <li>Honest availability and rate expectations, so matches are workable from the start.</li>
         <li>Readiness basics: a working device, stable-enough connectivity and, where relevant, power backup.</li>
         <li>References who will actually confirm what you've told us.</li>
-      </ul>
+      </ol>
     </div>
   </section>
 
-  <section class="section" id="talent-form">
+  <section class="page-section" id="talent-form">
     <div class="container">
-      <h2>Start your profile</h2>
-      <p class="muted max-65ch">This is a first intake, not your final profile — an AdorWorks reviewer will follow up about identity verification, portfolio evidence and a category assessment.</p>
-      <form class="js-form" name="adorworks-talent" data-form-id="talent-application" method="POST" data-netlify="true" data-netlify-honeypot="bot-field" novalidate>
-        <input type="hidden" name="form-name" value="adorworks-talent">
-        <p class="netlify-honeypot" aria-hidden="true">
-          <label>Leave this field blank: <input name="bot-field" tabindex="-1" autocomplete="off"></label>
-        </p>
-        <div class="form-grid">
-          <div class="form-grid form-grid-2">
-            <div>
+      <div class="form-panel site-reveal">
+        <div class="form-panel-intro">
+          <p class="eyebrow">Start your profile</p>
+          <h2>Tell us what you do best.</h2>
+          <p>This is a first intake, not your final profile — an AdorWorks reviewer will follow up about identity verification, portfolio evidence and a category assessment.</p>
+          <ol class="form-steps">
+            <li><span>1</span>About you</li>
+            <li><span>2</span>Your work</li>
+            <li><span>3</span>How you like to work</li>
+          </ol>
+          <p class="page-hero-note">Prefer to do this in person? <a href="assisted-hiring.html">Ask for in-person help</a>.</p>
+        </div>
+        <form class="js-form site-form" name="adorworks-talent" data-form-id="talent-application" method="POST" data-netlify="true" data-netlify-honeypot="bot-field" novalidate>
+          <input type="hidden" name="form-name" value="adorworks-talent">
+          <p class="netlify-honeypot" aria-hidden="true">
+            <label>Leave this field blank: <input name="bot-field" tabindex="-1" autocomplete="off"></label>
+          </p>
+          <fieldset>
+            <legend>1 · About you</legend>
+            <div class="field">
               <label for="tl-name">Full name</label>
               <input type="text" id="tl-name" name="name" autocomplete="name" required>
             </div>
-            <div>
+            <div class="field">
               <label for="tl-location">Location</label>
               <input type="text" id="tl-location" name="location" required>
             </div>
-          </div>
-          <div class="form-grid form-grid-2">
-            <div>
+            <div class="field">
               <label for="tl-phone">Phone / WhatsApp</label>
               <input type="tel" id="tl-phone" name="phone" autocomplete="tel" required>
             </div>
-            <div>
+            <div class="field">
               <label for="tl-email">Email</label>
               <input type="email" id="tl-email" name="email" autocomplete="email">
             </div>
-          </div>
-          <div>
-            <label for="tl-title">Professional title</label>
-            <input type="text" id="tl-title" name="title" placeholder="e.g. Graphic designer, Web developer, Translator" required>
-          </div>
-          <div>
-            <label for="tl-category">Category</label>
-            <select id="tl-category" name="category" required>
-              <option value="">Select one</option>
-              <option>Creative &amp; media</option>
-              <option>Digital &amp; technology</option>
-              <option>Business &amp; project support</option>
-            </select>
-          </div>
-          <div>
-            <label for="tl-skills">Key skills</label>
-            <input type="text" id="tl-skills" name="skills">
-          </div>
-          <div>
-            <label for="tl-portfolio">Portfolio link (if you have one)</label>
-            <input type="url" id="tl-portfolio" name="portfolio_link" placeholder="https://">
-          </div>
-          <div class="form-grid form-grid-2">
-            <div>
+          </fieldset>
+          <fieldset>
+            <legend>2 · Your work</legend>
+            <div class="field">
+              <label for="tl-title">Professional title</label>
+              <input type="text" id="tl-title" name="title" placeholder="e.g. Graphic designer, Web developer, Translator" required>
+            </div>
+            <div class="field">
+              <label for="tl-category">Category</label>
+              <select id="tl-category" name="category" required>
+                <option value="">Select one</option>
+                <option>Creative &amp; media</option>
+                <option>Digital &amp; technology</option>
+                <option>Business &amp; project support</option>
+              </select>
+            </div>
+            <div class="field field-full">
+              <label for="tl-skills">Key skills</label>
+              <input type="text" id="tl-skills" name="skills">
+            </div>
+            <div class="field field-full">
+              <label for="tl-portfolio">Portfolio link (if you have one)</label>
+              <input type="url" id="tl-portfolio" name="portfolio_link" placeholder="https://">
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>3 · How you like to work</legend>
+            <div class="field">
               <label for="tl-preference">Work preference</label>
               <select id="tl-preference" name="work_preference">
                 <option>Freelance / project</option>
@@ -265,29 +265,31 @@
                 <option>Open to any</option>
               </select>
             </div>
-            <div>
+            <div class="field">
               <label for="tl-availability">Availability</label>
               <input type="text" id="tl-availability" name="availability" placeholder="e.g. immediately, from next month">
             </div>
-          </div>
-          <div class="form-grid form-grid-2">
-            <div>
+            <div class="field">
               <label for="tl-years">Years of experience</label>
               <input type="text" id="tl-years" name="years_experience">
             </div>
-            <div>
+            <div class="field">
               <label for="tl-languages">Languages</label>
               <input type="text" id="tl-languages" name="languages">
             </div>
-          </div>
-          <div class="stack">
-            <label><input type="checkbox" name="consent_public_profile" required> I agree AdorWorks may contact me about my application and, if verified, may display a public profile using information I provide.</label>
-            <label><input type="checkbox" name="declaration_truthful" required> I confirm the information above is accurate to the best of my knowledge.</label>
-          </div>
-        </div>
-        <button type="submit" class="btn btn-primary" style="margin-top:1.25rem;">Submit application</button>
-        <div class="form-status" role="status"></div>
-      </form>
+          </fieldset>
+          <label class="consent">
+            <input type="checkbox" name="consent_public_profile" required>
+            <span>I agree AdorWorks may contact me about my application and, if verified, may display a public profile using information I provide (<a href="privacy.html">Privacy Policy</a>).</span>
+          </label>
+          <label class="consent">
+            <input type="checkbox" name="declaration_truthful" required>
+            <span>I confirm the information above is accurate to the best of my knowledge.</span>
+          </label>
+          <button type="submit" class="btn btn-primary form-submit">Submit application</button>
+          <div class="form-status" role="status"></div>
+        </form>
+      </div>
     </div>
   </section>
 
