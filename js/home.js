@@ -46,6 +46,40 @@
       arrowNav(tabs, showPath);
     }
 
+    // Why AdorWorks: each box shows its number and name; clicking it
+    // slides the explanation up over the box. One open at a time; Esc or
+    // the close button shuts it and returns focus to the box.
+    var whyList = document.querySelector(".why-cards");
+    if (whyList) {
+      var whyCards = Array.prototype.slice.call(whyList.querySelectorAll("[data-why-card]"));
+      var closeWhy = function (card, refocus) {
+        if (!card.classList.contains("is-open")) return;
+        card.classList.remove("is-open");
+        var toggle = card.querySelector("[data-why-toggle]");
+        toggle.setAttribute("aria-expanded", "false");
+        card.querySelector("[data-why-detail]").setAttribute("aria-hidden", "true");
+        if (refocus) toggle.focus();
+      };
+      var openWhy = function (card) {
+        whyCards.forEach(function (c) { if (c !== card) closeWhy(c, false); });
+        card.classList.add("is-open");
+        card.querySelector("[data-why-toggle]").setAttribute("aria-expanded", "true");
+        card.querySelector("[data-why-detail]").removeAttribute("aria-hidden");
+        card.querySelector("[data-why-close]").focus({ preventScroll: true });
+      };
+      whyCards.forEach(function (card) {
+        card.querySelector("[data-why-detail]").setAttribute("aria-hidden", "true");
+        card.querySelector("[data-why-toggle]").addEventListener("click", function () { openWhy(card); });
+        card.querySelector("[data-why-close]").addEventListener("click", function () { closeWhy(card, true); });
+        card.addEventListener("keydown", function (e) {
+          if (e.key === "Escape") closeWhy(card, true);
+        });
+      });
+      // Only now switch the boxes into click-to-open mode, so the text
+      // stays readable if this script never runs.
+      whyList.classList.add("is-ready");
+    }
+
     // How it works: employers / talent
     var how = document.querySelector("[data-how]");
     if (how) {
