@@ -14,7 +14,7 @@
 .home-hero-grid { display: grid; gap: 3rem; align-items: center; }
 .home-hero-copy { min-width: 0; display: flex; flex-direction: column; gap: 1.25rem; }
 .home-hero h1 { margin: 0; font-size: clamp(2.75rem, 6.4vw, 5.25rem); line-height: 1.02; letter-spacing: -0.03em; text-wrap: balance; }
-.home-hero .lede { margin: 0; font-size: clamp(1.05rem, 1.6vw, 1.2rem); }
+.home-hero .lede { margin: 0; font-size: clamp(1.1rem, 1.8vw, 1.35rem); max-width: 26em; color: #3c4657; }
 .home-hero .eyebrow { display: inline-flex; align-items: center; gap: 0.6rem; margin: 0; }
 .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--site-teal-bright); animation: live-pulse 2.2s ease-in-out infinite; }
 @keyframes live-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgb(0 168 143 / 0.45); } 50% { box-shadow: 0 0 0 8px rgb(0 168 143 / 0); } }
@@ -44,7 +44,9 @@
 }
 .home-search-roles button[aria-selected="true"] { background: #fff; color: var(--site-ink); box-shadow: 0 2px 6px rgb(24 34 48 / 0.1); }
 .home-search-form { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
-.home-search-form > svg { position: absolute; width: 20px; height: 20px; margin-inline-start: 14px; color: var(--site-muted); pointer-events: none; }
+/* Pinned to the input's row (26px = half its 52px height), so it stays
+   beside the text even when the button wraps underneath on phones. */
+.home-search-form > svg { position: absolute; top: 26px; inset-inline-start: 14px; transform: translateY(-50%); width: 20px; height: 20px; color: var(--site-muted); pointer-events: none; }
 .home-search-form { position: relative; }
 .home-search-form input {
   flex: 1 1 220px;
@@ -59,6 +61,7 @@
   color: var(--site-ink);
 }
 .home-search-form .btn { min-height: 52px; border-radius: 14px; flex: 0 0 auto; }
+@media (max-width: 520px) { .home-search-form .btn { flex: 1 1 100%; } }
 .home-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 4px 4px; }
 .home-chips a {
   font-size: 0.82rem;
@@ -73,18 +76,15 @@
   align-items: center;
 }
 .home-chips a:hover { background: var(--site-sand); color: var(--site-ink); }
-.home-promises { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem 1.4rem; font-size: 0.88rem; font-weight: 700; color: #3c4657; }
-.home-promises li { display: inline-flex; align-items: center; gap: 0.5rem; }
-.home-promises li::before {
-  content: "";
-  width: 18px;
-  height: 18px;
-  flex: none;
-  background: var(--site-teal);
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l4 4 10-10'/%3E%3C/svg%3E") center / contain no-repeat;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l4 4 10-10'/%3E%3C/svg%3E") center / contain no-repeat;
-}
-.home-login { margin: 0; font-size: 0.9rem; color: var(--site-muted); }
+/* Account row under the search: a clear way in for returning users. */
+.home-account { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; }
+.home-login-btn { gap: 0.5rem; min-height: 48px; padding: 0 1.4rem; background: #fff; }
+.home-login-btn svg { width: 18px; height: 18px; flex: none; }
+.home-login-btn:hover svg { transform: translateX(2px); }
+[dir="rtl"] .home-login-btn svg { transform: scaleX(-1); }
+[dir="rtl"] .home-login-btn:hover svg { transform: scaleX(-1) translateX(2px); }
+.home-account p { margin: 0; font-size: 0.95rem; color: var(--site-muted); }
+.home-account p a { font-weight: 800; }
 
 /* Product moments floating over the photo (decorative). */
 .home-hero-art { position: relative; min-width: 0; }
