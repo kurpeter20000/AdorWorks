@@ -47,7 +47,7 @@ const SHELL_URLS = [
   "/css/themes.css",
   "/css/styles.css",
   "/css/site.css",
-  "/css/home.css",
+  "/css/home.css?v=21",
   "/css/pages.css",
   "/js/main.js",
   "/js/home.js",

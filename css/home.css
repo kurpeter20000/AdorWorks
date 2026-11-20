@@ -62,7 +62,10 @@
 }
 .home-search-form .btn { min-height: 52px; border-radius: 14px; flex: 0 0 auto; }
 @media (max-width: 520px) { .home-search-form .btn { flex: 1 1 100%; } }
-.home-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 4px 4px; }
+/* One straight row of chips; on narrow screens it slides sideways
+   rather than breaking onto a second line. */
+.home-chips { display: flex; flex-wrap: nowrap; gap: 6px; padding: 2px 4px 4px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.home-chips::-webkit-scrollbar { display: none; }
 .home-chips a {
   font-size: 0.82rem;
   font-weight: 700;
@@ -70,21 +73,27 @@
   text-decoration: none;
   border: 1px solid var(--site-line);
   border-radius: 999px;
-  padding: 0.45rem 0.8rem;
+  padding: 0.45rem 0.75rem;
   min-height: 36px;
   display: inline-flex;
   align-items: center;
+  flex: none;
+  white-space: nowrap;
 }
 .home-chips a:hover { background: var(--site-sand); color: var(--site-ink); }
-/* Account row under the search: a clear way in for returning users. */
-.home-account { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; }
-.home-login-btn { gap: 0.5rem; min-height: 48px; padding: 0 1.4rem; background: #fff; }
-.home-login-btn svg { width: 18px; height: 18px; flex: none; }
+/* Account row under the search: a clear way in for returning users,
+   and a lighter one for newcomers, kept on one line where it fits. */
+.home-account { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.1rem; }
+.home-login-btn { display: inline-flex; align-items: center; gap: 0.55rem; min-height: 48px; padding: 0 1.4rem; background: #fff; white-space: nowrap; }
+.home-login-btn svg { width: 18px; height: 18px; flex: none; transition: transform 0.2s ease; }
 .home-login-btn:hover svg { transform: translateX(2px); }
 [dir="rtl"] .home-login-btn svg { transform: scaleX(-1); }
 [dir="rtl"] .home-login-btn:hover svg { transform: scaleX(-1) translateX(2px); }
-.home-account p { margin: 0; font-size: 0.95rem; color: var(--site-muted); }
-.home-account p a { font-weight: 800; }
+.home-account-divider { width: 1px; height: 24px; background: var(--site-line-strong); }
+.home-account p { margin: 0; font-size: 0.95rem; color: var(--site-muted); white-space: nowrap; }
+.home-account p a { font-weight: 800; text-decoration: none; }
+.home-account p a:hover { text-decoration: underline; }
+@media (max-width: 480px) { .home-account-divider { display: none; } .home-account p { white-space: normal; } }
 
 /* Product moments floating over the photo (decorative). */
 .home-hero-art { position: relative; min-width: 0; }
