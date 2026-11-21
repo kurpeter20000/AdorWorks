@@ -1,13 +1,17 @@
 "use server";
 
 import { z } from "zod";
+import { randomInt } from "crypto";
+import { revalidatePath } from "next/cache";
 import { requireSession, requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getActivePaymentProvider } from "@/lib/paymentProviders.server";
 import { calculateFees } from "@/lib/domain/fees";
-import { disputeWindowEndsAt } from "@/lib/domain/escrow";
 import { isInstitutional, DEFAULT_PAYMENT_TERMS_DAYS } from "@/lib/domain/institutional";
-import { getEscrowSettings, getFeeSettings } from "@/lib/dal/settings";
+import { getFeeSettings, getReceivingBankAccount } from "@/lib/dal/settings";
+import { newTransferReference, receivingBankAccountToJson } from "@/lib/domain/bankTransfer";
+import { normalisePhone } from "@/lib/domain/payoutMethods";
+import { finalizeMilestonePayment } from "@/lib/payments/finalizeMilestonePayment";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import { isFeatureEnabled, FEATURE_FLAGS } from "@/lib/domain/featureFlags";
 import { sendEmailSafely, getUserEmail } from "@/lib/email";
@@ -319,27 +323,29 @@ export async function requestRevision(deliverableId: string, note: string): Prom
 
 const CheckoutSchema = z
   .object({
-    provider: z.enum(["mgurush", "mtn_momo", "visa_mastercard"], { message: "Choose a payment provider." }),
+    provider: z.enum(["mtn_momo", "mgurush", "bank_transfer"], { message: "Choose how to pay." }),
     phone: z.string().trim().optional(),
   })
   .superRefine((v, ctx) => {
-    // S09-12: no card fields are collected at all — a card "charge" is
-    // simulated the same way regardless of any input, see paymentProviders.ts.
-    if (v.provider !== "visa_mastercard" && (!v.phone || v.phone.length < 9)) {
+    if (v.provider !== "bank_transfer" && (!v.phone || !/^\+?[0-9]{9,15}$/.test(v.phone.replace(/[\s()-]/g, "")))) {
       ctx.addIssue({ code: "custom", path: ["phone"], message: "Enter a valid phone number." });
     }
   });
 
 /**
- * Simulated mobile-money / card checkout. is_simulated on the resulting
- * payment_events row stays true — no code path anywhere in this project
- * ever sets it false, because no real payment provider is integrated
- * (see paymentProviders.ts). This records a payment_intentions row
- * first (the pre-settlement "details submitted, waiting on the
- * provider" state a real gateway would have), then "charges" through
- * the swappable PaymentProvider interface, then writes the settled
- * payment_events row + a receipt number, confirms the invoice, and
- * marks the milestone paid.
+ * Milestone checkout (payment partners, 0116): MTN Mobile Money (the
+ * default), mGurush, or bank transfer from any bank.
+ *
+ * Mobile money: records a payment_intentions row first (the "details
+ * submitted, waiting on the provider" state), "charges" through the
+ * swappable PaymentProvider seam (simulated unless
+ * ADORWORKS_FF_REAL_PAYMENTS is on), then finalizeMilestonePayment()
+ * writes the payment_events row and receipt and marks the milestone paid.
+ *
+ * Bank transfer: nothing is charged here. The intention waits as
+ * 'awaiting_transfer' with a reference for the employer to quote, the fee
+ * rates and AdorWorks' account details as they were shown; finance staff
+ * confirm it when the money lands (lib/actions/bankTransfers.ts).
  */
 export async function payMilestone(milestoneId: string, _prevState: FormState, formData: FormData): Promise<FormState> {
   const session = await requireRole(...CLIENT_ROLES);
@@ -358,6 +364,7 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     return { errors: validated.error.flatten().fieldErrors };
   }
   const v = validated.data;
+  const phone = v.phone ? (normalisePhone(v.phone) ?? v.phone.replace(/[\s()-]/g, "")) : null;
 
   const { data: milestone } = await admin
     .from("milestones")
@@ -365,11 +372,9 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     .eq("id", milestoneId)
     .maybeSingle();
   if (!milestone) return { message: "Milestone not found." };
-  // Rates read once, here, and stamped on the payment below (0096).
-  const fee = calculateFees(milestone.amount, await getFeeSettings());
-  // Escrow (0099): read once, here — switching it mid-flight never
-  // changes an already-held payment's window.
-  const escrow = await getEscrowSettings();
+  // Rates read once, here, and stamped on the payment (0096).
+  const feeSettings = await getFeeSettings();
+  const fee = calculateFees(milestone.amount, feeSettings);
 
   const { data: invoice } = await admin
     .from("finance_records")
@@ -380,15 +385,12 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     .limit(1)
     .maybeSingle();
 
-  // Gap-check fix: the partial unique index below only blocks a
-  // *concurrent* 'processing' row — it does nothing once an intention has
-  // already resolved to 'succeeded'. If the charge went through but the
-  // milestones.update({status: 'paid'}) at the end of this function ever
-  // failed (network blip, replica lag), the milestone stayed 'approved'
-  // and a second call would sail through the status check and charge
+  // Gap-check fix: the partial unique indexes below only block a
+  // *concurrent* open payment — they do nothing once one has already
+  // succeeded. If a payment went through but marking the milestone paid
+  // failed, a second call would sail through the status check and charge
   // again. Checking for an existing succeeded payment_events row closes
-  // that gap regardless of which finalization write failed, and
-  // self-heals the stuck 'approved' status while it's here.
+  // that gap and self-heals the stuck 'approved' status while it's here.
   const { data: existingPayment } = await admin
     .from("payment_events")
     .select("id")
@@ -400,11 +402,59 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     return { message: "This milestone has already been paid." };
   }
 
-  // status: 'processing' is the default anyway, but named explicitly here
-  // since it's exactly what 0057's partial unique index keys off of —
-  // this insert is what makes two concurrent payMilestone() calls for
-  // the same milestone impossible: the second one's insert fails outright
-  // (23505) instead of silently charging twice.
+  const { data: awaiting } = await admin
+    .from("payment_intentions")
+    .select("id")
+    .eq("milestone_id", milestoneId)
+    .eq("status", "awaiting_transfer")
+    .limit(1);
+  if (awaiting && awaiting.length > 0) {
+    return { message: "You've chosen bank transfer for this milestone. Cancel that transfer first if you'd rather pay another way." };
+  }
+
+  if (v.provider === "bank_transfer") {
+    const account = await getReceivingBankAccount();
+    if (!account) return { message: "Bank transfer isn't available yet. Please pay with MTN Mobile Money or mGurush." };
+    // A clash on the unique reference is astronomically unlikely, but
+    // retrying costs nothing.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { error } = await admin.from("payment_intentions").insert({
+        contract_id: check.contract!.id,
+        milestone_id: milestoneId,
+        invoice_id: invoice?.id ?? null,
+        provider: "bank_transfer",
+        amount: fee.totalCharged,
+        currency: milestone.currency,
+        status: "awaiting_transfer",
+        transfer_reference: newTransferReference(randomInt),
+        fee_settings: feeSettings,
+        bank_account: receivingBankAccountToJson(account),
+        created_by: session.userId,
+      });
+      if (!error) {
+        await logAuditEvent(admin, {
+          name: DOMAIN_EVENTS.PAYMENT_STATUS_CHANGED,
+          actorId: session.userId,
+          entityType: "payment_intentions",
+          entityId: milestoneId,
+          source: "platform",
+          after: { status: "awaiting_transfer", totalCharged: fee.totalCharged, currency: milestone.currency },
+          metadata: { contractId: check.contract!.id, milestoneId, provider: "bank_transfer" },
+        });
+        revalidatePath(`/contracts/${check.contract!.id}`);
+        return {};
+      }
+      if (error.code !== "23505") return { message: error.message || "Could not start the bank transfer." };
+      if (error.message?.includes("one_awaiting_per_milestone")) {
+        return { message: "A bank transfer has already been started for this milestone." };
+      }
+    }
+    return { message: "Could not start the bank transfer. Please try again." };
+  }
+
+  // status 'processing' is exactly what 0057's partial unique index keys
+  // off: a second concurrent payMilestone() for the same milestone fails
+  // this insert (23505) instead of silently charging twice.
   const { data: intention, error: intentionError } = await admin
     .from("payment_intentions")
     .insert({
@@ -412,7 +462,7 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
       milestone_id: milestoneId,
       invoice_id: invoice?.id ?? null,
       provider: v.provider,
-      payer_phone: v.phone || null,
+      payer_phone: phone,
       // What the employer is charged: the agreed amount plus their fee.
       amount: fee.totalCharged,
       currency: milestone.currency,
@@ -430,7 +480,7 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
 
   const provider = await getActivePaymentProvider(v.provider);
   const result = provider
-    ? await provider.charge({ phone: v.phone ?? "", amount: fee.totalCharged, currency: milestone.currency })
+    ? await provider.charge({ phone: phone ?? "", amount: fee.totalCharged, currency: milestone.currency })
     : { success: false as const, reason: "Unknown payment provider." };
 
   if (!result.success) {
@@ -441,130 +491,38 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     return { message: result.reason };
   }
 
-  if (result.cardLast4) {
-    await admin
-      .from("payment_intentions")
-      .update({ card_last4: result.cardLast4, card_brand: result.cardBrand })
-      .eq("id", intention.id);
-  }
-
-  const receiptNumber = `RCPT-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${intention.id.slice(0, 8).toUpperCase()}`;
-  // is_simulated defaults true (0006) — only a mobile-money charge that
-  // actually went through the real adapter (flag on, real credentials
-  // configured) should ever record false. Cards stay simulated
-  // regardless — no card-processor decision has been made.
-  const isSimulated = v.provider === "visa_mastercard" || !isFeatureEnabled(FEATURE_FLAGS.REAL_PAYMENTS);
-  const escrowEndsAt = escrow.enabled ? disputeWindowEndsAt(escrow) : null;
-
-  const { error: paymentError } = await admin.from("payment_events").insert({
-    milestone_id: milestoneId,
-    contract_id: check.contract!.id,
-    intention_id: intention.id,
-    invoice_id: invoice?.id ?? null,
-    provider_name: v.provider,
-    external_reference: result.reference,
-    payer_phone: v.phone || null,
-    card_last4: result.cardLast4 ?? null,
-    card_brand: result.cardBrand ?? null,
-    receipt_number: receiptNumber,
+  // is_simulated is only false for a charge that went through the real
+  // adapter (flag on, real credentials configured).
+  const finalized = await finalizeMilestonePayment(admin, {
+    actorId: session.userId,
+    contractId: check.contract!.id,
+    talentId: check.contract!.talent_id,
+    milestoneId,
+    intentionId: intention.id,
+    invoiceId: invoice?.id ?? null,
+    provider: v.provider,
+    externalReference: result.reference,
+    payerPhone: phone,
     amount: milestone.amount,
     currency: milestone.currency,
-    fee_percent: fee.talentFeePercent,
-    fee_amount: fee.talentFeeAmount,
-    net_amount: fee.netAmount,
-    employer_fee_percent: fee.employerFeePercent,
-    employer_fee_amount: fee.employerFeeAmount,
-    total_charged: fee.totalCharged,
-    is_simulated: isSimulated,
-    escrow_status: escrow.enabled ? "held" : "not_applicable",
-    dispute_window_ends_at: escrowEndsAt ? escrowEndsAt.toISOString() : null,
+    fee,
+    isSimulated: !isFeatureEnabled(FEATURE_FLAGS.REAL_PAYMENTS),
   });
-  if (paymentError) {
-    // Gap-check fix: the provider charge already succeeded at this point
-    // — only recording it failed. Leaving the intention at 'processing'
-    // would permanently lock this milestone out of ever being paid again
-    // (0057's partial unique index blocks every future attempt with
-    // "already being processing"), with no route anywhere to un-stick
-    // it. Marking it 'failed' with an explicit reason at least unblocks
-    // retrying and leaves a paper trail for whoever has to reconcile the
-    // upstream charge by hand.
+  if (!finalized.ok) {
+    // The charge already succeeded — only recording it failed. Leaving
+    // the intention at 'processing' would lock this milestone out of ever
+    // being paid (0057's index). Marking it 'failed' with an explicit
+    // reason unblocks it and leaves a trail for reconciling by hand.
     await admin
       .from("payment_intentions")
       .update({
         status: "failed",
-        failure_reason: `Charge succeeded upstream (ref ${result.reference}) but recording it failed: ${paymentError.message}. Needs manual reconciliation.`,
+        failure_reason: `Charge succeeded upstream (ref ${result.reference}) but recording it failed: ${finalized.error}. Needs manual reconciliation.`,
         resolved_at: new Date().toISOString(),
       })
       .eq("id", intention.id);
     return { message: "Your payment may have gone through, but AdorWorks couldn't record it. Contact support before trying again." };
   }
-
-  const { error: intentionUpdateError } = await admin
-    .from("payment_intentions")
-    .update({ status: "succeeded", resolved_at: new Date().toISOString() })
-    .eq("id", intention.id);
-  if (intentionUpdateError) {
-    console.error("payMilestone: payment_events %s recorded but payment_intentions update failed:", intention.id, intentionUpdateError.message);
-  }
-  if (invoice) {
-    const { error: invoiceError } = await admin.from("finance_records").update({ status: "confirmed" }).eq("id", invoice.id);
-    if (invoiceError) console.error("payMilestone: failed to confirm finance_records %s:", invoice.id, invoiceError.message);
-  }
-  const { error: milestoneError } = await admin.from("milestones").update({ status: "paid" }).eq("id", milestoneId);
-  if (milestoneError) {
-    console.error("payMilestone: payment succeeded for milestone %s but marking it 'paid' failed:", milestoneId, milestoneError.message);
-  }
-
-  await logAuditEvent(admin, {
-    name: DOMAIN_EVENTS.PAYMENT_STATUS_CHANGED,
-    actorId: session.userId,
-    entityType: "payment_events",
-    entityId: intention.id,
-    source: "platform",
-    after: { status: "succeeded", receiptNumber, amount: milestone.amount, totalCharged: fee.totalCharged, platformRevenue: fee.platformRevenue, currency: milestone.currency, isSimulated },
-    metadata: { contractId: check.contract!.id, milestoneId, provider: v.provider },
-  });
-  await logAuditEvent(admin, {
-    name: DOMAIN_EVENTS.MILESTONE_STATUS_CHANGED,
-    actorId: session.userId,
-    entityType: "milestones",
-    entityId: milestoneId,
-    source: "platform",
-    before: { status: "approved" },
-    after: { status: "paid" },
-    metadata: { contractId: check.contract!.id, receiptNumber },
-  });
-
-  // Escrow (0099): the employer's charge has succeeded either way, but
-  // when escrow is holding the payout, the talent hasn't actually
-  // received the money yet — "you were paid" would be false. Same event,
-  // different, honest wording depending on which is true right now.
-  const amountSummary = `${milestone.currency} ${fee.netAmount.toLocaleString()} net (${milestone.currency} ${milestone.amount.toLocaleString()} agreed${fee.talentFeeAmount > 0 ? `, ${milestone.currency} ${fee.talentFeeAmount.toLocaleString()} AdorWorks fee` : ""})`;
-  const paidNoticeTitle = escrow.enabled ? "Payment received — held briefly before release" : "You were paid";
-  const paidNoticeBody = escrow.enabled
-    ? `${amountSummary} received and held until ${escrowEndsAt!.toLocaleDateString()} (AdorWorks' dispute window), then released to you automatically unless a dispute is raised. Receipt ${receiptNumber}.`
-    : `${amountSummary}. Receipt ${receiptNumber}.`;
-  await notifyUser(admin, {
-    userId: check.contract!.talent_id,
-    type: NOTIFICATION_TYPES.MILESTONE_PAID,
-    title: paidNoticeTitle,
-    body: paidNoticeBody,
-    link: `/contracts/${check.contract!.id}`,
-    dedupeKey: milestoneId,
-  });
-  const talentEmail = await getUserEmail(admin, check.contract!.talent_id);
-  await sendEmailSafely(
-    talentEmail,
-    `${paidNoticeTitle} — AdorWorks`,
-    renderEmail({
-      heading: paidNoticeTitle,
-      paragraphs: [paidNoticeBody],
-      ctaLabel: "View contract",
-      ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/contracts/${check.contract!.id}`,
-      unsubscribeUrl: buildUnsubscribeUrl(check.contract!.talent_id),
-    }),
-    { admin, recipientUserId: check.contract!.talent_id }
-  );
 
   return {};
 }

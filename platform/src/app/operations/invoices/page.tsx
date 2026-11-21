@@ -3,6 +3,7 @@ import { requireRole, canMoveMoney } from "@/lib/dal/session";
 import { staffAreaRoles } from "@/lib/domain/staffAccess";
 import { createClient } from "@/lib/supabase/server";
 import { InvoicesConsole } from "./invoices-console";
+import { BankTransfersConsole } from "./bank-transfers-console";
 
 export const metadata: Metadata = { title: "Invoices — Operations" };
 
@@ -25,7 +26,16 @@ export default async function OperationsInvoicesPage() {
     .not("payment_terms_days", "is", null)
     .order("due_date", { ascending: true });
 
-  const contractIds = [...new Set((pending ?? []).map((p) => p.contract_id).filter((id): id is string => !!id))];
+  // 0116: milestone payments by bank transfer (any bank) waiting to land.
+  const { data: awaiting } = await supabase
+    .from("payment_intentions")
+    .select("id, contract_id, transfer_reference, amount, currency, created_at")
+    .eq("status", "awaiting_transfer")
+    .order("created_at", { ascending: true });
+
+  const contractIds = [
+    ...new Set([...(pending ?? []).map((p) => p.contract_id), ...(awaiting ?? []).map((a) => a.contract_id)].filter((id): id is string => !!id)),
+  ];
   const { data: contracts } =
     contractIds.length > 0 ? await supabase.from("contracts").select("id, organisation_id").in("id", contractIds) : { data: [] };
   const orgIdByContract = new Map((contracts ?? []).map((c) => [c.id, c.organisation_id]));
@@ -38,12 +48,25 @@ export default async function OperationsInvoicesPage() {
     return { ...p, organisationName: orgId ? (orgNameById.get(orgId) ?? "Unknown organisation") : "Unknown organisation" };
   });
 
+  const transferRows = (awaiting ?? []).map((a) => {
+    const orgId = orgIdByContract.get(a.contract_id);
+    return { ...a, organisationName: orgId ? (orgNameById.get(orgId) ?? "Unknown organisation") : "Unknown organisation" };
+  });
+
   return (
     <main className="mx-auto max-w-4xl p-6 sm:p-8">
       <h1 className="text-2xl font-extrabold text-midnight">Invoices</h1>
-      <p className="mt-1 text-sm text-slate">Institutional invoices awaiting bank-transfer confirmation.</p>
+      <p className="mt-1 text-sm text-slate">Bank transfers waiting to be confirmed when the money lands on AdorWorks&rsquo; statement.</p>
 
-      <InvoicesConsole rows={rows} canConfirm={canMoveMoney(session.role)} />
+      <section className="mt-6">
+        <h2 className="font-bold text-midnight">Milestone bank transfers ({transferRows.length})</h2>
+        <BankTransfersConsole rows={transferRows} canConfirm={canMoveMoney(session.role)} />
+      </section>
+
+      <section className="mt-8">
+        <h2 className="font-bold text-midnight">Institutional invoices ({rows.length})</h2>
+        <InvoicesConsole rows={rows} canConfirm={canMoveMoney(session.role)} />
+      </section>
     </main>
   );
 }
