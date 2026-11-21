@@ -290,3 +290,89 @@ h1 em, h2 em { font-style: normal; color: var(--site-teal); }
   .photo-slot { border-radius: 20px; }
   .photo-slot img { max-height: 56vh; }
 }
+
+/* ---------- Phones, app-grade layer (owner, Nov 2026) ----------
+   Built like a mobile app rather than a shrunken website: a denser type
+   scale, slimmer chrome, buttons that sit side by side when they fit, and
+   groups of cards that swipe sideways (with the next card peeking in)
+   instead of stacking into a long scroll. Rails are pure CSS; js/main.js
+   only adds the small position dots under them. */
+@media (max-width: 640px) {
+  body { font-size: 0.95rem; }
+  main h1 { font-size: clamp(1.85rem, 8.4vw, 2.15rem); line-height: 1.08; }
+  .page-section h2, .home-section h2, .page-hero h2, .page-dark h2 { font-size: clamp(1.4rem, 6.1vw, 1.62rem); line-height: 1.16; }
+  main h3 { font-size: 1.02rem; }
+  .lede { font-size: 0.98rem; line-height: 1.55; }
+  main p, main li { font-size: 0.95rem; }
+  .eyebrow { font-size: 0.72rem; letter-spacing: 0.08em; margin-bottom: 0.6rem; }
+
+  /* Slimmer header (~56px tall). */
+  .site-header .container { padding-block: 0.55rem; }
+  .nav-toggle { width: 40px; height: 40px; }
+
+  /* Buttons: a touch smaller, and side by side when two fit on a line. */
+  .btn { min-height: 46px; padding: 0.6em 1.15em; font-size: 0.93rem; }
+  .page-actions, .home-actions { gap: 0.6rem; }
+  .page-actions > .btn, .home-actions > .btn { flex: 1 1 auto; justify-content: center; text-align: center; }
+  .page-actions > .text-link, .home-actions > .text-link { flex: 1 0 100%; text-align: center; justify-content: center; }
+  .home-cta .home-actions > .text-link, .closing-cta .page-actions > .text-link { margin-top: 0.25rem; }
+
+  /* Bottom bar: slimmer, still a comfortable tap target. */
+  .mobile-contact-bar a { min-height: 50px; padding: 0.45rem 0.5rem; font-size: 0.86rem; }
+
+  /* Footer: compact, two link columns, Support as one wrapped row. */
+  .site-footer { font-size: 0.86rem; line-height: 1.5; }
+  .site-footer .container { padding-block: 2.25rem 1.25rem; }
+  .footer-grid { grid-template-columns: 1fr 1fr; gap: 1.4rem 1rem; }
+  .footer-tagline { font-size: 1.05rem; margin: 0.6rem 0 0.35rem; max-width: none; }
+  .footer-about { font-size: 0.78rem; max-width: none; }
+  .footer-heading { font-size: 0.64rem; margin-bottom: 0.5rem; }
+  .footer-list { gap: 0.2rem; }
+  .footer-list a { display: inline-block; padding-block: 0.2rem; }
+  .footer-grid > :last-child { grid-column: 1 / -1; }
+  .footer-grid > :last-child .footer-list { flex-direction: row; flex-wrap: wrap; gap: 0.1rem 1.1rem; }
+  .footer-bottom { margin-top: 1.5rem; padding-top: 1rem; font-size: 0.72rem; gap: 0.25rem 1rem; }
+
+  /* Photos: a little shorter so text keeps the focus. */
+  .photo-slot { border-radius: 18px; }
+  .photo-slot img { max-height: 46vh; }
+}
+
+/* Swipe rails (phones). Each group lists its cards in one sideways row
+   that snaps card by card and runs edge to edge, so the next card peeks
+   in as a hint to swipe. */
+@media (max-width: 640px) {
+  .people-grid, .numbered-row, .cover-grid, .who-grid, .outline-cards, .policy-grid, .service-panel:not([hidden]) {
+    display: flex !important;
+    flex-wrap: nowrap;
+    gap: 0.75rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 1.25rem;
+    margin-inline: -1.25rem;
+    padding: 0.25rem 1.25rem 0.5rem;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .people-grid::-webkit-scrollbar, .numbered-row::-webkit-scrollbar, .cover-grid::-webkit-scrollbar, .who-grid::-webkit-scrollbar,
+  .outline-cards::-webkit-scrollbar, .policy-grid::-webkit-scrollbar, .service-panel::-webkit-scrollbar { display: none; }
+  .people-grid > *, .numbered-row > *, .cover-grid > *, .who-grid > *, .outline-cards > *, .policy-grid > *, .service-panel > * {
+    flex: 0 0 82%;
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+  /* The scroll-in fade is tied to vertical scrolling; inside a sideways
+     rail it could leave a card faded, so rail cards just show. */
+  .people-grid > .site-reveal, .numbered-row > .site-reveal, .cover-grid > .site-reveal, .who-grid > .site-reveal,
+  .outline-cards > .site-reveal, .policy-grid > .site-reveal, .service-panel > .site-reveal { animation: none !important; opacity: 1; transform: none; }
+  /* Position dots added by js/main.js under each rail. */
+  .rail-dots { display: flex; justify-content: center; gap: 6px; margin: 0.6rem 0 0; padding: 0; list-style: none; }
+  .rail-dots li { width: 6px; height: 6px; border-radius: 3px; background: var(--site-line-strong); transition: width 0.2s ease, background 0.2s ease; }
+  .rail-dots li[aria-current="true"] { width: 18px; background: var(--site-teal); }
+  .rail-dots-light li { background: #3a4a62; }
+  .rail-dots-light li[aria-current="true"] { background: var(--site-mint); }
+  [hidden] + .rail-dots { display: none; }
+}
+@media (min-width: 641px) { .rail-dots { display: none; } }
+@media (prefers-reduced-motion: reduce) { .rail-dots li { transition: none; } }

@@ -14,6 +14,13 @@
         if (document.documentElement.dir === "rtl" && !vertical) {
           var t = next; next = prev; prev = t;
         }
+        // A vertical list becomes a sideways chip row on phones, so it
+        // also takes left/right arrows.
+        if (vertical) {
+          var rtl = document.documentElement.dir === "rtl";
+          if (e.key === (rtl ? "ArrowLeft" : "ArrowRight")) next = e.key;
+          if (e.key === (rtl ? "ArrowRight" : "ArrowLeft")) prev = e.key;
+        }
         var to = null;
         if (e.key === next) to = (i + 1) % tabs.length;
         if (e.key === prev) to = (i - 1 + tabs.length) % tabs.length;
@@ -41,6 +48,13 @@
         });
         panels.forEach(function (p, i) { p.hidden = i !== n; });
         if (panelBox) panelBox.setAttribute("aria-labelledby", tabs[n].id);
+        // Phones: keep the chosen chip fully in view in the sideways row.
+        var row = tabs[n].parentElement;
+        if (row && row.scrollWidth > row.clientWidth) {
+          var tr = tabs[n].getBoundingClientRect(), rr = row.getBoundingClientRect();
+          if (tr.left < rr.left + 20) row.scrollBy({ left: tr.left - rr.left - 20, behavior: "smooth" });
+          else if (tr.right > rr.right - 20) row.scrollBy({ left: tr.right - rr.right + 20, behavior: "smooth" });
+        }
       };
       tabs.forEach(function (t, i) { t.addEventListener("click", function () { showPath(i); }); });
       arrowNav(tabs, showPath);
