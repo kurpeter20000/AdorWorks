@@ -83,7 +83,7 @@ describe("releaseEscrowedPayment", () => {
       ],
       contracts: [{ id: "c-1", talent_id: "t-1" }],
       talent_payout_methods:
-        extra.method === null ? [] : [{ talent_id: "t-1", method: "mtn_momo", phone: "+211912345678", bank_name: null, account_name: null, account_number: null, ...extra.method }],
+        extra.method === null ? [] : [{ talent_id: "t-1", method: "mtn_momo", phone: "+211912345678", bank_name: null, account_name: null, account_number: null, name_checked_at: "2026-11-01T00:00:00Z", ...extra.method }],
       disputes: extra.disputes ?? [],
     });
   }
@@ -160,6 +160,14 @@ describe("releaseEscrowedPayment", () => {
     expect(row.escrow_status).toBe("held");
   });
 
+  it("holds the payout until finance has checked the name on the wallet", async () => {
+    seed({ method: { name_checked_at: null } });
+    as("finance");
+    const result = await sendPayout("pe-1");
+    expect(result.message).toMatch(/Check the name/);
+    expect(state.payout).not.toHaveBeenCalled();
+  });
+
   it("refuses to pay when the talent hasn't chosen a payout method", async () => {
     seed({ method: null });
     as("finance");
@@ -205,7 +213,7 @@ describe("recordManualPayout / resetStuckPayout", () => {
         { id: "pe-1", contract_id: "c-1", net_amount: 500, currency: "SSP", status: "succeeded", escrow_status: "held", dispute_window_ends_at: "2000-01-01T00:00:00Z", disbursement_status, payout_attempts: 0 },
       ],
       contracts: [{ id: "c-1", talent_id: "t-1" }],
-      talent_payout_methods: [{ talent_id: "t-1", phone: null, bank_name: null, account_name: null, account_number: null, ...method }],
+      talent_payout_methods: [{ talent_id: "t-1", phone: null, bank_name: null, account_name: null, account_number: null, name_checked_at: "2026-11-01T00:00:00Z", ...method }],
       disputes: [],
     });
   }

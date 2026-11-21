@@ -20,7 +20,7 @@ import { TimesheetsSection } from "./timesheets-section";
 import { DisputeSection } from "./dispute-section";
 import { CancelContractSection } from "./cancel-contract-section";
 import Link from "next/link";
-import { getCollectionAccounts, getFeeSettings, getReceivingBankAccounts, isGuaranteeEnabled } from "@/lib/dal/settings";
+import { getCollectionAccounts, getFeeSettings, getFxRate, getReceivingBankAccounts, isGuaranteeEnabled } from "@/lib/dal/settings";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { guaranteeRemedy, guaranteeWindowEnds } from "@/lib/domain/guarantee";
 import { GuaranteeCard, type GuaranteeState } from "./guarantee-card";
@@ -161,6 +161,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
   // received yet — the checkout shows the reference and account instead.
   const bankAccounts = isEmployer ? await getReceivingBankAccounts() : {};
   const collection = isEmployer ? await getCollectionAccounts() : null;
+  const fx = isEmployer ? await getFxRate() : null;
   const { data: awaitingIntentions } = must(isEmployer
     ? await supabase
         .from("payment_intentions")
@@ -399,6 +400,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                   fees={feeSettings}
                   bankTransferAvailable={pickBankAccount(bankAccounts, m.currency) !== null}
                   awaitingTransfer={awaitingByMilestone.get(m.id) ?? null}
+                  usdToSsp={fx?.usdToSsp ?? null}
                   collectionAccountNames={{ mtn_momo: collection?.mtn_momo?.accountName ?? null, mgurush: collection?.mgurush?.accountName ?? null }}
                 />
               )}

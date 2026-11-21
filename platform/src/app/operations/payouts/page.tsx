@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { requireRole, canMoveMoney } from "@/lib/dal/session";
 import { staffAreaRoles } from "@/lib/domain/staffAccess";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { StatementCheck, type RunView } from "./statement-check";
 import { getEscrowRates, getPayoutsQueueStart } from "@/lib/dal/settings";
 import { PayoutsConsole, type PayoutRow } from "./payouts-console";
 import { summariseCommission, type CommissionLine } from "@/lib/domain/commission";
@@ -63,9 +65,13 @@ export default async function OperationsPayoutsPage() {
   const talentIds = [...new Set((contracts ?? []).map((c) => c.talent_id))];
   const { data: methods } =
     talentIds.length > 0
-      ? await supabase.from("talent_payout_methods").select("talent_id, method, phone, bank_name, account_name, account_number").in("talent_id", talentIds)
+      ? await supabase.from("talent_payout_methods").select("talent_id, method, phone, bank_name, account_name, account_number, name_on_account, name_checked_at").in("talent_id", talentIds)
       : { data: [] };
-  const methodByTalent = new Map((methods ?? []).map((m) => [m.talent_id, m as PayoutMethodRow & { talent_id: string }]));
+  const methodByTalent = new Map(
+    (methods ?? []).map((m) => [m.talent_id, m as PayoutMethodRow & { talent_id: string; name_on_account: string | null; name_checked_at: string | null }])
+  );
+  // 0125: talent names, for the wallet name check.
+  const { data: talentNames } = talentIds.length ? await createAdminClient().from("profiles").select("id, full_name").in("id", talentIds) : { data: [] as { id: string; full_name: string | null }[] };
   // Not-held payments still wait for any open dispute to be resolved.
   const { data: disputes } =
     contractIds.length > 0 ? await supabase.from("disputes").select("contract_id").in("contract_id", contractIds).neq("status", "resolved") : { data: [] };
@@ -87,11 +93,31 @@ export default async function OperationsPayoutsPage() {
       isSimulated: p.is_simulated,
       method: method?.method ?? null,
       payTo: describePayoutMethod(method),
+      talentId: talentByContract.get(p.contract_id) ?? "",
+      talentName: (talentNames ?? []).find((n) => n.id === talentByContract.get(p.contract_id))?.full_name ?? null,
+      nameCheckedAt: method?.name_checked_at ?? null,
+      nameOnAccount: method?.name_on_account ?? (method?.method === "bank" ? method.account_name : null),
       disputed: disputed.has(p.contract_id),
     };
   };
 
   const rows = all.map(toRow);
+
+  // 0125: recent statement checks.
+  const { data: runRows } = await supabase.from("reconciliation_runs").select("*").order("created_at", { ascending: false }).limit(10);
+  const runs: RunView[] = (runRows ?? []).map((r) => ({
+    id: r.id,
+    account: r.account,
+    periodStart: r.period_start,
+    periodEnd: r.period_end,
+    fileName: r.file_name,
+    lines: r.statement_lines,
+    matched: r.matched,
+    unmatched: Array.isArray(r.unmatched_statement) ? (r.unmatched_statement as RunView["unmatched"]) : [],
+    missing: Array.isArray(r.missing_from_statement) ? (r.missing_from_statement as RunView["missing"]) : [],
+    mismatches: Array.isArray(r.amount_mismatches) ? (r.amount_mismatches as RunView["mismatches"]) : [],
+    createdAt: r.created_at,
+  }));
   const stuck = rows.filter((r) => r.disbursementStatus === "pending");
   const due = rows.filter((r) => r.disbursementStatus !== "pending" && (r.held ? eligibleIds.has(r.id) : !r.disputed));
   const dueIds = new Set([...due, ...stuck].map((r) => r.id));
@@ -110,6 +136,8 @@ export default async function OperationsPayoutsPage() {
         mtn_momo: collection.mtn_momo ? `${collection.mtn_momo.accountName} · ${collection.mtn_momo.number}` : null,
         mgurush: collection.mgurush ? `${collection.mgurush.accountName} · ${collection.mgurush.number}` : null,
       }} />
+
+      <StatementCheck runs={runs} canRun={canMoveMoney(session.role)} />
 
       <PayoutsConsole due={due} stuck={stuck} waiting={waiting} canPay={canMoveMoney(session.role)} />
     </main>

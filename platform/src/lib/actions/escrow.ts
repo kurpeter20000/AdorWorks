@@ -88,11 +88,17 @@ async function loadPayablePayment(admin: Admin, paymentEventId: string): Promise
 
   const { data: method } = await admin
     .from("talent_payout_methods")
-    .select("method, phone, bank_name, account_name, account_number")
+    .select("method, phone, bank_name, account_name, account_number, name_checked_at")
     .eq("talent_id", contract.talent_id)
     .maybeSingle();
   if (!method) {
     return { message: "This talent hasn't chosen how to be paid yet. Ask them to add a payout method under Finance, then try again." };
+  }
+
+  // 0125: before a talent's first payout to this wallet or account, finance
+  // checks the name it's registered to (it resets when the details change).
+  if (!method.name_checked_at) {
+    return { message: "Check the name on this talent's wallet or bank account first (Payouts → Name check), then pay out." };
   }
 
   return {

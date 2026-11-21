@@ -74,3 +74,10 @@ export async function isGuaranteeEnabled(): Promise<boolean> {
 export async function isProgrammeSharingEnabled(): Promise<boolean> {
   return parseGuaranteeEnabled(await readSetting("programme_sharing"));
 }
+
+/** 0125: USD→SSP rate set by finance, shown to employers before they pay. Null when not set. */
+export async function getFxRate(): Promise<{ usdToSsp: number; updatedAt: string | null } | null> {
+  const v = (await readSetting("fx")) as Record<string, unknown> | null;
+  const rate = v && typeof v.usd_to_ssp === "number" && v.usd_to_ssp > 0 ? v.usd_to_ssp : null;
+  return rate ? { usdToSsp: rate, updatedAt: typeof v?.updated_at === "string" ? v.updated_at : null } : null;
+}

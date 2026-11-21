@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { recordManualPayout, resetStuckPayout, sendPayout } from "@/lib/actions/escrow";
+import { recordPayoutNameCheck } from "@/lib/actions/paymentChecks";
 import { formatDate, formatDateTime } from "@/lib/domain/format";
 import type { PayoutMethod } from "@/lib/domain/payoutMethods";
 
@@ -23,6 +24,11 @@ export interface PayoutRow {
   method: PayoutMethod | null;
   payTo: string;
   disputed: boolean;
+  /** 0125: wallet name check. */
+  talentId: string;
+  talentName: string | null;
+  nameCheckedAt: string | null;
+  nameOnAccount: string | null;
 }
 
 export function PayoutsConsole({ due, stuck, waiting, canPay }: { due: PayoutRow[]; stuck: PayoutRow[]; waiting: PayoutRow[]; canPay: boolean }) {
@@ -142,14 +148,18 @@ function DueRowItem({ row, canPay }: { row: PayoutRow; canPay: boolean }) {
           <p className="text-xs font-semibold text-slate">Only finance or admin staff can pay out.</p>
         ) : !row.method ? (
           <p className="max-w-56 text-xs font-semibold text-coral-ink">Can&rsquo;t pay yet: the talent hasn&rsquo;t chosen a payout method.</p>
+        ) : !row.nameCheckedAt ? (
+          <p className="max-w-56 text-xs font-semibold text-coral-ink">Check the name on the account first (below).</p>
         ) : row.method === "mtn_momo" ? (
           <button type="button" disabled={pending || sent} onClick={send} className="rounded-lg bg-teal px-3 py-1.5 text-xs font-bold text-midnight disabled:opacity-60">
             {sent ? "Sent" : pending ? "Sending…" : row.disbursementStatus === "failed" ? "Try MTN again" : "Send by MTN MoMo"}
           </button>
         ) : null}
       </div>
+      {canPay && row.method && !row.nameCheckedAt && <NameCheckForm row={row} />}
+      {row.nameCheckedAt && <p className="mt-1 text-xs text-teal-ink">Name on account checked: {row.nameOnAccount}</p>}
       {error && <p className="mt-2 text-xs text-coral-ink">{error}</p>}
-      {canPay && row.method && !sent && (
+      {canPay && row.method && row.nameCheckedAt && !sent && (
         <div className="mt-3 border-t border-slate/10 pt-3">
           {row.method === "mtn_momo" && !manualOpen ? (
             <button type="button" onClick={() => setManualOpen(true)} className="text-xs font-semibold text-slate underline">
@@ -216,5 +226,39 @@ function StuckRowItem({ row, canPay }: { row: PayoutRow; canPay: boolean }) {
         </div>
       )}
     </li>
+  );
+}
+
+/**
+ * 0125: before the first payout to a wallet or bank account, finance
+ * records the name it's registered to (ask MTN/mGurush/the bank, or look it
+ * up when sending a test). The app compares it with the talent's name.
+ */
+function NameCheckForm({ row }: { row: PayoutRow }) {
+  const [state, action, pending] = useActionState(recordPayoutNameCheck.bind(null, row.talentId), {});
+  const done = "saved" in state && Boolean(state.saved);
+  useRefreshOn(done);
+  if (done) return <p className="mt-2 text-xs font-semibold text-teal-ink">Name checked{state.result === "close" ? " (partly matches — noted)" : ""}.</p>;
+  const different = "result" in state && state.result === "different";
+  return (
+    <form action={action} className="mt-3 space-y-2 rounded-lg border border-amber-tint bg-amber-tint/40 p-3">
+      <p className="text-xs text-midnight">
+        <strong>Name check before the first payout.</strong> Talent&rsquo;s name: {row.talentName ?? "not on file"}. Enter the name the{" "}
+        {row.method === "bank" ? "bank account" : "wallet"} is registered to, as {row.method === "mgurush" ? "mGurush" : row.method === "bank" ? "the bank" : "MTN"} shows it.
+      </p>
+      <div className="flex flex-wrap items-end gap-2">
+        <input name="nameOnAccount" required defaultValue={row.nameOnAccount ?? ""} placeholder="Name on the account" className="w-60 rounded-lg border border-slate/25 px-2 py-1.5 text-xs" />
+        <button type="submit" disabled={pending} className="rounded-lg bg-teal px-3 py-1.5 text-xs font-bold text-midnight disabled:opacity-60">
+          {pending ? "Checking…" : "Check name"}
+        </button>
+      </div>
+      {different && (
+        <label className="flex items-center gap-2 text-xs text-midnight">
+          <input type="checkbox" name="confirmDifferent" className="accent-teal" /> I&rsquo;ve confirmed with the talent that this account is theirs
+        </label>
+      )}
+      {state.errors?.nameOnAccount && <p className="text-xs text-coral-ink">{state.errors.nameOnAccount[0]}</p>}
+      {state.message && <p className="text-xs text-coral-ink">{state.message}</p>}
+    </form>
   );
 }

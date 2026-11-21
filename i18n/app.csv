@@ -142,6 +142,7 @@ Test mode — no real money moves,وضع تجريبي — لا تُنقل أمو
 Agreed amount,المبلغ المتفق عليه,draft,Kiasi kilichokubaliwa,draft,app/contracts/[id]/payment-checkout app/contracts/[id]/receipt-view,
 AdorWorks fee for employers ({percent}%),رسوم AdorWorks لأصحاب العمل ({percent}%),draft,Ada ya AdorWorks kwa waajiri ({percent}%),draft,app/contracts/[id]/payment-checkout,
 You pay,تدفع,draft,Unalipa,draft,app/contracts/[id]/payment-checkout,
+"About, at today's rate (1 USD = {rate} SSP)",تقريباً، بسعر اليوم (1 دولار = {rate} جنيه),draft,"Takriban, kwa kiwango cha leo (USD 1 = SSP {rate})",draft,app/contracts/[id]/payment-checkout,
 AdorWorks fee for talent ({percent}%),رسوم AdorWorks للمواهب ({percent}%),draft,Ada ya AdorWorks kwa wataalamu ({percent}%),draft,app/contracts/[id]/payment-checkout,
 Talent receives,تحصل الموهبة على,draft,Mtaalamu anapokea,draft,app/contracts/[id]/payment-checkout,
 Pay with,الدفع بواسطة,draft,Lipa kwa,draft,app/contracts/[id]/payment-checkout,

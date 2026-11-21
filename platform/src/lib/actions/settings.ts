@@ -244,3 +244,22 @@ export async function updateFeatureSwitch(_prev: FormState, formData: FormData):
   revalidatePath("/operations/settings");
   return { saved: true };
 }
+
+const FxSchema = z.object({
+  usdToSsp: z.coerce.number().positive("Enter how many SSP one US dollar buys.").max(1_000_000),
+  reason: z.string().trim().min(10, "Say where the rate comes from (at least 10 characters), e.g. the bank's rate today."),
+});
+
+/** Finance/admin (0125): today's USD→SSP rate, shown to employers before they pay. Information only; nothing is converted. */
+export async function updateFxRate(_prev: FormState, formData: FormData): Promise<FormState & { saved?: boolean }> {
+  const session = await requireRole("finance", "admin");
+  const parsed = FxSchema.safeParse({ usdToSsp: formData.get("usdToSsp"), reason: formData.get("reason") ?? "" });
+  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
+  const value = { usd_to_ssp: parsed.data.usdToSsp, updated_at: new Date().toISOString() };
+  const admin = createAdminClient();
+  const { error } = await admin.from("platform_settings").upsert({ key: "fx", value, updated_by: session.userId, updated_at: value.updated_at });
+  if (error) return { message: `Could not save: ${error.message}` };
+  await logAuditEvent(admin, { name: DOMAIN_EVENTS.PLATFORM_SETTINGS_CHANGED, actorId: session.userId, entityType: "platform_settings", entityId: "fx", source: "platform", reason: parsed.data.reason, after: value });
+  revalidatePath("/operations/settings");
+  return { saved: true };
+}
