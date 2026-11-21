@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { admin, createTestOrganisation, createTestUser, deleteTestUser, loginAs, seedOpportunity } from "./helpers";
+import { admin, createTestOrganisation, createTestUser, deleteTestUser, fillPitch, loginAs, seedOpportunity, submitApplication } from "./helpers";
 
 /**
  * S08-14 gap-check (2026-09-15): no e2e or unit test touched apply/
@@ -20,8 +20,8 @@ test.describe("applications", () => {
       await page.goto(`/opportunities/${opportunity.id}/apply`);
       await expect(page.getByRole("heading", { name: new RegExp(title) })).toBeVisible();
 
-      await page.getByLabel(/why are you a fit/i).fill("I have relevant experience for this exact role.");
-      await page.getByRole("button", { name: /submit application/i }).click();
+      await fillPitch(page, "I have relevant experience for this exact role.");
+      await submitApplication(page);
 
       await page.waitForURL("**/applications?applied=1", { timeout: 15000 });
       await expect(page.getByText(/your application was submitted/i)).toBeVisible();
@@ -42,13 +42,13 @@ test.describe("applications", () => {
     try {
       await loginAs(page, talent.email);
       await page.goto(`/opportunities/${opportunity.id}/apply`);
-      await page.getByLabel(/why are you a fit/i).fill("First attempt at applying to this role.");
-      await page.getByRole("button", { name: /submit application/i }).click();
+      await fillPitch(page, "First attempt at applying to this role.");
+      await submitApplication(page);
       await page.waitForURL("**/applications?applied=1", { timeout: 15000 });
 
       await page.goto(`/opportunities/${opportunity.id}/apply`);
-      await page.getByLabel(/why are you a fit/i).fill("Second attempt — should be rejected.");
-      await page.getByRole("button", { name: /submit application/i }).click();
+      await fillPitch(page, "Second attempt — should be rejected.");
+      await submitApplication(page);
       await expect(page.getByText(/already applied/i)).toBeVisible({ timeout: 15000 });
     } finally {
       await opportunity.cleanup();
@@ -70,9 +70,9 @@ test.describe("applications", () => {
     try {
       await loginAs(page, talent.email);
       await page.goto(`/opportunities/${opportunity.id}/apply`);
-      await page.getByLabel(/why are you a fit/i).fill("Trying to apply after the deadline passed.");
-      await page.getByRole("button", { name: /submit application/i }).click();
-      await expect(page.getByText(/deadline.*passed/i)).toBeVisible({ timeout: 15000 });
+      await fillPitch(page, "Trying to apply after the deadline passed.");
+      await submitApplication(page);
+      await expect(page.getByRole("alert").filter({ hasText: /deadline.*passed/i })).toBeVisible({ timeout: 15000 });
 
       const { data } = await admin.from("applications").select("id").eq("opportunity_id", opportunity.id);
       expect(data ?? []).toHaveLength(0);
@@ -93,12 +93,12 @@ test.describe("applications", () => {
     try {
       await loginAs(page, talent.email);
       await page.goto(`/opportunities/${opportunity.id}/apply`);
-      await page.getByLabel(/why are you a fit/i).fill(draftPitch);
-      await page.getByRole("button", { name: /save draft/i }).click();
-      await expect(page.getByText(/draft saved/i)).toBeVisible();
+      await fillPitch(page, draftPitch);
+      // Drafts save themselves shortly after typing stops.
+      await expect(page.getByText(/saved\. you can come back/i)).toBeVisible({ timeout: 10000 });
 
       await page.reload();
-      await expect(page.getByLabel(/why are you a fit/i)).toHaveValue(draftPitch);
+      await expect(page.locator("#pitch")).toHaveValue(draftPitch);
 
       const { data } = await admin.from("application_drafts").select("id").eq("opportunity_id", opportunity.id).eq("talent_id", talent.id);
       expect(data ?? []).toHaveLength(1);
@@ -120,8 +120,8 @@ test.describe("applications", () => {
     try {
       await loginAs(page, talent.email);
       await page.goto(`/opportunities/${opportunity.id}/apply`);
-      await page.getByLabel(/why are you a fit/i).fill("Applying so I can withdraw and check the flow.");
-      await page.getByRole("button", { name: /submit application/i }).click();
+      await fillPitch(page, "Applying so I can withdraw and check the flow.");
+      await submitApplication(page);
       await page.waitForURL("**/applications?applied=1", { timeout: 15000 });
 
       await page.getByRole("button", { name: /withdraw/i }).click();

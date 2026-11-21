@@ -58,6 +58,18 @@ export async function saveApplicationDraft(
   const session = await requireRole("talent");
 
   const supabase = await createClient();
+  // An autosave can land just after the application was sent; never keep
+  // a draft for something already applied to (it reopened at step 3).
+  const { data: existing } = await supabase
+    .from("applications")
+    .select("id")
+    .eq("opportunity_id", opportunityId)
+    .eq("talent_id", session.userId)
+    .limit(1);
+  if (existing && existing.length > 0) {
+    await supabase.from("application_drafts").delete().eq("opportunity_id", opportunityId).eq("talent_id", session.userId);
+    return {};
+  }
   const { error } = await supabase
     .from("application_drafts")
     .upsert({ opportunity_id: opportunityId, talent_id: session.userId, pitch, answers }, { onConflict: "opportunity_id,talent_id" });

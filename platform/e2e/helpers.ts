@@ -475,3 +475,23 @@ export async function loginAndCaptureStorageState(browser: Browser, email: strin
   await context.close();
   return storageState;
 }
+
+/**
+ * The apply form is three steps (Passport → pitch → questions and send).
+ * fillPitch() moves past step 1 if it's showing and types the pitch;
+ * submitApplication() goes to step 3 and sends.
+ */
+export async function fillPitch(page: Page, pitch: string) {
+  const confirm = page.getByRole("button", { name: /looks right — continue/i });
+  if (await confirm.isVisible()) await confirm.click();
+  // A restored draft opens on step 3: go back to the pitch.
+  if (!(await page.getByLabel(/why are you a fit/i).isVisible())) await page.getByRole("button", { name: /^back$/i }).click();
+  await page.getByLabel(/why are you a fit/i).fill(pitch);
+}
+
+export async function submitApplication(page: Page) {
+  await page.getByRole("button", { name: /continue to step 3/i }).click();
+  // Step 3 must actually show before anything is sent.
+  await page.getByRole("button", { name: /send application/i }).waitFor({ state: "visible" });
+  await page.getByRole("button", { name: /send application/i }).click();
+}
