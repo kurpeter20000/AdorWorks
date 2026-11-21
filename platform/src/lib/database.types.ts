@@ -287,6 +287,10 @@ export type OpportunityRow = {
   shortlisting_mode: "self_service" | "staff_assisted";
   created_at: string;
   updated_at: string;
+  /** 0119: shortlist review. */
+  shortlist_sent_at: string | null;
+  more_candidates_requested_at: string | null;
+  more_candidates_note: string | null;
 }
 
 export type ServicePackageRow = {
@@ -344,6 +348,8 @@ export type ApplicationRow = {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  /** 0119: staff's note to the employer on why this candidate is on the shortlist. */
+  reviewer_note: string | null;
 }
 
 export type InvitationStatus = "pending" | "accepted" | "declined" | "expired";

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Check, TriangleAlert } from "lucide-react";
 import { checkOpportunity } from "@/lib/domain/opportunityChecks";
 import { StaffInterviewPanel } from "./staff-interview-panel";
+import { ReviewerNote } from "./reviewer-note";
+import { sendShortlist } from "@/lib/actions/shortlists";
 import { CHANGE_FIELDS, CHANGE_FIELD_KEYS, type ChangeField } from "@/lib/domain/changeFields";
 import { approveOpportunity, rejectOpportunity, requestOpportunityChanges } from "@/lib/actions/operations";
 import {
@@ -483,9 +485,31 @@ function Shortlist({ opportunity, canRunInterviews }: { opportunity: Row; canRun
     }
   }
 
+  const waiting = (apps.data?.data ?? []).filter((a) => a.source === "matched" && a.stage === "submitted");
+  const missingNotes = waiting.filter((a) => !a.reviewer_note?.trim()).length;
+  const [sendMsg, setSendMsg] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  async function send() {
+    setSending(true);
+    setSendMsg(null);
+    const r = await sendShortlist(opportunity.id);
+    setSending(false);
+    setSendMsg(r.error ?? `Sent ${r.sent} candidate${r.sent === 1 ? "" : "s"} to the employer.`);
+    apps.reload();
+  }
+
   return (
     <div>
       <SubHeading>Shortlist</SubHeading>
+      {opportunity.more_candidates_requested_at && (
+        <p className="mb-2 rounded-lg bg-coral/10 px-3 py-2 text-xs text-coral-ink">
+          <strong>The employer asked for more candidates</strong> on {fmtDateTime(opportunity.more_candidates_requested_at)}
+          {opportunity.more_candidates_note ? `: “${opportunity.more_candidates_note}”` : "."}
+        </p>
+      )}
+      {opportunity.shortlist_sent_at && (
+        <p className="mb-2 text-xs text-slate">Last shortlist sent {fmtDateTime(opportunity.shortlist_sent_at)}.</p>
+      )}
       {opportunity.shortlisting_mode === "self_service" && (
         <p className="mb-2 text-xs text-slate">This employer chose to shortlist candidates themselves — you can still help if asked.</p>
       )}
@@ -499,6 +523,7 @@ function Shortlist({ opportunity, canRunInterviews }: { opportunity: Row; canRun
               <Badge value={a.talent_profiles?.verification_tier} />
             </p>
             {a.interview_scheduled_at && <p className="mt-1 text-xs text-slate">Interview: {fmtDateTime(a.interview_scheduled_at)}</p>}
+            {a.source === "matched" && <ReviewerNote applicationId={a.id} initial={a.reviewer_note ?? null} locked={a.stage !== "submitted"} />}
             {canRunInterviews && opportunity.shortlisting_mode === "staff_assisted" && ["shortlisted", "interviewing"].includes(a.stage) && (
               <StaffInterviewPanel applicationId={a.id} />
             )}
@@ -544,6 +569,19 @@ function Shortlist({ opportunity, canRunInterviews }: { opportunity: Row; canRun
         ))}
       </ul>
       <ActionStatus status={status} />
+      {waiting.length > 0 && (
+        <div className="mt-3 rounded-lg border border-teal/30 bg-teal/5 p-3 text-sm">
+          <p className="text-midnight">
+            {waiting.length} candidate{waiting.length === 1 ? "" : "s"} ready to send. The employer sees them side by side with your notes
+            (3–5 is best).
+          </p>
+          <Btn variant="primary" disabled={sending || missingNotes > 0} onClick={send}>
+            {sending ? "Sending…" : `Send shortlist to employer (${waiting.length})`}
+          </Btn>
+          {missingNotes > 0 && <p className="mt-1 text-xs text-coral-ink">Add a reviewer note to {missingNotes} more first.</p>}
+        </div>
+      )}
+      {sendMsg && <p className="mt-2 text-xs text-midnight" role="status">{sendMsg}</p>}
 
       <SubHeading>Suggested candidates</SubHeading>
       <p className="mb-2 text-xs text-slate">

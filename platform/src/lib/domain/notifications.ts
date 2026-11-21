@@ -56,6 +56,8 @@ export const NOTIFICATION_TYPES = {
   // 0116: payment partners.
   PAYOUT_FAILED: "payout_failed",
   BANK_TRANSFER_RECEIVED: "bank_transfer_received",
+  // 0119: shortlist review.
+  SHORTLIST_READY: "shortlist_ready",
 } as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];
