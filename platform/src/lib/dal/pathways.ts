@@ -13,8 +13,12 @@ export async function partnerProgrammesFor(userId: string, role: UserRole): Prom
     const { data } = await admin.from("programmes").select("*").order("created_at", { ascending: false });
     return data ?? [];
   }
-  const { data: links } = await admin.from("programme_partner_users").select("programme_id").eq("user_id", userId);
-  const ids = (links ?? []).map((l) => l.programme_id);
+  // Partner staff and facilitators (0123) both open the partner dashboard.
+  const [{ data: links }, { data: facil }] = await Promise.all([
+    admin.from("programme_partner_users").select("programme_id").eq("user_id", userId),
+    admin.from("programme_facilitators").select("programme_id").eq("user_id", userId),
+  ]);
+  const ids = [...new Set([...(links ?? []), ...(facil ?? [])].map((l) => l.programme_id))];
   if (!ids.length) return [];
   const { data } = await admin.from("programmes").select("*").in("id", ids).order("created_at", { ascending: false });
   return data ?? [];
@@ -74,4 +78,17 @@ export async function loadParticipantFacts(admin: Admin, programmeId: string): P
       consent: c ? { named: c.share_named_progress, earnings: c.share_earnings, story: c.share_story, guardian: c.guardian_name } : null,
     };
   });
+}
+
+/** Staff, or a facilitator whose background check has been recorded, may run this cohort's sessions. */
+export async function canRunSessions(userId: string, role: UserRole, programmeId: string): Promise<boolean> {
+  if (STAFF_ROLES.includes(role)) return true;
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("programme_facilitators")
+    .select("background_check_recorded_at")
+    .eq("programme_id", programmeId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  return Boolean(data?.background_check_recorded_at);
 }

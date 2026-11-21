@@ -19,6 +19,7 @@ const TOPIC_BY_TYPE: Record<string, AlertTopic> = {
   payout_failed: "application_updates",
   bank_transfer_received: "application_updates",
   shortlist_ready: "application_updates",
+  certificate_issued: "application_updates",
   message_received: "messages",
   support_message_received: "messages",
 };

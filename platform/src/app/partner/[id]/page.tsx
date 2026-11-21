@@ -62,6 +62,12 @@ export default async function PartnerCohortPage({ params }: { params: Promise<{ 
         </dl>
       </header>
 
+      <p className="mt-4">
+        <Link href={`/partner/${programme.id}/sessions`} className="inline-flex min-h-11 items-center rounded-control border border-teal/40 bg-white px-4 text-sm font-bold text-teal-ink">
+          {t("Sessions, attendance and certificates")}
+        </Link>
+      </p>
+
       {!report.visible ? (
         <p className="mt-6 rounded-card border border-line bg-white p-5 text-sm text-slate">
           {t("{n} people have joined so far. Results appear once at least {min} people are enrolled, so nobody can be identified.", { n: report.members, min: MIN_GROUP_SIZE })}

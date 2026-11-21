@@ -205,12 +205,13 @@ async function loadProgrammes(): Promise<ProgrammeView[]> {
   const { data: programmes } = await admin.from("programmes").select("*").order("created_at", { ascending: false });
   if (!programmes?.length) return [];
   const ids = programmes.map((p) => p.id);
-  const [{ data: members }, { data: consents }, { data: partnerLinks }] = await Promise.all([
+  const [{ data: members }, { data: consents }, { data: partnerLinks }, { data: facilitatorRows }] = await Promise.all([
     admin.from("programme_members").select("*").in("programme_id", ids),
     admin.from("programme_consents").select("*").in("programme_id", ids).order("created_at", { ascending: false }),
     admin.from("programme_partner_users").select("programme_id, user_id").in("programme_id", ids),
+    admin.from("programme_facilitators").select("programme_id, user_id, background_check_recorded_at, background_check_note").in("programme_id", ids),
   ]);
-  const partnerIds = [...new Set((partnerLinks ?? []).map((l) => l.user_id))];
+  const partnerIds = [...new Set([...(partnerLinks ?? []), ...(facilitatorRows ?? [])].map((l) => l.user_id))];
   const { data: partnerProfiles } = partnerIds.length
     ? await admin.from("profiles").select("id, full_name").in("id", partnerIds)
     : { data: [] as { id: string; full_name: string | null }[] };
@@ -239,6 +240,14 @@ async function loadProgrammes(): Promise<ProgrammeView[]> {
     partnerUsers: (partnerLinks ?? [])
       .filter((l) => l.programme_id === p.id)
       .map((l) => (partnerProfiles ?? []).find((x) => x.id === l.user_id)?.full_name ?? "Partner user"),
+    facilitators: (facilitatorRows ?? [])
+      .filter((f) => f.programme_id === p.id)
+      .map((f) => ({
+        userId: f.user_id,
+        name: (partnerProfiles ?? []).find((x) => x.id === f.user_id)?.full_name ?? "Facilitator",
+        checkedAt: f.background_check_recorded_at,
+        note: f.background_check_note,
+      })),
     members: (members ?? [])
       .filter((m) => m.programme_id === p.id)
       .map((m) => {

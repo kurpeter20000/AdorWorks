@@ -24,6 +24,7 @@ import { getCollectionAccounts, getFeeSettings, getReceivingBankAccounts, isGuar
 import { createAdminClient } from "@/lib/supabase/admin";
 import { guaranteeRemedy, guaranteeWindowEnds } from "@/lib/domain/guarantee";
 import { GuaranteeCard, type GuaranteeState } from "./guarantee-card";
+import { InternshipReviews } from "./internship-reviews";
 import { parseReceivingBankAccount, pickBankAccount } from "@/lib/domain/bankTransfer";
 import type { AwaitingTransfer } from "./payment-checkout";
 import { isInstitutional } from "@/lib/domain/institutional";
@@ -128,6 +129,15 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
     .eq("contract_id", contract.id), "payment events");
   const paymentByMilestone = new Map((paymentEvents ?? []).map((p) => [p.milestone_id, p]));
   const feeSettings = await getFeeSettings();
+
+  // 0123: Internship Bridge supervisor reviews.
+  const { data: internshipReviews } =
+    opportunity?.engagement_type === "internship"
+      ? await supabase
+          .from("internship_reviews")
+          .select("stage, score_skills, score_reliability, score_growth, strengths, to_improve, created_at")
+          .eq("contract_id", contract.id)
+      : { data: [] };
 
   // 0120: Employer Guarantee — only while it's switched on.
   let guarantee: GuaranteeState | null = null;
@@ -421,6 +431,10 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
       )}
 
       {isEmployer && guarantee && <GuaranteeCard contractId={contract.id} g={guarantee} />}
+
+      {opportunity?.engagement_type === "internship" && (isTalent || isEmployer) && (
+        <InternshipReviews contractId={contract.id} reviews={internshipReviews ?? []} canWrite={isEmployer} />
+      )}
 
       {(isTalent || isEmployer) && (
         <DisputeSection contractId={contract.id} contractStatus={contract.status} disputes={disputes ?? []} />
