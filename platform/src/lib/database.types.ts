@@ -206,6 +206,8 @@ export type OrganisationRow = {
   org_type: "individual" | "company" | "ngo" | "ingo" | "government" | "other";
   created_at: string;
   updated_at: string;
+  /** 0124: approved by staff to run Pathways cohorts. */
+  is_programme_partner: boolean;
 }
 
 export type OrganisationMemberRole = "member" | "admin" | "recruiter" | "hiring_manager" | "finance" | "viewer";
@@ -621,6 +623,8 @@ export type ProgrammeRow = {
   starts_on: string | null;
   target_placed: number | null;
   join_code: string | null;
+  /** 0124: the partner organisation that manages this cohort. */
+  partner_organisation_id: string | null;
   active: boolean;
   created_by: string | null;
   created_at: string;
@@ -636,6 +640,8 @@ export type ProgrammeMemberRow = {
 export type ProgrammePartnerUserRow = {
   programme_id: string;
   user_id: string;
+  /** 0124: admin manages the cohort and team; viewer sees results. */
+  role: "admin" | "viewer";
   added_by: string | null;
   created_at: string;
 }
