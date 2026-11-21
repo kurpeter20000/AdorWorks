@@ -35,12 +35,12 @@ export default async function LoginPage({
 
   return (
     <div>
-      <h1 className="text-[2.5rem] leading-tight font-medium text-midnight">
+      <h1 className="text-[2.25rem] leading-tight font-extrabold text-midnight">
         {t("Welcome back")}
       </h1>
       <p className="mt-1.5 text-[#4a5263]">{t(INTENT_COPY[intent])}</p>
       {reason === "idle" && (
-        <p className="mt-3 rounded-xl bg-white px-3 py-2 text-sm text-slate ring-1 ring-[#e6dfd2]" role="status">
+        <p className="mt-3 rounded-xl bg-[#f7f3ec] px-3 py-2 text-sm text-slate ring-1 ring-[#e6dfd2]" role="status">
           {t("You were signed out after 10 minutes of inactivity. Sign in again to continue.")}
         </p>
       )}

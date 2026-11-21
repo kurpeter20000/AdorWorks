@@ -35,10 +35,10 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
   const t = await getT();
   return (
     <div
-      className={`flex flex-1 flex-col bg-[#f7f3ec] text-midnight lg:flex-row`}
-      // Fraunces has no Arabic letters, so Arabic headings fall through to
-      // the app's Arabic face rather than a random system font.
-      style={{ "--font-auth-display": "var(--font-fraunces), var(--font-arabic), Georgia, serif" } as React.CSSProperties}
+      className={`flex flex-1 flex-col bg-white text-midnight lg:flex-row`}
+      // Headings use the app's own sans (Manrope), bold; Arabic falls
+      // through to the app's Arabic face.
+      style={{ "--font-auth-display": "var(--font-manrope), var(--font-arabic), system-ui, sans-serif" } as React.CSSProperties}
     >
       {/* The poster is the brand panel's background; the panel only shows
           from the lg breakpoint up, so the poster is only fetched there. */}
@@ -52,10 +52,10 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
             AdorWorks
           </a>
           <div className="mt-auto flex max-w-md flex-col gap-6">
-            <p className="font-[family-name:var(--font-auth-display)] text-5xl leading-[1.04] font-normal tracking-tight xl:text-6xl">
+            <p className="font-[family-name:var(--font-auth-display)] text-5xl leading-[1.06] font-extrabold tracking-tight xl:text-[3.4rem]">
               {t("Talent found.")}
               <br />
-              <em className="text-[#7fd8c8]">{t("Work delivered.")}</em>
+              <em className="text-[#7fd8c8] not-italic">{t("Work delivered.")}</em>
             </p>
             <ul className="flex flex-col gap-4">
               {VALUE_PROPS.map((item, i) => (
@@ -74,7 +74,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
         </div>
       </aside>
 
-      <main className="flex min-h-dvh flex-1 flex-col px-5 py-5 sm:px-8 lg:py-7 [&_h1]:font-[family-name:var(--font-auth-display)] [&_h1]:font-medium [&_h1]:tracking-tight">
+      <main className="flex min-h-dvh flex-1 flex-col px-5 py-5 sm:px-8 lg:py-7 [&_h1]:font-[family-name:var(--font-auth-display)] [&_h1]:font-extrabold [&_h1]:tracking-tight">
         <div className="flex items-center justify-between gap-3">
           <a
             href={MARKETING_SITE_URL}
@@ -89,7 +89,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
         <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center gap-6 py-8">
           {children}
 
-          <div className="flex items-start gap-3 rounded-2xl border border-[#e6dfd2] bg-white px-4 py-3.5 text-sm text-[#3c4657]">
+          <div className="flex items-start gap-3 rounded-2xl border border-[#e6dfd2] bg-[#f7f3ec] px-4 py-3.5 text-sm text-[#3c4657]">
             <ShieldCheck className="mt-0.5 size-5 flex-none text-teal-ink" aria-hidden="true" />
             <p>
               {t("AdorWorks will never ask for your password by phone or WhatsApp.")}{" "}
