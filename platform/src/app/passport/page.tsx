@@ -67,9 +67,13 @@ export default async function PassportPage() {
     .select("evidence_type")
     .eq("talent_id", session.userId)
     .eq("status", "approved");
+  // 0121: proof through paid work feeds the AdorCertified progress.
+  const { data: track } = await supabase.rpc("public_track_record", { p_kind: "talent", p_id: session.userId });
   const certified = adorCertifiedSteps({
     tier: profile?.verification_tier ?? "registered",
     approvedEvidenceTypes: (approvedEvidence ?? []).map((e) => e.evidence_type),
+    paidContracts: track?.[0]?.paid_contracts ?? 0,
+    averageRating: track?.[0]?.average_rating != null ? Number(track[0].average_rating) : null,
   });
   const references = (evidence ?? []).filter((e) => e.evidence_type === "reference");
   const credentials = (evidence ?? []).filter((e) => e.evidence_type === "assessment");

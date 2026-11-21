@@ -22,7 +22,7 @@ vi.mock("@/lib/emailTemplate", () => ({ renderEmail: () => "", escapeHtml: (s: s
 vi.mock("@/lib/unsubscribeToken", () => ({ buildUnsubscribeUrl: () => "" }));
 vi.mock("@/lib/domain/audit", () => ({ logAuditEvent: vi.fn() }));
 
-const { sendShortlist, respondToShortlist, requestMoreCandidates, saveReviewerNote } = await import("./shortlists");
+const { sendShortlist, respondToShortlist, requestMoreCandidates, saveReviewerNote, listFirstJobCandidates, addFirstJobCandidate } = await import("./shortlists");
 
 function as(role: string, userId: string) {
   state.role = role;
@@ -115,5 +115,38 @@ describe("employer shortlist review", () => {
     as("matcher", "staff-1");
     await sendShortlist("op-1");
     expect(state.fake!.db.opportunities[0].more_candidates_requested_at).toBeNull();
+  });
+});
+
+describe("first-job boost", () => {
+  function seedPool() {
+    state.fake = createFakeSupabase({
+      opportunities: [{ id: "op-1", title: "Graphic designer", organisation_id: "o-1", skills: ["Figma", "Canva"], category: "creative_media" }],
+      talent_profiles: [
+        { id: "t-new", display_name: "New Talent", headline: "Designer", verification_tier: "adorverified", skills: ["figma"], category: "creative_media", created_at: "2026-11-10" },
+        { id: "t-rev", display_name: "Reviewed Talent", headline: "Designer", verification_tier: "adorverified", skills: ["Figma"], category: "creative_media", created_at: "2026-11-11" },
+        { id: "t-boosted", display_name: "Boosted Talent", headline: "Designer", verification_tier: "adorcertified", skills: ["Canva"], category: "creative_media", created_at: "2026-11-12" },
+      ],
+      contracts: [{ id: "c-1", talent_id: "t-rev" }],
+      reviews: [{ id: "r-1", contract_id: "c-1", reviewer_role: "employer" }],
+      applications: [{ id: "ap-x", opportunity_id: "op-2", talent_id: "t-boosted", first_job_boost: true, created_at: new Date().toISOString() }],
+    });
+  }
+
+  it("lists only verified talent with no reviews who haven't had their boost this month", async () => {
+    seedPool();
+    as("matcher", "staff-1");
+    const r = await listFirstJobCandidates("op-1");
+    expect(r.candidates?.map((c) => c.talentId)).toEqual(["t-new"]);
+    expect(r.candidates?.[0].matches).toEqual(["figma"]);
+  });
+
+  it("adds the candidate marked as boosted, staff only", async () => {
+    seedPool();
+    as("employer", "u-rep");
+    await expect(addFirstJobCandidate("op-1", "t-new")).rejects.toThrow(/forbidden/);
+    as("matcher", "staff-1");
+    expect(await addFirstJobCandidate("op-1", "t-new")).toEqual({});
+    expect(state.fake!.db.applications.find((a) => a.talent_id === "t-new")).toMatchObject({ first_job_boost: true, stage: "submitted", source: "matched" });
   });
 });

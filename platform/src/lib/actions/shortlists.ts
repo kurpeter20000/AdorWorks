@@ -264,3 +264,90 @@ export async function requestMoreCandidates(opportunityId: string, note: string)
   revalidatePath(`/organisation/opportunities/${opportunityId}`);
   return {};
 }
+
+/**
+ * First-job boost (0121): AdorVerified (or higher) talent with no
+ * employer reviews yet, who haven't had their boost this month, ranked by
+ * skill overlap with the opportunity (never by pay) then newest first.
+ * Staff pick one to give a shortlist slot.
+ */
+export async function listFirstJobCandidates(
+  opportunityId: string
+): Promise<{ error?: string; candidates?: { talentId: string; name: string; headline: string | null; tier: string; matches: string[] }[] }> {
+  await requireRole(...staffAreaRoles("opportunities"));
+  const admin = createAdminClient();
+  const { data: opportunity } = await admin.from("opportunities").select("skills, category").eq("id", opportunityId).maybeSingle();
+  if (!opportunity) return { error: "Opportunity not found." };
+
+  let q = admin
+    .from("talent_profiles")
+    .select("id, display_name, headline, verification_tier, skills, created_at")
+    .in("verification_tier", ["adorverified", "adorcertified", "team_lead"])
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (opportunity.category) q = q.eq("category", opportunity.category);
+  const { data: pool, error } = await q;
+  if (error) return { error: error.message };
+  const ids = (pool ?? []).map((p) => p.id);
+  if (ids.length === 0) return { candidates: [] };
+
+  const monthStart = new Date();
+  monthStart.setUTCDate(1);
+  monthStart.setUTCHours(0, 0, 0, 0);
+  const { data: poolContracts } = await admin.from("contracts").select("id, talent_id").in("talent_id", ids);
+  const contractIds = (poolContracts ?? []).map((c) => c.id);
+  const { data: employerReviews } = contractIds.length
+    ? await admin.from("reviews").select("contract_id").in("contract_id", contractIds).eq("reviewer_role", "employer")
+    : { data: [] as { contract_id: string | null }[] };
+  const reviewedContracts = new Set((employerReviews ?? []).map((r) => r.contract_id));
+  const reviewed = (poolContracts ?? []).filter((c) => reviewedContracts.has(c.id));
+  const [{ data: boosted }, { data: already }] = await Promise.all([
+    admin.from("applications").select("talent_id").in("talent_id", ids).eq("first_job_boost", true).gte("created_at", monthStart.toISOString()),
+    admin.from("applications").select("talent_id").eq("opportunity_id", opportunityId),
+  ]);
+  const exclude = new Set([...reviewed, ...(boosted ?? []), ...(already ?? [])].map((r) => r.talent_id));
+  const asked = (opportunity.skills ?? []).map((s: string) => s.toLowerCase());
+
+  const candidates = (pool ?? [])
+    .filter((p) => !exclude.has(p.id))
+    .map((p) => ({
+      talentId: p.id,
+      name: p.display_name ?? "AdorWorks talent",
+      headline: p.headline,
+      tier: p.verification_tier,
+      matches: (p.skills ?? []).filter((s: string) => asked.includes(s.toLowerCase())),
+      created_at: p.created_at,
+    }))
+    .filter((c) => asked.length === 0 || c.matches.length > 0)
+    .sort((a, b) => b.matches.length - a.matches.length || +new Date(b.created_at) - +new Date(a.created_at))
+    .slice(0, 5)
+    .map((c) => ({ talentId: c.talentId, name: c.name, headline: c.headline, tier: c.tier, matches: c.matches }));
+  return { candidates };
+}
+
+/** Staff: add a first-job candidate to the shortlist, using their boost for this month. */
+export async function addFirstJobCandidate(opportunityId: string, talentId: string): Promise<{ error?: string }> {
+  const session = await requireRole(...staffAreaRoles("opportunities"));
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("applications")
+    .insert({ opportunity_id: opportunityId, talent_id: talentId, source: "matched", stage: "submitted", first_job_boost: true, created_by: session.userId })
+    .select("id")
+    .single();
+  if (error) {
+    if (error.code === "23505") return { error: "This person is already on this opportunity." };
+    if (error.message?.includes("first_job_boost:")) return { error: error.message.split("first_job_boost:")[1].trim() };
+    return { error: error.message };
+  }
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.APPLICATION_STAGE_CHANGED,
+    actorId: session.userId,
+    subjectId: talentId,
+    entityType: "applications",
+    entityId: data.id,
+    source: "platform",
+    after: { stage: "submitted" },
+    metadata: { reason: "first_job_boost", opportunityId },
+  });
+  return {};
+}

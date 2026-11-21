@@ -10,8 +10,13 @@ import { renderEmail } from "@/lib/emailTemplate";
 import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
 import type { FormState } from "./auth";
 
+const score = (message: string) => z.coerce.number({ message }).int().min(1, message).max(5);
 const ReviewSchema = z.object({
   rating: z.coerce.number().int().min(1, "Choose a rating.").max(5),
+  score_quality: score("Answer each question."),
+  score_communication: score("Answer each question."),
+  score_timeliness: score("Answer each question."),
+  would_work_again: z.enum(["yes", "no"], { message: "Answer each question." }),
   feedback: z.string().trim().max(2000).optional(),
 });
 
@@ -36,6 +41,10 @@ export async function submitReview(
 
   const validated = ReviewSchema.safeParse({
     rating: formData.get("rating"),
+    score_quality: formData.get("score_quality"),
+    score_communication: formData.get("score_communication"),
+    score_timeliness: formData.get("score_timeliness"),
+    would_work_again: formData.get("would_work_again"),
     feedback: formData.get("feedback") || undefined,
   });
   if (!validated.success) {
@@ -53,6 +62,10 @@ export async function submitReview(
     reviewer_id: user.id,
     reviewer_role: reviewerRole,
     rating: validated.data.rating,
+    score_quality: validated.data.score_quality,
+    score_communication: validated.data.score_communication,
+    score_timeliness: validated.data.score_timeliness,
+    would_work_again: validated.data.would_work_again === "yes",
     feedback: validated.data.feedback || null,
   });
 

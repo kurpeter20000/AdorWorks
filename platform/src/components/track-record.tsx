@@ -11,9 +11,31 @@ import { getT } from "@/i18n/server";
 export async function TrackRecord({ kind, id, compact = false }: { kind: "talent" | "organisation"; id: string; compact?: boolean }) {
   const supabase = await createClient();
   const t = await getT();
-  const { data, error } = await supabase.rpc("public_track_record", { p_kind: kind, p_id: id });
+  const [{ data, error }, { data: hl }] = await Promise.all([
+    supabase.rpc("public_track_record", { p_kind: kind, p_id: id }),
+    supabase.rpc("review_highlights", { p_kind: kind, p_id: id }),
+  ]);
   const r = data?.[0];
   if (error || !r) return null;
+  // 0121: averages of the structured questions, from reviews by the other side.
+  const h = hl?.[0];
+  const highlights =
+    h && h.reviews > 0
+      ? kind === "talent"
+        ? [
+            h.avg_quality != null && t("Quality {n}/5", { n: Number(h.avg_quality).toFixed(1) }),
+            h.avg_communication != null && t("Communication {n}/5", { n: Number(h.avg_communication).toFixed(1) }),
+            h.avg_timeliness != null && t("On time {n}/5", { n: Number(h.avg_timeliness).toFixed(1) }),
+            h.would_work_again_pct != null && t("{pct}% would hire again", { pct: h.would_work_again_pct }),
+          ]
+        : [
+            h.avg_quality != null && t("Clear briefs {n}/5", { n: Number(h.avg_quality).toFixed(1) }),
+            h.avg_communication != null && t("Communication {n}/5", { n: Number(h.avg_communication).toFixed(1) }),
+            h.avg_timeliness != null && t("Pays on time {n}/5", { n: Number(h.avg_timeliness).toFixed(1) }),
+            h.would_work_again_pct != null && t("{pct}% of talent would work for them again", { pct: h.would_work_again_pct }),
+          ]
+      : [];
+  const highlightLine = (highlights.filter(Boolean) as string[]).join(" · ") || null;
 
   const resolved = r.talent_favour + r.employer_favour + r.mutual_agreement + r.unresolved + r.outcome_not_recorded;
   const disputeParts = [
@@ -49,6 +71,7 @@ export async function TrackRecord({ kind, id, compact = false }: { kind: "talent
       <ul className="mt-2 space-y-1 text-sm text-slate">
         <li>{paidLine}</li>
         {ratingLine && <li>{ratingLine}</li>}
+        {highlightLine && <li>{highlightLine}</li>}
         <li>{disputeLine}</li>
       </ul>
       {resolved + r.disputes_open > 0 && (
