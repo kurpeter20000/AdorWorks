@@ -31,7 +31,7 @@
 <link rel="stylesheet" href="css/themes.css">
 <link rel="stylesheet" href="css/styles.css?v=26">
 <link rel="stylesheet" href="css/site.css?v=26">
-<link rel="stylesheet" href="css/pages.css?v=28">
+<link rel="stylesheet" href="css/pages.css?v=29">
 <script src="js/i18n-early.js"></script>
 </head>
 <body>
@@ -175,17 +175,14 @@
       <div id="opportunity-list" class="job-grid" hidden></div>
       <p id="opportunity-filter-empty" class="opportunity-filter-empty" hidden>No open opportunities match these filters right now. <button type="button" class="link-button" data-filter="all">Show all</button></p>
 
-      <div class="pilot-empty site-reveal" id="opportunity-pending">
-        <div>
-          <p class="eyebrow">Founding pilot</p>
-          <h2>Public listings open soon.</h2>
-          <p>Right now we match talent with our founding employers directly. We won't publish placeholder jobs or invent openings just to fill this page. Build your profile today and you'll be considered for every brief that fits your skills.</p>
-        </div>
-        <div class="pilot-empty-actions">
-          <a class="btn btn-primary" href="for-talent.html#talent-form">Build your profile</a>
-          <a class="btn btn-ghost" href="for-employers.html#brief-form">I'm an employer: post a brief</a>
-        </div>
+      <!-- Placeholder cards while live jobs load (no "listings open soon"
+           notice: jobs are posted all the time). -->
+      <div class="job-grid job-skeletons" id="opportunity-pending" aria-hidden="true">
+        <div class="job-skeleton"><span></span><span></span><span></span><span></span></div>
+        <div class="job-skeleton"><span></span><span></span><span></span><span></span></div>
+        <div class="job-skeleton"><span></span><span></span><span></span><span></span></div>
       </div>
+      <p id="opportunity-none" class="opportunity-filter-empty" hidden>No open jobs this moment — new ones are posted often. <a href="for-talent.html#talent-form">Build your profile</a> and we'll match you as they arrive.</p>
     </div>
   </section>
 
@@ -281,7 +278,7 @@
 <script src="js/api-config.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/main.js?v=26"></script>
-<script src="js/opportunities.js?v=2"></script>
+<script src="js/opportunities.js?v=3"></script>
 <script src="js/analytics-config.js"></script>
 <script src="js/analytics.js"></script>
 <script src="js/chat-widget.js"></script>
