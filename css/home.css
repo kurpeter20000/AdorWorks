@@ -157,71 +157,17 @@
 .home-head-stack h2 { max-width: none; font-size: clamp(1.8rem, 3.2vw, 2.7rem); text-wrap: balance; }
 .home-head-stack .home-head-note { max-width: none; font-size: 1.1rem; }
 
-/* Why AdorWorks: four clean boxes (number + name); clicking one slides
-   its explanation up over the box, so nothing below moves. Until
-   js/home.js adds .is-ready, the boxes simply show their text. */
-.why-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.why-card { position: relative; border-radius: 24px; overflow: hidden; background: var(--site-surface); border: 1px solid var(--site-line); }
-.why-card-title { margin: 0; height: 100%; }
-.why-card-face {
-  font: inherit; color: var(--site-ink); text-align: start; cursor: pointer;
-  width: 100%; height: 100%;
-  display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 1.5rem;
-  padding: 1.5rem; background: none; border: 0; border-radius: 24px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-}
-.why-card .num { font-family: var(--font-display); font-weight: 800; font-size: 2.4rem; line-height: 1; color: var(--site-teal); }
-.why-card-name { font-size: 1.2rem; font-weight: 800; line-height: 1.25; }
-.why-card-plus, .why-card-close { display: none; }
-.why-card-detail { padding: 0 1.5rem 1.5rem; }
-.why-card-detail .num { display: none; }
-.why-card-detail p { margin: 0; color: var(--site-muted); }
-
-.is-ready .why-card { min-height: 190px; background: none; border: 0; }
-.is-ready .why-card-face { min-height: 190px; background: var(--site-surface); border: 1px solid var(--site-line); }
-.is-ready .why-card-face:hover { border-color: var(--site-line-strong); box-shadow: 0 18px 40px rgb(24 34 48 / 0.08); transform: translateY(-2px); }
-.is-ready .why-card-plus, .is-ready .why-card-close {
-  display: block; position: absolute; inset-block-start: 1.4rem; inset-inline-end: 1.4rem;
-  width: 36px; height: 36px; border-radius: 50%;
-}
-.is-ready .why-card-plus { background: var(--site-sand); }
-.why-card-plus::before, .why-card-plus::after, .why-card-close span::before, .why-card-close span::after {
-  content: ""; position: absolute; inset: 50% auto auto 50%; width: 14px; height: 2.2px; border-radius: 2px; background: currentColor; transform: translate(-50%, -50%);
-}
-.why-card-plus::after { transform: translate(-50%, -50%) rotate(90deg); }
-.is-ready .why-card-detail {
-  position: absolute; inset: 0; z-index: 1;
-  display: flex; flex-direction: column; gap: 0.75rem; justify-content: flex-start;
-  padding: 1.5rem;
-  background: var(--site-ink); color: #f7f3ec; border-radius: 24px;
-  transform: translateY(100%); opacity: 0; visibility: hidden;
-  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.25s ease, visibility 0s linear 0.35s;
-}
-.is-ready .why-card.is-open .why-card-detail { transform: none; opacity: 1; visibility: visible; transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.25s ease; }
-.is-ready .why-card-detail .num { display: block; color: var(--site-mint); font-size: 1.6rem; }
-.is-ready .why-card-detail p { color: #e6ebf2; font-size: 1rem; line-height: 1.5; }
-.is-ready .why-card-close { border: 0; background: rgb(255 255 255 / 0.12); color: #f7f3ec; cursor: pointer; }
-.why-card-close span::before { transform: translate(-50%, -50%) rotate(45deg); }
-.why-card-close span::after { transform: translate(-50%, -50%) rotate(-45deg); }
-.is-ready .why-card-close:hover { background: rgb(255 255 255 / 0.22); }
-
-@media (min-width: 960px) { .why-cards { gap: 1rem; grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-/* Two-by-two on phones: smaller type, and the opened text can scroll
-   inside its box if a translation runs long. */
-@media (max-width: 959px) {
-  .is-ready .why-card, .is-ready .why-card-face { min-height: 200px; }
-  .why-card-face, .is-ready .why-card-detail { padding: 1rem; }
-  .is-ready .why-card-detail { gap: 0.5rem; overflow-y: auto; }
-  .why-card .num { font-size: 1.9rem; }
-  .why-card-name { font-size: 1rem; }
-  .is-ready .why-card-plus, .is-ready .why-card-close { inset-block-start: 0.9rem; inset-inline-end: 0.9rem; width: 32px; height: 32px; }
-  .is-ready .why-card-detail .num { font-size: 1.3rem; }
-  .is-ready .why-card-detail p { font-size: 0.86rem; line-height: 1.45; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .why-card-face, .is-ready .why-card-detail, .is-ready .why-card.is-open .why-card-detail { transition: none; }
-  .is-ready .why-card-face:hover { transform: none; }
-}
+/* Why AdorWorks (owner, Nov 2026: smaller, cleaner, no boxes): one slim
+   row — a small number, the name and one line — divided by hairlines. */
+.why-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.75rem 1.5rem; }
+.why-item { min-width: 0; padding-top: 1rem; border-top: 2px solid var(--site-line); transition: border-color 0.2s ease; }
+.why-item:hover { border-top-color: var(--site-teal); }
+.why-num { display: block; font-family: var(--font-display); font-weight: 800; font-size: 0.85rem; letter-spacing: 0.08em; color: var(--site-teal); }
+.why-item h3 { margin: 0.35rem 0 0.35rem; font-size: 1.1rem; font-weight: 800; line-height: 1.25; color: var(--site-ink); }
+.why-item p { margin: 0; font-size: 0.92rem; line-height: 1.5; color: var(--site-muted); }
+@media (min-width: 960px) { .why-list { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2rem; } }
+@media (max-width: 420px) { .why-list { grid-template-columns: 1fr; gap: 1.25rem; } }
+@media (prefers-reduced-motion: reduce) { .why-item { transition: none; } }
 
 .ladder { margin-top: 3.5rem; padding: 2rem; box-shadow: 0 20px 50px rgb(24 34 48 / 0.05); }
 .ladder ol { list-style: none; margin: 1.5rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1.5rem; position: relative; }
