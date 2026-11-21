@@ -291,6 +291,8 @@ export type OpportunityRow = {
   shortlist_sent_at: string | null;
   more_candidates_requested_at: string | null;
   more_candidates_note: string | null;
+  /** 0120: the named AdorWorks account contact (the staff member who sent the shortlist). */
+  account_contact_id: string | null;
 }
 
 export type ServicePackageRow = {
@@ -586,6 +588,53 @@ export type ContractTermsRow = {
   content: unknown;
   content_hash: string;
   generated_at: string;
+}
+
+/** 0120: Employer Guarantee replacement requests. */
+export type GuaranteeRequestRow = {
+  id: string;
+  contract_id: string;
+  organisation_id: string;
+  requested_by: string;
+  reason: "scope_missed" | "left_early" | "skills_missing" | "other";
+  details: string;
+  status: "open" | "replacement_sent" | "credited" | "declined" | "closed";
+  staff_note: string | null;
+  resolved_by: string | null;
+  resolved_at: string | null;
+  created_at: string;
+}
+
+/** 0120: programme partners and consent. */
+export type ProgrammeRow = {
+  id: string;
+  name: string;
+  partner_name: string;
+  agreement_signed_at: string | null;
+  ends_on: string | null;
+  active: boolean;
+  created_by: string | null;
+  created_at: string;
+}
+export type ProgrammeMemberRow = {
+  programme_id: string;
+  talent_id: string;
+  is_minor: boolean;
+  joined_at: string;
+  added_by: string | null;
+}
+export type ProgrammeConsentRow = {
+  id: string;
+  programme_id: string;
+  talent_id: string;
+  share_named_progress: boolean;
+  share_earnings: boolean;
+  share_story: boolean;
+  language: "en" | "ar" | "sw";
+  wording_version: string;
+  guardian_name: string | null;
+  recorded_by: string | null;
+  created_at: string;
 }
 
 export type PaymentIntentionStatus = "processing" | "awaiting_transfer" | "succeeded" | "failed";
@@ -1162,6 +1211,30 @@ export type Database = {
         Update: Partial<ContractTermsRow>;
         Relationships: [];
       };
+      guarantee_requests: {
+        Row: GuaranteeRequestRow;
+        Insert: Partial<GuaranteeRequestRow> & { contract_id: string; organisation_id: string; requested_by: string; reason: GuaranteeRequestRow["reason"]; details: string };
+        Update: Partial<GuaranteeRequestRow>;
+        Relationships: [];
+      };
+      programmes: {
+        Row: ProgrammeRow;
+        Insert: Partial<ProgrammeRow> & { name: string; partner_name: string };
+        Update: Partial<ProgrammeRow>;
+        Relationships: [];
+      };
+      programme_members: {
+        Row: ProgrammeMemberRow;
+        Insert: Partial<ProgrammeMemberRow> & { programme_id: string; talent_id: string };
+        Update: Partial<ProgrammeMemberRow>;
+        Relationships: [];
+      };
+      programme_consents: {
+        Row: ProgrammeConsentRow;
+        Insert: Partial<ProgrammeConsentRow> & { programme_id: string; talent_id: string; language: ProgrammeConsentRow["language"]; wording_version: string };
+        Update: Partial<ProgrammeConsentRow>;
+        Relationships: [];
+      };
       payment_intentions: {
         Row: PaymentIntentionRow;
         Insert: Partial<PaymentIntentionRow> & {
@@ -1367,6 +1440,21 @@ export type Database = {
       };
     };
     Functions: {
+      programme_summary: {
+        Args: { p_programme: string };
+        Returns: {
+          members: number;
+          verified: number;
+          placed: number;
+          paid: number;
+          named_talent_id: string | null;
+          named_name: string | null;
+          named_tier: string | null;
+          named_contracts: number | null;
+          named_earnings: number | null;
+          named_currency: string | null;
+        }[];
+      };
       verify_person: {
         Args: { p_id: string };
         Returns: { name: string; verification_tier: VerificationTier; member_since: string; completed_contracts: number }[];

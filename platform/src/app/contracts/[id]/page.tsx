@@ -20,7 +20,10 @@ import { TimesheetsSection } from "./timesheets-section";
 import { DisputeSection } from "./dispute-section";
 import { CancelContractSection } from "./cancel-contract-section";
 import Link from "next/link";
-import { getCollectionAccounts, getFeeSettings, getReceivingBankAccount } from "@/lib/dal/settings";
+import { getCollectionAccounts, getFeeSettings, getReceivingBankAccount, isGuaranteeEnabled } from "@/lib/dal/settings";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { guaranteeRemedy, guaranteeWindowEnds } from "@/lib/domain/guarantee";
+import { GuaranteeCard, type GuaranteeState } from "./guarantee-card";
 import { parseReceivingBankAccount } from "@/lib/domain/bankTransfer";
 import type { AwaitingTransfer } from "./payment-checkout";
 import { isInstitutional } from "@/lib/domain/institutional";
@@ -49,7 +52,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
   const isTalent = contract.talent_id === session.userId;
   const [{ data: opportunity }, { data: org }] = await Promise.all([
     contract.opportunity_id
-      ? supabase.from("opportunities").select("title").eq("id", contract.opportunity_id).maybeSingle()
+      ? supabase.from("opportunities").select("title, engagement_type, account_contact_id").eq("id", contract.opportunity_id).maybeSingle()
       : Promise.resolve({ data: null }),
     supabase.from("organisations").select("id, name, representative_id, org_type").eq("id", contract.organisation_id).maybeSingle(),
   ]);
@@ -125,6 +128,24 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
     .eq("contract_id", contract.id), "payment events");
   const paymentByMilestone = new Map((paymentEvents ?? []).map((p) => [p.milestone_id, p]));
   const feeSettings = await getFeeSettings();
+
+  // 0120: Employer Guarantee — only while it's switched on.
+  let guarantee: GuaranteeState | null = null;
+  if (isEmployer && (await isGuaranteeEnabled())) {
+    const admin = createAdminClient();
+    const [{ data: request }, { data: contact }] = await Promise.all([
+      supabase.from("guarantee_requests").select("status, reason, created_at, staff_note").eq("contract_id", contract.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      opportunity?.account_contact_id
+        ? admin.from("profiles").select("full_name").eq("id", opportunity.account_contact_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+    guarantee = {
+      windowEnds: guaranteeWindowEnds(contract.started_at, opportunity?.engagement_type).toISOString(),
+      remedy: guaranteeRemedy(feeSettings.enabled),
+      contactName: contact?.full_name ?? null,
+      request: request ? { status: request.status, reason: request.reason, createdAt: request.created_at, staffNote: request.staff_note } : null,
+    };
+  }
 
   // 0116: bank transfers the employer has started but AdorWorks hasn't
   // received yet — the checkout shows the reference and account instead.
@@ -398,6 +419,8 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
           fullyPaid={(milestones ?? []).length > 0 && (milestones ?? []).every((m) => m.status === "paid")}
         />
       )}
+
+      {isEmployer && guarantee && <GuaranteeCard contractId={contract.id} g={guarantee} />}
 
       {(isTalent || isEmployer) && (
         <DisputeSection contractId={contract.id} contractStatus={contract.status} disputes={disputes ?? []} />

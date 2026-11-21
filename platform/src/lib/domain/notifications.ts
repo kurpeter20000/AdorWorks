@@ -58,6 +58,9 @@ export const NOTIFICATION_TYPES = {
   BANK_TRANSFER_RECEIVED: "bank_transfer_received",
   // 0119: shortlist review.
   SHORTLIST_READY: "shortlist_ready",
+  // 0120: Employer Guarantee.
+  GUARANTEE_REQUESTED: "guarantee_requested",
+  GUARANTEE_RESOLVED: "guarantee_resolved",
 } as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];

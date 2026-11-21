@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ShareVerifiedProfile } from "./share-verified-profile";
+import { isProgrammeSharingEnabled } from "@/lib/dal/settings";
 import Link from "next/link";
 import { requireRole } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
@@ -93,6 +94,12 @@ export default async function PassportPage() {
     );
   }
 
+  // 0120: programme-partner consent, only once switched on.
+  const sharingOn = await isProgrammeSharingEnabled();
+  const { count: programmeCount } = sharingOn
+    ? await supabase.from("programme_members").select("programme_id", { count: "exact", head: true }).eq("talent_id", session.userId)
+    : { count: 0 };
+
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <h1 className="text-2xl font-extrabold text-midnight">Your Passport</h1>
@@ -105,6 +112,11 @@ export default async function PassportPage() {
         </Link>
       </p>
       <ShareVerifiedProfile talentId={session.userId} />
+      {sharingOn && (programmeCount ?? 0) > 0 && (
+        <Link href="/programme-sharing" className="mt-3 flex min-h-11 items-center rounded-card border border-line bg-white px-4 py-3 text-sm font-semibold text-teal-ink underline">
+          Programme sharing — choose what your programme partner can see
+        </Link>
+      )}
 
       <div className="mt-6 rounded-xl border border-slate/15 bg-white p-5">
         <div className="flex items-start justify-between gap-4">
