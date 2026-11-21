@@ -7,7 +7,7 @@ async function readSetting(key: string): Promise<unknown> {
   const admin = createAdminClient();
   const { data, error } = await admin.from("platform_settings").select("value").eq("key", key).maybeSingle();
   if (error) {
-    console.error(`[settings] could not read '${key}':`, error.message);
+    console.error("[settings] could not read '%s':", key, error.message);
     return null;
   }
   return data?.value ?? null;

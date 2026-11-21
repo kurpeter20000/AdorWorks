@@ -32,6 +32,7 @@ export function PendingInvitationRow({
   const [pending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
   const [revoked, setRevoked] = useState(false);
+  const [revokeError, setRevokeError] = useState<string | null>(null);
 
   function copyLink() {
     const link = `${window.location.origin}/organisation/invite/${token}`;
@@ -56,6 +57,7 @@ export function PendingInvitationRow({
           <p className="text-xs text-slate">
             {ROLE_LABEL[role] ?? role} · expires {formatDate(expiresAt)}
           </p>
+          {revokeError && <p className="text-xs text-coral-ink">{revokeError}</p>}
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={copyLink} className="text-xs font-semibold text-teal-ink underline">
@@ -65,9 +67,15 @@ export function PendingInvitationRow({
             type="button"
             disabled={pending}
             onClick={() => {
+              setRevokeError(null);
               startTransition(async () => {
-                await revokeTeamInvitation(organisationId, invitationId);
-                setRevoked(true);
+                try {
+                  const result = await revokeTeamInvitation(organisationId, invitationId);
+                  if (result.error) setRevokeError(result.error);
+                  else setRevoked(true);
+                } catch {
+                  setRevokeError("Could not revoke the invite. Please try again.");
+                }
               });
             }}
             className="text-xs font-semibold text-coral-ink underline disabled:opacity-60"

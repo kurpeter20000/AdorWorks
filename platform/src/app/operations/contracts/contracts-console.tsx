@@ -43,7 +43,7 @@ const FINANCE_STATUSES = ["pending", "confirmed", "reconciled", "cancelled"];
 
 const newestFirst = (key: string) => (a: Row, b: Row) => +new Date(b[key]) - +new Date(a[key]);
 
-export function ContractsConsole({ initialFilter }: { initialFilter: string }) {
+export function ContractsConsole({ initialFilter, canDecide = false, canRefund = false }: { initialFilter: string; canDecide?: boolean; canRefund?: boolean }) {
   const [filter, setFilter] = useState(initialFilter);
   const list = useStaffData<{ data: Row[] }>(`/api/contracts${qs({ status: filter, limit: 100 })}`);
 
@@ -74,6 +74,8 @@ export function ContractsConsole({ initialFilter }: { initialFilter: string }) {
           <DetailLoader<{ data: Row }> path={`/api/contracts/${r.id}`}>
             {(res, reload) => (
               <ContractDetail
+                canDecide={canDecide}
+                canRefund={canRefund}
                 c={res.data}
                 onChanged={() => {
                   reload();
@@ -89,7 +91,7 @@ export function ContractsConsole({ initialFilter }: { initialFilter: string }) {
   );
 }
 
-function ContractDetail({ c, onChanged }: { c: Row; onChanged: () => void }) {
+function ContractDetail({ c, onChanged, canDecide, canRefund }: { c: Row; onChanged: () => void; canDecide: boolean; canRefund: boolean }) {
   const milestones: Row[] = [...(c.milestones || [])].sort((a, b) => a.sequence - b.sequence);
   const invoices: Row[] = (c.finance_records || []).filter((f: Row) => f.record_type === "invoice").sort(newestFirst("created_at"));
   const intentions: Row[] = [...(c.payment_intentions || [])].sort(newestFirst("created_at"));
@@ -196,7 +198,7 @@ function ContractDetail({ c, onChanged }: { c: Row; onChanged: () => void }) {
           {!disputes.length && <p className="text-sm text-slate">No disputes.</p>}
           <ul className="space-y-3">
             {disputes.map((d) => (
-              <ContractDispute key={d.id} dispute={d} milestones={milestones} onSaved={onChanged} />
+              <ContractDispute key={d.id} dispute={d} milestones={milestones} onSaved={onChanged} canDecide={canDecide} canRefund={canRefund} />
             ))}
           </ul>
         </div>
@@ -228,7 +230,7 @@ function InvoiceRow({ invoice, onSaved }: { invoice: Row; onSaved: () => void })
   );
 }
 
-function ContractDispute({ dispute, milestones, onSaved }: { dispute: Row; milestones: Row[]; onSaved: () => void }) {
+function ContractDispute({ dispute, milestones, onSaved, canDecide, canRefund }: { dispute: Row; milestones: Row[]; onSaved: () => void; canDecide: boolean; canRefund: boolean }) {
   const [status, setStatusValue] = useState<string>(dispute.status);
   const [resolution, setResolution] = useState<string>(dispute.resolution || "");
   const [outcome, setOutcome] = useState<string>(dispute.outcome || "");
@@ -242,6 +244,10 @@ function ContractDispute({ dispute, milestones, onSaved }: { dispute: Row; miles
       <p>
         {dispute.description} <Badge value={dispute.status} />
       </p>
+      {/* Deciding a dispute is Trust & Safety's; finance only refunds. */}
+      {!canDecide && <p className="mt-2 text-xs text-slate">Trust &amp; Safety decide disputes. You can see the details here.</p>}
+      {canDecide && (
+      <>
       <div className="mt-2 grid gap-2 sm:grid-cols-2">
         <select aria-label="Dispute status" className={inputClass} value={status} onChange={(e) => setStatusValue(e.target.value)}>
           {DISPUTE_STATUSES.map((s) => (
@@ -268,8 +274,10 @@ function ContractDispute({ dispute, milestones, onSaved }: { dispute: Row; miles
           Save
         </Btn>
       </div>
+      </>
+      )}
 
-      {milestones.length > 0 && (
+      {canRefund && milestones.length > 0 && (
         <div className="mt-3 border-t border-slate/10 pt-3">
           <div className="grid gap-2 sm:grid-cols-2">
             <select aria-label="Refund which milestone" className={inputClass} value={refundMilestone} onChange={(e) => setRefundMilestone(e.target.value)}>

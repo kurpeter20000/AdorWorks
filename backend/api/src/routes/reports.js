@@ -2,17 +2,18 @@ import { Router } from "express";
 import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff } from "../middleware/auth.js";
+import { requireStaffArea } from "../middleware/staffAccess.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
 import { logAuditEvent } from "../audit.js";
 
 export const reportsRouter = Router();
-reportsRouter.use(requireAuth, requireStaff);
+reportsRouter.use(requireAuth, requireStaff, requireStaffArea("reports"));
 
 // Stage 6 gap-check (0056) widened reports.target_type at the DB layer
 // to also allow 'talent_video'/'portfolio_item' — this list (used only
 // to validate the optional ?target_type= filter below, not to gate
 // creation) already matches that.
-const TARGET_TYPES = ["opportunity", "talent_service", "talent_profile", "organisation", "talent_video", "portfolio_item"];
+const TARGET_TYPES = ["opportunity", "talent_service", "talent_profile", "organisation", "talent_video", "portfolio_item", "vouch"];
 const STATUSES = ["open", "reviewed", "dismissed", "actioned"];
 const SEVERITIES = ["low", "medium", "high", "critical"];
 
@@ -119,6 +120,31 @@ reportsRouter.patch(
   })
 );
 
+const TARGET_WORDS = {
+  opportunity: "an opportunity",
+  talent_service: "a service",
+  talent_profile: "a profile",
+  organisation: "an organisation",
+  talent_video: "an introduction video",
+  portfolio_item: "a portfolio item",
+  vouch: "a reference",
+};
+
+export const REPORT_OUTCOME_NOTICE = {
+  actioned: {
+    title: "We acted on your report",
+    body: (what) => `Thank you for reporting ${what}. We reviewed it and took action under our Community Standards.`,
+  },
+  reviewed: {
+    title: "We reviewed your report",
+    body: (what) => `Thank you for reporting ${what}. We reviewed it and are keeping an eye on it.`,
+  },
+  dismissed: {
+    title: "We reviewed your report",
+    body: (what) => `Thank you for reporting ${what}. We reviewed it and didn't find a breach of our Community Standards. Thank you for looking out for others.`,
+  },
+};
+
 const updateSchema = z.object({
   status: z.enum(["reviewed", "dismissed", "actioned"]),
   // S10-06/S10-13/S10-14 gap-check (2026-09-19): this endpoint previously
@@ -136,14 +162,19 @@ reportsRouter.patch(
   asyncRoute(async (req, res) => {
     const { status, resolution_notes } = updateSchema.parse(req.body);
     const { data: before } = await supabaseAdmin.from("reports").select("status").eq("id", req.params.id).maybeSingle();
+    if (!before) throw new HttpError(404, "Report not found.");
 
+    // Only from the status we just read: two staff deciding at once can't
+    // both win, and a repeat of the same decision changes nothing.
     const { data, error } = await supabaseAdmin
       .from("reports")
       .update({ status, resolution_notes, reviewed_by: req.user.id, reviewed_at: new Date().toISOString() })
       .eq("id", req.params.id)
+      .eq("status", before.status)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw new HttpError(400, error.message);
+    if (!data) throw new HttpError(409, "Someone else just updated this report. Refresh and check it again.");
 
     await logAuditEvent(supabaseAdmin, {
       name: "case.report.resolved",
@@ -156,6 +187,22 @@ reportsRouter.patch(
       after: { status },
       metadata: { target_type: data.target_type, target_id: data.target_id },
     });
+
+    // Spec: "tell the reporter the outcome". Only the outcome — never
+    // what happened to the other person or which staff member decided.
+    // Best-effort: a failed notice never undoes the decision.
+    const outcome = before.status !== status ? REPORT_OUTCOME_NOTICE[status] : null;
+    if (outcome && data.reporter_id) {
+      const what = TARGET_WORDS[data.target_type] ?? "something on AdorWorks";
+      const { error: noteError } = await supabaseAdmin.from("notifications").insert({
+        user_id: data.reporter_id,
+        type: "report_resolved",
+        title: outcome.title,
+        body: outcome.body(what),
+        link: null,
+      });
+      if (noteError) console.error("reports: could not notify reporter of %s: %s", req.params.id, noteError.message);
+    }
 
     res.json({ data });
   })

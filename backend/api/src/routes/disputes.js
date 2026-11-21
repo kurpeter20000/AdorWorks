@@ -2,11 +2,12 @@ import { Router } from "express";
 import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff, requireFinanceStaff } from "../middleware/auth.js";
+import { requireStaffArea, requireRoleIn } from "../middleware/staffAccess.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
 import { logAuditEvent } from "../audit.js";
 
 export const disputesRouter = Router();
-disputesRouter.use(requireAuth, requireStaff);
+disputesRouter.use(requireAuth, requireStaff, requireStaffArea("disputes"));
 
 const listQuerySchema = z.object({
   status: z.enum(["open", "investigating", "resolved", "escalated"]).optional(),
@@ -57,8 +58,11 @@ const updateSchema = z
 // 'disputed' -> 'active') — raising a dispute is the only code path that
 // sets 'disputed' (see platform/src/lib/actions/contracts.ts::raiseDispute),
 // so resolving is the only code path that should clear it.
+// Deciding a dispute is Trust & Safety's (and admins'); finance only
+// issues refunds (POST /:id/refund below).
 disputesRouter.patch(
   "/:id",
+  requireRoleIn("trust_safety"),
   asyncRoute(async (req, res) => {
     const body = updateSchema.parse(req.body);
     const patch = { ...body };

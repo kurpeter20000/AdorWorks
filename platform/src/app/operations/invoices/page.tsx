@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { requireRole, STAFF_ROLES } from "@/lib/dal/session";
+import { requireRole, canMoveMoney } from "@/lib/dal/session";
+import { staffAreaRoles } from "@/lib/domain/staffAccess";
 import { createClient } from "@/lib/supabase/server";
 import { InvoicesConsole } from "./invoices-console";
 
@@ -13,7 +14,7 @@ export const metadata: Metadata = { title: "Invoices — Operations" };
  * anywhere else lets the paying org mark its own invoice paid.
  */
 export default async function OperationsInvoicesPage() {
-  await requireRole(...STAFF_ROLES);
+  const session = await requireRole(...staffAreaRoles("invoices"));
   const supabase = await createClient();
 
   const { data: pending } = await supabase
@@ -42,7 +43,7 @@ export default async function OperationsInvoicesPage() {
       <h1 className="text-2xl font-extrabold text-midnight">Invoices</h1>
       <p className="mt-1 text-sm text-slate">Institutional invoices awaiting bank-transfer confirmation.</p>
 
-      <InvoicesConsole rows={rows} />
+      <InvoicesConsole rows={rows} canConfirm={canMoveMoney(session.role)} />
     </main>
   );
 }

@@ -6,10 +6,10 @@ import { useT } from "@/i18n/client";
 
 export default function ErrorPage({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }) {
   const t = useT();
   useEffect(() => {
@@ -22,7 +22,7 @@ export default function ErrorPage({
         <p>{t("We could not load this screen. Your existing data has not been changed.")}</p>
         <button
           type="button"
-          onClick={reset}
+          onClick={() => retry()}
           className="mt-4 rounded-lg bg-midnight px-4 py-2 font-semibold text-white"
         >
           {t("Try again")}

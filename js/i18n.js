@@ -86,8 +86,7 @@
 
   /** Visits every translatable unit and attribute under root. */
   function walk(root, onUnit, onText, onAttr) {
-    function visit(el) {
-      if (el.nodeType !== 1 || skipped(el)) return;
+    function visitAttrs(el) {
       // Already-translated content has no Latin letters left to detect, so
       // anything recorded as translated is always revisited (for restore).
       var savedAttrs = originalAttrs.get(el);
@@ -95,6 +94,17 @@
         var v = el.getAttribute(ATTRS[a]);
         if (v && (/[A-Za-z]/.test(v) || (savedAttrs && ATTRS[a] in savedAttrs))) onAttr(el, ATTRS[a]);
       }
+    }
+    function visit(el) {
+      if (el.nodeType !== 1) return;
+      // A text box's typed content is never touched, but its hint
+      // (placeholder) and label attributes are ours to translate.
+      if (el.tagName === "TEXTAREA" && !el.closest("[data-no-i18n], .no-i18n")) {
+        visitAttrs(el);
+        return;
+      }
+      if (skipped(el)) return;
+      visitAttrs(el);
       if (el.tagName === "INPUT" && /^(submit|button)$/i.test(el.type) && el.value) onAttr(el, "value");
       if (originals.has(el)) {
         onUnit(el);

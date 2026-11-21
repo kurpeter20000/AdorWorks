@@ -35,9 +35,10 @@ export function AssistedFieldForm({
     <form action={formAction} className="rounded-lg border border-slate/15 bg-white p-3">
       <input type="hidden" name="sessionId" value={sessionId} />
       <input type="hidden" name="field" value={field} />
-      <label className="text-sm font-semibold text-midnight">{FIELD_LABELS[field] ?? field}</label>
+      <label htmlFor={`assisted-${field}`} className="text-sm font-semibold text-midnight">{FIELD_LABELS[field] ?? field}</label>
       {MULTILINE_FIELDS.has(field) ? (
         <textarea
+          id={`assisted-${field}`}
           name="value"
           rows={3}
           defaultValue={initialValue}
@@ -45,6 +46,7 @@ export function AssistedFieldForm({
         />
       ) : (
         <input
+          id={`assisted-${field}`}
           name="value"
           defaultValue={initialValue}
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"

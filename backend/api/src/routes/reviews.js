@@ -2,10 +2,11 @@ import { Router } from "express";
 import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff } from "../middleware/auth.js";
+import { requireStaffArea } from "../middleware/staffAccess.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
 
 export const reviewsRouter = Router();
-reviewsRouter.use(requireAuth, requireStaff);
+reviewsRouter.use(requireAuth, requireStaff, requireStaffArea("reviews"));
 
 // Reviews are written directly by talent/employer participants via the
 // Supabase client (RLS policy reviews_insert allows it) — this route is

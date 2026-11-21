@@ -3,7 +3,8 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { msg } from "@/i18n/config";
-import { requireSession, requireRole, STAFF_ROLES } from "@/lib/dal/session";
+import { requireSession, requireRole } from "@/lib/dal/session";
+import { staffAreaRoles } from "@/lib/domain/staffAccess";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ensureSupportConversation } from "@/lib/dal/support";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
@@ -42,7 +43,7 @@ export async function sendSupportMessage(_prevState: FormState, formData: FormDa
  * the replying staff member just to satisfy messages_insert's RLS.
  */
 export async function replyToSupportMessage(conversationId: string, _prevState: FormState, formData: FormData): Promise<FormState> {
-  const session = await requireRole(...STAFF_ROLES);
+  const session = await requireRole(...staffAreaRoles("support"));
   const validated = MessageSchema.safeParse({ body: formData.get("body") || "" });
   if (!validated.success) return { errors: validated.error.flatten().fieldErrors };
 

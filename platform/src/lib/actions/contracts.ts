@@ -504,11 +504,11 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
     .update({ status: "succeeded", resolved_at: new Date().toISOString() })
     .eq("id", intention.id);
   if (intentionUpdateError) {
-    console.error(`payMilestone: payment_events ${intention.id} recorded but payment_intentions update failed:`, intentionUpdateError.message);
+    console.error("payMilestone: payment_events %s recorded but payment_intentions update failed:", intention.id, intentionUpdateError.message);
   }
   if (invoice) {
     const { error: invoiceError } = await admin.from("finance_records").update({ status: "confirmed" }).eq("id", invoice.id);
-    if (invoiceError) console.error(`payMilestone: failed to confirm finance_records ${invoice.id}:`, invoiceError.message);
+    if (invoiceError) console.error("payMilestone: failed to confirm finance_records %s:", invoice.id, invoiceError.message);
   }
   const { error: milestoneError } = await admin.from("milestones").update({ status: "paid" }).eq("id", milestoneId);
   if (milestoneError) {
