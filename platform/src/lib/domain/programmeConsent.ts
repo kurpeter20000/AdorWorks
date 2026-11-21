@@ -13,7 +13,8 @@ import { msg } from "@/i18n/config";
 export const CONSENT_WORDING_VERSION = "draft-2026-11-21";
 export const RETENTION_MONTHS = 24;
 export const MIN_GROUP_SIZE = 5;
-export const COMPANY_NAME = "Adormedia Ltd";
+/** Owner decision (2026-11-21): AdorWorks is the named party; registration to follow in Juba. */
+export const COMPANY_NAME = "AdorWorks";
 
 export const CONSENT_BOXES = {
   share_named_progress: msg("My progress with my name: verification level, jobs I was placed in, and whether I was paid on time."),
