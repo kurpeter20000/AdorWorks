@@ -24,7 +24,7 @@ import type { Database } from "@/lib/database.types";
 // mass-reporting to harass a competitor or retaliate, invitation guards
 // against invite spam while still allowing a real employer to batch-
 // invite a large shortlist in one sitting.
-export type RateLimitAction = "login" | "signup" | "password_reset_request" | "mfa_challenge" | "report" | "invitation" | "account_appeal";
+export type RateLimitAction = "login" | "signup" | "password_reset_request" | "mfa_challenge" | "report" | "invitation" | "account_appeal" | "phone_otp";
 
 const WINDOWS: Record<RateLimitAction, { windowMinutes: number; maxAttempts: number }> = {
   login: { windowMinutes: 15, maxAttempts: 5 },
@@ -35,6 +35,8 @@ const WINDOWS: Record<RateLimitAction, { windowMinutes: number; maxAttempts: num
   invitation: { windowMinutes: 60, maxAttempts: 50 },
   // 0112: the public suspension-appeal page.
   account_appeal: { windowMinutes: 60, maxAttempts: 5 },
+  // 0122: SMS sign-in codes — per phone number and per IP. Each costs money.
+  phone_otp: { windowMinutes: 60, maxAttempts: 5 },
 };
 
 /**

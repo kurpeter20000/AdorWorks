@@ -6,6 +6,9 @@ import { requireRole } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isProgrammeSharingEnabled } from "@/lib/dal/settings";
 import { CONSENT_WORDING_VERSION, normaliseConsent } from "@/lib/domain/programmeConsent";
+import { newJoinCode } from "@/lib/domain/pathways";
+import { normalisePhone } from "@/lib/domain/payoutMethods";
+import { randomInt } from "crypto";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import { getLocale } from "@/i18n/server";
@@ -63,25 +66,59 @@ export async function saveProgrammeConsent(programmeId: string, _prev: FormState
 
 const STAFF_ROLES_FOR_PROGRAMMES = ["admin", "finance"] as const;
 
+const dateOrEmpty = z.string().trim().regex(/^(\d{4}-\d{2}-\d{2})?$/, "Use a date like 2027-06-30.");
 const ProgrammeSchema = z.object({
   name: z.string().trim().min(2, "Enter the programme name.").max(160),
   partnerName: z.string().trim().min(2, "Enter the partner's name.").max(160),
-  endsOn: z.string().trim().regex(/^(\d{4}-\d{2}-\d{2})?$/, "Use a date like 2027-06-30."),
+  programmeType: z.enum(["career_readiness", "portfolio_studio", "graduate_launchpad", "internship_bridge", "train_the_trainer", "hiring_young_people", "other"]),
+  funder: z.string().trim().max(160),
+  region: z.string().trim().max(120),
+  startsOn: dateOrEmpty,
+  endsOn: dateOrEmpty,
+  targetPlaced: z.string().trim().regex(/^\d{0,5}$/, "Enter a whole number."),
 });
 
 /** Staff: add a programme run by a partner. */
 export async function createProgramme(_prev: FormState, formData: FormData): Promise<FormState & { saved?: boolean }> {
   const session = await requireRole(...STAFF_ROLES_FOR_PROGRAMMES);
-  const parsed = ProgrammeSchema.safeParse({ name: formData.get("name") ?? "", partnerName: formData.get("partnerName") ?? "", endsOn: formData.get("endsOn") ?? "" });
+  const field = (k: string) => String(formData.get(k) ?? "");
+  const parsed = ProgrammeSchema.safeParse({
+    name: field("name"),
+    partnerName: field("partnerName"),
+    programmeType: field("programmeType") || "other",
+    funder: field("funder"),
+    region: field("region"),
+    startsOn: field("startsOn"),
+    endsOn: field("endsOn"),
+    targetPlaced: field("targetPlaced"),
+  });
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
+  const v = parsed.data;
   const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("programmes")
-    .insert({ name: parsed.data.name, partner_name: parsed.data.partnerName, ends_on: parsed.data.endsOn || null, created_by: session.userId })
-    .select("id")
-    .single();
-  if (error) return { message: error.message };
-  await logAuditEvent(admin, { name: DOMAIN_EVENTS.PROGRAMME_UPDATED, actorId: session.userId, entityType: "programmes", entityId: data.id, source: "platform", after: parsed.data });
+  let data: { id: string } | null = null;
+  // A clash on the join code is very unlikely; try a few.
+  for (let attempt = 0; attempt < 4 && !data; attempt++) {
+    const res = await admin
+      .from("programmes")
+      .insert({
+        name: v.name,
+        partner_name: v.partnerName,
+        programme_type: v.programmeType,
+        funder: v.funder || null,
+        region: v.region || null,
+        starts_on: v.startsOn || null,
+        ends_on: v.endsOn || null,
+        target_placed: v.targetPlaced ? Number(v.targetPlaced) : null,
+        join_code: newJoinCode(v.partnerName, randomInt),
+        created_by: session.userId,
+      })
+      .select("id")
+      .single();
+    if (res.error && res.error.code !== "23505") return { message: res.error.message };
+    data = res.data;
+  }
+  if (!data) return { message: "Could not create a join code. Please try again." };
+  await logAuditEvent(admin, { name: DOMAIN_EVENTS.PROGRAMME_UPDATED, actorId: session.userId, entityType: "programmes", entityId: data.id, source: "platform", after: v });
   revalidatePath("/operations/settings");
   return { saved: true };
 }
@@ -181,4 +218,58 @@ export async function recordGuardianConsent(programmeId: string, talentId: strin
   });
   revalidatePath("/operations/settings");
   return { saved: true };
+}
+
+/** Find an account by email or phone (staff tools). */
+async function findAccount(admin: ReturnType<typeof createAdminClient>, raw: string): Promise<string | null> {
+  const value = raw.trim();
+  const phone = value.includes("@") ? null : normalisePhone(value);
+  if (phone) {
+    const { data } = await admin.from("profiles").select("id").eq("phone", phone).limit(1);
+    if (data?.[0]) return data[0].id;
+  }
+  const email = value.toLowerCase();
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
+    if (error) return null;
+    const hit = data.users.find((u) => u.email?.toLowerCase() === email || (phone && u.phone && `+${u.phone.replace(/^\+/, "")}` === phone));
+    if (hit) return hit.id;
+    if (data.users.length < 200) break;
+  }
+  return null;
+}
+
+/** Staff: give someone at the partner (e.g. EduPower) access to this cohort's partner dashboard. */
+export async function addPartnerUser(programmeId: string, _prev: FormState, formData: FormData): Promise<FormState & { saved?: boolean }> {
+  const session = await requireRole(...STAFF_ROLES_FOR_PROGRAMMES);
+  const who = String(formData.get("account") ?? "").trim();
+  if (who.length < 5) return { errors: { account: ["Enter their email or phone number."] } };
+  const admin = createAdminClient();
+  const userId = await findAccount(admin, who);
+  if (!userId) return { errors: { account: ["No AdorWorks account uses that email or phone. Ask them to create one first."] } };
+  const { error } = await admin.from("programme_partner_users").upsert({ programme_id: programmeId, user_id: userId, added_by: session.userId });
+  if (error) return { message: error.message };
+  await logAuditEvent(admin, { name: DOMAIN_EVENTS.PROGRAMME_UPDATED, actorId: session.userId, subjectId: userId, entityType: "programme_partner_users", entityId: programmeId, source: "platform", after: { partnerUserAdded: true } });
+  revalidatePath("/operations/settings");
+  return { saved: true };
+}
+
+const JoinSchema = z.object({ code: z.string().trim().min(4, msg("Enter the code your programme gave you.")).max(20) });
+
+/** Talent: join a Pathways cohort with the code from the session (works without email). */
+export async function joinProgrammeByCode(_prev: FormState, formData: FormData): Promise<FormState & { joined?: string }> {
+  const session = await requireRole("talent");
+  const parsed = JoinSchema.safeParse({ code: formData.get("code") ?? "" });
+  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
+  const admin = createAdminClient();
+  const code = parsed.data.code.toUpperCase().replace(/\s+/g, "");
+  const { data: programme } = await admin.from("programmes").select("id, name, active").eq("join_code", code).maybeSingle();
+  if (!programme || !programme.active) return { errors: { code: [msg("That code doesn't match an open programme. Check it with your facilitator.")] } };
+  const { error } = await admin
+    .from("programme_members")
+    .upsert({ programme_id: programme.id, talent_id: session.userId, joined_via: "code" }, { onConflict: "programme_id,talent_id", ignoreDuplicates: true });
+  if (error) return { message: error.message };
+  await logAuditEvent(admin, { name: DOMAIN_EVENTS.PROGRAMME_UPDATED, actorId: session.userId, subjectId: session.userId, entityType: "programme_members", entityId: programme.id, source: "platform", after: { joinedByCode: true } });
+  revalidatePath("/pathways/join");
+  return { joined: programme.name };
 }

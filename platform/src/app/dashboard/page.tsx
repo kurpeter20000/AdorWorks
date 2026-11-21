@@ -512,6 +512,18 @@ export default async function DashboardPage({
         ? t("1 thing needs your attention.")
         : t("{n} things need your attention.", { n: attentionCount });
 
+  // 0122: people at a programme partner (e.g. EduPower) see their cohort dashboard.
+  const { count: partnerCohorts } = await supabase
+    .from("programme_partner_users")
+    .select("programme_id", { count: "exact", head: true })
+    .eq("user_id", session.userId);
+  const partnerBanner = (partnerCohorts ?? 0) > 0 && (
+    <Link href="/partner" className="mt-4 flex min-h-11 items-center justify-between rounded-card border border-teal/30 bg-teal/5 px-4 py-3 text-sm font-bold text-teal-ink">
+      {t("Programme dashboard — see your cohort's verified results")}
+      <span aria-hidden="true">→</span>
+    </Link>
+  );
+
   const alerts = (query.error === "forbidden" || query.onboarding === "submitted" || todayDataError) && (
     <div className="mt-6 space-y-3">
       {query.error === "forbidden" && (
@@ -557,6 +569,7 @@ export default async function DashboardPage({
           }
         />
         {alerts}
+        {partnerBanner}
         {assistance}
         {nextStep && <div className="mt-6">{nextStep}</div>}
 
@@ -661,6 +674,7 @@ export default async function DashboardPage({
           }
         />
         {alerts}
+        {partnerBanner}
         {assistance}
         {nextStep && <div className="mt-6">{nextStep}</div>}
 

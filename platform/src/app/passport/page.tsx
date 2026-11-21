@@ -116,6 +116,9 @@ export default async function PassportPage() {
         </Link>
       </p>
       <ShareVerifiedProfile talentId={session.userId} />
+      <Link href="/pathways/join" className="mt-3 flex min-h-11 items-center rounded-card border border-line bg-white px-4 py-3 text-sm font-semibold text-teal-ink underline">
+        Joined a Pathways session? Enter your programme code
+      </Link>
       {sharingOn && (programmeCount ?? 0) > 0 && (
         <Link href="/programme-sharing" className="mt-3 flex min-h-11 items-center rounded-card border border-line bg-white px-4 py-3 text-sm font-semibold text-teal-ink underline">
           Programme sharing — choose what your programme partner can see
