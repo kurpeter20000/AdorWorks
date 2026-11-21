@@ -77,7 +77,7 @@ export default async function ProgrammeSharingPage() {
             <details className="mt-4 rounded-control border border-line px-4 py-3 text-sm">
               <summary className="cursor-pointer font-bold text-midnight">{t("Read the full notice")}</summary>
               <ol className="mt-3 list-decimal space-y-2 ps-5 text-midnight/90">
-                <li>{t("Who: AdorWorks, a venture of {company}, shares with {partner}, which runs {programme}.", { company: COMPANY_NAME, partner: p.partner_name, programme: p.name })}</li>
+                <li>{t("Who: {company} shares with {partner}, which runs {programme}.", { company: COMPANY_NAME, partner: p.partner_name, programme: p.name })}</li>
                 <li>{t("Why: to track the programme's results, report to its funders and improve support for participants.")}</li>
                 <li>{t("What: group totals always (never for groups under {n}); information with your name only for the boxes you ticked.", { n: MIN_GROUP_SIZE })}</li>
                 <li>{t("Never shared: ID documents, contact details, payment details, messages, or other people's information.")}</li>
