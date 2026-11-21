@@ -613,3 +613,79 @@
   .form-panel-intro h2, .request-intro h2 { font-size: clamp(1.6rem, 6.8vw, 1.85rem); }
   .help-band h2, .pilot-empty h2, .bigger-band h2 { font-size: clamp(1.5rem, 6.4vw, 1.75rem); }
 }
+
+/* ---------- Pages on phones, app-grade layer (owner, Nov 2026) ----------
+   Card groups become swipe rails (site.css); here each card is sized for
+   the rail so the whole group reads at a glance. */
+@media (max-width: 640px) {
+  .page-section { padding-block: 2.75rem; }
+  .page-hero h1 { font-size: clamp(1.85rem, 8.2vw, 2.1rem); line-height: 1.08; }
+  .section-head { margin-bottom: 1.4rem; gap: 0.6rem; }
+  .section-head > p { font-size: 0.95rem; }
+
+  /* Numbered points: ruled list → small cards in a rail. */
+  .numbered-row { border-top: 0; }
+  .numbered-row li { padding: 1.1rem 1.1rem 1.2rem; border: 1px solid var(--site-line); border-radius: 18px; background: var(--site-surface); }
+  .numbered-row .num { font-size: 1.6rem; }
+  .numbered-row h3 { margin: 0.55rem 0 0.3rem; font-size: 1rem; }
+  .numbered-row p { font-size: 0.88rem; }
+  .numbered-row-dark li { border-color: #2f3f57; background: rgb(255 255 255 / 0.03); padding-inline-end: 1.1rem; }
+  .numbered-row-dark .num { font-size: 1.6rem; }
+
+  /* What we cover: shorter photo, tighter body. */
+  .cover-card { border-radius: 20px; }
+  .cover-photo { height: 150px; }
+  .cover-body { padding: 1rem 1.1rem 0.6rem; gap: 0.55rem; }
+  .cover-body h3 { font-size: 1.2rem; }
+  .skill-pills li { font-size: 0.74rem; padding: 2px 8px; }
+
+  .who-card, .policy-card { padding: 1.1rem 1.15rem; border-radius: 18px; }
+  .who-card h3 { font-size: 1rem; }
+  .who-card p, .policy-desc { font-size: 0.88rem; }
+  .policy-name { font-size: 1.1rem; }
+  .outline-cards li { padding: 1.1rem; border-radius: 18px; }
+  .outline-cards .num { font-size: 1.6rem; }
+  .outline-cards p { font-size: 0.9rem; }
+  .promise-grid { gap: 0.6rem; }
+  .promise-card { min-height: 64px; padding: 1.1rem; padding-inline-end: 3rem; border-radius: 18px; }
+  .promise-card h3 { font-size: 0.98rem; }
+
+  /* Five ways (ruled list): number and name on one tight line. */
+  .ways-list li { gap: 0.25rem 0.75rem; padding: 0.95rem 0; }
+  .ways-list .num { flex: 0 0 2rem; font-size: 1.15rem; }
+  .ways-name { flex: 1 1 0; font-size: 1.12rem; }
+  .ways-role { flex: 1 1 100%; font-size: 0.9rem; }
+  .ways-best { flex: 1 1 100%; font-size: 0.8rem; }
+
+  /* Page hero photos: a wide banner, not a full screen. */
+  .page-hero .photo-slot img, .page-hero-photo img { height: clamp(200px, 56vw, 250px); max-height: none; object-fit: cover; }
+
+  /* Services: the three categories as one sideways row of chips. */
+  .cat-tabs { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; margin: 0 -1.25rem 1.25rem; padding: 2px 1.25rem 4px; gap: 6px; }
+  .cat-tabs::-webkit-scrollbar { display: none; }
+  .cat-tab { flex: none; min-height: 40px; padding: 0.45rem 0.95rem; border-radius: 999px; white-space: nowrap; }
+  .cat-tab-name { font-family: inherit; font-weight: 800; font-size: 0.88rem; }
+  .cat-tab-tag { display: none; }
+  /* Service cards: shorter photo, tighter text. */
+  .service-card { border-radius: 20px; }
+  .service-card-photo { height: 150px; }
+  .service-card-body { padding: 1rem 1.1rem 0.75rem; gap: 0.45rem; }
+  .service-card h3 { font-size: 1.12rem; }
+  .service-card-body > p { font-size: 0.9rem; }
+  .service-card-body > .service-get { font-size: 0.88rem; }
+  .service-card:hover { transform: none; box-shadow: none; }
+
+  /* Pathways programmes: compact cards. */
+  .prog-grid { gap: 0.75rem; }
+  .prog-card { padding: 1.1rem 1.15rem; gap: 0.5rem; border-radius: 20px; }
+  .prog-top .num { font-size: 1.3rem; }
+  .prog-len { font-size: 0.72rem; padding: 3px 10px; }
+  .prog-card h3 { font-size: 1.08rem; }
+  .prog-leave { padding: 0.55rem 0.8rem; font-size: 0.9rem; border-radius: 12px; }
+  .prog-leave span { font-size: 0.64rem; }
+  .prog-price { font-size: 1rem; }
+  .prog-price span, .prog-who { font-size: 0.86rem; }
+
+  /* Hover lifts don't belong on touch screens. */
+  .cover-card:hover, .who-card:hover, .policy-card:hover { transform: none; box-shadow: none; }
+}

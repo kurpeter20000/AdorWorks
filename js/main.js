@@ -665,5 +665,51 @@
       table.classList.add("is-stacked");
       if (table.parentElement) table.parentElement.classList.add("has-stacked");
     });
+
+    // Phones: small position dots under each swipe rail (the rails
+    // themselves are pure CSS in site.css). Dots only appear when a group
+    // actually scrolls sideways, and follow the card in view.
+    var railSel = ".people-grid, .numbered-row, .cover-grid, .who-grid, .outline-cards, .policy-grid, .service-panel";
+    var setupRail = function (rail) {
+      if (rail.getAttribute("data-rail-ready")) return;
+      var items = Array.prototype.slice.call(rail.children).filter(function (c) { return !c.hidden; });
+      if (items.length < 2 || getComputedStyle(rail).overflowX !== "auto" || rail.scrollWidth <= rail.clientWidth + 4) return;
+      rail.setAttribute("data-rail-ready", "1");
+      var dots = document.createElement("ol");
+      dots.className = "rail-dots";
+      dots.setAttribute("aria-hidden", "true");
+      if (rail.closest(".page-dark, .home-trust, .paths-panel, [class*='dark']")) dots.className += " rail-dots-light";
+      items.forEach(function () { dots.appendChild(document.createElement("li")); });
+      rail.insertAdjacentElement("afterend", dots);
+      var mark = function () {
+        var box = rail.getBoundingClientRect();
+        var best = 0, bestGap = Infinity;
+        items.forEach(function (item, i) {
+          var gap = Math.abs(item.getBoundingClientRect().left - box.left - 20);
+          if (gap < bestGap) { bestGap = gap; best = i; }
+        });
+        if (rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 4 && document.documentElement.dir !== "rtl") best = items.length - 1;
+        Array.prototype.forEach.call(dots.children, function (d, i) { d.setAttribute("aria-current", String(i === best)); });
+      };
+      var ticking = false;
+      rail.addEventListener("scroll", function () {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(function () { ticking = false; mark(); });
+      }, { passive: true });
+      mark();
+    };
+    var phone = window.matchMedia ? window.matchMedia("(max-width: 640px)") : null;
+    var initRails = function () {
+      if (phone && !phone.matches) return;
+      document.querySelectorAll(railSel).forEach(setupRail);
+    };
+    initRails();
+    window.addEventListener("load", initRails);
+    if (phone && phone.addEventListener) phone.addEventListener("change", initRails);
+    // A rail inside a tab panel only gets its dots once its tab is shown.
+    document.addEventListener("click", function (e) {
+      if (e.target.closest && e.target.closest("[role='tab']")) setTimeout(initRails, 50);
+    });
   });
 })();
