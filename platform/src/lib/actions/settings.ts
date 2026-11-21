@@ -6,7 +6,9 @@ import { requireRole } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
-import { getEscrowRates, getFeeRates, getReceivingBankAccount } from "@/lib/dal/settings";
+import { getCollectionAccounts, getEscrowRates, getFeeRates, getReceivingBankAccount } from "@/lib/dal/settings";
+import { collectionAccountsToJson, type MobileMoneyAccount } from "@/lib/domain/collectionAccounts";
+import { normalisePhone } from "@/lib/domain/payoutMethods";
 import { MAX_FEE_PERCENT } from "@/lib/domain/fees";
 import { receivingBankAccountToJson } from "@/lib/domain/bankTransfer";
 import { MAX_DISPUTE_WINDOW_DAYS, MIN_DISPUTE_WINDOW_DAYS } from "@/lib/domain/escrow";
@@ -149,6 +151,51 @@ export async function updateReceivingBankAccount(_prev: FormState, formData: For
     source: "platform",
     reason: v.reason,
     before: before ? receivingBankAccountToJson(before) : null,
+    after: value,
+  });
+  revalidatePath("/operations/settings");
+  return { saved: true };
+}
+
+/**
+ * Finance/admin only. AdorWorks' own MTN MoMo and mGurush accounts — where
+ * employers' mobile-money payments land and where the commission stays
+ * once the talent is paid. Either can be left empty. A blank number and
+ * name removes that account.
+ */
+export async function updateCollectionAccounts(_prev: FormState, formData: FormData): Promise<FormState & { saved?: boolean }> {
+  const session = await requireRole("finance", "admin");
+  const errors: Record<string, string[]> = {};
+  const read = (key: "mtn" | "mgurush"): MobileMoneyAccount | null => {
+    const rawNumber = String(formData.get(`${key}Number`) ?? "").trim();
+    const accountName = String(formData.get(`${key}Name`) ?? "").trim();
+    if (!rawNumber && !accountName) return null;
+    const number = normalisePhone(rawNumber);
+    if (!number) errors[`${key}Number`] = ["Enter a valid phone number, e.g. 0912 345 678."];
+    if (accountName.length < 2 || accountName.length > 120) errors[`${key}Name`] = ["Enter the name registered on the account."];
+    return number && !errors[`${key}Name`] ? { number, accountName } : null;
+  };
+  const accounts = { mtn_momo: read("mtn"), mgurush: read("mgurush") };
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (reason.length < 10) errors.reason = ["Say why this is changing (at least 10 characters) — it goes in the audit log."];
+  if (Object.keys(errors).length > 0) return { errors };
+
+  const before = await getCollectionAccounts();
+  const value = collectionAccountsToJson(accounts);
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("platform_settings")
+    .upsert({ key: "collection_accounts", value, updated_by: session.userId, updated_at: new Date().toISOString() });
+  if (error) return { message: `Could not save: ${error.message}` };
+
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.PLATFORM_SETTINGS_CHANGED,
+    actorId: session.userId,
+    entityType: "platform_settings",
+    entityId: "collection_accounts",
+    source: "platform",
+    reason,
+    before: collectionAccountsToJson(before),
     after: value,
   });
   revalidatePath("/operations/settings");

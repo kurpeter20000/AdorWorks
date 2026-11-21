@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { requireRole } from "@/lib/dal/session";
 import { staffAreaRoles } from "@/lib/domain/staffAccess";
-import { getEscrowRates, getFeeRates, getReceivingBankAccount } from "@/lib/dal/settings";
+import { getCollectionAccounts, getEscrowRates, getFeeRates, getReceivingBankAccount } from "@/lib/dal/settings";
 import { calculateFees } from "@/lib/domain/fees";
 import { StatePanel } from "@/components/state-panel";
 import { FeeSettingsForm } from "./fee-settings-form";
 import { EscrowSettingsForm } from "./escrow-settings-form";
 import { BankAccountForm } from "./bank-account-form";
+import { CollectionAccountsForm } from "./collection-accounts-form";
 
 export const metadata: Metadata = { title: "Settings — Operations" };
 
@@ -15,6 +16,7 @@ export default async function OperationsSettingsPage() {
   const rates = await getFeeRates();
   const escrowRates = await getEscrowRates();
   const bankAccount = await getReceivingBankAccount();
+  const collection = await getCollectionAccounts();
   const canEdit = session.role === "finance" || session.role === "admin";
   const example = calculateFees(10000, { ...rates, enabled: true });
 
@@ -87,6 +89,32 @@ export default async function OperationsSettingsPage() {
           <p className="mt-4 text-sm text-slate">
             Dispute window {escrowRates.disputeWindowDays} day{escrowRates.disputeWindowDays === 1 ? "" : "s"}. Only
             finance and admin staff can change this.
+          </p>
+        )}
+      </section>
+
+      <section className="mt-6 rounded-xl border border-slate/15 bg-white p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-bold text-midnight">AdorWorks mobile money accounts</h2>
+          <span
+            className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${collection.mtn_momo || collection.mgurush ? "bg-teal/10 text-teal-ink" : "bg-slate/10 text-slate"}`}
+          >
+            {[collection.mtn_momo && "MTN set", collection.mgurush && "mGurush set"].filter(Boolean).join(" · ") || "Not set yet"}
+          </span>
+        </div>
+        <p className="mt-2 text-sm text-slate">
+          Where employers&rsquo; MTN MoMo and mGurush payments land. AdorWorks pays the talent their share and the commission
+          (employer fee + talent fee) stays here — totals are on{" "}
+          <a href="/operations/payouts" className="font-semibold text-teal-ink underline">Payouts</a>. When the live MTN
+          connection is switched on, money goes to the account linked to AdorWorks&rsquo; MTN agreement, so keep this the same.
+        </p>
+        {canEdit ? (
+          <CollectionAccountsForm current={collection} />
+        ) : (
+          <p className="mt-4 text-sm text-slate">
+            MTN: {collection.mtn_momo ? `${collection.mtn_momo.accountName} · ${collection.mtn_momo.number}` : "not set"} · mGurush:{" "}
+            {collection.mgurush ? `${collection.mgurush.accountName} · ${collection.mgurush.number}` : "not set"}. Only finance and
+            admin staff can change these.
           </p>
         )}
       </section>

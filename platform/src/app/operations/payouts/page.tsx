@@ -4,6 +4,9 @@ import { staffAreaRoles } from "@/lib/domain/staffAccess";
 import { createClient } from "@/lib/supabase/server";
 import { getEscrowRates, getPayoutsQueueStart } from "@/lib/dal/settings";
 import { PayoutsConsole, type PayoutRow } from "./payouts-console";
+import { summariseCommission, type CommissionLine } from "@/lib/domain/commission";
+import { getCollectionAccounts } from "@/lib/dal/settings";
+import { formatMoney } from "@/lib/domain/format";
 import { describePayoutMethod, type PayoutMethodRow } from "@/lib/domain/payoutMethods";
 
 export const metadata: Metadata = { title: "Payouts — Operations" };
@@ -21,6 +24,14 @@ export default async function OperationsPayoutsPage() {
   const supabase = await createClient();
   const escrow = await getEscrowRates();
   const queueStart = await getPayoutsQueueStart();
+  const collection = await getCollectionAccounts();
+
+  // AdorWorks' commission: both fees on every payment received.
+  const { data: received } = await supabase
+    .from("payment_events")
+    .select("provider_name, currency, employer_fee_amount, fee_amount, is_simulated")
+    .eq("status", "succeeded");
+  const commission = summariseCommission(received ?? []);
 
   // Held payments whose dispute window has passed with no open dispute (0099).
   const { data: eligible } = await supabase.rpc("escrow_release_eligible");
@@ -95,7 +106,83 @@ export default async function OperationsPayoutsPage() {
         {!escrow.enabled && <span className="font-semibold text-slate">Escrow is off — new payments are due for payout straight away.</span>}
       </p>
 
+      <CommissionCard live={commission.live} test={commission.test} accounts={{
+        mtn_momo: collection.mtn_momo ? `${collection.mtn_momo.accountName} · ${collection.mtn_momo.number}` : null,
+        mgurush: collection.mgurush ? `${collection.mgurush.accountName} · ${collection.mgurush.number}` : null,
+      }} />
+
       <PayoutsConsole due={due} stuck={stuck} waiting={waiting} canPay={canMoveMoney(session.role)} />
     </main>
+  );
+}
+
+const CHANNEL_LABEL: Record<CommissionLine["channel"], string> = {
+  mtn_momo: "MTN Mobile Money",
+  mgurush: "mGurush",
+  bank_transfer: "Bank",
+  other: "Other (old card tests)",
+};
+
+function CommissionCard({ live, test, accounts }: { live: CommissionLine[]; test: CommissionLine[]; accounts: Record<"mtn_momo" | "mgurush", string | null> }) {
+  return (
+    <section className="mt-6 rounded-xl border border-slate/15 bg-white p-5">
+      <h2 className="text-lg font-bold text-midnight">Commission collected</h2>
+      <p className="mt-1 text-sm text-slate">
+        Employer fee + talent fee on every payment received. It stays in the AdorWorks account the payment landed in once
+        the talent&rsquo;s share is paid out.
+      </p>
+      {live.length === 0 ? (
+        <p className="mt-3 text-sm text-slate">No commission from real payments yet{test.length > 0 ? " (test payments are counted below)" : ""}.</p>
+      ) : (
+        <CommissionTable lines={live} accounts={accounts} />
+      )}
+      {test.length > 0 && (
+        <details className="mt-3 text-sm">
+          <summary className="cursor-pointer font-semibold text-slate">Test payments (no real money)</summary>
+          <CommissionTable lines={test} accounts={accounts} />
+        </details>
+      )}
+      {(!accounts.mtn_momo || !accounts.mgurush) && (
+        <p className="mt-3 text-xs text-slate">
+          {!accounts.mtn_momo && !accounts.mgurush ? "AdorWorks' MTN and mGurush accounts aren't" : `AdorWorks' ${!accounts.mtn_momo ? "MTN" : "mGurush"} account isn't`}{" "}
+          set yet — add {!accounts.mtn_momo && !accounts.mgurush ? "them" : "it"} under{" "}
+          <a href="/operations/settings" className="font-semibold text-teal-ink underline">Settings</a>.
+        </p>
+      )}
+    </section>
+  );
+}
+
+function CommissionTable({ lines, accounts }: { lines: CommissionLine[]; accounts: Record<"mtn_momo" | "mgurush", string | null> }) {
+  return (
+    <div className="mt-3 overflow-x-auto">
+      <table className="w-full min-w-[34rem] text-left text-sm">
+        <thead className="text-xs text-slate">
+          <tr>
+            <th className="py-1 pe-3 font-semibold">Account</th>
+            <th className="py-1 pe-3 font-semibold">Payments</th>
+            <th className="py-1 pe-3 font-semibold">From employers</th>
+            <th className="py-1 pe-3 font-semibold">From talent</th>
+            <th className="py-1 font-semibold">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {lines.map((l) => (
+            <tr key={`${l.channel}-${l.currency}`} className="border-t border-slate/10">
+              <td className="py-2 pe-3">
+                <span className="font-semibold text-midnight">{CHANNEL_LABEL[l.channel]}</span>
+                {(l.channel === "mtn_momo" || l.channel === "mgurush") && accounts[l.channel] && (
+                  <span className="block text-xs text-slate">{accounts[l.channel]}</span>
+                )}
+              </td>
+              <td className="py-2 pe-3">{l.payments}</td>
+              <td className="py-2 pe-3">{formatMoney(l.fromEmployers, l.currency)}</td>
+              <td className="py-2 pe-3">{formatMoney(l.fromTalent, l.currency)}</td>
+              <td className="py-2 font-bold text-midnight">{formatMoney(l.total, l.currency)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

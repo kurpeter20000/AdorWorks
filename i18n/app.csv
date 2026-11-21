@@ -111,6 +111,7 @@ Talent receives,تحصل الموهبة على,draft,Mtaalamu anapokea,draft,app
 Pay with,الدفع بواسطة,draft,Lipa kwa,draft,app/contracts/[id]/payment-checkout,
 "Next you'll see AdorWorks' bank details and a payment reference. Send the money from any bank, quoting the reference. The milestone is marked paid once the money arrives, usually within 1–2 working days.",ستظهر لك بعد ذلك بيانات حساب AdorWorks البنكي ورقم مرجعي للدفع. أرسل المبلغ من أي بنك مع ذكر الرقم المرجعي. تُعلَّم المرحلة مدفوعة عند وصول المال، عادةً خلال يوم إلى يومي عمل.,draft,"Kisha utaona maelezo ya benki ya AdorWorks na namba ya kumbukumbu ya malipo. Tuma pesa kutoka benki yoyote ukitaja namba hiyo. Hatua itawekwa kuwa imelipwa pesa zikifika, kwa kawaida ndani ya siku 1–2 za kazi.",draft,app/contracts/[id]/payment-checkout,
 Phone number to pay from,رقم الهاتف الذي تدفع منه,draft,Namba ya simu ya kulipia,draft,app/contracts/[id]/payment-checkout,
+Paid to AdorWorks' {provider} account: {name}.,يُدفع إلى حساب AdorWorks على {provider}: {name}.,draft,Inalipwa kwa akaunti ya AdorWorks ya {provider}: {name}.,draft,app/contracts/[id]/payment-checkout,
 Please wait…,يرجى الانتظار…,draft,Tafadhali subiri…,draft,app/contracts/[id]/payment-checkout,
 Get bank details,عرض البيانات البنكية,draft,Pata maelezo ya benki,draft,app/contracts/[id]/payment-checkout,
 Pay {amount},ادفع {amount},draft,Lipa {amount},draft,app/contracts/[id]/payment-checkout,

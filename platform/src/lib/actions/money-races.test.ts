@@ -49,6 +49,7 @@ vi.mock("@/lib/paymentProviders.server", () => ({
 }));
 vi.mock("@/lib/dal/settings", () => ({
   getReceivingBankAccount: async () => state.bankAccount,
+  getCollectionAccounts: async () => ({ mtn_momo: { number: "+211920000000", accountName: "AdorWorks Ltd" }, mgurush: null }),
   getFeeSettings: async () => ({ enabled: false, talentPercent: 0, employerPercent: 0 }),
   getEscrowSettings: async () => ({ enabled: true, disputeWindowDays: 7 }),
 }));
@@ -276,6 +277,7 @@ describe("bank transfers (any bank)", () => {
           status: "awaiting_transfer",
           transfer_reference: "AWP-7KQ4ZD",
           fee_settings: { enabled: true, employerPercent: 2.5, talentPercent: 7.5 },
+          bank_account: { bank_name: "Equity Bank", account_name: "AdorWorks Ltd", account_number: "100200300" },
           amount: 1025,
           currency: "USD",
           created_by: "u-rep",
@@ -304,6 +306,7 @@ describe("bank transfers (any bank)", () => {
     expect(pe.provider_name).toBe("bank_transfer");
     expect(pe.external_reference).toBe("EQ-STATEMENT-55");
     expect(pe.is_simulated).toBe(false);
+    expect(pe.received_into).toBe("Bank transfer · Equity Bank · AdorWorks Ltd · 100200300");
     expect(state.fake!.db.payment_intentions[0].status).toBe("succeeded");
     expect(state.fake!.db.milestones[0].status).toBe("paid");
   });
@@ -485,6 +488,7 @@ describe("payMilestone (MTN, mGurush, bank transfer)", () => {
     expect(result).toEqual({});
     expect(state.charge).toHaveBeenCalledWith(expect.objectContaining({ phone: "+211912345678" }));
     expect(state.fake!.db.payment_events[0].receipt_number).toBe("AW-TEST-000001");
+    expect(state.fake!.db.payment_events[0].received_into).toBe("MTN MoMo · AdorWorks Ltd · +211920000000");
     expect(state.fake!.db.milestones[0].status).toBe("paid");
   });
 

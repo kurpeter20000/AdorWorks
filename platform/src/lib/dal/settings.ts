@@ -2,6 +2,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FEES_OFF, parseFeeRates, parseFeeSettings, type FeeSettings } from "@/lib/domain/fees";
 import { parseReceivingBankAccount, type ReceivingBankAccount } from "@/lib/domain/bankTransfer";
+import { parseCollectionAccounts, type CollectionAccounts } from "@/lib/domain/collectionAccounts";
 import { ESCROW_OFF, parseEscrowRates, parseEscrowSettings, type EscrowSettings } from "@/lib/domain/escrow";
 
 async function readSetting(key: string): Promise<unknown> {
@@ -51,4 +52,9 @@ export async function getReceivingBankAccount(): Promise<ReceivingBankAccount | 
 export async function getPayoutsQueueStart(): Promise<string | null> {
   const value = await readSetting("payouts_queue_start");
   return typeof value === "string" && !Number.isNaN(Date.parse(value)) ? value : null;
+}
+
+/** AdorWorks' own MTN MoMo and mGurush accounts, where mobile-money payments and commission land. */
+export async function getCollectionAccounts(): Promise<CollectionAccounts> {
+  return parseCollectionAccounts(await readSetting("collection_accounts"));
 }

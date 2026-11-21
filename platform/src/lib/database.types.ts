@@ -559,6 +559,8 @@ export type PaymentEventRow = {
   payout_last_attempt_at: string | null;
   payout_recorded_by: string | null;
   payout_receipt_number: string | null;
+  /** 0117: the AdorWorks account the payment landed in. */
+  received_into: string | null;
   created_at: string;
 }
 

@@ -20,7 +20,7 @@ import { TimesheetsSection } from "./timesheets-section";
 import { DisputeSection } from "./dispute-section";
 import { CancelContractSection } from "./cancel-contract-section";
 import Link from "next/link";
-import { getFeeSettings, getReceivingBankAccount } from "@/lib/dal/settings";
+import { getCollectionAccounts, getFeeSettings, getReceivingBankAccount } from "@/lib/dal/settings";
 import { parseReceivingBankAccount } from "@/lib/domain/bankTransfer";
 import type { AwaitingTransfer } from "./payment-checkout";
 import { isInstitutional } from "@/lib/domain/institutional";
@@ -129,6 +129,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
   // 0116: bank transfers the employer has started but AdorWorks hasn't
   // received yet — the checkout shows the reference and account instead.
   const bankAccount = isEmployer ? await getReceivingBankAccount() : null;
+  const collection = isEmployer ? await getCollectionAccounts() : null;
   const { data: awaitingIntentions } = must(isEmployer
     ? await supabase
         .from("payment_intentions")
@@ -367,6 +368,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                   fees={feeSettings}
                   bankTransferAvailable={bankAccount !== null}
                   awaitingTransfer={awaitingByMilestone.get(m.id) ?? null}
+                  collectionAccountNames={{ mtn_momo: collection?.mtn_momo?.accountName ?? null, mgurush: collection?.mgurush?.accountName ?? null }}
                 />
               )}
             </div>
