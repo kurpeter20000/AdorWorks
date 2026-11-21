@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { requireRole } from "@/lib/dal/session";
 import { staffAreaRoles } from "@/lib/domain/staffAccess";
-import { getCollectionAccounts, getEscrowRates, getFeeRates, getReceivingBankAccounts, isGuaranteeEnabled, isProgrammeSharingEnabled } from "@/lib/dal/settings";
+import { getCollectionAccounts, getEscrowRates, getFeeRates, getFxRate, getReceivingBankAccounts, isGuaranteeEnabled, isProgrammeSharingEnabled } from "@/lib/dal/settings";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FeatureSwitchForm } from "./feature-switch-form";
 import { ProgrammesPanel, type ProgrammeView } from "./programmes-panel";
 import { PartnerOrgs } from "./partner-orgs";
+import { FxForm } from "./fx-form";
 import { guaranteeRemedy } from "@/lib/domain/guarantee";
 import { calculateFees } from "@/lib/domain/fees";
 import { StatePanel } from "@/components/state-panel";
@@ -23,6 +24,7 @@ export default async function OperationsSettingsPage() {
   const bankAccounts = await getReceivingBankAccounts();
   const bankCurrencies = [bankAccounts.SSP && "SSP", (bankAccounts.USD || bankAccounts["*"]) && "USD"].filter(Boolean) as string[];
   const collection = await getCollectionAccounts();
+  const fx = await getFxRate();
   const [guaranteeOn, sharingOn] = await Promise.all([isGuaranteeEnabled(), isProgrammeSharingEnabled()]);
   const programmes = await loadProgrammes();
   const { data: orgRows } = await createAdminClient()
@@ -157,6 +159,20 @@ export default async function OperationsSettingsPage() {
             finance and admin staff can change this.
           </p>
         )}
+      </section>
+
+      <section className="mt-6 rounded-xl border border-slate/15 bg-white p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-bold text-midnight">Exchange rate</h2>
+          <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${fx ? "bg-teal/10 text-teal-ink" : "bg-slate/10 text-slate"}`}>
+            {fx ? `1 USD = ${fx.usdToSsp.toLocaleString()} SSP` : "Not set"}
+          </span>
+        </div>
+        <p className="mt-2 text-sm text-slate">
+          Shown to employers at checkout so they can see the amount in the other currency before paying (for information — payments
+          stay in the milestone&rsquo;s currency).{fx?.updatedAt ? ` Last updated ${new Date(fx.updatedAt).toLocaleString("en-GB")}.` : ""} Update it when the bank rate moves.
+        </p>
+        {canEdit && <FxForm current={fx?.usdToSsp ?? null} />}
       </section>
 
       <section className="mt-6 rounded-xl border border-slate/15 bg-white p-5">

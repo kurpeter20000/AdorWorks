@@ -39,6 +39,7 @@ export function PaymentCheckout({
   bankTransferAvailable,
   awaitingTransfer,
   collectionAccountNames,
+  usdToSsp,
 }: {
   milestoneId: string;
   amount: number;
@@ -52,6 +53,8 @@ export function PaymentCheckout({
   awaitingTransfer: AwaitingTransfer | null;
   /** Names on AdorWorks' own MTN / mGurush accounts, so the employer sees who they're paying. */
   collectionAccountNames?: { mtn_momo: string | null; mgurush: string | null };
+  /** 0125: today's rate set by finance, for showing the other currency. */
+  usdToSsp?: number | null;
 }) {
   const t = useT();
   const boundAction = payMilestone.bind(null, milestoneId);
@@ -92,6 +95,14 @@ export function PaymentCheckout({
           <dt className="font-semibold text-midnight">{t("You pay")}</dt>
           <dd className="font-bold text-midnight">{money(fee.totalCharged)}</dd>
         </div>
+        {usdToSsp && (currency === "USD" || currency === "SSP") && (
+          <div className="flex justify-between gap-3 text-xs">
+            <dt className="text-slate">{t("About, at today's rate (1 USD = {rate} SSP)", { rate: usdToSsp.toLocaleString() })}</dt>
+            <dd className="text-slate">
+              ≈ {currency === "USD" ? `SSP ${Math.round(fee.totalCharged * usdToSsp).toLocaleString()}` : `USD ${(fee.totalCharged / usdToSsp).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
+            </dd>
+          </div>
+        )}
         <div className="flex justify-between gap-3 pt-2 text-xs">
           <dt className="text-slate">{t("AdorWorks fee for talent ({percent}%)", { percent: fee.talentFeePercent })}</dt>
           <dd className="text-slate">− {money(fee.talentFeeAmount)}</dd>

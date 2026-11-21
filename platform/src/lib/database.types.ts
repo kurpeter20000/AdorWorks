@@ -709,6 +709,23 @@ export type InternshipReviewRow = {
   created_at: string;
 }
 
+/** 0125: statement reconciliation runs. */
+export type ReconciliationRunRow = {
+  id: string;
+  account: "mtn_momo" | "mgurush" | "bank_ssp" | "bank_usd";
+  period_start: string | null;
+  period_end: string | null;
+  file_name: string | null;
+  statement_lines: number;
+  matched: number;
+  unmatched_statement: unknown;
+  missing_from_statement: unknown;
+  amount_mismatches: unknown;
+  uploaded_by: string | null;
+  note: string | null;
+  created_at: string;
+}
+
 export type PaymentIntentionStatus = "processing" | "awaiting_transfer" | "succeeded" | "failed";
 /** 0116: visa_mastercard only on old simulated rows; the app no longer offers card. */
 export type PayInProvider = "mtn_momo" | "mgurush" | "bank_transfer" | "visa_mastercard";
@@ -987,6 +1004,10 @@ export type TalentPayoutMethodRow = {
   bank_name: string | null;
   account_name: string | null;
   account_number: string | null;
+  /** 0125: wallet/bank account name as the provider shows it, checked by finance before the first payout. */
+  name_on_account: string | null;
+  name_checked_at: string | null;
+  name_checked_by: string | null;
   updated_at: string;
 };
 
@@ -1346,6 +1367,12 @@ export type Database = {
         Row: InternshipReviewRow;
         Insert: Partial<InternshipReviewRow> & { contract_id: string; stage: InternshipReviewRow["stage"]; supervisor_id: string; score_skills: number; score_reliability: number; score_growth: number };
         Update: Partial<InternshipReviewRow>;
+        Relationships: [];
+      };
+      reconciliation_runs: {
+        Row: ReconciliationRunRow;
+        Insert: Partial<ReconciliationRunRow> & { account: ReconciliationRunRow["account"] };
+        Update: Partial<ReconciliationRunRow>;
         Relationships: [];
       };
       payment_intentions: {
