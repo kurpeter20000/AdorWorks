@@ -6,6 +6,7 @@ import { getDashboardKind } from "@/lib/domain/roles";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate, formatMoney } from "@/lib/domain/format";
 import { StatePanel } from "@/components/state-panel";
+import { isPaidOut, summariseEarnings } from "@/lib/domain/earnings";
 import { getT } from "@/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -27,16 +28,21 @@ export default async function FinancePage() {
   const t = await getT();
 
   if (dashboardKind === "talent") {
-    const [{ data: summary, error: summaryError }, { data: recent, error: recentError }, { data: payoutMethod }] = await Promise.all([
-      supabase.rpc("talent_finance_summary"),
+    const [{ data: received, error: summaryError }, { data: recent, error: recentError }, { data: payoutMethod }] = await Promise.all([
       supabase
         .from("payment_events")
-        .select("id, contract_id, net_amount, currency, receipt_number, escrow_status, dispute_window_ends_at, created_at")
+        .select("net_amount, currency, created_at, escrow_status, disbursement_status, disbursed_at")
+        .eq("status", "succeeded")
+        .limit(1000),
+      supabase
+        .from("payment_events")
+        .select("id, contract_id, net_amount, currency, receipt_number, escrow_status, dispute_window_ends_at, created_at, disbursement_status, payout_receipt_number")
         .eq("status", "succeeded")
         .order("created_at", { ascending: false })
         .limit(10),
       supabase.from("talent_payout_methods").select("method, phone, bank_name, account_name, account_number").eq("talent_id", session.userId).maybeSingle(),
     ]);
+    const earnings = summariseEarnings(received ?? []);
 
     return (
       <main className="mx-auto max-w-3xl p-6 sm:p-8">
@@ -49,21 +55,41 @@ export default async function FinancePage() {
           </div>
         )}
 
-        {(summary ?? []).length === 0 ? (
-          <p className="mt-6 text-sm text-slate">{t("Nothing paid yet — figures appear here once your first milestone is paid.")}</p>
-        ) : (
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            {(summary ?? []).map((row) => (
-              <div key={row.currency} className="rounded-xl border border-slate/15 bg-white p-4">
-                <p className="text-xs font-semibold text-slate">{t("Total earned")}</p>
-                <p className="mt-1 text-2xl font-extrabold text-midnight">{formatMoney(row.total_earned, row.currency)}</p>
-                {row.pending_payout > 0 && (
-                  <p className="mt-2 text-xs text-slate">{t("{amount} held, releasing soon", { amount: formatMoney(row.pending_payout, row.currency) })}</p>
-                )}
-              </div>
-            ))}
+        <section aria-labelledby="earnings-h" className="mt-6 rounded-card border border-line bg-white p-5 shadow-card">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 id="earnings-h" className="text-lg font-extrabold text-midnight">
+              {t("Earnings")}
+            </h2>
+            <Link href="/finance/proof-of-work" className="inline-flex min-h-11 items-center rounded-control border border-slate/30 px-3 text-sm font-bold text-midnight hover:bg-cloud">
+              {t("Download proof of work")}
+            </Link>
           </div>
-        )}
+          {earnings.length === 0 ? (
+            <p className="mt-2 text-sm text-slate">{t("Nothing paid yet — figures appear here once your first milestone is paid.")}</p>
+          ) : (
+            earnings.map((e) => (
+              <dl key={e.currency} className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-control bg-cloud px-3 py-2">
+                  <dt className="text-xs font-semibold text-slate">{t("This month")}</dt>
+                  <dd className="mt-0.5 text-lg font-extrabold text-midnight">{formatMoney(e.thisMonth, e.currency)}</dd>
+                </div>
+                <div className="rounded-control bg-amber-tint/60 px-3 py-2">
+                  <dt className="text-xs font-semibold text-slate">{t("Waiting to be sent")}</dt>
+                  <dd className="mt-0.5 text-lg font-extrabold text-midnight">{formatMoney(e.waiting, e.currency)}</dd>
+                </div>
+                <div className="rounded-control bg-teal/8 px-3 py-2">
+                  <dt className="text-xs font-semibold text-slate">{t("Sent to you")}</dt>
+                  <dd className="mt-0.5 text-lg font-extrabold text-teal-ink">{formatMoney(e.sent, e.currency)}</dd>
+                </div>
+                <div className="rounded-control bg-cloud px-3 py-2">
+                  <dt className="text-xs font-semibold text-slate">{t("Total earned")}</dt>
+                  <dd className="mt-0.5 text-lg font-extrabold text-midnight">{formatMoney(e.total, e.currency)}</dd>
+                </div>
+              </dl>
+            ))
+          )}
+          <p className="mt-3 text-xs text-slate">{t("Amounts are after AdorWorks fees. Each payment has a receipt — open it from the list below.")}</p>
+        </section>
 
         <h2 className="mt-8 text-lg font-extrabold text-midnight">{t("How you get paid")}</h2>
         <p className="mt-1 text-sm text-slate">{t("Choose where your money goes when a milestone is released.")}</p>
@@ -82,6 +108,7 @@ export default async function FinancePage() {
                     <p className="text-xs text-slate">
                       {p.receipt_number ?? t("No receipt number")} · {formatDate(p.created_at)}
                       {p.escrow_status === "held" && ` · ${t("Held until {date}", { date: p.dispute_window_ends_at ? formatDate(p.dispute_window_ends_at) : "" })}`}
+                      {isPaidOut(p) ? ` · ${t("Sent to you")}` : ` · ${t("Waiting to be sent")}`}
                     </p>
                   </div>
                 </Link>

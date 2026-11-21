@@ -12,6 +12,8 @@ import { ReopenOpportunityButton } from "./reopen-opportunity-button";
 import { SendOfferForm } from "./send-offer-form";
 import { ShortlistingModeForm } from "./shortlisting-mode-form";
 import { ShortlistActions } from "./shortlist-actions";
+import { ShortlistReview } from "./shortlist-review";
+import { fitCheck } from "@/lib/domain/fitCheck";
 import { BulkDecisionPanel } from "./bulk-decision-panel";
 import { InterviewSlotsForm, type ExistingSlot } from "@/components/interview-slots-form";
 import { CHANGE_FIELDS, isChangeField } from "@/lib/domain/changeFields";
@@ -29,7 +31,7 @@ export default async function OpportunityDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ offered?: string; resubmitted?: string }>;
 }) {
-  const { org, session } = await requireOrganisationMembership();
+  const { org, session, myRole } = await requireOrganisationMembership();
   const { id } = await params;
   const { offered, resubmitted } = await searchParams;
   const supabase = await createClient();
@@ -57,14 +59,14 @@ export default async function OpportunityDetailPage({
 
   const { data: applications } = must(await supabase
     .from("applications")
-    .select("id, talent_id, stage, source, pitch, created_at")
+    .select("id, talent_id, stage, source, pitch, created_at, reviewer_note")
     .eq("opportunity_id", opportunity.id)
     .order("created_at", { ascending: false }), "applications");
 
   const talentIds = [...new Set((applications ?? []).map((a) => a.talent_id))];
   const { data: talents } =
     must(talentIds.length > 0
-      ? await supabase.from("talent_profiles").select("id, display_name, headline, verification_tier").in("id", talentIds)
+      ? await supabase.from("talent_profiles").select("id, display_name, headline, verification_tier, skills").in("id", talentIds)
       : { data: [] }, "talents");
   const talentById = new Map((talents ?? []).map((t) => [t.id, t]));
 
@@ -165,6 +167,24 @@ export default async function OpportunityDetailPage({
     );
   }
 
+  // 0119: staff-built shortlist awaiting the employer's decision.
+  const reviewCandidates = (applications ?? [])
+    .filter((a) => a.source === "matched" && a.stage === "shortlisted")
+    .map((a) => {
+      const talent = talentById.get(a.talent_id);
+      const fit = fitCheck(opportunity.skills, talent?.skills);
+      return {
+        applicationId: a.id,
+        talentId: a.talent_id,
+        name: talent?.display_name ?? "AdorWorks talent",
+        headline: talent?.headline ?? null,
+        tier: talent?.verification_tier ?? null,
+        reviewerNote: a.reviewer_note ?? null,
+        have: fit?.have ?? [],
+        lack: fit?.lack ?? [],
+      };
+    });
+
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <h1 className="text-2xl font-extrabold text-midnight">{opportunity.title}</h1>
@@ -239,6 +259,15 @@ export default async function OpportunityDetailPage({
         <p className="mt-4 rounded-lg bg-teal/10 px-4 py-3 text-sm font-semibold text-teal-ink">
           Submitted for review.
         </p>
+      )}
+
+      {opportunity.shortlisting_mode !== "self_service" && (opportunity.shortlist_sent_at || reviewCandidates.length > 0) && (
+        <ShortlistReview
+          opportunityId={opportunity.id}
+          candidates={reviewCandidates}
+          canDecide={myRole !== "viewer"}
+          moreRequestedAt={opportunity.more_candidates_requested_at}
+        />
       )}
 
       <div className="mt-8">
