@@ -11,7 +11,10 @@ import { IntroductionVideoManager } from "./introduction-video-manager";
 import { CvUpload } from "./cv-upload";
 import { WorkExperienceManager } from "./work-experience-manager";
 import { EducationManager } from "./education-manager";
+import { VouchesManager } from "./vouches-manager";
 import { VerificationBadge } from "@/components/verification-badge";
+import { adorCertifiedSteps } from "@/lib/domain/adorCertified";
+import { AdorCertifiedProgress } from "./adorcertified-progress";
 
 export const metadata: Metadata = { title: "Your Passport" };
 
@@ -19,7 +22,7 @@ export default async function PassportPage() {
   const session = await requireRole("talent");
   const supabase = await createClient();
 
-  const [{ data: profile }, { data: items }, { data: evidence }, { data: introVideo }, { data: workExperience }, { data: education }] =
+  const [{ data: profile }, { data: items }, { data: evidence }, { data: introVideo }, { data: workExperience }, { data: education }, { data: vouches }] =
     await Promise.all([
       supabase.from("talent_profiles").select("*").eq("id", session.userId).maybeSingle(),
       supabase
@@ -44,8 +47,28 @@ export default async function PassportPage() {
         .select("*")
         .eq("talent_id", session.userId)
         .order("sort_order", { ascending: true }),
+      supabase
+        .from("vouches")
+        .select("id, voucher_id, relationship, statement, status, created_at")
+        .eq("talent_id", session.userId)
+        .order("created_at", { ascending: false }),
     ]);
 
+  const voucherIds = [...new Set((vouches ?? []).map((v) => v.voucher_id))];
+  const { data: voucherNameRows } =
+    voucherIds.length > 0 ? await supabase.from("public_profile_names").select("id, full_name").in("id", voucherIds) : { data: [] };
+  const voucherNames = new Map((voucherNameRows ?? []).map((n) => [n.id, n.full_name]));
+
+  // AdorCertified progress: every approved document, of any kind.
+  const { data: approvedEvidence } = await supabase
+    .from("talent_evidence")
+    .select("evidence_type")
+    .eq("talent_id", session.userId)
+    .eq("status", "approved");
+  const certified = adorCertifiedSteps({
+    tier: profile?.verification_tier ?? "registered",
+    approvedEvidenceTypes: (approvedEvidence ?? []).map((e) => e.evidence_type),
+  });
   const references = (evidence ?? []).filter((e) => e.evidence_type === "reference");
   const credentials = (evidence ?? []).filter((e) => e.evidence_type === "assessment");
   const avatarUrl = profile?.avatar_path
@@ -121,6 +144,8 @@ export default async function PassportPage() {
         )}
       </div>
 
+      <AdorCertifiedProgress {...certified} />
+
       <div className="mt-6">
         <h2 className="font-bold text-midnight">CV</h2>
         <p className="mt-1 text-xs text-slate">A PDF employers can download — upload replaces your existing one.</p>
@@ -169,6 +194,15 @@ export default async function PassportPage() {
           notesPlaceholder="e.g. Jane Doe, former manager at XYZ — jane@example.com"
           items={references}
         />
+      </div>
+
+      <div className="mt-6">
+        <h2 className="font-bold text-midnight">Vouches</h2>
+        <p className="mt-1 text-xs text-slate">
+          Someone who already knows you personally confirms it, right on AdorWorks — a digital version of the same
+          referral that already gets people hired here, visible to employers once confirmed.
+        </p>
+        <VouchesManager items={vouches ?? []} voucherNames={voucherNames} />
       </div>
 
       <div className="mt-6">

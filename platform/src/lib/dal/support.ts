@@ -53,6 +53,6 @@ export async function attachDisputeToSupport(
   } catch (err) {
     // Best-effort — a failure here must never block raiseDispute() itself,
     // same fail-open contract as notifyUser()/logAuditEvent().
-    console.error(`[support] attachDisputeToSupport(${info.contractId}) failed:`, err);
+    console.error("[support] attachDisputeToSupport(%s) failed:", info.contractId, err);
   }
 }

@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { createOpportunitiesBatch } from "@/lib/actions/organisation";
 import type { FormState } from "@/lib/actions/auth";
-import { categoryOptions, engagementTypeOptions, paymentBasisOptions, workModeOptions } from "@/lib/domain/taxonomy";
+import { categoryOptions, engagementTypeOptions, opportunityPaymentBasisOptions, workModeOptions } from "@/lib/domain/taxonomy";
 
 const initialState: FormState = {};
 const MAX_ROWS = 10;
@@ -75,7 +75,7 @@ export function BatchOpportunityForm({ organisationId }: { organisationId: strin
           <label className={label}>
             Payment basis
             <select name="paymentBasis" required defaultValue="fixed" className={input}>
-              {paymentBasisOptions().map(([v, l]) => (
+              {opportunityPaymentBasisOptions().map(([v, l]) => (
                 <option key={v} value={v}>
                   {l}
                 </option>

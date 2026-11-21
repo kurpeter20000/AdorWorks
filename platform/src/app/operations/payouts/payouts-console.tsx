@@ -23,7 +23,18 @@ interface HeldRow {
   disbursement_failure_reason: string | null;
 }
 
-export function PayoutsConsole({ eligible, notYetDue }: { eligible: EligibleRow[]; notYetDue: HeldRow[] }) {
+export function PayoutsConsole({
+  eligible,
+  notYetDue,
+  canRelease,
+  payTo,
+}: {
+  eligible: EligibleRow[];
+  notYetDue: HeldRow[];
+  canRelease: boolean;
+  /** 0114: where each contract's talent wants to be paid. */
+  payTo: Record<string, string>;
+}) {
   return (
     <div className="mt-6 space-y-8">
       <section>
@@ -33,7 +44,7 @@ export function PayoutsConsole({ eligible, notYetDue }: { eligible: EligibleRow[
         ) : (
           <ul className="mt-3 space-y-2">
             {eligible.map((row) => (
-              <EligibleRowItem key={row.payment_event_id} row={row} />
+              <EligibleRowItem key={row.payment_event_id} row={row} canRelease={canRelease} payTo={payTo[row.contract_id]} />
             ))}
           </ul>
         )}
@@ -55,6 +66,7 @@ export function PayoutsConsole({ eligible, notYetDue }: { eligible: EligibleRow[
                     ? `Releases ${formatDate(row.dispute_window_ends_at)} (or sooner once any dispute is resolved)`
                     : "Held — no dispute window recorded"}
                 </p>
+                {payTo[row.contract_id] && <p className="mt-1 text-xs text-midnight">Pay to: {payTo[row.contract_id]}</p>}
                 {row.disbursement_status === "failed" && (
                   <p className="mt-1 text-xs font-semibold text-coral-ink">Last attempt failed: {row.disbursement_failure_reason}</p>
                 )}
@@ -67,7 +79,7 @@ export function PayoutsConsole({ eligible, notYetDue }: { eligible: EligibleRow[
   );
 }
 
-function EligibleRowItem({ row }: { row: EligibleRow }) {
+function EligibleRowItem({ row, canRelease, payTo }: { row: EligibleRow; canRelease: boolean; payTo?: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +106,9 @@ function EligibleRowItem({ row }: { row: EligibleRow }) {
             {row.currency} {row.net_amount.toLocaleString()}
           </p>
           <p className="text-xs text-slate">Dispute window ended {formatDate(row.dispute_window_ends_at)}</p>
+          {payTo && <p className="mt-1 text-xs text-midnight">Pay to: {payTo}</p>}
         </div>
+        {canRelease ? (
         <button
           type="button"
           disabled={pending || released}
@@ -103,6 +117,9 @@ function EligibleRowItem({ row }: { row: EligibleRow }) {
         >
           {released ? "Released" : pending ? "Releasing…" : "Release payout"}
         </button>
+        ) : (
+          <p className="text-xs font-semibold text-slate">Only finance or admin staff can release payouts.</p>
+        )}
       </div>
       {error && <p className="mt-2 text-xs text-coral-ink">{error}</p>}
     </li>

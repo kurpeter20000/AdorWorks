@@ -18,6 +18,9 @@ export const USER_ROLES = [
   "org_admin",
   "onboarding_agent",
   "partner_hub_admin",
+  "verifier",
+  "trust_safety",
+  "field_support",
 ] as const satisfies readonly UserRole[];
 
 export const EMPLOYER_ACCOUNT_ROLES = [
@@ -29,8 +32,11 @@ export const EMPLOYER_ACCOUNT_ROLES = [
 
 export const STAFF_ACCOUNT_ROLES = [
   "reviewer",
-  "matcher",
+  "verifier",
+  "trust_safety",
   "finance",
+  "field_support",
+  "matcher",
   "admin",
 ] as const satisfies readonly UserRole[];
 
@@ -45,6 +51,9 @@ export const USER_ROLE_LABELS: Record<UserRole, string> = {
   org_admin: msg("Org admin"),
   reviewer: msg("Reviewer"),
   matcher: msg("Matcher"),
+  verifier: msg("Verifier"),
+  trust_safety: msg("Trust & Safety"),
+  field_support: msg("Field support"),
   finance: msg("Finance"),
   admin: msg("Admin"),
   onboarding_agent: msg("Assistance"),

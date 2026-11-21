@@ -91,7 +91,7 @@ export async function ensureContractTerms(contractId: string, actorId: string | 
         const { data: winner } = await admin.from("contract_terms").select("*").eq("contract_id", contract.id).eq("version", version).maybeSingle();
         return (winner as IssuedTerms) ?? null;
       }
-      console.error(`[contractTerms] could not store terms for ${contract.id}:`, error.message);
+      console.error("[contractTerms] could not store terms for %s:", contract.id, error.message);
       return null;
     }
 
@@ -105,7 +105,7 @@ export async function ensureContractTerms(contractId: string, actorId: string | 
     });
     return inserted as IssuedTerms;
   } catch (err) {
-    console.error(`[contractTerms] ensureContractTerms(${contractId}) failed:`, err);
+    console.error("[contractTerms] ensureContractTerms(%s) failed:", contractId, err);
     return null;
   }
 }

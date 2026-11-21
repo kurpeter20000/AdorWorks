@@ -3,7 +3,7 @@
 import { msg } from "@/i18n/config";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { requireSession } from "@/lib/dal/session";
+import { requireSession, requireRole } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import { sendEmailSafely, getUserEmail } from "@/lib/email";
@@ -153,4 +153,94 @@ export async function sendApplicationMessage(
   revalidatePath("/applications");
   revalidatePath(`/organisation/opportunities/${parties.opportunityId}`);
   return {};
+}
+
+const STAFF_INTERVIEW_ROLES = ["matcher", "admin"] as const;
+
+/**
+ * Owner decision (2026-11-16): messaging stays inside Contracts, plus
+ * staff and an applicant may message during the interview stage (once
+ * shortlisted). For staff-assisted hiring, where staff run the shortlist.
+ * Same contact-detail filter as every pre-contract message.
+ */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Staff interview tools are for staff-assisted roles only (the employer runs self-service hiring). */
+async function isStaffAssistedApplication(admin: ReturnType<typeof createAdminClient>, applicationId: string): Promise<boolean> {
+  if (!UUID.test(applicationId)) return false;
+  const { data } = await admin.from("applications").select("opportunity_id").eq("id", applicationId).maybeSingle();
+  if (!data) return false;
+  const { data: opp } = await admin.from("opportunities").select("shortlisting_mode").eq("id", data.opportunity_id).maybeSingle();
+  return opp?.shortlisting_mode === "staff_assisted";
+}
+
+export async function staffMessageApplicant(applicationId: string, body: string): Promise<{ error?: string }> {
+  const session = await requireRole(...STAFF_INTERVIEW_ROLES);
+  const validated = MessageSchema.safeParse({ body });
+  if (!validated.success) return { error: validated.error.issues[0]?.message ?? "Write a message." };
+  if (containsContactDetails(validated.data.body)) return { error: CONTACT_DETAIL_BLOCKED_MESSAGE };
+
+  const admin = createAdminClient();
+  if (!(await isStaffAssistedApplication(admin, applicationId))) return { error: "Staff message applicants only on staff-assisted roles." };
+  const { data: app } = await admin.from("applications").select("stage").eq("id", applicationId).maybeSingle();
+  if (!app || !["shortlisted", "interviewing"].includes(app.stage)) {
+    return { error: "Staff can message an applicant once they're shortlisted or interviewing." };
+  }
+  const parties = await getApplicationParties(admin, applicationId);
+  if (!parties) return { error: "Application not found." };
+
+  let { data: conversation } = await admin.from("conversations").select("id").eq("application_id", applicationId).maybeSingle();
+  if (!conversation) {
+    const { data: created, error } = await admin.from("conversations").insert({ application_id: applicationId }).select("id").single();
+    if (error?.code === "23505") {
+      ({ data: conversation } = await admin.from("conversations").select("id").eq("application_id", applicationId).maybeSingle());
+    } else if (created) {
+      conversation = created;
+      const memberIds = [parties.talentId, parties.employerId].filter(Boolean) as string[];
+      if (memberIds.length > 0) {
+        await admin.from("conversation_members").insert(memberIds.map((user_id) => ({ conversation_id: created.id, user_id })));
+      }
+    }
+  }
+  if (!conversation) return { error: "Could not open this conversation." };
+
+  // The applicant's thread shows anyone else as "the other side"; say
+  // plainly that this is AdorWorks, not the employer.
+  const { error } = await admin.from("messages").insert({
+    conversation_id: conversation.id,
+    sender_id: session.userId,
+    body: `AdorWorks team: ${validated.data.body}`,
+  });
+  if (error) return { error: error.message };
+
+  await notifyUser(admin, {
+    userId: parties.talentId,
+    type: NOTIFICATION_TYPES.MESSAGE_RECEIVED,
+    title: "AdorWorks sent you a message about your application",
+    link: "/applications",
+  });
+  revalidatePath("/applications");
+  return {};
+}
+
+/** Staff view of an application's interview times and messages. */
+export async function getStaffInterviewView(applicationId: string): Promise<{
+  slots: { id: string; starts_at: string; mode: string; details: string | null; status: string }[];
+  messages: { id: string; body: string; created_at: string; fromTalent: boolean }[];
+}> {
+  await requireRole(...STAFF_INTERVIEW_ROLES);
+  const admin = createAdminClient();
+  if (!(await isStaffAssistedApplication(admin, applicationId))) return { slots: [], messages: [] };
+  const [{ data: app }, { data: slots }, { data: conversation }] = await Promise.all([
+    admin.from("applications").select("talent_id").eq("id", applicationId).maybeSingle(),
+    admin.from("interview_slots").select("id, starts_at, mode, details, status").eq("application_id", applicationId).order("starts_at"),
+    admin.from("conversations").select("id").eq("application_id", applicationId).maybeSingle(),
+  ]);
+  const { data: messages } = conversation
+    ? await admin.from("messages").select("id, sender_id, body, created_at").eq("conversation_id", conversation.id).order("created_at").limit(50)
+    : { data: [] };
+  return {
+    slots: slots ?? [],
+    messages: (messages ?? []).map((m) => ({ id: m.id, body: m.body, created_at: m.created_at, fromTalent: m.sender_id === app?.talent_id })),
+  };
 }

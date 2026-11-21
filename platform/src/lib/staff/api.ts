@@ -40,7 +40,7 @@ export async function staffApiFetch<T = unknown>(
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
   } catch (err) {
-    console.error(`[staffApi] ${options.method ?? "GET"} ${path} network error:`, err);
+    console.error("[staffApi] %s %s network error:", options.method ?? "GET", path, err);
     return {
       ok: false,
       error: "Couldn't reach the staff service. It may be waking up — wait a minute and try again.",
@@ -60,7 +60,7 @@ export async function staffApiFetch<T = unknown>(
     // email") and shown as-is; a 5xx carries raw database detail, so it is
     // logged and replaced with plain words.
     if (res.status >= 500) {
-      console.error(`[staffApi] ${options.method ?? "GET"} ${path} failed (${res.status}):`, message);
+      console.error("[staffApi] %s %s failed (%s):", options.method ?? "GET", path, res.status, message);
       return {
         ok: false,
         status: res.status,

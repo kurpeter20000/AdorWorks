@@ -2,11 +2,12 @@ import { Router } from "express";
 import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff } from "../middleware/auth.js";
+import { requireStaffArea } from "../middleware/staffAccess.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
 import { logAuditEvent } from "../audit.js";
 
 export const talentServicesRouter = Router();
-talentServicesRouter.use(requireAuth, requireStaff);
+talentServicesRouter.use(requireAuth, requireStaff, requireStaffArea("talentServices"));
 
 const STATUSES = ["draft", "pending_review", "published", "paused", "rejected", "removed"];
 

@@ -19,3 +19,9 @@ export function rankBySkillOverlap<T extends { skills: string[] | null; created_
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 }
+
+/** How many of an opportunity's skills are on the talent's Passport (case-insensitive) — the "N of M skills" chip. Same rule as the ranking above. */
+export function countSkillOverlap(opportunitySkills: string[], talentSkills: string[]): number {
+  const mine = new Set(talentSkills.map((s) => s.toLowerCase()));
+  return new Set(opportunitySkills.map((s) => s.toLowerCase()).filter((s) => mine.has(s))).size;
+}

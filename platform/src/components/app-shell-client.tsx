@@ -11,6 +11,7 @@ import { USER_ROLE_LABELS, getRoleBadgeVariant } from "@/lib/domain/roles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AppSidebar } from "./app-sidebar";
+import { BottomTabBar } from "./bottom-tab-bar";
 import { ModeSwitcher, type SwitchableMode } from "./mode-switcher";
 import { LanguageSwitcher } from "./language-switcher";
 import { IdleTimer } from "./idle-timer";
@@ -62,8 +63,9 @@ export function AppShellClient({
   return (
     <div className="flex min-h-screen flex-1">
       <IdleTimer />
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-e border-slate/15 bg-white lg:flex">
-        <Link href="/dashboard" className="px-5 py-4 text-lg font-extrabold text-midnight">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-e border-line bg-white lg:flex">
+        <Link href="/dashboard" className="flex items-center gap-2.5 px-5 py-4 text-lg font-extrabold text-midnight">
+          <span className="flex size-8 items-center justify-center rounded-[9px] bg-primary text-sm font-extrabold text-white" aria-hidden="true">A</span>
           AdorWorks
         </Link>
         <div className="flex-1 overflow-y-auto">
@@ -100,16 +102,18 @@ export function AppShellClient({
       )}
 
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-slate/15 bg-white/95 px-4 py-3 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-line bg-white/95 px-4 py-3 backdrop-blur sm:px-6">
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setDrawerOpen(true)}
-              aria-label={t("Open menu")}
-              className="rounded-lg border border-slate/20 p-2 lg:hidden"
-            >
-              <Menu className="size-5" aria-hidden="true" />
-            </button>
+            {!mode && (
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(true)}
+                aria-label={t("Open menu")}
+                className="flex size-11 items-center justify-center rounded-control border border-line lg:hidden"
+              >
+                <Menu className="size-5" aria-hidden="true" />
+              </button>
+            )}
             <Link href="/dashboard" className="text-lg font-extrabold text-midnight lg:hidden">
               AdorWorks
             </Link>
@@ -121,7 +125,7 @@ export function AppShellClient({
             <Link
               href="/notifications"
               aria-label={unreadCount > 0 ? t("Notifications, {n} unread", { n: unreadCount }) : t("Notifications")}
-              className="relative rounded-full border border-slate/20 p-2 hover:border-slate/35"
+              className="relative flex size-11 items-center justify-center rounded-control border border-line hover:border-slate/35"
             >
               <Bell className="size-4 text-midnight" aria-hidden="true" />
               {unreadCount > 0 && (
@@ -136,9 +140,11 @@ export function AppShellClient({
           </div>
         </header>
 
-        <div id="main-content" className="flex-1">
+        {/* Bottom padding keeps the last card clear of the phone tab bar. */}
+        <div id="main-content" className={mode ? "flex-1 pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0" : "flex-1"}>
           {children}
         </div>
+        {mode && <BottomTabBar mode={mode} onMore={() => setDrawerOpen(true)} />}
       </div>
     </div>
   );

@@ -170,12 +170,14 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
 
       <div className="mt-4 space-y-2 rounded-lg border border-slate/15 bg-cloud/40 p-3">
         <input
+          aria-label="Portfolio item title"
           placeholder="Title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
         <textarea
+          aria-label="Description (optional)"
           placeholder="Description (optional)"
           rows={2}
           value={description}
@@ -183,12 +185,14 @@ export function PortfolioManager({ items }: { items: TalentPortfolioItemRow[] })
           className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
         <input
+          aria-label="Link to the work"
           placeholder="Link to the work (e.g. a live site, a Drive/Dropbox share, Behance, Dribbble)"
           value={externalUrl}
           onChange={(e) => setExternalUrl(e.target.value)}
           className="w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
         <input
+          aria-label="Preview image link (optional)"
           placeholder="Preview image link (optional — a screenshot or thumbnail makes this stand out)"
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}

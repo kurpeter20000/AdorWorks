@@ -1,14 +1,13 @@
-import { Compass } from "lucide-react";
-import { MARKETING_SITE_URL } from "@/lib/domain/marketingSite";
-import { HeroVideoBackground } from "@/components/hero-video-background";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { CONTACT_URL, MARKETING_SITE_URL } from "@/lib/domain/marketingSite";
+import { HeroVideoBackgroundFrom } from "@/components/hero-video-background";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { msg } from "@/i18n/config";
 import { getT } from "@/i18n/server";
 
 // Same three value props on both sides of the marketplace — the auth
 // pages are the one place login/signup for talent and employers share a
-// single shell, so the copy here stays intentionally role-neutral rather
-// than picking a side.
+// single shell, so the copy here stays intentionally role-neutral.
 const VALUE_PROPS = [
   {
     title: msg("Fair-ranked matching"),
@@ -23,89 +22,101 @@ const VALUE_PROPS = [
     body: msg("Every profile carries a visible trust tier, so credibility is never just a claim."),
   },
 ];
+const NUMERALS = ["i.", "ii.", "iii."];
 
-// Same "Explore" language and icon as Explore Mode in the authenticated
-// app's mode switcher (see mode-switcher.tsx), so a signed-out visitor and
-// a signed-in user leaving the app both reach for the same affordance.
-// A plain inline link now, not an absolutely-positioned pill — it used to
-// be fixed to the viewport's top-right corner regardless of where the
-// card ended up underneath it, which is exactly why it read as
-// "misplaced" sitting right on top of the card at most viewport sizes.
-// Paired with the brand wordmark like a real header instead, in normal
-// document flow on both the desktop panel and the mobile top bar.
-function ExploreLink({ className, label }: { className?: string; label: string }) {
-  return (
-    <a
-      href={MARKETING_SITE_URL}
-      className={`inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/20 ${className ?? ""}`}
-    >
-      <Compass className="size-4" aria-hidden="true" />
-      {label}
-    </a>
-  );
-}
-
+/**
+ * Sign-in shell (redesign 2026, Login design): a dark brand panel with the
+ * promise on the left (wide screens only), and a light panel on the right
+ * holding the form, the language switch, a way back to the public site and
+ * a help card. On phones only the light panel shows, so the background
+ * video never loads there.
+ */
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
   const t = await getT();
   return (
-    <div className="relative isolate flex flex-1 flex-col overflow-hidden">
-      {/* CI's Lighthouse run flagged LCP >2500ms on /login and /signup —
-          the video's poster frame is the LCP element (and, under 768px,
-          the PERMANENT background, since hero-video-background.tsx never
-          starts playback there), but as a <video poster> rather than an
-          <img>/next/image it got no priority hint and no early discovery.
-          React 19 hoists any <link> rendered in the tree up into <head>,
-          so this preload gets the browser fetching it before it would
-          otherwise notice the <video> tag at all. */}
-      <link rel="preload" as="image" href="/hero/hero-poster.jpg" fetchPriority="high" />
-      {/* One shared background across the whole page — video on wider,
-          motion-safe, non-Data-Saver connections (see hero-video-
-          background.tsx), the poster frame everywhere else — with the
-          same dark scrim the marketing site uses over its own hero photo
-          (css/styles.css .hero-photo) so white text stays legible over
-          any frame of the footage. */}
-      <HeroVideoBackground className="absolute inset-0 -z-20 h-full w-full object-cover" />
-      <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-midnight/80 to-midnight/90" />
+    <div
+      className={`flex flex-1 flex-col bg-[#f7f3ec] text-midnight lg:flex-row`}
+      // Fraunces has no Arabic letters, so Arabic headings fall through to
+      // the app's Arabic face rather than a random system font.
+      style={{ "--font-auth-display": "var(--font-fraunces), var(--font-arabic), Georgia, serif" } as React.CSSProperties}
+    >
+      {/* The poster is the brand panel's background; the panel only shows
+          from the lg breakpoint up, so the poster is only fetched there. */}
+      <link rel="preload" as="image" href="/hero/hero-poster.jpg" media="(min-width: 1024px)" />
 
-      <div className="relative z-0 flex items-center justify-between gap-3 px-6 py-4 text-white lg:hidden">
-        <span className="text-lg font-extrabold">AdorWorks</span>
-        <div className="flex items-center gap-2">
-          <LanguageSwitcher className="text-white [&_select]:border-white/30 [&_select]:bg-white/10 [&_select]:text-white [&_option]:text-midnight" />
-          <ExploreLink className="px-3 py-1.5 text-xs" label={t("Explore AdorWorks")} />
-        </div>
-      </div>
-
-      <div className="relative z-0 flex flex-1 flex-col lg:flex-row">
-        <div className="hidden flex-col justify-center py-16 text-white lg:flex lg:w-1/2 lg:px-16 xl:px-24">
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-extrabold">AdorWorks</span>
-            <div className="flex items-center gap-3">
-              <LanguageSwitcher className="text-white [&_select]:border-white/30 [&_select]:bg-white/10 [&_select]:text-white [&_option]:text-midnight" />
-              <ExploreLink label={t("Explore AdorWorks")} />
-            </div>
-          </div>
-
-          <div className="mt-10">
-            <p className="text-4xl leading-snug font-extrabold">
+      <aside className="relative isolate hidden min-h-dvh flex-col overflow-hidden bg-midnight text-[#f7f3ec] lg:flex lg:w-[46%]">
+        <HeroVideoBackgroundFrom query="(min-width: 1024px)" className="absolute inset-0 -z-20 h-full w-full object-cover" />
+        <div aria-hidden className="absolute inset-0 -z-10 bg-[#10171f]/70" />
+        <div className="flex flex-1 flex-col gap-6 px-12 py-9 xl:px-16">
+          <a href={MARKETING_SITE_URL} className="self-start text-lg font-extrabold text-[#f7f3ec]">
+            AdorWorks
+          </a>
+          <div className="mt-auto flex max-w-md flex-col gap-6">
+            <p className="font-[family-name:var(--font-auth-display)] text-5xl leading-[1.04] font-normal tracking-tight xl:text-6xl">
               {t("Talent found.")}
               <br />
-              {t("Work delivered.")}
+              <em className="text-[#7fd8c8]">{t("Work delivered.")}</em>
             </p>
-            <ul className="mt-8 max-w-md space-y-6">
-              {VALUE_PROPS.map((item) => (
-                <li key={item.title}>
-                  <p className="font-bold text-teal">{t(item.title)}</p>
-                  <p className="mt-1 text-sm text-white/75">{t(item.body)}</p>
+            <ul className="flex flex-col gap-4">
+              {VALUE_PROPS.map((item, i) => (
+                <li key={item.title} className="flex gap-3">
+                  <span dir="ltr" className="w-6 flex-none font-[family-name:var(--font-auth-display)] text-[#7fd8c8]" aria-hidden="true">
+                    {NUMERALS[i]}
+                  </span>
+                  <span>
+                    <strong className="block font-bold">{t(item.title)}</strong>
+                    <span className="text-white/80">{t(item.body)}</span>
+                  </span>
                 </li>
               ))}
             </ul>
           </div>
         </div>
+      </aside>
 
-        <div className="flex flex-1 flex-col items-center justify-center px-6 pb-10 sm:px-10 lg:w-1/2 lg:px-16 lg:py-16">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-10 shadow-2xl ring-1 ring-black/5">{children}</div>
+      <main className="flex min-h-dvh flex-1 flex-col px-5 py-5 sm:px-8 lg:py-7 [&_h1]:font-[family-name:var(--font-auth-display)] [&_h1]:font-medium [&_h1]:tracking-tight">
+        <div className="flex items-center justify-between gap-3">
+          <a
+            href={MARKETING_SITE_URL}
+            className="inline-flex min-h-11 items-center gap-1.5 font-bold text-[#3c4657] hover:text-teal-ink"
+          >
+            <ArrowLeft className="size-[18px] rtl:rotate-180" aria-hidden="true" />
+            {t("Explore AdorWorks")}
+          </a>
+          <LanguageSwitcher className="[&_select]:rounded-full [&_select]:border-[#e6dfd2] [&_select]:bg-transparent" />
         </div>
-      </div>
+
+        <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center gap-6 py-8">
+          {children}
+
+          <div className="flex items-start gap-3 rounded-2xl border border-[#e6dfd2] bg-white px-4 py-3.5 text-sm text-[#3c4657]">
+            <ShieldCheck className="mt-0.5 size-5 flex-none text-teal-ink" aria-hidden="true" />
+            <p>
+              {t("AdorWorks will never ask for your password by phone or WhatsApp.")}{" "}
+              {t("Trouble signing in?")}{" "}
+              <a href={CONTACT_URL} className="font-extrabold text-teal-ink hover:underline">
+                {t("Message support")}
+              </a>{" "}
+              {t("or")}{" "}
+              <a href="/assistance/request" className="font-extrabold text-teal-ink hover:underline">
+                {t("get in-person help")}
+              </a>
+              .
+            </p>
+          </div>
+        </div>
+
+        <p className="text-center text-[13px] text-[#7a8394]">
+          © 2026 AdorWorks ·{" "}
+          <a href={`${MARKETING_SITE_URL}/privacy.html`} className="text-slate hover:underline">
+            {t("Privacy")}
+          </a>{" "}
+          ·{" "}
+          <a href={`${MARKETING_SITE_URL}/terms.html`} className="text-slate hover:underline">
+            {t("Terms")}
+          </a>
+        </p>
+      </main>
     </div>
   );
 }

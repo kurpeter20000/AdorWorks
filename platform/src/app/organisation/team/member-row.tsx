@@ -31,6 +31,9 @@ export function MemberRow({
 }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  // Controlled, so a refused change snaps back instead of showing a role
+  // the member doesn't actually have.
+  const [currentRole, setCurrentRole] = useState<OrganisationMemberRole>(role);
 
   return (
     <li className="flex items-center justify-between gap-3 rounded-lg border border-slate/15 bg-white p-3">
@@ -44,16 +47,24 @@ export function MemberRow({
       {canManage ? (
         <div className="flex items-center gap-2">
           <select
-            defaultValue={role}
+            aria-label={`Team role for ${name}`}
+            value={currentRole}
             disabled={pending}
             onChange={(e) => {
               const newRole = e.target.value as OrganisationMemberRole;
+              const previous = currentRole;
+              setCurrentRole(newRole);
               setError(null);
               startTransition(async () => {
                 try {
-                  await changeTeamMemberRole(organisationId, userId, newRole);
-                } catch (err) {
-                  setError(err instanceof Error ? err.message : "Could not update their role.");
+                  const result = await changeTeamMemberRole(organisationId, userId, newRole);
+                  if (result.error) {
+                    setCurrentRole(previous);
+                    setError(result.error);
+                  }
+                } catch {
+                  setCurrentRole(previous);
+                  setError("Could not update their role.");
                 }
               });
             }}
@@ -74,9 +85,10 @@ export function MemberRow({
                 setError(null);
                 startTransition(async () => {
                   try {
-                    await removeTeamMember(organisationId, userId);
-                  } catch (err) {
-                    setError(err instanceof Error ? err.message : "Could not remove them.");
+                    const result = await removeTeamMember(organisationId, userId);
+                    if (result.error) setError(result.error);
+                  } catch {
+                    setError("Could not remove them.");
                   }
                 });
               }}

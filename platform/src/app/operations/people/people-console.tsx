@@ -11,6 +11,7 @@ import {
   PageHeader,
   Section,
   StaffTable,
+  SubHeading,
   api,
   fmtDate,
   fmtDateTime,
@@ -20,11 +21,14 @@ import {
   useAction,
   useStaffData,
 } from "../_components/staff-ui";
+import { STAFF_ACCOUNT_ROLES, USER_ROLE_LABELS } from "@/lib/domain/roles";
+import { sendAppealUpheldNotice, sendReinstatementNotice, sendSuspensionNotice } from "@/lib/actions/accountNotices";
+import { STAFF_ROLE_DESCRIPTIONS } from "@/lib/domain/staffAccess";
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- staff API payloads are untyped JSON from backend/api */
 type Row = any;
 
-const ROLES = ["talent", "individual_client", "employer", "org_admin", "org_member", "reviewer", "matcher", "finance", "admin", "onboarding_agent", "partner_hub_admin"];
+const ROLES = ["talent", "individual_client", "employer", "org_admin", "org_member", "reviewer", "verifier", "trust_safety", "finance", "field_support", "matcher", "admin", "onboarding_agent", "partner_hub_admin"];
 const ROLE_FILTER: [string, string][] = [
   ["talent", "Talent"],
   ["individual_client", "Individual client"],
@@ -32,15 +36,20 @@ const ROLE_FILTER: [string, string][] = [
   ["org_admin", "Company admin"],
   ["org_member", "Company team member"],
   ["reviewer", "Staff — reviewer"],
-  ["matcher", "Staff — matcher"],
+  ["verifier", "Staff — verifier"],
+  ["trust_safety", "Staff — trust & safety"],
   ["finance", "Staff — finance"],
+  ["field_support", "Staff — field support"],
+  ["matcher", "Staff — matcher"],
   ["admin", "Staff — admin"],
   ["onboarding_agent", "Onboarding agent"],
   ["partner_hub_admin", "Partner hub admin"],
 ];
-const STAFF_ROLE_OPTIONS = ["reviewer", "matcher", "finance", "admin"];
+const STAFF_ROLE_OPTIONS = STAFF_ACCOUNT_ROLES;
 
-export function PeopleConsole() {
+export function PeopleConsole({ viewerRole }: { viewerRole: string }) {
+  const isAdmin = viewerRole === "admin";
+  const canSuspend = isAdmin || viewerRole === "trust_safety";
   const [role, setRole] = useState("");
   const [search, setSearch] = useState("");
   const [q, setQ] = useState("");
@@ -50,12 +59,17 @@ export function PeopleConsole() {
   }, [search]);
 
   const people = useStaffData<{ data: Row[] }>(`/api/people${qs({ limit: 100, role, q })}`);
-  const requests = useStaffData<{ data: Row[] }>("/api/people/role-requests");
-  const audit = useStaffData<{ data: Row[] }>("/api/people/audit-events?limit=50");
+  // Admin-only lists aren't fetched for other roles (the API refuses them).
+  const requests = useStaffData<{ data: Row[] }>(isAdmin ? "/api/people/role-requests" : null);
+  const audit = useStaffData<{ data: Row[] }>(isAdmin ? "/api/people/audit-events?limit=50" : null);
+  const appeals = useStaffData<{ data: Row[] }>(canSuspend ? "/api/people/appeals" : null);
   const refreshAll = () => {
     people.reload();
-    requests.reload();
-    audit.reload();
+    if (isAdmin) {
+      requests.reload();
+      audit.reload();
+    }
+    if (canSuspend) appeals.reload();
   };
   const page = useAction(refreshAll);
 
@@ -63,12 +77,20 @@ export function PeopleConsole() {
     <>
       <PageHeader
         title="People"
-        description="Search every account by role — talent, clients, company reps, or staff — change roles, suspend or reinstate, and add staff. Admin-only."
+        description={
+          isAdmin
+            ? "Find any account by name, email, phone or ID — change roles, suspend or reinstate, add staff, and keep notes."
+            : canSuspend
+              ? "Find a person by name, email, phone or ID, keep notes, suspend or reinstate, and decide appeals."
+              : "Find a person by name, email, phone or ID and keep notes for whoever helps them next."
+        }
       />
 
-      <AddStaff onAdded={refreshAll} />
+      {canSuspend && <Appeals appeals={appeals} onChanged={refreshAll} />}
 
-      {requests.data && requests.data.data.length > 0 && (
+      {isAdmin && <AddStaff onAdded={refreshAll} />}
+
+      {isAdmin && requests.data && requests.data.data.length > 0 && (
         <Section title="Pending role approvals">
           <p className="mb-2 text-xs text-slate">Promoting to admin or finance needs a second admin&rsquo;s approval — you can&rsquo;t approve your own request.</p>
           <StaffTable
@@ -97,7 +119,7 @@ export function PeopleConsole() {
           />
         </Section>
       )}
-      {requests.error && (
+      {isAdmin && requests.error && (
         <div className="mt-4">
           <Notice tone="error">{requests.error}</Notice>
         </div>
@@ -113,7 +135,13 @@ export function PeopleConsole() {
               </option>
             ))}
           </select>
-          <input aria-label="Search by name" className={`${inputClass} sm:w-64`} placeholder="Search by name…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input
+            aria-label="Search by name, email, phone or account ID"
+            className={`${inputClass} sm:w-80`}
+            placeholder="Name, email, phone or account ID…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </FilterBar>
         <ActionStatus status={page.status} />
         <div className="mt-3">
@@ -141,12 +169,13 @@ export function PeopleConsole() {
                 </span>
               ),
             ]}
-            detail={(r) => <PersonActions row={r} onChanged={refreshAll} />}
+            detail={(r) => <PersonActions row={r} onChanged={refreshAll} isAdmin={isAdmin} canSuspend={canSuspend} />}
             empty="No accounts match this filter."
           />
         </div>
       </Section>
 
+      {isAdmin && (
       <Section title="Recent audit events">
         <p className="mb-2 text-xs text-slate">Who changed what, and when — staff and role assignments, suspensions and more.</p>
         <StaffTable
@@ -166,6 +195,7 @@ export function PeopleConsole() {
           empty="No audited events yet."
         />
       </Section>
+      )}
     </>
   );
 }
@@ -213,7 +243,7 @@ function AddStaff({ onAdded }: { onAdded: () => void }) {
           <select className={inputClass} value={role} onChange={(e) => setRole(e.target.value)}>
             {STAFF_ROLE_OPTIONS.map((r) => (
               <option key={r} value={r}>
-                {humanize(r)}
+                {USER_ROLE_LABELS[r]} — {STAFF_ROLE_DESCRIPTIONS[r]}
               </option>
             ))}
           </select>
@@ -238,7 +268,7 @@ function AddStaff({ onAdded }: { onAdded: () => void }) {
   );
 }
 
-function PersonActions({ row, onChanged }: { row: Row; onChanged: () => void }) {
+function PersonActions({ row, onChanged, isAdmin, canSuspend }: { row: Row; onChanged: () => void; isAdmin: boolean; canSuspend: boolean }) {
   const { run, pending, status, setStatus } = useAction(onChanged);
   const [role, setRole] = useState<string>(row.role);
   const [reason, setReason] = useState("");
@@ -246,12 +276,18 @@ function PersonActions({ row, onChanged }: { row: Row; onChanged: () => void }) 
 
   return (
     <div onClick={(e) => e.stopPropagation()} className="space-y-4">
+      {row.status === "suspended" && row.suspended_reason && (
+        <p className="text-sm text-midnight">
+          <span className="font-semibold">Suspended:</span> {row.suspended_reason}
+        </p>
+      )}
+      {isAdmin && (
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <Field label="Role">
           <select className={`${inputClass} sm:w-56`} value={role} onChange={(e) => setRole(e.target.value)}>
             {ROLES.map((r) => (
               <option key={r} value={r}>
-                {humanize(r)}
+                {ROLE_FILTER.find(([v]) => v === r)?.[1] ?? humanize(r)}
               </option>
             ))}
           </select>
@@ -279,8 +315,9 @@ function PersonActions({ row, onChanged }: { row: Row; onChanged: () => void }) 
           Force re-auth
         </Btn>
       </div>
+      )}
 
-      {(row.status === "active" || row.status === "suspended") && (
+      {canSuspend && (row.status === "active" || row.status === "suspended") && (
         <div className="flex flex-col gap-2 sm:flex-row">
           <input
             aria-label="Reason"
@@ -293,14 +330,24 @@ function PersonActions({ row, onChanged }: { row: Row; onChanged: () => void }) 
             <Btn
               variant="danger"
               disabled={pending || reason.trim().length < 10}
-              onClick={() => run(() => api(`/api/people/${row.id}/suspend`, { method: "POST", body: { reason: reason.trim() } }), `Suspended ${who}.`)}
+              onClick={() =>
+                run(async () => {
+                  await api(`/api/people/${row.id}/suspend`, { method: "POST", body: { reason: reason.trim() } });
+                  await sendSuspensionNotice(row.id);
+                }, `Suspended ${who} and emailed them how to appeal.`)
+              }
             >
               Suspend
             </Btn>
           ) : (
             <Btn
               disabled={pending || reason.trim().length < 10}
-              onClick={() => run(() => api(`/api/people/${row.id}/reinstate`, { method: "POST", body: { reason: reason.trim() } }), `Reinstated ${who}.`)}
+              onClick={() =>
+                run(async () => {
+                  await api(`/api/people/${row.id}/reinstate`, { method: "POST", body: { reason: reason.trim() } });
+                  await sendReinstatementNotice(row.id);
+                }, `Reinstated ${who} and emailed them.`)
+              }
             >
               Reinstate
             </Btn>
@@ -308,6 +355,105 @@ function PersonActions({ row, onChanged }: { row: Row; onChanged: () => void }) 
         </div>
       )}
       <ActionStatus status={status} />
+      <StaffNotes personId={row.id} />
     </div>
+  );
+}
+
+/** 0112: notes for whoever helps this person next. Append-only. */
+function StaffNotes({ personId }: { personId: string }) {
+  const notes = useStaffData<{ data: Row[] }>(`/api/people/${personId}/notes`);
+  const { run, pending, status } = useAction(notes.reload);
+  const [body, setBody] = useState("");
+  return (
+    <div className="border-t border-slate/10 pt-3">
+      <SubHeading>Staff notes</SubHeading>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <input aria-label="New note" className={inputClass} placeholder="What happened, what you did, what's next…" value={body} onChange={(e) => setBody(e.target.value)} />
+        <Btn
+          disabled={pending || body.trim().length < 2}
+          onClick={() =>
+            run(async () => {
+              await api(`/api/people/${personId}/notes`, { method: "POST", body: { body: body.trim() } });
+              setBody("");
+            }, "Note added.")
+          }
+        >
+          Add note
+        </Btn>
+      </div>
+      <ActionStatus status={status} />
+      {notes.error ? (
+        <Notice tone="error">{notes.error}</Notice>
+      ) : (notes.data?.data ?? []).length === 0 ? (
+        <p className="mt-2 text-xs text-slate">{notes.loading ? "Loading…" : "No notes yet."}</p>
+      ) : (
+        <ul className="mt-2 space-y-2">
+          {notes.data!.data.map((n) => (
+            <li key={n.id} className="rounded-lg bg-cloud px-3 py-2 text-sm">
+              <p className="text-midnight">{n.body}</p>
+              <p className="mt-0.5 text-xs text-slate">
+                {n.author_name} · {fmtDateTime(n.created_at)}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** 0112: appeals from suspended people (they arrive through /appeal). */
+function Appeals({ appeals, onChanged }: { appeals: { data: { data: Row[] } | null; error: string | null; loading: boolean; reload: () => void }; onChanged: () => void }) {
+  const rows = appeals.data?.data ?? [];
+  if (!appeals.loading && !appeals.error && rows.length === 0) return null;
+  return (
+    <Section title="Suspension appeals">
+      <p className="mb-2 text-xs text-slate">Oldest first. The person is emailed your decision and note.</p>
+      {appeals.error && <Notice tone="error">{appeals.error}</Notice>}
+      <ul className="space-y-3">
+        {rows.map((a) => (
+          <AppealRow key={a.id} appeal={a} onChanged={onChanged} />
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
+function AppealRow({ appeal, onChanged }: { appeal: Row; onChanged: () => void }) {
+  const { run, pending, status } = useAction(onChanged);
+  const [note, setNote] = useState("");
+  const person = appeal.profiles ?? {};
+  const decide = (decision: "reinstated" | "upheld") =>
+    run(async () => {
+      await api(`/api/people/appeals/${appeal.id}/decide`, { method: "POST", body: { decision, note: note.trim() } });
+      if (decision === "reinstated") await sendReinstatementNotice(appeal.profile_id);
+      else await sendAppealUpheldNotice(appeal.profile_id, note.trim());
+    }, decision === "reinstated" ? "Reinstated and emailed." : "Suspension kept; they've been emailed.");
+  return (
+    <li className="rounded-xl border border-slate/15 bg-white p-4">
+      <p className="font-semibold text-midnight">
+        {person.full_name || "Account"} <span className="text-xs font-normal text-slate">· appealed {fmtDateTime(appeal.created_at)}</span>
+      </p>
+      {person.suspended_reason && <p className="mt-1 text-xs text-slate">Suspended for: {person.suspended_reason}</p>}
+      <p className="mt-2 rounded-lg bg-cloud px-3 py-2 text-sm text-midnight">{appeal.message}</p>
+      <textarea
+        aria-label="Decision note (sent to the person)"
+        className={`${inputClass} mt-2`}
+        rows={2}
+        placeholder="Decision note — sent to the person (at least 10 characters)"
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+      />
+      <div className="mt-2 flex flex-wrap gap-2">
+        <Btn variant="primary" disabled={pending || note.trim().length < 10} onClick={() => decide("reinstated")}>
+          Reinstate
+        </Btn>
+        <Btn disabled={pending || note.trim().length < 10} onClick={() => decide("upheld")}>
+          Keep suspended
+        </Btn>
+      </div>
+      <ActionStatus status={status} />
+    </li>
   );
 }

@@ -58,7 +58,7 @@ export const verifySession = cache(async (): Promise<VerifiedSession | null> => 
   if (!profile) {
     // A valid session with no profiles row is a data-integrity problem, not
     // "signed out" — callers can't tell the two apart, so log it.
-    console.error(`verifySession: authenticated user ${user.id} has no matching profiles row`, profileError);
+    console.error("verifySession: authenticated user %s has no matching profiles row", user.id, profileError);
     return null;
   }
 
@@ -94,7 +94,7 @@ export async function requireSessionWithoutMfaGate(): Promise<VerifiedSession> {
     redirect(await loginPathForCurrentRequest());
   }
   if (session.status !== "active") {
-    redirect("/login");
+    redirect(session.status === "suspended" ? "/login?reason=suspended" : "/login");
   }
   return session;
 }
@@ -141,6 +141,17 @@ export async function requireRole(...roles: UserRole[]): Promise<VerifiedSession
 }
 
 export const STAFF_ROLES: UserRole[] = [...STAFF_ACCOUNT_ROLES];
+
+/**
+ * Staff who may move money: release escrow payouts, confirm bank
+ * transfers, change fees. Matches backend/api's FINANCE_ROLES
+ * (middleware/auth.js) so the two apps agree on who can touch funds —
+ * reviewers and matchers can see the finance queues but not act on them.
+ */
+export const FINANCE_ROLES: UserRole[] = ["finance", "admin"];
+export function canMoveMoney(role: UserRole): boolean {
+  return FINANCE_ROLES.includes(role);
+}
 
 // The organisation/employer side, across both onboarding paths: the
 // self-service signup flow assigns 'individual_client' (auth.ts), but the

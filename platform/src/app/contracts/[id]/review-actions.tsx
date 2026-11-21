@@ -18,6 +18,7 @@ export function ReviewActions({ deliverableId }: { deliverableId: string }) {
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}
+          aria-label="What needs to change?"
           placeholder="What needs to change?"
           className="w-full rounded-lg border border-slate/25 px-2 py-1.5 text-sm"
         />

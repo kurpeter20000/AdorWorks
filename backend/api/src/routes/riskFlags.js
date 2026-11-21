@@ -2,13 +2,14 @@ import { Router } from "express";
 import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff } from "../middleware/auth.js";
+import { requireStaffArea, requireRoleIn } from "../middleware/staffAccess.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
 import { logAuditEvent } from "../audit.js";
 
 // S10-11: proactive fraud/scam indicators — separate from the reactive,
 // user-submitted `reports` table (see 0083's own comment for why).
 export const riskFlagsRouter = Router();
-riskFlagsRouter.use(requireAuth, requireStaff);
+riskFlagsRouter.use(requireAuth, requireStaff, requireStaffArea("riskFlags"));
 
 const TARGET_TYPES = ["organisation", "opportunity", "talent_profile", "talent_service", "file"];
 const INDICATORS = ["fraud", "scam", "fake_identity", "payment_risk", "other"];
@@ -84,8 +85,10 @@ const resolveSchema = z.object({
 });
 
 // POST /api/risk-flags/:id/resolve
+// Any staff role can raise a flag; closing one is Trust & Safety's.
 riskFlagsRouter.post(
   "/:id/resolve",
+  requireRoleIn("trust_safety"),
   asyncRoute(async (req, res) => {
     const { resolution_notes } = resolveSchema.parse(req.body);
     const { data: before } = await supabaseAdmin.from("risk_flags").select("resolved").eq("id", req.params.id).maybeSingle();
@@ -96,9 +99,11 @@ riskFlagsRouter.post(
       .from("risk_flags")
       .update({ resolved: true, resolved_by: req.user.id, resolved_at: new Date().toISOString(), resolution_notes })
       .eq("id", req.params.id)
+      .eq("resolved", false)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw new HttpError(400, error.message);
+    if (!data) throw new HttpError(409, "This flag is already resolved.");
 
     await logAuditEvent(supabaseAdmin, {
       name: "case.risk_flag.resolved",
