@@ -11,7 +11,7 @@ import { useT } from "@/i18n/client";
 const field = "h-[52px] rounded-[14px] border-[#d9d0bf] ps-10 text-base";
 const icon = "pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2 text-slate/50";
 
-export function PhoneForm({ mode, intent, next }: { mode: "signin" | "signup"; intent: "talent" | "hire"; next: string | null }) {
+export function PhoneForm({ mode, intent, next, defaultPhone }: { mode: "signin" | "signup"; intent: "talent" | "hire"; next: string | null; defaultPhone?: string }) {
   const t = useT();
   const [sendState, sendAction, sending] = useActionState(sendPhoneSignInCode, {} as PhoneCodeState);
   const [verifyState, verifyAction, verifying] = useActionState(verifyPhoneSignInCode, {} as PhoneCodeState);
@@ -73,7 +73,7 @@ export function PhoneForm({ mode, intent, next }: { mode: "signin" | "signup"; i
         </label>
         <div className="relative mt-1">
           <Phone className={icon} aria-hidden="true" />
-          <Input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="0912 345 678" required className={field} />
+          <Input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="0912 345 678" defaultValue={defaultPhone} required className={field} />
         </div>
         {sendState.errors?.phone && <p className="mt-1 text-sm text-coral-ink">{t(sendState.errors.phone[0])}</p>}
       </div>
@@ -97,6 +97,15 @@ export function PhoneForm({ mode, intent, next }: { mode: "signin" | "signup"; i
         <p className="text-sm text-coral-ink" role="alert">
           {t(sendState.message)}
         </p>
+      )}
+      {sendState.noAccountFor && (
+        <Link
+          href={`/phone?mode=signup&intent=${intent}&phone=${encodeURIComponent(sendState.noAccountFor)}${next ? `&next=${encodeURIComponent(next)}` : ""}`}
+          prefetch={false}
+          className="flex min-h-[50px] w-full items-center justify-center rounded-[14px] border border-teal/40 bg-teal/5 text-[15px] font-extrabold text-teal-ink"
+        >
+          {t("Create an account with this number")}
+        </Link>
       )}
       <Button type="submit" loading={sending} size="lg" className="h-[54px] w-full rounded-[14px] text-[17px] font-extrabold">
         {sending ? t("Sending…") : t("Send me a code")}
