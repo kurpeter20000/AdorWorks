@@ -1,4 +1,5 @@
 import type { VerificationTier } from "@/lib/database.types";
+import { provenThroughPaidWork } from "./reviews";
 
 /**
  * AdorCertified progress (owner, 2026-11-16): "verified, all your
@@ -8,7 +9,7 @@ import type { VerificationTier } from "@/lib/database.types";
  * Staff still confirm the tier itself.
  */
 export interface CertifiedStep {
-  key: "identity" | "documents" | "courses" | "confirmed";
+  key: "identity" | "documents" | "paid_work" | "courses" | "confirmed";
   label: string;
   hint: string;
   state: "done" | "todo" | "later";
@@ -19,6 +20,9 @@ const RANK: Record<VerificationTier, number> = { registered: 0, identity_verifie
 export function adorCertifiedSteps(input: {
   tier: VerificationTier;
   approvedEvidenceTypes: string[];
+  /** 0121: completed, paid contracts and the average employer rating. */
+  paidContracts?: number;
+  averageRating?: number | null;
 }): { steps: CertifiedStep[]; done: number; total: number } {
   const types = new Set(input.approvedEvidenceTypes);
   const identity = RANK[input.tier] >= 1 || types.has("identity");
@@ -31,6 +35,12 @@ export function adorCertifiedSteps(input: {
       label: "Documents recorded",
       hint: "Your ID plus proof of your skills — a certificate, reference or work sample — approved by our team.",
       state: documents ? "done" : "todo",
+    },
+    {
+      key: "paid_work",
+      label: "Proven through paid work",
+      hint: "Complete a paid contract on AdorWorks and earn an average employer rating of 4 or more.",
+      state: provenThroughPaidWork(input.paidContracts ?? 0, input.averageRating ?? null) || confirmed ? "done" : "todo",
     },
     { key: "courses", label: "AdorWorks courses", hint: "Short courses are coming. You don't need them yet.", state: "later" },
     {

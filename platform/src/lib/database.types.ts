@@ -352,6 +352,8 @@ export type ApplicationRow = {
   updated_at: string;
   /** 0119: staff's note to the employer on why this candidate is on the shortlist. */
   reviewer_note: string | null;
+  /** 0121: staff used this talent's monthly first-job boost on this application. */
+  first_job_boost: boolean;
 }
 
 export type InvitationStatus = "pending" | "accepted" | "declined" | "expired";
@@ -731,6 +733,11 @@ export type ReviewRow = {
   reviewer_id: string;
   rating: number;
   feedback: string | null;
+  /** 0121: structured scores (null on older reviews). */
+  score_quality: number | null;
+  score_communication: number | null;
+  score_timeliness: number | null;
+  would_work_again: boolean | null;
   created_at: string;
 }
 
@@ -1440,6 +1447,10 @@ export type Database = {
       };
     };
     Functions: {
+      review_highlights: {
+        Args: { p_kind: "talent" | "organisation"; p_id: string };
+        Returns: { reviews: number; avg_quality: number | null; avg_communication: number | null; avg_timeliness: number | null; would_work_again_pct: number | null }[];
+      };
       programme_summary: {
         Args: { p_programme: string };
         Returns: {

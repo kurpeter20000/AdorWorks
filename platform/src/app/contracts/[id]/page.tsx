@@ -15,7 +15,7 @@ import { DeliverableForm } from "./deliverable-form";
 import { ReviewActions } from "./review-actions";
 import { ReceiptView } from "./receipt-view";
 import { MessageThread } from "./message-thread";
-import { ReviewSection } from "./review-section";
+import { ReviewSection, type ReviewView } from "./review-section";
 import { TimesheetsSection } from "./timesheets-section";
 import { DisputeSection } from "./dispute-section";
 import { CancelContractSection } from "./cancel-contract-section";
@@ -220,12 +220,12 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
     .eq("contract_id", contract.id)
     .order("created_at", { ascending: false }), "disputes");
 
-  let myReview: { rating: number; feedback: string | null } | null = null;
-  let theirReview: { rating: number; feedback: string | null } | null = null;
+  let myReview: ReviewView | null = null;
+  let theirReview: ReviewView | null = null;
   if (contract.status === "completed") {
     const { data: reviews } = must(await supabase
       .from("reviews")
-      .select("reviewer_role, rating, feedback")
+      .select("reviewer_role, rating, feedback, score_quality, score_communication, score_timeliness, would_work_again")
       .eq("contract_id", contract.id), "reviews");
     const myRole = isTalent ? "talent" : "employer";
     myReview = (reviews ?? []).find((r) => r.reviewer_role === myRole) ?? null;

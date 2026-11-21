@@ -6,6 +6,7 @@ import { Check, TriangleAlert } from "lucide-react";
 import { checkOpportunity } from "@/lib/domain/opportunityChecks";
 import { StaffInterviewPanel } from "./staff-interview-panel";
 import { ReviewerNote } from "./reviewer-note";
+import { FirstJobBoost } from "./first-job-boost";
 import { sendShortlist } from "@/lib/actions/shortlists";
 import { becomeAccountContact } from "@/lib/actions/guarantee";
 import { CHANGE_FIELDS, CHANGE_FIELD_KEYS, type ChangeField } from "@/lib/domain/changeFields";
@@ -537,6 +538,7 @@ function Shortlist({ opportunity, canRunInterviews }: { opportunity: Row; canRun
               <Badge value={a.talent_profiles?.verification_tier} />
             </p>
             {a.interview_scheduled_at && <p className="mt-1 text-xs text-slate">Interview: {fmtDateTime(a.interview_scheduled_at)}</p>}
+            {a.first_job_boost && <p className="mt-1 text-xs font-semibold text-violet">First-job boost</p>}
             {a.source === "matched" && <ReviewerNote applicationId={a.id} initial={a.reviewer_note ?? null} locked={a.stage !== "submitted"} />}
             {canRunInterviews && opportunity.shortlisting_mode === "staff_assisted" && ["shortlisted", "interviewing"].includes(a.stage) && (
               <StaffInterviewPanel applicationId={a.id} />
@@ -596,6 +598,8 @@ function Shortlist({ opportunity, canRunInterviews }: { opportunity: Row; canRun
         </div>
       )}
       {sendMsg && <p className="mt-2 text-xs text-midnight" role="status">{sendMsg}</p>}
+
+      <FirstJobBoost opportunityId={opportunity.id} onAdded={apps.reload} />
 
       <SubHeading>Suggested candidates</SubHeading>
       <p className="mb-2 text-xs text-slate">
