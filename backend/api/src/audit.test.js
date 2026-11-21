@@ -78,7 +78,7 @@ describe("logAuditEvent", () => {
       })
     ).resolves.toBeUndefined();
 
-    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("audit_events insert failed for opportunity.rejected"), "boom");
+    expect(errorSpy).toHaveBeenCalledWith("audit_events insert failed for %s:", "opportunity.rejected", "boom");
   });
 
   it("fails open (never throws) when the client itself throws", async () => {
@@ -98,7 +98,8 @@ describe("logAuditEvent", () => {
     ).resolves.toBeUndefined();
 
     expect(errorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("audit_events insert threw for payment.refund_issued"),
+      "audit_events insert threw for %s:",
+      "payment.refund_issued",
       expect.any(Error)
     );
   });

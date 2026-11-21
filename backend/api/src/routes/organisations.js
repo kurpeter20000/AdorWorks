@@ -2,11 +2,12 @@ import { Router } from "express";
 import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff } from "../middleware/auth.js";
+import { requireStaffArea } from "../middleware/staffAccess.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
 import { logAuditEvent } from "../audit.js";
 
 export const organisationsRouter = Router();
-organisationsRouter.use(requireAuth, requireStaff);
+organisationsRouter.use(requireAuth, requireStaff, requireStaffArea("organisations"));
 
 const listQuerySchema = z.object({
   verification_status: z.enum(["pending", "verified", "rejected", "suspended"]).optional(),

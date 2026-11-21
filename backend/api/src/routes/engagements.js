@@ -2,10 +2,11 @@ import { Router } from "express";
 import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff } from "../middleware/auth.js";
+import { requireStaffArea } from "../middleware/staffAccess.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
 
 export const engagementsRouter = Router();
-engagementsRouter.use(requireAuth, requireStaff);
+engagementsRouter.use(requireAuth, requireStaff, requireStaffArea("engagements"));
 
 const listQuerySchema = z.object({
   status: z.enum(["proposed", "contracted", "active", "completed", "cancelled", "disputed"]).optional(),

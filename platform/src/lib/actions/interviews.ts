@@ -1,0 +1,102 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { requireSession } from "@/lib/dal/session";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { logAuditEvent } from "@/lib/domain/audit";
+import { DOMAIN_EVENTS } from "@/lib/domain/events";
+import { sendEmailSafely, getUserEmail } from "@/lib/email";
+import { renderEmail } from "@/lib/emailTemplate";
+import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
+import { sendWhatsAppAlert } from "@/lib/whatsapp";
+
+const SlotSchema = z.object({
+  starts_at: z.string().datetime({ offset: true }),
+  duration_minutes: z.number().int().min(10).max(240).default(30),
+  mode: z.enum(["video", "phone", "in_person"]).default("video"),
+  details: z.string().trim().max(500).optional(),
+});
+const SlotsSchema = z.array(SlotSchema).min(1).max(5);
+
+export type SlotInput = z.input<typeof SlotSchema>;
+
+/**
+ * Spec "Interview scheduling": the employer (or staff, on staff-assisted
+ * roles) offers 1–5 times; a new set replaces any unanswered one. The
+ * database checks who may schedule and that times are in the future
+ * (0113); it also notifies the talent in the app — this adds an email.
+ */
+const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function offerInterviewSlots(applicationId: string, slots: SlotInput[]): Promise<{ error?: string }> {
+  const session = await requireSession();
+  if (!ID.test(applicationId)) return { error: "Application not found." };
+  const parsed = SlotsSchema.safeParse(slots);
+  if (!parsed.success) return { error: "Offer between 1 and 5 times, each with a date and time." };
+
+  const supabase = (await createClient()) as unknown as SupabaseClient;
+  const { error } = await supabase.rpc("offer_interview_slots", { p_application_id: applicationId, p_slots: parsed.data });
+  if (error) return { error: error.message };
+
+  const admin = createAdminClient();
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.INTERVIEW_TIMES_OFFERED,
+    actorId: session.userId,
+    entityType: "applications",
+    entityId: applicationId,
+    source: "platform",
+    metadata: { count: parsed.data.length },
+  });
+  const { data: app } = await admin.from("applications").select("talent_id, opportunity_id").eq("id", applicationId).maybeSingle();
+  if (app) {
+    // The database wrote the in-app notification; add the WhatsApp copy.
+    await sendWhatsAppAlert(admin, { userId: app.talent_id, type: "interview_times_offered", title: "Pick a time for your interview" });
+    await sendEmailSafely(
+      await getUserEmail(admin, app.talent_id),
+      "Pick a time for your AdorWorks interview",
+      renderEmail({
+        heading: "Pick a time for your interview",
+        paragraphs: [`The employer offered ${parsed.data.length === 1 ? "a time" : `${parsed.data.length} times`} for an interview. Pick the one that suits you — you'll see them in your own timezone.`],
+        ctaLabel: "Pick a time",
+        ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/applications`,
+        unsubscribeUrl: buildUnsubscribeUrl(app.talent_id),
+      }),
+      { admin, recipientUserId: app.talent_id }
+    );
+    revalidatePath(`/organisation/opportunities/${app.opportunity_id}`);
+  }
+  revalidatePath("/operations/opportunities");
+  return {};
+}
+
+/** The talent picks one of the offered times; the application moves to the interview stage (0113). */
+export async function chooseInterviewSlot(slotId: string): Promise<{ error?: string }> {
+  const session = await requireSession();
+  if (!ID.test(slotId)) return { error: "That time is no longer available." };
+  const supabase = (await createClient()) as unknown as SupabaseClient;
+  const { data, error } = await supabase.rpc("choose_interview_slot", { p_slot_id: slotId });
+  if (error) return { error: error.message };
+  const admin = createAdminClient();
+  if (data?.application_id) {
+    const { data: app } = await admin.from("applications").select("opportunity_id").eq("id", data.application_id).maybeSingle();
+    const { data: opp } = app ? await admin.from("opportunities").select("organisation_id").eq("id", app.opportunity_id).maybeSingle() : { data: null };
+    const { data: org } = opp ? await admin.from("organisations").select("representative_id").eq("id", opp.organisation_id).maybeSingle() : { data: null };
+    if (org?.representative_id) {
+      await sendWhatsAppAlert(admin, { userId: org.representative_id, type: "interview_time_chosen", title: "An applicant picked an interview time" });
+    }
+  }
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.INTERVIEW_TIME_CHOSEN,
+    actorId: session.userId,
+    entityType: "applications",
+    entityId: data?.application_id ?? slotId,
+    source: "platform",
+    metadata: { slotId, startsAt: data?.starts_at },
+  });
+  revalidatePath("/applications");
+  revalidatePath("/dashboard");
+  return {};
+}

@@ -7,8 +7,12 @@ import { msg } from "@/i18n/config";
  * exactly why not if not) as three distinct signals — never collapsed
  * into one unexplained percentage or score.
  */
+const TALENT_CHECKS = 7; // headline, bio, skills, category, location, photo, orientation
+const EMPLOYER_CHECKS = 5; // sector, website, billing email, registration evidence, first opportunity
+
 export interface ReadinessState {
-  readiness: { complete: boolean; missing: string[] };
+  /** total = how many readiness checks exist, so the UI can say "4 of 7 done" — readiness only, never blended with trust/visibility. */
+  readiness: { complete: boolean; missing: string[]; total: number };
   trust: { label: string; nextStep: string | null };
   visibility: { visible: boolean; reason: string | null };
 }
@@ -55,7 +59,7 @@ export function getTalentReadiness(profile: TalentReadinessInput): ReadinessStat
   const complete = missing.length === 0;
 
   return {
-    readiness: { complete, missing },
+    readiness: { complete, missing, total: TALENT_CHECKS },
     trust: { label: TIER_LABEL[profile.verification_tier], nextStep: TIER_NEXT_STEP[profile.verification_tier] },
     visibility: {
       visible: profile.public_visible,
@@ -98,7 +102,7 @@ export function getEmployerReadiness(org: EmployerReadinessInput, hasPostedOppor
   const complete = missing.length === 0;
 
   return {
-    readiness: { complete, missing },
+    readiness: { complete, missing, total: EMPLOYER_CHECKS },
     trust: { label: ORG_STATUS_LABEL[org.verification_status], nextStep: ORG_STATUS_NEXT_STEP[org.verification_status] },
     visibility: {
       visible: org.verification_status === "verified",

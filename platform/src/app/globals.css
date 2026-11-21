@@ -38,8 +38,16 @@
      AA for normal text, same discipline as --color-coral-ink above. */
   --color-accent-hover: #00967f;
   --color-accent-active: #00786a;
-  --color-warning: #f59e0b;
-  --color-warning-ink: #b45309;
+  /* Amber = "waiting on you" (canvas Foundations): #d99a00 fills/dots,
+     #7a4b00 text on the #fff1cc tint (≈7:1). */
+  --color-warning: #d99a00;
+  --color-warning-ink: #7a4b00;
+  --color-amber-tint: #fff1cc;
+  /* Canvas Foundations line colour for card borders and dividers. */
+  --color-line: #e3e7ee;
+  /* Dark teal for primary buttons (white text ≈5.4:1) and its hover. */
+  --color-primary: #00786a;
+  --color-primary-hover: #005a50;
 
   --background: var(--color-white);
   --foreground: var(--color-midnight);
@@ -61,8 +69,25 @@
   --color-accent-active: var(--color-accent-active);
   --color-warning: var(--color-warning);
   --color-warning-ink: var(--color-warning-ink);
+  --color-amber-tint: var(--color-amber-tint);
+  --color-line: var(--color-line);
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
 
   --font-sans: var(--font-manrope), system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+
+  /* Design system (pilot) — one place for depth and shape, so pages stop
+     choosing their own. Three elevation levels, three corner sizes:
+       shadow-card   resting surfaces (cards, panels, list containers)
+       shadow-raised hover / focus lift on interactive cards
+       shadow-overlay menus, drawers, dialogs
+       rounded-control (inputs, buttons, chips) · rounded-card · rounded-panel (hero/feature blocks) */
+  --shadow-card: 0 1px 2px rgb(24 34 48 / 0.04), 0 1px 3px rgb(24 34 48 / 0.06);
+  --shadow-raised: 0 2px 4px rgb(24 34 48 / 0.05), 0 8px 20px rgb(24 34 48 / 0.08);
+  --shadow-overlay: 0 12px 32px rgb(24 34 48 / 0.16);
+  --radius-control: 0.75rem; /* 12px — buttons, inputs (44px min height) */
+  --radius-card: 1.125rem; /* 18px — cards */
+  --radius-panel: 1.5rem;
 }
 
 body {

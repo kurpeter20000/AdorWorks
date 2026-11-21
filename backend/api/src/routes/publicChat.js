@@ -141,7 +141,7 @@ publicChatRouter.post(
 
     if (!response.ok) {
       const detail = await response.text().catch(() => "");
-      console.error(`Anthropic API error (${response.status}):`, detail);
+      console.error("Anthropic API error (%s):", response.status, detail);
       throw new HttpError(502, "The chat assistant is temporarily unavailable — please try again shortly.");
     }
 

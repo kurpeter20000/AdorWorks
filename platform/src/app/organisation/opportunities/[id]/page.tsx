@@ -12,9 +12,13 @@ import { ReopenOpportunityButton } from "./reopen-opportunity-button";
 import { SendOfferForm } from "./send-offer-form";
 import { ShortlistingModeForm } from "./shortlisting-mode-form";
 import { ShortlistActions } from "./shortlist-actions";
+import { BulkDecisionPanel } from "./bulk-decision-panel";
+import { InterviewSlotsForm, type ExistingSlot } from "@/components/interview-slots-form";
+import { CHANGE_FIELDS, isChangeField } from "@/lib/domain/changeFields";
 import { RemoveFromShortlistButton } from "./remove-from-shortlist-button";
 import { OpportunityAttachments } from "./opportunity-attachments";
 import { VerificationBadge } from "@/components/verification-badge";
+import { must } from "@/lib/dal/must";
 
 export const metadata: Metadata = { title: "Opportunity" };
 
@@ -30,47 +34,52 @@ export default async function OpportunityDetailPage({
   const { offered, resubmitted } = await searchParams;
   const supabase = await createClient();
 
-  const { data: opportunity } = await supabase
+  const { data: opportunity } = must(await supabase
     .from("opportunities")
     .select("*")
     .eq("id", id)
     .eq("organisation_id", org.id)
-    .maybeSingle();
+    .maybeSingle(), "opportunity");
   if (!opportunity) {
     notFound();
   }
 
-  const { data: attachments } = await supabase
+  const { data: attachments } = must(await supabase
     .from("opportunity_attachments")
     .select("id, filename, size_bytes, created_at")
     .eq("opportunity_id", opportunity.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }), "attachments");
 
-  const { data: applications } = await supabase
+  // "Viewed" step (0110): the employer opening this page marks the
+  // applications they can see as viewed. Best-effort — a failure here
+  // must never stop the employer seeing their applicants.
+  await supabase.rpc("mark_applications_viewed", { p_opportunity_id: opportunity.id });
+
+  const { data: applications } = must(await supabase
     .from("applications")
     .select("id, talent_id, stage, source, pitch, created_at")
     .eq("opportunity_id", opportunity.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }), "applications");
 
   const talentIds = [...new Set((applications ?? []).map((a) => a.talent_id))];
   const { data: talents } =
-    talentIds.length > 0
+    must(talentIds.length > 0
       ? await supabase.from("talent_profiles").select("id, display_name, headline, verification_tier").in("id", talentIds)
-      : { data: [] };
+      : { data: [] }, "talents");
   const talentById = new Map((talents ?? []).map((t) => [t.id, t]));
 
   const applicationIds = (applications ?? []).map((a) => a.id);
   const { data: screeningAnswers } =
-    applicationIds.length > 0
+    must(applicationIds.length > 0
       ? await supabase
           .from("screening_answers")
           .select("application_id, answer, screening_question_id")
           .in("application_id", applicationIds)
-      : { data: [] };
-  const { data: screeningQuestions } = await supabase
+      : { data: [] }, "screening answers");
+  const { data: screeningQuestions } = must(await supabase
     .from("screening_questions")
     .select("id, question")
-    .eq("opportunity_id", opportunity.id);
+    .eq("opportunity_id", opportunity.id), "screening questions");
   const questionById = new Map((screeningQuestions ?? []).map((q) => [q.id, q.question]));
   const answersByApplication = new Map<string, { question: string; answer: string }[]>();
   for (const a of screeningAnswers ?? []) {
@@ -79,17 +88,17 @@ export default async function OpportunityDetailPage({
     answersByApplication.set(a.application_id, list);
   }
 
-  const { data: offers } = await supabase
+  const { data: offers } = must(await supabase
     .from("offers")
     .select("id, application_id, status")
-    .eq("opportunity_id", opportunity.id);
+    .eq("opportunity_id", opportunity.id), "offers");
   const offerByApplication = new Map((offers ?? []).map((o) => [o.application_id, o]));
 
   const offerIds = (offers ?? []).map((o) => o.id);
   const { data: contracts } =
-    offerIds.length > 0
+    must(offerIds.length > 0
       ? await supabase.from("contracts").select("id, offer_id").in("offer_id", offerIds)
-      : { data: [] };
+      : { data: [] }, "contracts");
   const contractIdByOffer = new Map((contracts ?? []).map((c) => [c.offer_id, c.id]));
 
   const [{ data: scores }, { data: notes }, { data: interviewDetails }] = await Promise.all([
@@ -115,27 +124,39 @@ export default async function OpportunityDetailPage({
   }
   const interviewByApplication = new Map((interviewDetails ?? []).map((i) => [i.id, i]));
 
+  // 0113: interview times offered or booked, per application.
+  const { data: slotRows } =
+    applicationIds.length > 0
+      ? await supabase.from("interview_slots").select("id, application_id, starts_at, mode, details, status").in("application_id", applicationIds).order("starts_at")
+      : { data: [] };
+  const slotsByApplication = new Map<string, ExistingSlot[]>();
+  for (const sl of slotRows ?? []) {
+    const list = slotsByApplication.get(sl.application_id) ?? [];
+    list.push(sl);
+    slotsByApplication.set(sl.application_id, list);
+  }
+
   const noteAuthorIds = [...new Set((notes ?? []).map((n) => n.author_id))];
   const { data: noteAuthors } =
-    noteAuthorIds.length > 0 ? await supabase.from("profiles").select("id, full_name").in("id", noteAuthorIds) : { data: [] };
+    must(noteAuthorIds.length > 0 ? await supabase.from("profiles").select("id, full_name").in("id", noteAuthorIds) : { data: [] }, "note authors");
   const noteAuthorNameById = new Map((noteAuthors ?? []).map((p) => [p.id, p.full_name]));
 
   const { data: conversations } =
-    applicationIds.length > 0
+    must(applicationIds.length > 0
       ? await supabase.from("conversations").select("id, application_id").in("application_id", applicationIds)
-      : { data: [] };
+      : { data: [] }, "conversations");
   const conversationIdByApplication = new Map(
     (conversations ?? []).filter((c): c is typeof c & { application_id: string } => c.application_id !== null).map((c) => [c.application_id, c.id])
   );
   const conversationIds = (conversations ?? []).map((c) => c.id);
   const { data: applicationMessages } =
-    conversationIds.length > 0
+    must(conversationIds.length > 0
       ? await supabase
           .from("messages")
           .select("id, conversation_id, sender_id, body, created_at")
           .in("conversation_id", conversationIds)
           .order("created_at", { ascending: true })
-      : { data: [] };
+      : { data: [] }, "application messages");
   const messagesByApplication = new Map<string, NonNullable<typeof applicationMessages>>();
   for (const [applicationId, conversationId] of conversationIdByApplication) {
     messagesByApplication.set(
@@ -171,6 +192,16 @@ export default async function OpportunityDetailPage({
       {opportunity.status === "changes_required" && (
         <div className="mt-4 rounded-lg bg-violet/10 px-4 py-3 text-sm text-midnight">
           {opportunity.status_note && <p>Staff requested changes: {opportunity.status_note}</p>}
+          {(opportunity.changes_fields ?? []).length > 0 && (
+            <>
+              <p className="mt-2 font-semibold">To fix before it can be published:</p>
+              <ul className="mt-1 list-disc ps-5">
+                {opportunity.changes_fields.filter(isChangeField).map((f) => (
+                  <li key={f}>{CHANGE_FIELDS[f]}</li>
+                ))}
+              </ul>
+            </>
+          )}
           <Link
             href={`/organisation/opportunities/${opportunity.id}/edit`}
             className="mt-2 inline-block font-semibold text-teal-ink underline"
@@ -235,6 +266,19 @@ export default async function OpportunityDetailPage({
             : "Only shows once AdorWorks staff have shortlisted an applicant — this is the same curated-shortlist review every opportunity goes through."}
         </p>
 
+        {opportunity.shortlisting_mode === "self_service" &&
+          (applications ?? []).filter((a) => a.stage === "submitted").length >= 2 && (
+            <BulkDecisionPanel
+              opportunityId={opportunity.id}
+              applicants={(applications ?? [])
+                .filter((a) => a.stage === "submitted")
+                .map((a) => {
+                  const talent = talentById.get(a.talent_id);
+                  return { id: a.id, name: talent?.display_name ?? "AdorWorks talent", headline: talent?.headline ?? null };
+                })}
+            />
+          )}
+
         {!applications || applications.length === 0 ? (
           <p className="mt-4 text-sm text-slate">
             {opportunity.shortlisting_mode === "self_service" ? "No applicants yet." : "No shortlisted applicants yet."}
@@ -296,6 +340,10 @@ export default async function OpportunityDetailPage({
                   ) : a.stage === "shortlisted" && a.source === "matched" ? (
                     <RemoveFromShortlistButton applicationId={a.id} opportunityId={opportunity.id} />
                   ) : null}
+
+                  {["shortlisted", "interviewing"].includes(a.stage) && !offer && (
+                    <InterviewSlotsForm applicationId={a.id} existing={slotsByApplication.get(a.id) ?? []} />
+                  )}
 
                   <ApplicantEvaluationPanel
                     applicationId={a.id}

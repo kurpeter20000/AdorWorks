@@ -5,10 +5,10 @@ import { StatePanel } from "@/components/state-panel";
 
 export default function PassportError({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }) {
   useEffect(() => {
     console.error(error);
@@ -20,7 +20,7 @@ export default function PassportError({
         <p>Your saved information hasn&apos;t been changed. Try again, or come back later.</p>
         <button
           type="button"
-          onClick={reset}
+          onClick={() => retry()}
           className="mt-4 rounded-lg bg-midnight px-4 py-2 font-semibold text-white"
         >
           Try again

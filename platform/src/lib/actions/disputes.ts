@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { requireRole, STAFF_ROLES } from "@/lib/dal/session";
+import { requireRole } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
@@ -35,8 +35,9 @@ export type DisputeUpdate = z.input<typeof Schema>;
  * un-pauses the contract; resolving or escalating notifies everyone
  * involved and is audited — same side effects the staff API had.
  */
+// Deciding a dispute is Trust & Safety's (and admins'); finance only refunds.
 export async function updateDispute(disputeId: string, input: DisputeUpdate): Promise<{ error?: string }> {
-  const session = await requireRole(...STAFF_ROLES);
+  const session = await requireRole("admin", "trust_safety");
   const parsed = Schema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues.map((i) => i.message).join(" ") };
   const v = parsed.data;

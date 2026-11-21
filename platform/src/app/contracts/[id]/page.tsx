@@ -1,4 +1,8 @@
 import type { Metadata } from "next";
+import { Stepper } from "@/components/ui/status";
+import { MILESTONE_STEPS, milestoneTimelineStep } from "@/lib/domain/milestoneTimeline";
+import { ensureContractTerms } from "@/lib/dal/contractTerms";
+import { SignContractPanel, type SignatureState } from "./sign-contract-panel";
 import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
 import { StatusBadge } from "@/components/status-badge";
@@ -19,6 +23,7 @@ import Link from "next/link";
 import { getFeeSettings } from "@/lib/dal/settings";
 import { isInstitutional } from "@/lib/domain/institutional";
 import { InstitutionalInvoicePanel } from "./institutional-invoice-panel";
+import { must } from "@/lib/dal/must";
 
 export const metadata: Metadata = { title: "Contract" };
 
@@ -34,7 +39,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: contract } = await supabase.from("contracts").select("*").eq("id", id).maybeSingle();
+  const { data: contract } = must(await supabase.from("contracts").select("*").eq("id", id).maybeSingle(), "contract");
   if (!contract) notFound();
 
   const isTalent = contract.talent_id === session.userId;
@@ -48,9 +53,9 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
   // the talent's own service listing via service_requests.
   let contractTitle = opportunity?.title ?? null;
   if (!contractTitle && contract.service_request_id) {
-    const { data: request } = await supabase.from("service_requests").select("talent_service_id").eq("id", contract.service_request_id).maybeSingle();
+    const { data: request } = must(await supabase.from("service_requests").select("talent_service_id").eq("id", contract.service_request_id).maybeSingle(), "request");
     if (request) {
-      const { data: service } = await supabase.from("talent_services").select("title").eq("id", request.talent_service_id).maybeSingle();
+      const { data: service } = must(await supabase.from("talent_services").select("title").eq("id", request.talent_service_id).maybeSingle(), "service");
       contractTitle = service?.title ?? null;
     }
   }
@@ -69,51 +74,51 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
   // permission (same rep-only convention as sendOffer in offers.ts).
   let isOtherOrgMember = false;
   if (!isTalent && !isEmployer && org) {
-    const { data: membership } = await supabase
+    const { data: membership } = must(await supabase
       .from("organisation_members")
       .select("organisation_id")
       .eq("user_id", session.userId)
       .eq("organisation_id", org.id)
-      .maybeSingle();
+      .maybeSingle(), "membership");
     isOtherOrgMember = !!membership;
   }
   const canView = isTalent || isEmployer || isOtherOrgMember;
-  if (!canView && !["reviewer", "matcher", "finance", "admin"].includes(session.role)) {
+  if (!canView && !["reviewer", "matcher", "finance", "trust_safety", "admin"].includes(session.role)) {
     notFound();
   }
 
-  const { data: talent } = await supabase
+  const { data: talent } = must(await supabase
     .from("talent_profiles")
     .select("display_name")
     .eq("id", contract.talent_id)
-    .maybeSingle();
+    .maybeSingle(), "talent");
 
-  const { data: milestones } = await supabase
+  const { data: milestones } = must(await supabase
     .from("milestones")
     .select("*")
     .eq("contract_id", contract.id)
-    .order("sequence", { ascending: true });
+    .order("sequence", { ascending: true }), "milestones");
 
   const milestoneIds = (milestones ?? []).map((m) => m.id);
   const { data: deliverables } =
-    milestoneIds.length > 0
+    must(milestoneIds.length > 0
       ? await supabase
           .from("deliverables")
           .select("*")
           .in("milestone_id", milestoneIds)
           .order("created_at", { ascending: false })
-      : { data: [] };
+      : { data: [] }, "deliverables");
   const latestDeliverableByMilestone = new Map<string, DeliverableRow>();
   for (const d of deliverables ?? []) {
     if (!latestDeliverableByMilestone.has(d.milestone_id)) latestDeliverableByMilestone.set(d.milestone_id, d);
   }
 
-  const { data: paymentEvents } = await supabase
+  const { data: paymentEvents } = must(await supabase
     .from("payment_events")
     .select(
       "milestone_id, external_reference, amount, currency, provider_name, payer_phone, card_last4, card_brand, receipt_number, created_at, fee_percent, fee_amount, net_amount, employer_fee_percent, employer_fee_amount, total_charged, is_simulated, escrow_status, dispute_window_ends_at, disbursed_at"
     )
-    .eq("contract_id", contract.id);
+    .eq("contract_id", contract.id), "payment events");
   const paymentByMilestone = new Map((paymentEvents ?? []).map((p) => [p.milestone_id, p]));
   const feeSettings = await getFeeSettings();
 
@@ -121,20 +126,20 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
   // instead of mobile money — approveDeliverable() already raises this
   // same finance_records row for every milestone, institutional or not.
   const institutional = isInstitutional(org?.org_type);
-  const { data: invoices } = institutional
+  const { data: invoices } = must(institutional
     ? await supabase
         .from("finance_records")
         .select("id, milestone_id, amount, currency, status, due_date, payment_terms_days, bank_reference, confirmed_at")
         .eq("contract_id", contract.id)
         .eq("record_type", "invoice")
-    : { data: [] };
+    : { data: [] }, "invoices");
   const invoiceByMilestone = new Map((invoices ?? []).map((i) => [i.milestone_id, i]));
 
-  const { data: conversation } = await supabase
+  const { data: conversation } = must(await supabase
     .from("conversations")
     .select("id")
     .eq("contract_id", contract.id)
-    .maybeSingle();
+    .maybeSingle(), "conversation");
   // Stage 10 perf fix: this had no .limit() at all -- a long-running
   // contract's full message history (with attachments) re-downloaded on
   // every visit, unbounded, which is both a server-load and a low-data-
@@ -143,38 +148,56 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
   // thread's expected chronological order -- same cap-then-reverse shape
   // used nowhere else yet, but the least surprising fix for a UI that
   // already assumes ascending order.
-  const { data: recentMessages } = conversation
+  const { data: recentMessages } = must(conversation
     ? await supabase
         .from("messages")
         .select("id, sender_id, body, file_path, file_name, created_at")
         .eq("conversation_id", conversation.id)
         .order("created_at", { ascending: false })
         .limit(MESSAGE_FETCH_CAP)
-    : { data: [] };
+    : { data: [] }, "recent messages");
   const messages = recentMessages ? [...recentMessages].reverse() : recentMessages;
 
-  const { data: timesheets } = await supabase
+  const { data: timesheets } = must(await supabase
     .from("timesheets")
     .select("*")
     .eq("contract_id", contract.id)
-    .order("period_start", { ascending: false });
+    .order("period_start", { ascending: false }), "timesheets");
 
-  const { data: disputes } = await supabase
+  const { data: disputes } = must(await supabase
     .from("disputes")
     .select("*")
     .eq("contract_id", contract.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }), "disputes");
 
   let myReview: { rating: number; feedback: string | null } | null = null;
   let theirReview: { rating: number; feedback: string | null } | null = null;
   if (contract.status === "completed") {
-    const { data: reviews } = await supabase
+    const { data: reviews } = must(await supabase
       .from("reviews")
       .select("reviewer_role, rating, feedback")
-      .eq("contract_id", contract.id);
+      .eq("contract_id", contract.id), "reviews");
     const myRole = isTalent ? "talent" : "employer";
     myReview = (reviews ?? []).find((r) => r.reviewer_role === myRole) ?? null;
     theirReview = (reviews ?? []).find((r) => r.reviewer_role !== myRole) ?? null;
+  }
+
+  // 0113: who has signed the current written terms.
+  let signature: SignatureState | null = null;
+  if (isTalent || isEmployer) {
+    const terms = await ensureContractTerms(contract.id, session.userId);
+    if (terms) {
+      const { data: sigs } = await supabase
+        .from("contract_signatures")
+        .select("party, signed_at")
+        .eq("contract_id", contract.id)
+        .eq("terms_version", terms.version);
+      signature = {
+        termsVersion: terms.version,
+        talentSignedAt: sigs?.find((x) => x.party === "talent")?.signed_at ?? null,
+        organisationSignedAt: sigs?.find((x) => x.party === "organisation")?.signed_at ?? null,
+      };
+    }
   }
 
   return (
@@ -190,6 +213,15 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
         </Link>
         <span className="text-slate"> — parties, work, duration and pay, ready to print.</span>
       </p>
+
+      {signature && (isTalent || isEmployer) && (
+        <SignContractPanel
+          contractId={contract.id}
+          viewerParty={isTalent ? "talent" : "organisation"}
+          state={signature}
+          names={{ talent: talent?.display_name ?? "Talent", organisation: org?.name ?? "Organisation" }}
+        />
+      )}
 
       {contract.status === "completed" && (
         <p className="mt-4 rounded-lg bg-violet/10 px-4 py-3 text-sm font-semibold text-violet">
@@ -226,6 +258,21 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                 </div>
                 <StatusBadge state={MILESTONE_STATES[m.status]} className="whitespace-nowrap" />
               </div>
+              {(() => {
+                const step = milestoneTimelineStep(m.status, payment?.escrow_status);
+                if (step === null) return null;
+                return (
+                  <div className="mt-3 flex items-center gap-3">
+                    <Stepper
+                      className="w-full max-w-64"
+                      steps={[...MILESTONE_STEPS]}
+                      current={step}
+                      label={`Payment step ${step + 1} of ${MILESTONE_STEPS.length}: ${MILESTONE_STEPS[step]}`}
+                    />
+                    <span className="text-xs font-semibold whitespace-nowrap text-slate">{MILESTONE_STEPS[step]}</span>
+                  </div>
+                );
+              })()}
 
               {deliverable && (
                 <div className="mt-3 rounded-lg bg-cloud p-3 text-sm">

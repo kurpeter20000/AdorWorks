@@ -1,65 +1,37 @@
 "use client";
 
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { useT } from "@/i18n/client";
 import { rich } from "@/i18n/rich";
+import { ActionList, type ActionItem } from "./action-list";
 
 interface RecommendedOpportunity {
   id: string;
   title: string;
   compensationLabel: string;
   orgName: string;
+  /** Skills this opportunity asks for that are on the talent's Passport. */
+  matched: number;
+  /** Skills the opportunity asks for in total. */
+  asked: number;
 }
-
-interface AttentionItem {
-  href: string;
-  label: string;
-  count: number;
-  tone: "warning" | "danger" | "info";
-}
-
-const TONE_CLASS: Record<AttentionItem["tone"], string> = {
-  warning: "border-coral/30 bg-coral/5",
-  danger: "border-coral/40 bg-coral/10",
-  info: "border-violet/25 bg-violet/5",
-};
 
 /**
  * Stage 8: the talent dashboard's "Today" surface. Every number here
  * comes from a real query the caller ran (dashboard/page.tsx) — nothing
- * is invented client-side. Items with count === 0 are simply omitted by
- * the caller before this renders, so an empty `items` array here is a
- * genuine "nothing needs you right now" state, not a hidden zero.
+ * is invented client-side.
  */
-export function TalentAttentionList({ items }: { items: AttentionItem[] }) {
+export function TalentAttentionList({ items }: { items: ActionItem[] }) {
   const t = useT();
-  if (items.length === 0) {
-    return (
-      <p className="mt-3 text-sm text-slate">{t("Nothing needs your attention right now — nice work staying on top of it.")}</p>
-    );
-  }
-  return (
-    <ul className="mt-3 space-y-2">
-      {items.map((item) => (
-        <li key={item.href}>
-          <Link
-            href={item.href}
-            className={`flex items-center justify-between rounded-lg border px-4 py-2.5 text-sm font-semibold text-midnight ${TONE_CLASS[item.tone]}`}
-          >
-            <span>{t(item.label)}</span>
-            <span className="rounded-full bg-white px-2 py-0.5 text-xs">{item.count}</span>
-          </Link>
-        </li>
-      ))}
-    </ul>
-  );
+  return <ActionList items={items} emptyMessage={t("Nothing needs your attention right now — nice work staying on top of it.")} />;
 }
 
 export function RecommendedOpportunities({ opportunities }: { opportunities: RecommendedOpportunity[] }) {
   const t = useT();
   if (opportunities.length === 0) {
     return (
-      <p className="mt-3 text-sm text-slate">
+      <p className="rounded-card border border-line bg-white p-5 text-sm text-slate shadow-card">
         {rich(t("No open opportunities match your Passport skills yet — <all>browse everything open</all>."), {
           all: (text) => (
             <Link href="/opportunities" className="font-semibold text-teal-ink underline">
@@ -71,15 +43,21 @@ export function RecommendedOpportunities({ opportunities }: { opportunities: Rec
     );
   }
   return (
-    <ul className="mt-3 space-y-2">
+    <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-white shadow-card">
       {opportunities.map((o) => (
         <li key={o.id}>
-          <Link href={`/opportunities/${o.id}/apply`} className="flex items-center justify-between rounded-lg border border-slate/15 bg-white px-4 py-2.5 text-sm">
-            <span>
-              <span className="font-semibold text-midnight">{o.title}</span>
-              <span className="block text-xs text-slate">{o.orgName}</span>
+          <Link href={`/opportunities/${o.id}/apply`} className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-cloud sm:px-5">
+            <span className="min-w-0 flex-1">
+              <span className="line-clamp-2 block text-sm font-bold text-midnight">{o.title}</span>
+              <span className="mt-0.5 block truncate text-xs text-slate">{o.orgName}</span>
+              {o.asked > 0 && (
+                <span className="mt-2 inline-flex items-center rounded-full bg-teal/12 px-2 py-0.5 text-[11px] font-extrabold text-teal-ink">
+                  {t("{matched} of {asked} skills", { matched: o.matched, asked: o.asked })}
+                </span>
+              )}
             </span>
-            <span className="whitespace-nowrap text-xs font-semibold text-teal-ink">{o.compensationLabel}</span>
+            <span className="shrink-0 text-sm font-extrabold whitespace-nowrap text-midnight">{o.compensationLabel}</span>
+            <ChevronRight className="size-4 shrink-0 text-slate/60 rtl:rotate-180" aria-hidden="true" />
           </Link>
         </li>
       ))}

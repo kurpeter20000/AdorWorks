@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PayoutMethodForm } from "./payout-method-form";
 import Link from "next/link";
 import { requireSession } from "@/lib/dal/session";
 import { getDashboardKind } from "@/lib/domain/roles";
@@ -26,7 +27,7 @@ export default async function FinancePage() {
   const t = await getT();
 
   if (dashboardKind === "talent") {
-    const [{ data: summary, error: summaryError }, { data: recent, error: recentError }] = await Promise.all([
+    const [{ data: summary, error: summaryError }, { data: recent, error: recentError }, { data: payoutMethod }] = await Promise.all([
       supabase.rpc("talent_finance_summary"),
       supabase
         .from("payment_events")
@@ -34,6 +35,7 @@ export default async function FinancePage() {
         .eq("status", "succeeded")
         .order("created_at", { ascending: false })
         .limit(10),
+      supabase.from("talent_payout_methods").select("method, phone, bank_name, account_name, account_number").eq("talent_id", session.userId).maybeSingle(),
     ]);
 
     return (
@@ -62,6 +64,10 @@ export default async function FinancePage() {
             ))}
           </div>
         )}
+
+        <h2 className="mt-8 text-lg font-extrabold text-midnight">{t("How you get paid")}</h2>
+        <p className="mt-1 text-sm text-slate">{t("Choose where your money goes when a milestone is released.")}</p>
+        <PayoutMethodForm current={payoutMethod ?? null} />
 
         <h2 className="mt-8 text-lg font-extrabold text-midnight">{t("Recent payments")}</h2>
         {(recent ?? []).length === 0 ? (

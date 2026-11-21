@@ -22,6 +22,9 @@ describe("role contracts", () => {
       ["org_admin", "employer"],
       ["onboarding_agent", "assistance"],
       ["partner_hub_admin", "partner"],
+      ["verifier", "operations"],
+      ["trust_safety", "operations"],
+      ["field_support", "operations"],
     ]);
   });
 

@@ -39,3 +39,11 @@ describe("taxonomy contracts", () => {
     expect(engagementTypeOptions()).toEqual(Object.entries(ENGAGEMENT_TYPE_LABEL));
   });
 });
+
+describe("opportunityPaymentBasisOptions", () => {
+  it("never offers 'negotiable' when posting an opportunity", async () => {
+    const { opportunityPaymentBasisOptions } = await import("./taxonomy");
+    expect(opportunityPaymentBasisOptions().map(([v]) => v)).not.toContain("negotiable");
+    expect(opportunityPaymentBasisOptions().length).toBeGreaterThan(0);
+  });
+});

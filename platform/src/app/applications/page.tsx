@@ -8,13 +8,20 @@ import { WithdrawActions } from "./withdraw-actions";
 import { ApplicationThreadPanel } from "./application-thread-panel";
 import { getT } from "@/i18n/server";
 import { rich } from "@/i18n/rich";
+import { must } from "@/lib/dal/must";
+import { Stepper } from "@/components/ui/status";
+import { APPLICATION_STEPS, applicationProgress } from "@/lib/domain/applicationProgress";
+import { InterviewPicker, type PickableSlot } from "./interview-picker";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   return { title: t("My applications") };
 }
 
-const CLOSED_OPPORTUNITY_STATUSES = new Set(["closed", "cancelled", "expired", "filled"]);
+/** Read once per request, outside render (React purity rule). */
+function requestTime(): number {
+  return Date.now();
+}
 
 export default async function ApplicationsPage({
   searchParams,
@@ -26,17 +33,28 @@ export default async function ApplicationsPage({
   const t = await getT();
   const supabase = await createClient();
 
-  const { data: applications } = await supabase
+  const { data: applications } = must(await supabase
     .from("applications")
-    .select("id, opportunity_id, stage, decision_reason, created_at")
+    .select("id, opportunity_id, stage, decision_reason, created_at, viewed_at, stage_changed_at")
     .eq("talent_id", session.userId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }), "applications");
 
-  const opportunityIds = [...new Set((applications ?? []).map((a) => a.opportunity_id))];
+  // Spec "saved drafts": applications started but not sent yet, so a
+  // dropped connection never loses them. Drafts for jobs that have
+  // closed are left out — they can't be sent any more.
+  const { data: draftRows } = must(await supabase
+    .from("application_drafts")
+    .select("opportunity_id, updated_at")
+    .eq("talent_id", session.userId)
+    .order("updated_at", { ascending: false }), "drafts");
+  const appliedTo = new Set((applications ?? []).map((a) => a.opportunity_id));
+  const pendingDrafts = (draftRows ?? []).filter((d) => !appliedTo.has(d.opportunity_id));
+
+  const opportunityIds = [...new Set([...(applications ?? []).map((a) => a.opportunity_id), ...pendingDrafts.map((d) => d.opportunity_id)])];
   const { data: opportunities } =
-    opportunityIds.length > 0
-      ? await supabase.from("opportunities").select("id, title, organisation_id, status").in("id", opportunityIds)
-      : { data: [] };
+    must(opportunityIds.length > 0
+      ? await supabase.from("opportunities").select("id, title, organisation_id, status, shortlisting_mode").in("id", opportunityIds)
+      : { data: [] }, "opportunities");
 
   const orgIds = [...new Set((opportunities ?? []).map((o) => o.organisation_id))];
   const { data: orgs } =
@@ -45,28 +63,42 @@ export default async function ApplicationsPage({
     // organisations they've applied to, so the base table's RLS returned
     // nothing and this silently fell back to a generic placeholder for
     // every single application (S08-05 gap-check finding).
-    orgIds.length > 0 ? await supabase.from("public_organisation_names").select("id, name").in("id", orgIds) : { data: [] };
+    must(orgIds.length > 0 ? await supabase.from("public_organisation_names").select("id, name").in("id", orgIds) : { data: [] }, "orgs");
 
   const opportunityById = new Map((opportunities ?? []).map((o) => [o.id, o]));
   const orgNameById = new Map((orgs ?? []).map((o) => [o.id, o.name]));
 
   const applicationIds = (applications ?? []).map((a) => a.id);
+  // 0113: interview times offered or booked.
+  const { data: slotRows } = must(applicationIds.length > 0
+    ? await supabase
+        .from("interview_slots")
+        .select("id, application_id, starts_at, duration_minutes, mode, details, status")
+        .in("application_id", applicationIds)
+        .in("status", ["offered", "chosen"])
+        .order("starts_at")
+    : { data: [] }, "interview slots");
+  const slotsByApplication = new Map<string, PickableSlot[]>();
+  for (const sl of slotRows ?? []) {
+    if (sl.status === "offered" && Date.parse(sl.starts_at) < requestTime()) continue;
+    slotsByApplication.set(sl.application_id, [...(slotsByApplication.get(sl.application_id) ?? []), sl]);
+  }
   const { data: conversations } =
-    applicationIds.length > 0
+    must(applicationIds.length > 0
       ? await supabase.from("conversations").select("id, application_id").in("application_id", applicationIds)
-      : { data: [] };
+      : { data: [] }, "conversations");
   const conversationIdByApplication = new Map(
     (conversations ?? []).filter((c): c is typeof c & { application_id: string } => c.application_id !== null).map((c) => [c.application_id, c.id])
   );
   const conversationIds = (conversations ?? []).map((c) => c.id);
   const { data: applicationMessages } =
-    conversationIds.length > 0
+    must(conversationIds.length > 0
       ? await supabase
           .from("messages")
           .select("id, conversation_id, sender_id, body, created_at")
           .in("conversation_id", conversationIds)
           .order("created_at", { ascending: true })
-      : { data: [] };
+      : { data: [] }, "application messages");
   const messagesByApplication = new Map<string, NonNullable<typeof applicationMessages>>();
   for (const [applicationId, conversationId] of conversationIdByApplication) {
     messagesByApplication.set(
@@ -74,6 +106,9 @@ export default async function ApplicationsPage({
       (applicationMessages ?? []).filter((m) => m.conversation_id === conversationId)
     );
   }
+
+  const now = requestTime();
+  const steps = APPLICATION_STEPS.map((s) => t(s));
 
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
@@ -95,6 +130,34 @@ export default async function ApplicationsPage({
         </div>
       )}
 
+      {(() => {
+        const drafts = pendingDrafts.filter((d) => opportunityById.get(d.opportunity_id)?.status === "open");
+        if (drafts.length === 0) return null;
+        return (
+          <section aria-labelledby="drafts-h" className="mt-6">
+            <h2 id="drafts-h" className="text-sm font-bold tracking-wide text-slate uppercase">
+              {t("Not sent yet")}
+            </h2>
+            <ul className="mt-2 space-y-2">
+              {drafts.map((d) => {
+                const opp = opportunityById.get(d.opportunity_id)!;
+                return (
+                  <li key={d.opportunity_id} className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-slate/30 bg-white p-4">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-midnight">{opp.title}</p>
+                      <p className="text-xs text-slate">{orgNameById.get(opp.organisation_id) ?? t("AdorWorks employer")}</p>
+                    </div>
+                    <Link href={`/opportunities/${d.opportunity_id}/apply`} className="shrink-0 rounded-control bg-primary px-4 py-2.5 text-sm font-extrabold text-white hover:bg-primary-hover">
+                      {t("Continue")}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        );
+      })()}
+
       {!applications || applications.length === 0 ? (
         <p className="mt-8 text-sm text-slate">
           {rich(t("No applications yet. <browse>Browse open opportunities</browse>."), {
@@ -109,11 +172,14 @@ export default async function ApplicationsPage({
         <ul className="mt-6 space-y-2">
           {applications.map((a) => {
             const opp = opportunityById.get(a.opportunity_id);
-            const opportunityEnded = opp ? CLOSED_OPPORTUNITY_STATUSES.has(opp.status) : false;
+            const progress = applicationProgress(
+              { stage: a.stage, viewedAt: a.viewed_at, stageChangedAt: a.stage_changed_at, staffAssisted: opp?.shortlisting_mode === "staff_assisted" },
+              now
+            );
             return (
               <li key={a.id} className="rounded-xl border border-slate/15 bg-white p-4">
                 <div className="flex items-center justify-between gap-4">
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-semibold text-midnight">{opp?.title ?? t("Opportunity")}</p>
                     <p className="text-xs text-slate">
                       {opp ? (orgNameById.get(opp.organisation_id) ?? t("AdorWorks employer")) : ""}
@@ -124,8 +190,34 @@ export default async function ApplicationsPage({
                     <WithdrawActions applicationId={a.id} stage={a.stage} opportunityOpen={opp?.status === "open"} />
                   </div>
                 </div>
-                {opportunityEnded && a.stage === "rejected" && a.decision_reason && (
-                  <p className="mt-2 text-xs text-slate">{a.decision_reason}</p>
+                {progress.step !== null && (
+                  <div className="mt-3 flex items-center gap-3">
+                    <Stepper
+                      className="w-full max-w-56"
+                      steps={steps}
+                      current={progress.step}
+                      label={t("Step {n} of {total}: {step}", { n: progress.step + 1, total: steps.length, step: steps[progress.step] })}
+                    />
+                    <span className="text-xs font-semibold whitespace-nowrap text-slate">{steps[progress.step]}</span>
+                  </div>
+                )}
+                <p className="mt-2 text-sm text-slate">
+                  {progress.href ? (
+                    <Link href={progress.href} className="font-semibold text-teal-ink underline">
+                      {t(progress.next, progress.vars)}
+                    </Link>
+                  ) : (
+                    t(progress.next, progress.vars)
+                  )}
+                </p>
+                {(a.stage === "shortlisted" || a.stage === "interviewing") && (slotsByApplication.get(a.id) ?? []).length > 0 && (
+                  <InterviewPicker slots={slotsByApplication.get(a.id)!} />
+                )}
+                {/* The reason is written for the talent: the employer's kind
+                    decline note, the 14-day auto-close note (0110) or the
+                    "no longer accepting applications" cascade. */}
+                {a.stage === "rejected" && a.decision_reason && (
+                  <p className="mt-2 rounded-lg bg-cloud px-3 py-2 text-sm text-midnight">{a.decision_reason}</p>
                 )}
                 <ApplicationThreadPanel
                   applicationId={a.id}
