@@ -16,7 +16,7 @@ const ROOT = process.cwd();
 const SKIP = new Set(["offline.html"]);
 const FONTS =
   '<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">';
-const SITE_CSS = '<link rel="stylesheet" href="css/site.css">';
+const SITE_CSS = '<link rel="stylesheet" href="css/site.css?v=23">';
 
 const check = process.argv.includes("--check");
 const stale = [];
