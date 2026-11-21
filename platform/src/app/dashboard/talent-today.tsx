@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { FIT_LABEL, type FitLevel } from "@/lib/domain/fitCheck";
 import { ChevronRight } from "lucide-react";
 import { useT } from "@/i18n/client";
 import { rich } from "@/i18n/rich";
@@ -13,6 +14,7 @@ interface RecommendedOpportunity {
   orgName: string;
   /** Skills this opportunity asks for that are on the talent's Passport. */
   matched: number;
+  fit?: FitLevel | null;
   /** Skills the opportunity asks for in total. */
   asked: number;
 }
@@ -51,8 +53,17 @@ export function RecommendedOpportunities({ opportunities }: { opportunities: Rec
               <span className="line-clamp-2 block text-sm font-bold text-midnight">{o.title}</span>
               <span className="mt-0.5 block truncate text-xs text-slate">{o.orgName}</span>
               {o.asked > 0 && (
-                <span className="mt-2 inline-flex items-center rounded-full bg-teal/12 px-2 py-0.5 text-[11px] font-extrabold text-teal-ink">
-                  {t("{matched} of {asked} skills", { matched: o.matched, asked: o.asked })}
+                <span className="mt-2 flex flex-wrap items-center gap-1.5">
+                  {o.fit && (
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-extrabold ${
+                        o.fit === "good" ? "bg-teal/12 text-teal-ink" : o.fit === "stretch" ? "bg-amber-tint text-warning-ink" : "bg-slate/10 text-slate"
+                      }`}
+                    >
+                      {t(FIT_LABEL[o.fit])}
+                    </span>
+                  )}
+                  <span className="text-[11px] font-bold text-slate">{t("{matched} of {asked} skills", { matched: o.matched, asked: o.asked })}</span>
                 </span>
               )}
             </span>

@@ -2,6 +2,7 @@
 
 import { msg } from "@/i18n/config";
 import { z } from "zod";
+import { MAX_OPEN_APPLICATIONS, OPEN_APPLICATION_STAGES } from "@/lib/domain/fitCheck";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireRole, CLIENT_ROLES } from "@/lib/dal/session";
@@ -25,6 +26,21 @@ const PitchSchema = z.object({
 // active job-seeker can still apply to several roles a day, but a script
 // mass-applying to everything can't.
 const MAX_APPLICATIONS_PER_DAY = 15;
+
+const OPEN_CAP_MESSAGE = msg(
+  "You already have 10 open applications. Withdraw one, or wait for an answer, before applying again — fewer, better applications get answered faster."
+);
+
+/** The talent's own open applications (Talent Charter cap). Staff-matched candidates don't count. */
+async function countOpenApplications(supabase: Awaited<ReturnType<typeof createClient>>, talentId: string): Promise<number> {
+  const { count } = await supabase
+    .from("applications")
+    .select("id", { count: "exact", head: true })
+    .eq("talent_id", talentId)
+    .eq("source", "applied")
+    .in("stage", [...OPEN_APPLICATION_STAGES]);
+  return count ?? 0;
+}
 
 /**
  * S08-02: saves a resumable draft — a separate table from `applications`
@@ -79,6 +95,12 @@ export async function applyToOpportunity(
     return { message: `You've reached the daily limit of ${MAX_APPLICATIONS_PER_DAY} applications — try again tomorrow.` };
   }
 
+  // Talent Charter: at most 10 open applications at once (0118 enforces
+  // it too; this is the friendly message).
+  if ((await countOpenApplications(supabase, session.userId)) >= MAX_OPEN_APPLICATIONS) {
+    return { message: OPEN_CAP_MESSAGE };
+  }
+
   // S08-04: the real enforcement is applications_insert RLS (0073), which
   // rejects this same insert server-side regardless of client — this is
   // just a friendlier message than a raw RLS-violation error, checked with
@@ -129,6 +151,7 @@ export async function applyToOpportunity(
     if (error.code === "23505") {
       return { message: msg("You've already applied to this opportunity.") };
     }
+    if (error.message?.includes("open_application_cap")) return { message: OPEN_CAP_MESSAGE };
     return { message: error.message };
   }
 
@@ -409,8 +432,11 @@ export async function reapplyToOpportunity(applicationId: string): Promise<{ err
   const session = await requireRole("talent");
 
   const supabase = await createClient();
+  if ((await countOpenApplications(supabase, session.userId)) >= MAX_OPEN_APPLICATIONS) {
+    return { error: OPEN_CAP_MESSAGE };
+  }
   const { error } = await supabase.from("applications").update({ stage: "submitted" }).eq("id", applicationId);
-  if (error) return { error: error.message };
+  if (error) return { error: error.message?.includes("open_application_cap") ? OPEN_CAP_MESSAGE : error.message };
 
   const admin = createAdminClient();
   await logAuditEvent(admin, {

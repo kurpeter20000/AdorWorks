@@ -10,6 +10,7 @@ import { TrendBars } from "@/components/trend-bars";
 import { loadWorkQueue } from "@/lib/dal/workQueue";
 import { WorkList } from "./work-list";
 import { HealthPanel } from "./health-panel";
+import { CharterMonitor } from "./charter-monitor";
 import { loadPlatformHealth } from "@/lib/dal/platformHealth";
 
 export const metadata: Metadata = { title: "Operations" };
@@ -121,6 +122,7 @@ export default async function OperationsPage() {
 
       <WorkList items={work.items} failed={work.failed} now={work.now} />
       <HealthPanel {...health} />
+      <CharterMonitor role={session.role} />
 
       {failed.length > 0 && (
         <div className="mt-6">
