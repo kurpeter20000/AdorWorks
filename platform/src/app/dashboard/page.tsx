@@ -8,6 +8,7 @@ import { getTalentReadiness, getEmployerReadiness } from "@/lib/domain/readiness
 import { getMyOrganisationMembership } from "@/lib/dal/organisation";
 import { rankBySkillOverlap, countSkillOverlap } from "@/lib/domain/matching";
 import { formatCompensation, formatDate, formatMoney } from "@/lib/domain/format";
+import { fitCheck, type FitLevel } from "@/lib/domain/fitCheck";
 import { Briefcase, Circle, ClipboardList, FileCheck2, FileSignature, Mail, Plus, Search, Users, Wallet } from "lucide-react";
 import { NextStepCard } from "@/components/ui/status";
 import { HelpCard } from "@/components/help-card";
@@ -74,7 +75,7 @@ export default async function DashboardPage({
   // onboarding yet just sees the existing "Onboarding" action card
   // instead of a panel listing every field as missing.
   let readinessState = null;
-  let recommendedOpportunities: { id: string; title: string; compensationLabel: string; orgName: string; matched: number; asked: number }[] = [];
+  let recommendedOpportunities: { id: string; title: string; compensationLabel: string; orgName: string; matched: number; asked: number; fit: FitLevel | null }[] = [];
   const talentAttention: { href: string; label: string; count: number; tone: "warning" | "danger" | "info"; meta?: string }[] = [];
   const employerPipeline: { href: string; label: string; count: number; tone: "warning" | "danger" | "info"; meta?: string }[] = [];
   // Real counts only (see the "skip the wallet card" decision) — every
@@ -161,6 +162,7 @@ export default async function DashboardPage({
         // "Why you match": skill overlap with the Passport only — never pay.
         matched: countSkillOverlap(o.skills ?? [], talentProfile?.skills ?? []),
         asked: (o.skills ?? []).length,
+        fit: fitCheck(o.skills, talentProfile?.skills)?.level ?? null,
       }));
     }
 

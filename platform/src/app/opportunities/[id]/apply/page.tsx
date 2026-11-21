@@ -9,7 +9,7 @@ import { ReportButton } from "@/components/report-button";
 import { ShareButton } from "../../share-button";
 import { ApplyForm } from "./apply-form";
 import { formatCompensation, formatDate } from "@/lib/domain/format";
-import { countSkillOverlap } from "@/lib/domain/matching";
+import { fitCheck, FIT_HINT, FIT_LABEL, MAX_OPEN_APPLICATIONS, OPEN_APPLICATION_STAGES } from "@/lib/domain/fitCheck";
 import { StatusPill } from "@/components/ui/status";
 import { HelpCard } from "@/components/help-card";
 import { msg } from "@/i18n/config";
@@ -61,6 +61,14 @@ export default async function ApplyPage({ params }: { params: Promise<{ id: stri
     supabase.from("public_organisation_names").select("name, verification_status").eq("id", opportunity.organisation_id).maybeSingle(),
     supabase.from("talent_profiles").select("skills, headline, location").eq("id", session.userId).maybeSingle(),
   ]);
+  // Talent Charter: 10 open applications at most.
+  const { count: openCount } = await supabase
+    .from("applications")
+    .select("id", { count: "exact", head: true })
+    .eq("talent_id", session.userId)
+    .eq("source", "applied")
+    .in("stage", [...OPEN_APPLICATION_STAGES]);
+  const openApplications = openCount ?? 0;
 
   const admin = createAdminClient();
   const { data: attachmentRows } = await admin
@@ -75,11 +83,11 @@ export default async function ApplyPage({ params }: { params: Promise<{ id: stri
     })
   );
 
-  // "Why you match" — skill overlap with the Passport only, never pay.
+  // Fit check — skill overlap with the Passport only, never pay.
+  const fit = fitCheck(opportunity.skills, talentProfile?.skills);
   const mySkills = new Set((talentProfile?.skills ?? []).map((s) => s.toLowerCase()));
-  const asked = [...new Map((opportunity.skills ?? []).map((s) => [s.toLowerCase(), s])).values()];
-  const matched = countSkillOverlap(asked, talentProfile?.skills ?? []);
-  const missing = asked.filter((s) => !mySkills.has(s.toLowerCase()));
+  const asked = fit ? [...fit.have, ...fit.lack] : [];
+  const missing = fit?.lack ?? [];
 
   const deadline = opportunity.application_deadline ? new Date(opportunity.application_deadline) : null;
   const daysLeft = deadline ? daysUntil(deadline) : null;
@@ -139,10 +147,16 @@ export default async function ApplyPage({ params }: { params: Promise<{ id: stri
             <section aria-labelledby="match-h" className="space-y-3 rounded-card border border-line bg-white p-5 shadow-card">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 id="match-h" className="text-lg font-extrabold text-midnight">
-                  {t("Why you match")}
+                  {t("Fit check")}
                 </h2>
-                <StatusPill tone={matched > 0 ? "done" : "neutral"}>{t("{matched} of {asked} skills", { matched, asked: asked.length })}</StatusPill>
+                {fit && (
+                  <span className="flex items-center gap-2">
+                    <StatusPill tone={fit.level === "good" ? "done" : fit.level === "stretch" ? "waiting" : "neutral"}>{t(FIT_LABEL[fit.level])}</StatusPill>
+                    <span className="text-xs font-bold text-slate">{t("{matched} of {asked} skills", { matched: fit.have.length, asked: fit.total })}</span>
+                  </span>
+                )}
               </div>
+              {fit && <p className="text-sm text-midnight">{t(FIT_HINT[fit.level])}</p>}
               <p className="text-[13px] text-slate">{t("Based only on skill overlap with your Passport — never on pay or reputation.")}</p>
               <ul className="flex flex-wrap gap-2">
                 {asked.map((skill) => {
@@ -216,6 +230,11 @@ export default async function ApplyPage({ params }: { params: Promise<{ id: stri
             <h2 id="apply-h" className="text-lg font-extrabold text-midnight">
               {t("Apply in 3 steps")}
             </h2>
+            <p className={`mt-1 text-xs font-semibold ${openApplications >= MAX_OPEN_APPLICATIONS ? "text-coral-ink" : "text-slate"}`}>
+              {openApplications >= MAX_OPEN_APPLICATIONS
+                ? t("You have {n} open applications — the most allowed. Withdraw one or wait for an answer to apply here.", { n: openApplications })
+                : t("{n} of {max} open applications used.", { n: openApplications, max: MAX_OPEN_APPLICATIONS })}
+            </p>
             <ApplyForm
               opportunityId={opportunity.id}
               questions={questions ?? []}

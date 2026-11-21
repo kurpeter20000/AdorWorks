@@ -1361,6 +1361,20 @@ export type Database = {
       };
     };
     Functions: {
+      verify_person: {
+        Args: { p_id: string };
+        Returns: { name: string; verification_tier: VerificationTier; member_since: string; completed_contracts: number }[];
+      };
+      charter_monitor: {
+        Args: Record<string, never>;
+        Returns: {
+          kind: "unanswered_application" | "listing_without_pay" | "payout_overdue";
+          ref_id: string;
+          title: string;
+          detail: string;
+          since: string;
+        }[];
+      };
       next_receipt_number: {
         Args: Record<string, never>;
         Returns: string;

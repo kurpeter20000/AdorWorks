@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ShareVerifiedProfile } from "./share-verified-profile";
 import Link from "next/link";
 import { requireRole } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
@@ -103,6 +104,7 @@ export default async function PassportPage() {
           {profile.public_visible ? "View your public profile" : "Preview how it will look"}
         </Link>
       </p>
+      <ShareVerifiedProfile talentId={session.userId} />
 
       <div className="mt-6 rounded-xl border border-slate/15 bg-white p-5">
         <div className="flex items-start justify-between gap-4">
