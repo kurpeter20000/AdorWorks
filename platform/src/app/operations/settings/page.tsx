@@ -17,7 +17,7 @@ export default async function OperationsSettingsPage() {
   const example = calculateFees(10000, { ...rates, enabled: true });
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-4xl">
       <h1 className="text-2xl font-extrabold text-midnight">Settings</h1>
       <p className="mt-1 text-sm text-slate">Platform-wide settings that change without a new release.</p>
 
