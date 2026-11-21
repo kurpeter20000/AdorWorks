@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { requireRole } from "@/lib/dal/session";
 import { staffAreaRoles } from "@/lib/domain/staffAccess";
-import { getCollectionAccounts, getEscrowRates, getFeeRates, getReceivingBankAccount, isGuaranteeEnabled, isProgrammeSharingEnabled } from "@/lib/dal/settings";
+import { getCollectionAccounts, getEscrowRates, getFeeRates, getReceivingBankAccounts, isGuaranteeEnabled, isProgrammeSharingEnabled } from "@/lib/dal/settings";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FeatureSwitchForm } from "./feature-switch-form";
 import { ProgrammesPanel, type ProgrammeView } from "./programmes-panel";
@@ -19,7 +19,8 @@ export default async function OperationsSettingsPage() {
   const session = await requireRole(...staffAreaRoles("settings"));
   const rates = await getFeeRates();
   const escrowRates = await getEscrowRates();
-  const bankAccount = await getReceivingBankAccount();
+  const bankAccounts = await getReceivingBankAccounts();
+  const bankCurrencies = [bankAccounts.SSP && "SSP", (bankAccounts.USD || bankAccounts["*"]) && "USD"].filter(Boolean) as string[];
   const collection = await getCollectionAccounts();
   const [guaranteeOn, sharingOn] = await Promise.all([isGuaranteeEnabled(), isProgrammeSharingEnabled()]);
   const programmes = await loadProgrammes();
@@ -127,24 +128,25 @@ export default async function OperationsSettingsPage() {
 
       <section className="mt-6 rounded-xl border border-slate/15 bg-white p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-bold text-midnight">Bank account for employer payments</h2>
+          <h2 className="text-lg font-bold text-midnight">Bank accounts for employer payments</h2>
           <span
-            className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${bankAccount ? "bg-teal/10 text-teal-ink" : "bg-slate/10 text-slate"}`}
+            className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${bankCurrencies.length ? "bg-teal/10 text-teal-ink" : "bg-slate/10 text-slate"}`}
           >
-            {bankAccount ? "Bank transfer offered" : "Not set — bank transfer hidden"}
+            {bankCurrencies.length ? `Bank transfer offered: ${bankCurrencies.join(", ")}` : "Not set — bank transfer hidden"}
           </span>
         </div>
         <p className="mt-2 text-sm text-slate">
-          AdorWorks&rsquo; own account that employers pay into when they choose bank transfer. Employers can send from any
-          bank; this is only where the money lands. Confirm transfers as they arrive under{" "}
+          AdorWorks&rsquo; own accounts that employers pay into when they choose bank transfer — one per currency, so an
+          employer paying in SSP sees the SSP account and one paying in USD sees the USD account. Employers can send from
+          any bank; this is only where the money lands. Confirm transfers as they arrive under{" "}
           <a href="/operations/invoices" className="font-semibold text-teal-ink underline">Invoices</a>.
         </p>
 
         {canEdit ? (
-          <BankAccountForm current={bankAccount} />
+          <BankAccountForm current={bankAccounts} />
         ) : (
           <p className="mt-4 text-sm text-slate">
-            {bankAccount ? `${bankAccount.bankName} · ${bankAccount.accountName} · ${bankAccount.accountNumber}` : "No account saved yet."} Only
+            {bankCurrencies.length ? `Accounts set for ${bankCurrencies.join(" and ")}.` : "No account saved yet."} Only
             finance and admin staff can change this.
           </p>
         )}

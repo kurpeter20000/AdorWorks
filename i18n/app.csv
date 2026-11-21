@@ -752,6 +752,7 @@ Enter your password.,أدخل كلمة المرور.,draft,Weka nenosiri lako.,d
 Too many login attempts. Please wait a few minutes and try again.,محاولات تسجيل دخول كثيرة جدًا. يُرجى الانتظار بضع دقائق والمحاولة مرة أخرى.,draft,Majaribio mengi mno ya kuingia. Tafadhali subiri dakika chache ujaribu tena.,draft,lib/actions/auth,
 Incorrect email or password.,البريد الإلكتروني أو كلمة المرور غير صحيحة.,draft,Barua pepe au nenosiri si sahihi.,draft,lib/actions/auth,
 Too many reset requests for this email. Please wait a few minutes and try again.,طلبات إعادة تعيين كثيرة جدًا لهذا البريد. يُرجى الانتظار بضع دقائق والمحاولة مرة أخرى.,draft,Maombi mengi mno ya kuweka upya kwa barua pepe hii. Tafadhali subiri dakika chache ujaribu tena.,draft,lib/actions/auth,
+Bank transfer isn't available for this currency yet. Please pay with MTN Mobile Money or mGurush.,التحويل البنكي غير متاح لهذه العملة بعد. يرجى الدفع عبر MTN Mobile Money أو mGurush.,draft,Uhamisho wa benki bado haupatikani kwa sarafu hii. Tafadhali lipa kwa MTN Mobile Money au mGurush.,draft,lib/actions/contracts,
 Choose what happened.,اختر ما حدث.,draft,Chagua kilichotokea.,draft,lib/actions/guarantee,
 Tell us what happened in a sentence or two.,أخبرنا بما حدث في جملة أو اثنتين.,draft,Tuambie kilichotokea kwa sentensi moja au mbili.,draft,lib/actions/guarantee,
 The Employer Guarantee isn't available yet.,ضمان صاحب العمل غير متاح بعد.,draft,Dhamana ya Mwajiri bado haipatikani.,draft,lib/actions/guarantee,

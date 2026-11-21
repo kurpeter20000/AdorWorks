@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { msg } from "@/i18n/config";
 import { randomInt } from "crypto";
 import { revalidatePath } from "next/cache";
 import { requireSession, requireRole, CLIENT_ROLES } from "@/lib/dal/session";
@@ -413,8 +414,8 @@ export async function payMilestone(milestoneId: string, _prevState: FormState, f
   }
 
   if (v.provider === "bank_transfer") {
-    const account = await getReceivingBankAccount();
-    if (!account) return { message: "Bank transfer isn't available yet. Please pay with MTN Mobile Money or mGurush." };
+    const account = await getReceivingBankAccount(milestone.currency);
+    if (!account) return { message: msg("Bank transfer isn't available for this currency yet. Please pay with MTN Mobile Money or mGurush.") };
     // A clash on the unique reference is astronomically unlikely, but
     // retrying costs nothing.
     for (let attempt = 0; attempt < 3; attempt++) {

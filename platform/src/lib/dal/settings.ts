@@ -1,7 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FEES_OFF, parseFeeRates, parseFeeSettings, type FeeSettings } from "@/lib/domain/fees";
-import { parseReceivingBankAccount, type ReceivingBankAccount } from "@/lib/domain/bankTransfer";
+import { parseReceivingBankAccounts, pickBankAccount, type ReceivingBankAccount, type ReceivingBankAccounts } from "@/lib/domain/bankTransfer";
 import { parseCollectionAccounts, type CollectionAccounts } from "@/lib/domain/collectionAccounts";
 import { parseGuaranteeEnabled } from "@/lib/domain/guarantee";
 import { ESCROW_OFF, parseEscrowRates, parseEscrowSettings, type EscrowSettings } from "@/lib/domain/escrow";
@@ -44,9 +44,14 @@ export async function getEscrowRates(): Promise<EscrowSettings & { loaded: boole
   return { ...parseEscrowRates(value), loaded: value !== null };
 }
 
-/** AdorWorks' own account employers pay into by bank transfer (0116). Null = not set up, so bank transfer isn't offered. */
-export async function getReceivingBankAccount(): Promise<ReceivingBankAccount | null> {
-  return parseReceivingBankAccount(await readSetting("bank_account"));
+/** AdorWorks' own bank accounts, one per currency (0116; SSP and USD). */
+export async function getReceivingBankAccounts(): Promise<ReceivingBankAccounts> {
+  return parseReceivingBankAccounts(await readSetting("bank_account"));
+}
+
+/** The account for payments in `currency`. Null = none set up, so bank transfer isn't offered for it. */
+export async function getReceivingBankAccount(currency: string): Promise<ReceivingBankAccount | null> {
+  return pickBankAccount(await getReceivingBankAccounts(), currency);
 }
 
 /** When payments made with escrow off started going into the payouts queue (0116). Null = migration not run yet. */
