@@ -46,3 +46,8 @@ export function newTransferReference(randomIndex: (max: number) => number): stri
   for (let i = 0; i < 6; i++) code += REFERENCE_ALPHABET[randomIndex(REFERENCE_ALPHABET.length)];
   return `AWP-${code}`;
 }
+
+/** "Bank transfer · Equity Bank · AdorWorks Ltd · 100200300", as stamped on payment_events.received_into. */
+export function describeReceivingBankAccount(a: ReceivingBankAccount | null): string | null {
+  return a ? `Bank transfer · ${a.bankName} · ${a.accountName} · ${a.accountNumber}` : null;
+}

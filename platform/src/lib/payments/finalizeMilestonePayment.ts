@@ -2,7 +2,8 @@ import "server-only";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { FeeBreakdown } from "@/lib/domain/fees";
 import { disputeWindowEndsAt } from "@/lib/domain/escrow";
-import { getEscrowSettings } from "@/lib/dal/settings";
+import { getCollectionAccounts, getEscrowSettings } from "@/lib/dal/settings";
+import { describeCollectionAccount } from "@/lib/domain/collectionAccounts";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import { sendEmailSafely, getUserEmail } from "@/lib/email";
 import { renderEmail } from "@/lib/emailTemplate";
@@ -29,6 +30,8 @@ export interface SettledMilestonePayment {
   currency: string;
   fee: FeeBreakdown;
   isSimulated: boolean;
+  /** 0117: the AdorWorks account it landed in. Worked out here for mobile money; the bank flows pass it. */
+  receivedInto?: string | null;
 }
 
 /**
@@ -53,6 +56,10 @@ export async function finalizeMilestonePayment(
   const escrow = await getEscrowSettings();
   const escrowEndsAt = escrow.enabled ? disputeWindowEndsAt(escrow) : null;
   const receiptNumber = await nextReceiptNumber(admin, p.intentionId);
+  let receivedInto = p.receivedInto ?? null;
+  if (p.receivedInto === undefined && p.provider !== "bank_transfer") {
+    receivedInto = describeCollectionAccount(p.provider, (await getCollectionAccounts())[p.provider]);
+  }
 
   const { error: paymentError } = await admin.from("payment_events").insert({
     milestone_id: p.milestoneId,
@@ -63,6 +70,7 @@ export async function finalizeMilestonePayment(
     external_reference: p.externalReference,
     payer_phone: p.payerPhone,
     receipt_number: receiptNumber,
+    received_into: receivedInto,
     amount: p.amount,
     currency: p.currency,
     fee_percent: p.fee.talentFeePercent,

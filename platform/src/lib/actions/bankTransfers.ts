@@ -8,6 +8,7 @@ import { calculateFees, FEES_OFF, type FeeSettings } from "@/lib/domain/fees";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
+import { describeReceivingBankAccount, parseReceivingBankAccount } from "@/lib/domain/bankTransfer";
 import { finalizeMilestonePayment } from "@/lib/payments/finalizeMilestonePayment";
 import type { FormState } from "./auth";
 
@@ -88,7 +89,7 @@ export async function confirmBankTransfer(
 
   const { data: intention } = await admin
     .from("payment_intentions")
-    .select("id, contract_id, milestone_id, invoice_id, status, fee_settings, transfer_reference, created_by")
+    .select("id, contract_id, milestone_id, invoice_id, status, fee_settings, bank_account, transfer_reference, created_by")
     .eq("id", intentionId)
     .maybeSingle();
   if (!intention) return { message: "Transfer not found." };
@@ -136,6 +137,7 @@ export async function confirmBankTransfer(
     fee,
     // Staff confirmed real money on a real statement.
     isSimulated: false,
+    receivedInto: describeReceivingBankAccount(parseReceivingBankAccount(intention.bank_account)),
   });
   if (!finalized.ok) {
     // Put it back so it can be confirmed again.

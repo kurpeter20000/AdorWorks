@@ -6,7 +6,7 @@ import { requireRole, FINANCE_ROLES } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { calculateFees } from "@/lib/domain/fees";
 import { disputeWindowEndsAt } from "@/lib/domain/escrow";
-import { getEscrowSettings, getFeeSettings } from "@/lib/dal/settings";
+import { getEscrowSettings, getFeeSettings, getReceivingBankAccount } from "@/lib/dal/settings";
 import { isInstitutional } from "@/lib/domain/institutional";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import { sendEmailSafely, getUserEmail } from "@/lib/email";
@@ -14,6 +14,7 @@ import { renderEmail } from "@/lib/emailTemplate";
 import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
+import { describeReceivingBankAccount } from "@/lib/domain/bankTransfer";
 import { nextReceiptNumber } from "@/lib/payments/receiptNumber";
 import type { FormState } from "./auth";
 
@@ -97,6 +98,7 @@ export async function confirmInstitutionalPayment(
     invoice_id: invoice.id,
     provider_name: "bank_transfer",
     external_reference: validated.data.bankReference,
+    received_into: describeReceivingBankAccount(await getReceivingBankAccount()),
     receipt_number: receiptNumber,
     amount: invoice.amount,
     currency: invoice.currency,

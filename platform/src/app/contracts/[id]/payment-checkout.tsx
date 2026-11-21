@@ -38,6 +38,7 @@ export function PaymentCheckout({
   fees,
   bankTransferAvailable,
   awaitingTransfer,
+  collectionAccountNames,
 }: {
   milestoneId: string;
   amount: number;
@@ -49,6 +50,8 @@ export function PaymentCheckout({
   /** False until finance staff have saved AdorWorks' receiving account. */
   bankTransferAvailable: boolean;
   awaitingTransfer: AwaitingTransfer | null;
+  /** Names on AdorWorks' own MTN / mGurush accounts, so the employer sees who they're paying. */
+  collectionAccountNames?: { mtn_momo: string | null; mgurush: string | null };
 }) {
   const t = useT();
   const boundAction = payMilestone.bind(null, milestoneId);
@@ -136,6 +139,14 @@ export function PaymentCheckout({
             className="mt-1 min-h-11 w-full rounded-lg border border-slate/25 px-3 text-sm"
           />
           {state.errors?.phone && <p className="mt-1 text-xs text-coral-ink">{t(state.errors.phone[0])}</p>}
+          {collectionAccountNames?.[option as "mtn_momo" | "mgurush"] && (
+            <p className="mt-2 text-xs text-slate">
+              {t("Paid to AdorWorks' {provider} account: {name}.", {
+                provider: option === "mtn_momo" ? "MTN MoMo" : "mGurush",
+                name: collectionAccountNames[option as "mtn_momo" | "mgurush"]!,
+              })}
+            </p>
+          )}
         </div>
       )}
 
