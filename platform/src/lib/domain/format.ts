@@ -27,6 +27,14 @@ export function formatMoney(amount: number, currency: string): string {
   return `${currency} ${amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 
+/** Listing-friendly amounts: 250,000 → "250K", 2,500,000 → "2.5M" (owner request). Exact figures stay on contracts and receipts. */
+export function compactAmount(n: number): string {
+  const trim = (x: number) => String(Math.round(x * 10) / 10);
+  if (n >= 1_000_000) return `${trim(n / 1_000_000)}M`;
+  if (n >= 1_000) return `${trim(n / 1_000)}K`;
+  return String(n);
+}
+
 /**
  * Shared with the talent dashboard's "Recommended for you" widget — one
  * formatting rule, not a second copy that could drift from
@@ -40,9 +48,9 @@ export function formatCompensation(o: {
   currency: string | null;
 }): string {
   const currency = o.currency || "SSP";
-  if (o.compensation_amount) return `${currency} ${o.compensation_amount.toLocaleString()}`;
+  if (o.compensation_amount) return `${currency} ${compactAmount(o.compensation_amount)}`;
   if (o.compensation_min && o.compensation_max) {
-    return `${currency} ${o.compensation_min.toLocaleString()}–${o.compensation_max.toLocaleString()}`;
+    return `${currency} ${compactAmount(o.compensation_min)}–${compactAmount(o.compensation_max)}`;
   }
   if (o.payment_basis === "negotiable") return msg("Negotiable");
   return msg("Paid — details on application");
