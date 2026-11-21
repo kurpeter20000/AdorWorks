@@ -31,7 +31,7 @@
 <link rel="stylesheet" href="css/themes.css">
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/site.css">
-<link rel="stylesheet" href="css/home.css?v=21">
+<link rel="stylesheet" href="css/home.css?v=22">
 <script src="js/i18n-early.js"></script>
 <script type="application/ld+json">
 {
@@ -201,19 +201,69 @@
   <!-- Why AdorWorks + verification ladder -->
   <section class="home-section">
     <div class="container">
-      <div class="home-head site-reveal">
-        <div>
-          <p class="eyebrow">Why AdorWorks</p>
-          <h2>A marketplace built on people you can trust.</h2>
-        </div>
+      <div class="home-head home-head-stack site-reveal">
+        <p class="eyebrow">Why AdorWorks</p>
+        <h2>A marketplace built on people you can trust.</h2>
         <p class="home-head-note">Most platforms leave you to sort through strangers. We verify, review and stay with you until the work is delivered.</p>
       </div>
-      <ol class="home-reasons">
-        <li class="site-reveal"><span class="num">01</span><h3>Staged verification</h3><p>Every profile climbs a visible ladder, so credibility is shown, not claimed.</p></li>
-        <li class="site-reveal"><span class="num">02</span><h3>0% platform fee</h3><p>No deductions for talent or employers during the founding pilot.</p></li>
-        <li class="site-reveal"><span class="num">03</span><h3>Human-reviewed</h3><p>A person checks every brief and every shortlist. Matching is by skill, never by who pays more.</p></li>
-        <li class="site-reveal"><span class="num">04</span><h3>In-person help</h3><p>Assisted Hiring brings people online who would otherwise be left out.</p></li>
-      </ol>
+      <ul class="why-cards">
+        <li class="why-card site-reveal" data-why-card>
+          <h3 class="why-card-title">
+            <button type="button" class="why-card-face" aria-expanded="false" aria-controls="why-detail-01" data-why-toggle>
+              <span class="num">01</span>
+              <span class="why-card-name">Staged verification</span>
+              <span class="why-card-plus" aria-hidden="true"></span>
+            </button>
+          </h3>
+          <div class="why-card-detail" id="why-detail-01" data-why-detail>
+            <span class="num" aria-hidden="true">01</span>
+            <p>Every profile climbs a visible ladder, so credibility is shown, not claimed.</p>
+            <button type="button" class="why-card-close" aria-label="Close" data-why-close><span aria-hidden="true"></span></button>
+          </div>
+        </li>
+        <li class="why-card site-reveal" data-why-card>
+          <h3 class="why-card-title">
+            <button type="button" class="why-card-face" aria-expanded="false" aria-controls="why-detail-02" data-why-toggle>
+              <span class="num">02</span>
+              <span class="why-card-name">0% platform fee</span>
+              <span class="why-card-plus" aria-hidden="true"></span>
+            </button>
+          </h3>
+          <div class="why-card-detail" id="why-detail-02" data-why-detail>
+            <span class="num" aria-hidden="true">02</span>
+            <p>No deductions for talent or employers during the founding pilot.</p>
+            <button type="button" class="why-card-close" aria-label="Close" data-why-close><span aria-hidden="true"></span></button>
+          </div>
+        </li>
+        <li class="why-card site-reveal" data-why-card>
+          <h3 class="why-card-title">
+            <button type="button" class="why-card-face" aria-expanded="false" aria-controls="why-detail-03" data-why-toggle>
+              <span class="num">03</span>
+              <span class="why-card-name">Human-reviewed</span>
+              <span class="why-card-plus" aria-hidden="true"></span>
+            </button>
+          </h3>
+          <div class="why-card-detail" id="why-detail-03" data-why-detail>
+            <span class="num" aria-hidden="true">03</span>
+            <p>A person checks every brief and every shortlist. Matching is by skill, never by who pays more.</p>
+            <button type="button" class="why-card-close" aria-label="Close" data-why-close><span aria-hidden="true"></span></button>
+          </div>
+        </li>
+        <li class="why-card site-reveal" data-why-card>
+          <h3 class="why-card-title">
+            <button type="button" class="why-card-face" aria-expanded="false" aria-controls="why-detail-04" data-why-toggle>
+              <span class="num">04</span>
+              <span class="why-card-name">In-person help</span>
+              <span class="why-card-plus" aria-hidden="true"></span>
+            </button>
+          </h3>
+          <div class="why-card-detail" id="why-detail-04" data-why-detail>
+            <span class="num" aria-hidden="true">04</span>
+            <p>Assisted Hiring brings people online who would otherwise be left out.</p>
+            <button type="button" class="why-card-close" aria-label="Close" data-why-close><span aria-hidden="true"></span></button>
+          </div>
+        </li>
+      </ul>
 
       <div class="ladder site-card site-reveal">
         <p class="eyebrow eyebrow-muted">The verification ladder</p>
@@ -432,7 +482,7 @@
 <script src="js/api-config.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
-<script src="js/home.js"></script>
+<script src="js/home.js?v=22"></script>
 <script src="js/analytics-config.js"></script>
 <script src="js/analytics.js"></script>
 <script src="js/chat-widget.js"></script>
