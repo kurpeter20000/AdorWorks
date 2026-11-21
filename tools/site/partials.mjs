@@ -13,6 +13,7 @@ export const ACTIVE = {
   "jobs-projects.html": "jobs",
   "for-employers.html": "talent",
   "services.html": "services",
+  "pathways.html": "pathways",
   "how-it-works.html": "how",
   "trust-safety.html": "trust",
 };
@@ -101,6 +102,7 @@ ${c.items
             </div>
           </div>
         </li>
+        <li><a href="pathways.html"${current(active, "pathways")}>Pathways</a></li>
         <li><a href="how-it-works.html"${current(active, "how")}>How it works</a></li>
         <li><a href="trust-safety.html"${current(active, "trust")}>Trust &amp; Safety</a></li>
         <li class="nav-login"><a href="${APP}/login">Log in</a></li>
@@ -128,6 +130,7 @@ export function footer() {
         <ul class="footer-list">
           <li><a href="services.html">Services</a></li>
           <li><a href="jobs-projects.html">Jobs &amp; projects</a></li>
+          <li><a href="pathways.html">Pathways for schools</a></li>
           <li><a href="how-it-works.html">How it works</a></li>
           <li><a href="pricing.html">Pricing</a></li>
           <li><a href="impact-stories.html">Impact &amp; stories</a></li>

@@ -146,7 +146,7 @@ p { margin: 0 0 1em; }
 .site-nav a[aria-current="page"] { color: var(--color-accent-text); }
 .site-nav .nav-cta { margin-top: 0.5rem; }
 
-@media (min-width: 960px) {
+@media (min-width: 1180px) {
   .nav-toggle { display: none; }
   .site-header .container { flex-wrap: nowrap; }
   .site-nav { display: flex !important; flex: 1 1 auto; justify-content: center; }
@@ -183,7 +183,7 @@ p { margin: 0 0 1em; }
 /* The homepage navigation is outcome-led, so every text link uses one
    consistent interaction instead of relying on a link's position. This
    also keeps the treatment correct if the navigation order changes. */
-@media (min-width: 960px) {
+@media (min-width: 1180px) {
   .site-nav > ul > li:not(.nav-cta) > a {
     position: relative !important;
     padding-inline: 0 !important;
@@ -303,7 +303,7 @@ p { margin: 0 0 1em; }
 .services-megamenu-footer a { color: var(--color-accent-text); font-weight: 700; font-size: 0.9rem; text-decoration: none; }
 .services-megamenu-footer a:hover { text-decoration: underline; }
 
-@media (min-width: 960px) {
+@media (min-width: 1180px) {
   .services-megamenu {
     position: absolute;
     top: calc(100% + 0.75rem);
@@ -335,7 +335,7 @@ p { margin: 0 0 1em; }
   }
 }
 
-@media (max-width: 959px) {
+@media (max-width: 1179px) {
   .nav-megamenu-trigger { width: 100%; justify-content: space-between; padding: 0.6rem 0.25rem; border-bottom: 1px solid var(--color-border); }
   .services-megamenu { border: none; border-radius: 0; }
   .nav-megamenu.is-open .services-megamenu { display: block; }
@@ -1919,7 +1919,7 @@ input[type="checkbox"], input[type="radio"] {
   max-width: 100%;
 }
 .nav-lang select:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
-@media (min-width: 960px) { .nav-lang { margin-inline-start: 0.5rem; } }
+@media (min-width: 1180px) { .nav-lang { margin-inline-start: 0.5rem; } }
 
 html[lang="ar"] body,
 html[lang="ar"] button,
@@ -1934,7 +1934,7 @@ html[lang="ar"] h1, html[lang="ar"] h2, html[lang="ar"] h3 { letter-spacing: 0; 
 
 /* Mirror the rules above that use physical left/right. */
 [dir="rtl"] .skip-link { left: auto; right: 1rem; }
-@media (min-width: 960px) {
+@media (min-width: 1180px) {
   [dir="rtl"] .site-nav .nav-cta {
     margin-left: 0; margin-right: 0.5rem;
     padding-left: 0; padding-right: 1.5rem;

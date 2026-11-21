@@ -135,7 +135,7 @@
     // would add complexity for without changing what a keyboard user can
     // actually reach. Desktop opens on hover (with a short close delay so
     // moving the mouse from trigger to panel doesn't drop it) and on
-    // click/Enter for keyboard and touch; under 960px it's an inline
+    // click/Enter for keyboard and touch; under 1180px it's an inline
     // disclosure inside the already-open mobile drawer instead of a flyout,
     // since a hover panel makes no sense on a touch screen.
     document.querySelectorAll("[data-nav-megamenu]").forEach(function (item) {
@@ -145,7 +145,7 @@
 
       var catButtons = Array.from(panel.querySelectorAll("[data-megamenu-cat]"));
       var catGroups = Array.from(panel.querySelectorAll("[data-megamenu-items]"));
-      var desktopQuery = window.matchMedia("(min-width: 960px)");
+      var desktopQuery = window.matchMedia("(min-width: 1180px)");
       var closeTimer = null;
       // When the pointer opened it a moment ago, the click that follows is
       // the same intent ("show me the menu"), not a request to close it.
