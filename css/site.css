@@ -274,3 +274,19 @@ h1 em, h2 em { font-style: normal; color: var(--site-teal); }
 /* Mobile bottom bar matches the new palette. */
 .mobile-contact-bar { background: rgb(255 255 255 / 0.97); border-top: 1px solid var(--site-line); }
 .mobile-contact-bar a.is-primary { background: var(--site-teal); color: #fff; }
+
+/* ---------- Phones (owner, Nov 2026: text sizes and photos at their best) ----------
+   One consistent type scale on small screens: page titles clearly biggest,
+   section headings a step down, comfortable body text, and calmer
+   spacing so pages don't feel stretched. */
+@media (max-width: 640px) {
+  main h1 { font-size: clamp(2rem, 9vw, 2.4rem); line-height: 1.08; letter-spacing: -0.02em; }
+  .page-section h2, .home-section h2, .page-hero h2, .page-dark h2 { font-size: clamp(1.55rem, 6.6vw, 1.8rem); line-height: 1.15; letter-spacing: -0.01em; }
+  main h3 { line-height: 1.25; }
+  .lede { font-size: 1.05rem; line-height: 1.55; }
+  main p, main li { line-height: 1.55; }
+  .eyebrow { font-size: 0.76rem; letter-spacing: 0.1em; }
+  /* Photos: one rounded style, never taller than about half the screen. */
+  .photo-slot { border-radius: 20px; }
+  .photo-slot img { max-height: 56vh; }
+}
