@@ -4,14 +4,15 @@
   pages pick up the new look step by step without breaking anything that
   hasn't been redesigned yet.
 
-  Cream #F7F3EC page · Ink #182230 text · Teal #00786A primary action ·
-  Fraunces for display headings, Manrope for everything else.
+  White page · cream #F7F3EC cards and panels · Ink #182230 text ·
+  Teal #00786A primary action · Manrope throughout (bold for headings).
   Every colour pairing here meets 4.5:1; touch targets are 44px or more;
   animation switches off for people who ask for reduced motion.
 */
 :root {
-  --site-bg: #f7f3ec;
-  --site-bg-soft: #fbf8f3;
+  --site-bg: #ffffff;
+  --site-surface: #f7f3ec;
+  --site-bg-soft: #faf7f1;
   --site-sand: #efe8dc;
   --site-line: #e6dfd2;
   --site-line-strong: #d9d0bf;
@@ -22,7 +23,9 @@
   --site-teal-bright: #00a88f;
   --site-mint: #7fd8c8;
   --site-night: #10171f;
-  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  /* One clean sans family for everything; headings are bold, not a
+     decorative serif (easier on the eyes over long reading). */
+  --font-display: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 body { background: var(--site-bg); color: var(--site-ink); }
@@ -39,14 +42,15 @@ select:focus-visible { outline: 3px solid var(--site-teal-bright); outline-offse
 
 h1, h2 {
   font-family: var(--font-display);
-  font-weight: 500;
-  letter-spacing: -0.02em;
+  font-weight: 800;
+  letter-spacing: -0.03em;
   line-height: 1.08;
   color: var(--site-ink);
 }
-h1 { font-size: clamp(2.4rem, 6vw, 4.6rem); }
-h2 { font-size: clamp(1.9rem, 4vw, 3rem); }
-h1 em, h2 em { font-style: italic; color: var(--site-teal); }
+h1 { font-size: clamp(2.2rem, 5.2vw, 4rem); }
+h2 { font-size: clamp(1.75rem, 3.4vw, 2.6rem); }
+/* Highlighted words keep their teal colour, without the slant. */
+h1 em, h2 em { font-style: normal; color: var(--site-teal); }
 
 /* Pill buttons, as in the designs. */
 .btn { border-radius: 999px; padding: 0.75em 1.5em; }
@@ -63,7 +67,7 @@ h1 em, h2 em { font-style: italic; color: var(--site-teal); }
    Header
    ------------------------------------------------------------------ */
 .site-header {
-  background: rgb(247 243 236 / 0.96);
+  background: rgb(255 255 255 / 0.96);
   border-bottom: 1px solid var(--site-line);
   -webkit-backdrop-filter: saturate(1.2) blur(6px);
   backdrop-filter: saturate(1.2) blur(6px);
@@ -114,7 +118,7 @@ h1 em, h2 em { font-style: italic; color: var(--site-teal); }
    ------------------------------------------------------------------ */
 .mm-grid { display: grid; gap: 1.5rem; padding: 1rem 0.25rem 1.25rem; }
 .mm-col { min-width: 0; }
-.mm-cat { margin: 0; font-family: var(--font-display); font-size: 1.3rem; color: var(--site-ink); }
+.mm-cat { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; color: var(--site-ink); }
 .mm-tag { margin: 0.1rem 0 0.6rem; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--site-teal); }
 /* The top menu's row/centre rules must not reach the lists in here. */
 .site-nav .mm-col ul {
@@ -138,7 +142,7 @@ h1 em, h2 em { font-style: italic; color: var(--site-teal); }
   font-weight: 400;
   min-height: 44px;
 }
-.site-nav .mm-item:hover { background: var(--site-bg); color: var(--site-ink); }
+.site-nav .mm-item:hover { background: #fff; color: var(--site-ink); }
 .mm-item strong { display: block; font-size: 0.95rem; font-weight: 800; }
 .mm-item small { display: block; font-size: 0.82rem; color: var(--site-muted); line-height: 1.4; }
 .mm-note {
@@ -150,11 +154,11 @@ h1 em, h2 em { font-style: italic; color: var(--site-teal); }
   flex-direction: column;
   gap: 0.35rem;
 }
-.mm-note-text { margin: 0 0 0.5rem; font-family: var(--font-display); font-size: 1.2rem; line-height: 1.25; }
+.mm-note-text { margin: 0 0 0.5rem; font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; line-height: 1.25; }
 .site-nav .mm-note a { color: var(--site-mint); border: none; padding: 0.35rem 0; min-height: 0; font-weight: 800; }
 .site-nav .mm-note a:hover { color: #fff; }
 
-.services-megamenu { background: #fff; border-color: var(--site-line); }
+.services-megamenu { background: var(--site-surface); border-color: var(--site-line); }
 @media (min-width: 960px) {
   /* Full-width panel under the header, anchored to it (sticky header is
      the positioned ancestor) rather than to the Services button. */
@@ -191,7 +195,7 @@ h1 em, h2 em { font-style: italic; color: var(--site-teal); }
 .site-footer a:hover { color: #fff; }
 .site-footer .brand { color: #fff; }
 .footer-grid { gap: 2rem; }
-.footer-tagline { margin: 0.75rem 0 0.5rem; font-family: var(--font-display); font-size: 1.3rem; line-height: 1.25; color: #f7f3ec; max-width: 15em; }
+.footer-tagline { margin: 0.75rem 0 0.5rem; font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; line-height: 1.25; color: #f7f3ec; max-width: 15em; }
 .footer-about { margin: 0; color: #a9b3c2; font-size: 0.85rem; max-width: 38ch; }
 .footer-heading { color: #8f9cb0; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; margin: 0 0 0.7rem; font-family: "Manrope", system-ui, sans-serif; }
 .footer-list { gap: 0.35rem; }
@@ -246,7 +250,7 @@ h1 em, h2 em { font-style: italic; color: var(--site-teal); }
 /* Wide enough that a short intro stays on one line; long ones still wrap
    at a readable length. */
 .lede { font-size: 1.15rem; color: var(--site-muted); max-width: 54em; }
-.site-card { background: #fff; border: 1px solid var(--site-line); border-radius: 24px; }
+.site-card { background: var(--site-surface); border: 1px solid var(--site-line); border-radius: 24px; }
 
 /* Entrance and scroll-reveal motion (opt-in per element). Named
    .site-reveal: styles.css already has a .reveal (hidden until main.js
@@ -265,5 +269,5 @@ h1 em, h2 em { font-style: italic; color: var(--site-teal); }
 }
 
 /* Mobile bottom bar matches the new palette. */
-.mobile-contact-bar { background: rgb(247 243 236 / 0.97); border-top: 1px solid var(--site-line); }
+.mobile-contact-bar { background: rgb(255 255 255 / 0.97); border-top: 1px solid var(--site-line); }
 .mobile-contact-bar a.is-primary { background: var(--site-teal); color: #fff; }

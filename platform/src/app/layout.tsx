@@ -30,23 +30,6 @@ const notoArabic = localFont({
   preload: false,
 });
 
-// The public site's display face, used only for headings on the sign-in
-// pages. Declared here so its @font-face lands in the main stylesheet (a
-// font declared in a nested layout ships as an extra render-blocking CSS
-// file), and preload: false so nothing downloads unless a heading on the
-// page actually uses it.
-const fraunces = localFont({
-  src: [
-    { path: "./fonts/fraunces-latin.woff2", style: "normal" },
-    { path: "./fonts/fraunces-latin-italic.woff2", style: "italic" },
-  ],
-  variable: "--font-fraunces",
-  weight: "400 500",
-  display: "swap",
-  preload: false,
-  adjustFontFallback: "Times New Roman",
-});
-
 export const metadata: Metadata = {
   title: {
     default: "AdorWorks",
@@ -72,7 +55,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
   const t = await getT();
   return (
-    <html lang={locale} dir={dirOf(locale)} className={`${manrope.variable} ${notoArabic.variable} ${fraunces.variable} h-full antialiased`}>
+    <html lang={locale} dir={dirOf(locale)} className={`${manrope.variable} ${notoArabic.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-cloud text-midnight">
         <I18nProvider locale={locale} messages={getMessages(locale)}>
         <a
