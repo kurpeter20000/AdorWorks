@@ -243,7 +243,9 @@ h1 em, h2 em { font-style: italic; color: var(--site-teal); }
    Section scaffolding shared by the redesigned pages.
    ------------------------------------------------------------------ */
 .eyebrow { margin: 0 0 0.75rem; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--site-teal); }
-.lede { font-size: 1.15rem; color: var(--site-muted); max-width: 34em; }
+/* Wide enough that a short intro stays on one line; long ones still wrap
+   at a readable length. */
+.lede { font-size: 1.15rem; color: var(--site-muted); max-width: 54em; }
 .site-card { background: #fff; border: 1px solid var(--site-line); border-radius: 24px; }
 
 /* Entrance and scroll-reveal motion (opt-in per element). Named
