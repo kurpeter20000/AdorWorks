@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 
 /**
  * Same asset and the same autoplay gating as the marketing site's hero
@@ -52,4 +52,24 @@ export function HeroVideoBackground({ className }: { className?: string }) {
       <source src="/hero/hero-1080.mp4" type="video/mp4" />
     </video>
   );
+}
+
+/**
+ * The hero background, but only on screens matching `query` (checked in
+ * the browser, so the server renders nothing). Used where the background
+ * sits in a panel that's hidden on phones: a hidden <video poster> still
+ * downloads its poster, which on a slow mobile connection competes with
+ * the page's real content for bandwidth.
+ */
+export function HeroVideoBackgroundFrom({ query, className }: { query: string; className?: string }) {
+  const matches = useSyncExternalStore(
+    (onChange) => {
+      const mq = window.matchMedia(query);
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia(query).matches,
+    () => false
+  );
+  return matches ? <HeroVideoBackground className={className} /> : null;
 }

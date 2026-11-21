@@ -31,9 +31,17 @@
   };
   var WORK_MODE_LABEL = { remote: "Remote", on_site: "On-site", hybrid: "Hybrid", any: "Any work mode" };
 
+  var CATEGORY_LABEL = { creative_media: "Creative & media", digital_technology: "Digital & technology", business_project_support: "Business & project support" };
+
   var opportunities = [];
   var orgs = {};
   var activeFilter = "all";
+  // Redesign (2026): search, work mode, category and sort, all optional
+  // so the script still works on a page without them.
+  var searchInput = document.getElementById("job-search");
+  var modeSelect = document.getElementById("job-mode");
+  var categorySelect = document.getElementById("job-category");
+  var sortSelect = document.getElementById("job-sort");
 
   function get(path) {
     return fetch(API + path, { headers: HEADERS }).then(function (res) {
@@ -81,65 +89,70 @@
   // it; only AdorWorks' own labels around it are translated.
   function userText(tag, className, text) {
     var node = el(tag, className ? className + " no-i18n" : "no-i18n", text);
+    // Employer text may be in another script from the page (English
+    // inside Arabic): let the browser set its direction from the text.
+    node.setAttribute("dir", "auto");
     return node;
   }
 
   function renderCard(o) {
-    var card = el("article", "card opportunity-card");
+    var card = el("article", "job-card");
+    var org = orgs[o.organisation_id];
+    var orgName = org && org.name ? org.name : null;
 
-    var head = el("div", "opportunity-head");
-    var titleWrap = el("div");
-    var title = el("h3", "opportunity-title");
+    var head = el("div", "job-card-head");
+    head.appendChild(el("span", "job-initial no-i18n", (orgName || "A").trim().charAt(0).toUpperCase()));
+    var who = el("span", "job-org");
+    who.appendChild(orgName ? userText("span", "job-org-name", orgName) : el("span", "job-org-name", "AdorWorks employer"));
+    if (org && org.verification_status === "verified") who.appendChild(el("span", "job-verified", "Verified employer"));
+    head.appendChild(who);
+    if (ENGAGEMENT_LABEL[o.engagement_type]) head.appendChild(el("span", "job-type", ENGAGEMENT_LABEL[o.engagement_type]));
+    card.appendChild(head);
+
+    var title = el("h3", "job-title");
     var titleLink = userText("a", null, o.title);
     titleLink.id = "opp-title-" + o.id;
     titleLink.href = PLATFORM_URL + "/jobs/" + encodeURIComponent(o.id);
     title.appendChild(titleLink);
-    titleWrap.appendChild(title);
-    var org = orgs[o.organisation_id];
-    var employer = el("p", "opportunity-employer");
-    if (org && org.name) employer.appendChild(userText("span", null, org.name));
-    else employer.appendChild(el("span", null, "AdorWorks employer"));
-    if (org && org.verification_status === "verified") {
-      employer.appendChild(el("span", "opportunity-verified", "Verified"));
-    }
-    titleWrap.appendChild(employer);
-    head.appendChild(titleWrap);
-    var amount = o.compensation_amount || (o.compensation_min && o.compensation_max);
-    head.appendChild(amount ? userText("p", "opportunity-pay", formatCompensation(o)) : el("p", "opportunity-pay", formatCompensation(o)));
-    card.appendChild(head);
+    card.appendChild(title);
 
-    if (o.brief) card.appendChild(userText("p", "opportunity-brief", o.brief));
+    // Pay · Where · Closes — labels translate; employer values don't.
+    var facts = el("dl", "job-facts");
+    function fact(label, valueNode) {
+      var d = el("div");
+      d.appendChild(el("dt", null, label));
+      var dd = el("dd");
+      dd.appendChild(valueNode);
+      d.appendChild(dd);
+      facts.appendChild(d);
+    }
+    var amount = o.compensation_amount || (o.compensation_min && o.compensation_max);
+    fact("Pay", amount ? userText("span", null, formatCompensation(o)) : el("span", null, formatCompensation(o)));
+    var where = el("span");
+    if (WORK_MODE_LABEL[o.work_mode]) where.appendChild(el("span", null, WORK_MODE_LABEL[o.work_mode]));
+    if (o.location) {
+      if (where.childNodes.length) where.appendChild(document.createTextNode(" · "));
+      where.appendChild(userText("span", null, o.location));
+    }
+    if (!where.childNodes.length) where.appendChild(el("span", null, "—"));
+    fact("Where", where);
+    fact("Closes", o.application_deadline ? userText("span", null, formatDate(o.application_deadline)) : el("span", null, "Open"));
+    card.appendChild(facts);
+
+    if (o.brief) card.appendChild(userText("p", "job-brief", o.brief));
 
     if (o.skills && o.skills.length) {
-      var skills = el("ul", "opportunity-skills");
+      var skills = el("ul", "job-skills");
       skills.setAttribute("aria-label", "Required skills");
-      o.skills.slice(0, 6).forEach(function (s) {
-        skills.appendChild(userText("li", null, s));
+      o.skills.slice(0, 6).forEach(function (sk) {
+        skills.appendChild(userText("li", null, sk));
       });
       card.appendChild(skills);
     }
 
-    // Each part is its own element so labels translate and places/dates don't.
-    var parts = [];
-    if (ENGAGEMENT_LABEL[o.engagement_type]) parts.push(el("span", null, ENGAGEMENT_LABEL[o.engagement_type]));
-    if (WORK_MODE_LABEL[o.work_mode]) parts.push(el("span", null, WORK_MODE_LABEL[o.work_mode]));
-    if (o.location) parts.push(userText("span", null, o.location));
-    if (o.application_deadline) {
-      var by = el("span");
-      by.appendChild(el("span", null, "Apply by"));
-      by.appendChild(document.createTextNode(" "));
-      by.appendChild(userText("span", null, formatDate(o.application_deadline)));
-      parts.push(by);
-    }
-    var metaLine = el("p", "opportunity-meta");
-    parts.forEach(function (p, i) {
-      if (i) metaLine.appendChild(document.createTextNode(" · "));
-      metaLine.appendChild(p);
-    });
-
-    var foot = el("div", "opportunity-foot");
-    foot.appendChild(metaLine);
-    var apply = el("a", "btn btn-primary opportunity-apply", "View & apply");
+    var foot = el("div", "job-foot");
+    if (CATEGORY_LABEL[o.category]) foot.appendChild(el("p", "job-category", CATEGORY_LABEL[o.category]));
+    var apply = el("a", "job-apply", "View and apply →");
     apply.href = PLATFORM_URL + "/jobs/" + encodeURIComponent(o.id);
     apply.setAttribute("aria-describedby", titleLink.id);
     foot.appendChild(apply);
@@ -148,10 +161,30 @@
     return card;
   }
 
+  function matchesSearch(o, q) {
+    if (!q) return true;
+    var org = orgs[o.organisation_id];
+    var hay = [o.title, o.brief, o.location, (o.skills || []).join(" "), org && org.name].join(" ").toLowerCase();
+    return q.split(/\s+/).every(function (word) { return hay.indexOf(word) !== -1; });
+  }
+
   function render() {
+    var q = searchInput ? searchInput.value.trim().toLowerCase() : "";
+    var mode = modeSelect ? modeSelect.value : "";
+    var category = categorySelect ? categorySelect.value : "";
     var visible = opportunities.filter(function (o) {
-      return activeFilter === "all" || o.engagement_type === activeFilter;
+      return (activeFilter === "all" || o.engagement_type === activeFilter) &&
+        (!mode || o.work_mode === mode) &&
+        (!category || o.category === category) &&
+        matchesSearch(o, q);
     });
+    if (sortSelect && sortSelect.value === "closing") {
+      visible = visible.slice().sort(function (a, b) {
+        if (!a.application_deadline) return 1;
+        if (!b.application_deadline) return -1;
+        return new Date(a.application_deadline) - new Date(b.application_deadline);
+      });
+    }
 
     list.textContent = "";
     visible.forEach(function (o) {
@@ -161,12 +194,27 @@
     list.hidden = visible.length === 0;
     filterEmpty.hidden = visible.length !== 0;
     countEl.hidden = false;
-    countEl.textContent =
-      visible.length === 1 ? "1 open opportunity" : visible.length + " open opportunities";
+    // The number is kept apart from the words so the words translate
+    // once, whatever the count.
+    countEl.textContent = "";
+    countEl.appendChild(el("strong", "no-i18n", String(visible.length)));
+    countEl.appendChild(document.createTextNode(visible.length === 1 ? " open opportunity" : " open opportunities"));
 
     document.querySelectorAll(".filter-bar .filter-chip").forEach(function (chip) {
       chip.setAttribute("aria-pressed", String(chip.getAttribute("data-filter") === activeFilter));
     });
+  }
+
+  [searchInput, modeSelect, categorySelect, sortSelect].forEach(function (input) {
+    if (!input) return;
+    input.addEventListener(input.tagName === "INPUT" ? "input" : "change", function () {
+      if (opportunities.length) render();
+    });
+  });
+  // Arriving from the homepage search (?q=…) fills the box.
+  if (searchInput) {
+    var fromUrl = new URLSearchParams(location.search).get("q");
+    if (fromUrl) searchInput.value = fromUrl;
   }
 
   document.querySelectorAll("[data-filter]").forEach(function (btn) {
@@ -177,7 +225,7 @@
   });
 
   get(
-    "opportunities?select=id,title,brief,skills,location,work_mode,engagement_type,payment_basis," +
+    "opportunities?select=id,title,brief,skills,location,work_mode,engagement_type,category,payment_basis," +
       "compensation_amount,compensation_min,compensation_max,currency,application_deadline,organisation_id" +
       "&status=eq.open&visibility=eq.public&order=created_at.desc&limit=50"
   )

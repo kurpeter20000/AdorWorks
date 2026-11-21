@@ -2,7 +2,9 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { requireRole, STAFF_ROLES } from "@/lib/dal/session";
+import { requireRole } from "@/lib/dal/session";
+import { OPPORTUNITY_REVIEW_ROLES } from "@/lib/domain/staffAccess";
+import { CHANGE_FIELDS, CHANGE_FIELD_KEYS, isChangeField } from "@/lib/domain/changeFields";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/domain/audit";
@@ -55,7 +57,7 @@ function revalidateOpportunity(opportunityId: string) {
 }
 
 export async function approveOpportunity(opportunityId: string): Promise<FormState> {
-  const session = await requireRole(...STAFF_ROLES);
+  const session = await requireRole(...OPPORTUNITY_REVIEW_ROLES);
 
   const found = await loadOpportunityForReview(opportunityId);
   if (!found) return { message: "Opportunity not found." };
@@ -123,7 +125,7 @@ export async function rejectOpportunity(
   _prevState: FormState,
   formData: FormData
 ): Promise<FormState> {
-  const session = await requireRole(...STAFF_ROLES);
+  const session = await requireRole(...OPPORTUNITY_REVIEW_ROLES);
 
   const validated = ReasonSchema.safeParse({ reason: formData.get("reason") });
   if (!validated.success) {
@@ -191,12 +193,15 @@ export async function requestOpportunityChanges(
   _prevState: FormState,
   formData: FormData
 ): Promise<FormState> {
-  const session = await requireRole(...STAFF_ROLES);
+  const session = await requireRole(...OPPORTUNITY_REVIEW_ROLES);
 
   const validated = NoteSchema.safeParse({ note: formData.get("note") });
   if (!validated.success) {
     return { errors: validated.error.flatten().fieldErrors };
   }
+  // 0112: which fields to fix — only known keys, in a stable order.
+  const picked = new Set(formData.getAll("fields").filter(isChangeField));
+  const fields = CHANGE_FIELD_KEYS.filter((k) => picked.has(k));
 
   const found = await loadOpportunityForReview(opportunityId);
   if (!found) return { message: "Opportunity not found." };
@@ -207,7 +212,7 @@ export async function requestOpportunityChanges(
   const supabase = await createClient();
   const { error } = await supabase
     .from("opportunities")
-    .update({ status: "changes_required", status_note: validated.data.note })
+    .update({ status: "changes_required", status_note: validated.data.note, changes_fields: fields })
     .eq("id", opportunityId);
   if (error) return { message: `Could not request changes: ${error.message}` };
 
@@ -219,6 +224,7 @@ export async function requestOpportunityChanges(
     entityId: opportunityId,
     source: "platform",
     reason: validated.data.note,
+    metadata: fields.length > 0 ? { fields } : undefined,
   });
   if (found.representativeId) {
     await notifyUser(admin, {
@@ -237,6 +243,9 @@ export async function requestOpportunityChanges(
         paragraphs: [
           `"<strong>${escapeHtml(found.opportunity.title)}</strong>" needs changes before it can be published.`,
           escapeHtml(validated.data.note),
+          ...(fields.length > 0
+            ? [`<strong>To fix:</strong> ${fields.map((f) => escapeHtml(CHANGE_FIELDS[f])).join("; ")}`]
+            : []),
         ],
         ctaLabel: "Edit opportunity",
         ctaUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/organisation/opportunities/${opportunityId}/edit`,

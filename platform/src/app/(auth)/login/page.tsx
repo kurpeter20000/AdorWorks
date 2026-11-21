@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Briefcase, LogIn, Search } from "lucide-react";
+import { Briefcase, Search } from "lucide-react";
 import { resolveReturnPath } from "@/lib/domain/redirects";
 import { LoginForm } from "./login-form";
 import { msg } from "@/i18n/config";
@@ -12,8 +12,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const INTENT_COPY = {
-  talent: msg("Ready to find your next opportunity."),
-  hire: msg("Ready to review your hiring pipeline."),
+  talent: msg("Sign in to your Passport, applications and payments."),
+  hire: msg("Sign in to your opportunities, shortlists and contracts."),
 } as const;
 
 // Cosmetic only — cues below the heading, not the auth flow itself. Once
@@ -27,34 +27,48 @@ export default async function LoginPage({
 }) {
   const { as, next, reason } = await searchParams;
   const t = await getT();
-  const intent = as === "hire" ? "hire" : as === "talent" ? "talent" : null;
+  // "Find work" is the default tab, as in the design; ?as=hire switches it.
+  const intent = as === "hire" ? "hire" : "talent";
   // The page someone was sent here from, carried through to sign-in/sign-up.
   const returnTo = resolveReturnPath(next);
   const withNext = (href: string) => (returnTo ? `${href}${href.includes("?") ? "&" : "?"}next=${encodeURIComponent(returnTo)}` : href);
 
   return (
     <div>
-      {/* S12-12 gap-check finding (2026-09-24): every Link below defaults to
-          Next.js's automatic prefetch, which fires a real server-side RSC
-          render for its target as soon as the link is in viewport — on
-          this page that's 4 links, all in viewport on load. Confirmed via
-          a captured CI-adjacent network trace that all 4 fire immediately.
-          Harmless on a normal server, but on CI's Lighthouse job the
-          Next.js server and the Lighthouse-launched Chrome share the same
-          constrained runner, so this competes for CPU with the actual
-          /login request during the exact window LCP is measured in —
-          disabled here since none of these need instant navigation. */}
-      <div className="mb-6 flex gap-1 rounded-lg bg-cloud p-1 text-sm font-semibold" role="tablist" aria-label={t("Signing in as")}>
+      <h1 className="text-[2.5rem] leading-tight font-medium text-midnight">
+        {t("Welcome back")}
+      </h1>
+      <p className="mt-1.5 text-[#4a5263]">{t(INTENT_COPY[intent])}</p>
+      {reason === "idle" && (
+        <p className="mt-3 rounded-xl bg-white px-3 py-2 text-sm text-slate ring-1 ring-[#e6dfd2]" role="status">
+          {t("You were signed out after 10 minutes of inactivity. Sign in again to continue.")}
+        </p>
+      )}
+      {reason === "suspended" && (
+        <p className="mt-3 rounded-xl bg-coral/10 px-3 py-2 text-sm text-midnight" role="status">
+          {t("This account is suspended. If you think that's a mistake, you can")}{" "}
+          <Link href="/appeal" prefetch={false} className="font-semibold text-teal-ink underline">
+            {t("appeal the decision")}
+          </Link>
+          .
+        </p>
+      )}
+
+      {/* S12-12: prefetch is off on every link here — automatic prefetch
+          fired 4 server renders on load and competed with /login itself
+          for CPU during CI's Lighthouse LCP window. None of these links
+          needs instant navigation. */}
+      <div className="mt-6 flex gap-1 rounded-[14px] bg-[#efe8dc] p-1 font-extrabold" role="tablist" aria-label={t("Signing in as")}>
         <Link
           href={withNext("/login?as=talent")}
           prefetch={false}
           role="tab"
           aria-selected={intent === "talent"}
-          className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-center transition-all ${
+          className={`flex min-h-[46px] flex-1 items-center justify-center gap-1.5 rounded-[11px] text-center transition-all ${
             intent === "talent" ? "bg-white text-midnight shadow-sm" : "text-slate hover:text-midnight"
           }`}
         >
-          <Search className="size-3.5" aria-hidden="true" />
+          <Search className="size-4" aria-hidden="true" />
           {t("Find work")}
         </Link>
         <Link
@@ -62,34 +76,20 @@ export default async function LoginPage({
           prefetch={false}
           role="tab"
           aria-selected={intent === "hire"}
-          className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-center transition-all ${
+          className={`flex min-h-[46px] flex-1 items-center justify-center gap-1.5 rounded-[11px] text-center transition-all ${
             intent === "hire" ? "bg-white text-midnight shadow-sm" : "text-slate hover:text-midnight"
           }`}
         >
-          <Briefcase className="size-3.5" aria-hidden="true" />
+          <Briefcase className="size-4" aria-hidden="true" />
           {t("Hire talent")}
         </Link>
       </div>
 
-      <span className="inline-flex size-10 items-center justify-center rounded-full bg-teal/15 text-teal-ink">
-        <LogIn className="size-5" aria-hidden="true" />
-      </span>
-      <h1 className="mt-3 text-2xl font-bold text-midnight">{t("Sign in")}</h1>
-      {reason === "idle" && (
-        <p className="mt-2 rounded-lg bg-cloud px-3 py-2 text-sm text-slate" role="status">
-          {t("You were signed out after 10 minutes of inactivity. Sign in again to continue.")}
-        </p>
-      )}
-      {intent && <p className="mt-1 text-sm text-slate">{t(INTENT_COPY[intent])}</p>}
       <LoginForm next={returnTo} />
-      <p className="mt-4 text-center text-sm text-slate">
+      <p className="mt-5 text-center text-[#4a5263]">
         {t("New to AdorWorks?")}{" "}
-        <Link
-          href={withNext(intent ? `/signup?intent=${intent}` : "/signup")}
-          prefetch={false}
-          className="font-semibold text-teal-ink hover:underline"
-        >
-          {t("Create an account")}
+        <Link href={withNext(`/signup?intent=${intent}`)} prefetch={false} className="font-extrabold text-teal-ink hover:underline">
+          {t("Create a free account")}
         </Link>
       </p>
     </div>

@@ -24,7 +24,7 @@ import type { Database } from "@/lib/database.types";
 // mass-reporting to harass a competitor or retaliate, invitation guards
 // against invite spam while still allowing a real employer to batch-
 // invite a large shortlist in one sitting.
-export type RateLimitAction = "login" | "signup" | "password_reset_request" | "mfa_challenge" | "report" | "invitation";
+export type RateLimitAction = "login" | "signup" | "password_reset_request" | "mfa_challenge" | "report" | "invitation" | "account_appeal";
 
 const WINDOWS: Record<RateLimitAction, { windowMinutes: number; maxAttempts: number }> = {
   login: { windowMinutes: 15, maxAttempts: 5 },
@@ -33,6 +33,8 @@ const WINDOWS: Record<RateLimitAction, { windowMinutes: number; maxAttempts: num
   mfa_challenge: { windowMinutes: 15, maxAttempts: 5 },
   report: { windowMinutes: 60, maxAttempts: 10 },
   invitation: { windowMinutes: 60, maxAttempts: 50 },
+  // 0112: the public suspension-appeal page.
+  account_appeal: { windowMinutes: 60, maxAttempts: 5 },
 };
 
 /**
@@ -108,7 +110,7 @@ export async function checkAndRecordAttempt(
 
     return { allowed: allowed ?? true };
   } catch (err) {
-    console.error(`rate limit check failed for ${action}/${identifier}, failing open:`, err);
+    console.error("rate limit check failed for %s/%s, failing open:", action, identifier, err);
     return { allowed: true };
   }
 }

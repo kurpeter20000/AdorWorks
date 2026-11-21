@@ -106,7 +106,7 @@ export async function sendEmailSafely(
     await sendEmail(to, subject, html);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`Email send failed to ${to} ("${subject}"):`, message);
+    console.error("Email send failed to %s (\"%s\"):", to, subject, message);
     if (context) {
       await logAuditEvent(context.admin, {
         name: DOMAIN_EVENTS.EMAIL_DELIVERY_FAILED,

@@ -13,6 +13,8 @@ import { WorkExperienceManager } from "./work-experience-manager";
 import { EducationManager } from "./education-manager";
 import { VouchesManager } from "./vouches-manager";
 import { VerificationBadge } from "@/components/verification-badge";
+import { adorCertifiedSteps } from "@/lib/domain/adorCertified";
+import { AdorCertifiedProgress } from "./adorcertified-progress";
 
 export const metadata: Metadata = { title: "Your Passport" };
 
@@ -57,6 +59,16 @@ export default async function PassportPage() {
     voucherIds.length > 0 ? await supabase.from("public_profile_names").select("id, full_name").in("id", voucherIds) : { data: [] };
   const voucherNames = new Map((voucherNameRows ?? []).map((n) => [n.id, n.full_name]));
 
+  // AdorCertified progress: every approved document, of any kind.
+  const { data: approvedEvidence } = await supabase
+    .from("talent_evidence")
+    .select("evidence_type")
+    .eq("talent_id", session.userId)
+    .eq("status", "approved");
+  const certified = adorCertifiedSteps({
+    tier: profile?.verification_tier ?? "registered",
+    approvedEvidenceTypes: (approvedEvidence ?? []).map((e) => e.evidence_type),
+  });
   const references = (evidence ?? []).filter((e) => e.evidence_type === "reference");
   const credentials = (evidence ?? []).filter((e) => e.evidence_type === "assessment");
   const avatarUrl = profile?.avatar_path
@@ -131,6 +143,8 @@ export default async function PassportPage() {
           <p className="mt-2 text-xs text-slate">Languages: {profile.languages.join(", ")}</p>
         )}
       </div>
+
+      <AdorCertifiedProgress {...certified} />
 
       <div className="mt-6">
         <h2 className="font-bold text-midnight">CV</h2>

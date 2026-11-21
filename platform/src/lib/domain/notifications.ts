@@ -1,4 +1,5 @@
 import "server-only";
+import { sendWhatsAppAlert } from "@/lib/whatsapp";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import { logAuditEvent } from "./audit";
@@ -45,6 +46,13 @@ export const NOTIFICATION_TYPES = {
   // 0107: digitized personal referrals.
   VOUCH_REQUESTED: "vouch_requested",
   VOUCH_RESPONDED: "vouch_responded",
+  // 0112: written by backend/api's reports.js when staff resolve a
+  // report — the reporter is told the outcome, never the details.
+  REPORT_RESOLVED: "report_resolved",
+  // 0113: written by the interview functions in the database.
+  INTERVIEW_TIMES_OFFERED: "interview_times_offered",
+  INTERVIEW_TIME_CHOSEN: "interview_time_chosen",
+  INTERVIEW_REMINDER: "interview_reminder",
 } as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];
@@ -81,13 +89,19 @@ export async function notifyUser(
       body: input.body ?? null,
       link: input.link ?? null,
     };
-    const { error } = input.dedupeKey
+    const { data: written, error } = input.dedupeKey
       ? await admin
           .from("notifications")
           .upsert({ ...row, dedupe_key: input.dedupeKey }, { onConflict: "user_id,type,dedupe_key", ignoreDuplicates: true })
-      : await admin.from("notifications").insert(row);
+          .select("id")
+      : await admin.from("notifications").insert(row).select("id");
+    // 0114: a WhatsApp copy for people who asked for one (no-op until
+    // the WhatsApp Business account is connected) — only when a new
+    // notification was actually written, so a retried action doesn't
+    // send a second message.
+    if (!error && (written ?? []).length > 0) await sendWhatsAppAlert(admin, { userId: input.userId, type: input.type, title: input.title });
     if (error) {
-      console.error(`notifications insert failed for ${input.type}:`, error.message);
+      console.error("notifications insert failed for %s:", input.type, error.message);
       await logAuditEvent(admin, {
         name: DOMAIN_EVENTS.NOTIFICATION_DELIVERY_FAILED,
         actorId: null,
@@ -101,7 +115,7 @@ export async function notifyUser(
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`notifications insert threw for ${input.type}:`, err);
+    console.error("notifications insert threw for %s:", input.type, err);
     await logAuditEvent(admin, {
       name: DOMAIN_EVENTS.NOTIFICATION_DELIVERY_FAILED,
       actorId: null,

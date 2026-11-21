@@ -3,6 +3,7 @@ import { z } from "zod";
 import { randomInt } from "crypto";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff, requireAdmin } from "../middleware/auth.js";
+import { requireStaffArea } from "../middleware/staffAccess.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
 import { logAuditEvent } from "../audit.js";
 import { findUserByEmail } from "../findUserByEmail.js";
@@ -23,7 +24,7 @@ export function generateTemporaryPassword(length = 10) {
 }
 
 export const assistedOnboardingRouter = Router();
-assistedOnboardingRouter.use(requireAuth, requireStaff);
+assistedOnboardingRouter.use(requireAuth, requireStaff, requireStaffArea("assistedOnboarding"));
 
 // Fields an onboarding agent is ever allowed to touch on someone else's
 // talent_profiles row, mirroring the platform's talent onboarding "basics"

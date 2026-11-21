@@ -3,12 +3,16 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { setApplicationStage } from "@/lib/actions/applications";
+import { KIND_DECLINE } from "@/lib/domain/decisions";
+
 
 export function ShortlistActions({ applicationId, opportunityId }: { applicationId: string; opportunityId: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [rejecting, setRejecting] = useState(false);
-  const [reason, setReason] = useState("");
+  // A ready-written, respectful note (spec: "kind decline"). The employer
+  // can edit it; an empty box is what candidates used to get.
+  const [reason, setReason] = useState(KIND_DECLINE);
 
   function shortlist() {
     startTransition(async () => {
@@ -29,13 +33,13 @@ export function ShortlistActions({ applicationId, opportunityId }: { application
     return (
       <div className="mt-3 space-y-2">
         <label className="block text-xs font-semibold text-slate" htmlFor={`reject-reason-${applicationId}`}>
-          Let them know why (optional, but a short reason is more useful to the candidate than none)
+          Message to the candidate (edit if you like — it is sent with the decision)
         </label>
         <textarea
           id={`reject-reason-${applicationId}`}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          rows={2}
+          rows={4}
           className="w-full rounded-lg border border-slate/25 p-2 text-sm"
           placeholder="e.g. We're moving forward with candidates whose experience more closely matches this role."
         />
@@ -67,7 +71,7 @@ export function ShortlistActions({ applicationId, opportunityId }: { application
         type="button"
         disabled={pending}
         onClick={shortlist}
-        className="rounded-lg bg-teal px-3 py-1.5 text-sm font-bold text-midnight disabled:opacity-60"
+        className="min-h-10 rounded-control bg-primary px-4 text-sm font-extrabold text-white hover:bg-primary-hover disabled:opacity-60"
       >
         Shortlist
       </button>
