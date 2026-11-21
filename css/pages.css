@@ -7,9 +7,11 @@
 .page-section-tight { padding-top: 0; }
 .page-band { background: var(--site-bg-soft); border-block: 1px solid var(--site-line); }
 .page-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
-.section-intro { max-width: 700px; margin-bottom: 2.25rem; }
-.section-intro h2 { margin: 0; }
-.section-intro p:not(.eyebrow) { color: var(--site-muted); margin: 0.75rem 0 0; }
+/* Headings use the full content width (so they don't break while there's
+   room); balance keeps a two-line heading even when it must wrap. */
+.section-intro { margin-bottom: 2.25rem; }
+.section-intro h2 { margin: 0; text-wrap: balance; }
+.section-intro p:not(.eyebrow) { color: var(--site-muted); margin: 0.75rem 0 0; max-width: 60em; }
 
 /* ---------- Page hero ---------- */
 .page-hero { padding-block: clamp(2.5rem, 6vw, 4rem) clamp(2rem, 5vw, 3rem); }
@@ -116,7 +118,7 @@
   margin-top: 2rem;
 }
 .pilot-empty h2 { margin: 0 0 0.75rem; font-size: clamp(1.8rem, 3.5vw, 2.4rem); }
-.pilot-empty p:not(.eyebrow) { margin: 0; color: var(--site-muted); max-width: 36em; }
+.pilot-empty p:not(.eyebrow) { margin: 0; color: var(--site-muted); max-width: 48em; }
 .pilot-empty-actions { display: flex; flex-direction: column; gap: 0.6rem; }
 .pilot-empty-actions .btn { width: 100%; }
 @media (min-width: 860px) { .pilot-empty { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); } }
@@ -168,10 +170,10 @@
 .page [id] { scroll-margin-top: calc(var(--site-header-h, 68px) + 64px); }
 
 /* ---------- Section head with side note ---------- */
-.section-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 1.5rem; margin-bottom: 2.25rem; }
-.section-head > div { max-width: 640px; }
-.section-head h2 { margin: 0; }
-.section-head > p { margin: 0; max-width: 26em; color: var(--site-muted); }
+/* Heading with its note stacked underneath (not squeezed beside it). */
+.section-head { display: flex; flex-direction: column; align-items: flex-start; gap: 0.75rem; margin-bottom: 2.25rem; }
+.section-head h2 { margin: 0; text-wrap: balance; }
+.section-head > p { margin: 0; max-width: 60em; color: var(--site-muted); font-size: 1.05rem; }
 
 /* ---------- What we cover ---------- */
 .cover-grid { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
@@ -235,7 +237,7 @@
 .faq-icon::before, .faq-icon::after { content: ""; position: absolute; inset: 50% auto auto 50%; width: 16px; height: 2.4px; border-radius: 2px; background: currentColor; transform: translate(-50%, -50%); }
 .faq-icon::after { transform: translate(-50%, -50%) rotate(90deg); }
 .faq-list details[open] .faq-icon { background: var(--site-ink); color: #f7f3ec; transform: rotate(45deg); }
-.faq-list details p { margin: 0 0 1.4rem; color: var(--site-muted); max-width: 44em; }
+.faq-list details p { margin: 0 0 1.4rem; color: var(--site-muted); max-width: 56em; }
 
 /* ---------- Form panel (brief and request forms) ---------- */
 .form-panel { background: #fff; border: 1px solid var(--site-line); border-radius: 32px; overflow: hidden; display: grid; }
@@ -315,8 +317,11 @@
 .bigger-band p { margin: 0; color: var(--site-muted); }
 
 /* ---------- How it works ---------- */
-.how-hero { display: flex; flex-wrap: wrap; gap: 2rem 3rem; align-items: flex-end; justify-content: space-between; }
-.how-hero .page-hero-copy { flex: 2 1 520px; }
+/* Heading and intro use the full width (so "From brief to completed work."
+   stays on one line); the employers/talent switch sits underneath. */
+.how-hero { display: flex; flex-direction: column; align-items: flex-start; gap: 1.75rem; }
+.how-hero .page-hero-copy { width: 100%; }
+.how-hero .pill-tabs { flex: none; width: min(100%, 380px); }
 .pill-tabs { flex: 0 1 380px; display: flex; gap: 4px; background: var(--site-sand); border-radius: 999px; padding: 5px; }
 .pill-tabs [role="tab"] { flex: 1; font: inherit; font-size: 0.95rem; font-weight: 800; border: 0; border-radius: 999px; min-height: 48px; padding: 0 1rem; cursor: pointer; background: transparent; color: var(--site-muted); transition: background 0.2s ease, color 0.2s ease; }
 .pill-tabs [role="tab"][aria-selected="true"] { background: var(--site-ink); color: #f7f3ec; }
