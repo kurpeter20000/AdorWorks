@@ -201,3 +201,36 @@ export async function updateCollectionAccounts(_prev: FormState, formData: FormD
   revalidatePath("/operations/settings");
   return { saved: true };
 }
+
+const SwitchSchema = z.object({
+  key: z.enum(["guarantee", "programme_sharing"]),
+  enabled: z.boolean(),
+  reason: z.string().trim().min(10, "Say why this is changing (at least 10 characters) — e.g. who approved the wording."),
+});
+
+/**
+ * Finance/admin only (0120). Turns the Employer Guarantee or the
+ * programme-sharing consent screens on for users. Both stay off until
+ * counsel has approved the wording.
+ */
+export async function updateFeatureSwitch(_prev: FormState, formData: FormData): Promise<FormState & { saved?: boolean }> {
+  const session = await requireRole("finance", "admin");
+  const parsed = SwitchSchema.safeParse({ key: formData.get("key"), enabled: formData.get("enabled") === "on", reason: formData.get("reason") ?? "" });
+  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("platform_settings")
+    .upsert({ key: parsed.data.key, value: { enabled: parsed.data.enabled }, updated_by: session.userId, updated_at: new Date().toISOString() });
+  if (error) return { message: `Could not save: ${error.message}` };
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.PLATFORM_SETTINGS_CHANGED,
+    actorId: session.userId,
+    entityType: "platform_settings",
+    entityId: parsed.data.key,
+    source: "platform",
+    reason: parsed.data.reason,
+    after: { enabled: parsed.data.enabled },
+  });
+  revalidatePath("/operations/settings");
+  return { saved: true };
+}

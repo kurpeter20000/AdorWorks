@@ -7,6 +7,7 @@ import { checkOpportunity } from "@/lib/domain/opportunityChecks";
 import { StaffInterviewPanel } from "./staff-interview-panel";
 import { ReviewerNote } from "./reviewer-note";
 import { sendShortlist } from "@/lib/actions/shortlists";
+import { becomeAccountContact } from "@/lib/actions/guarantee";
 import { CHANGE_FIELDS, CHANGE_FIELD_KEYS, type ChangeField } from "@/lib/domain/changeFields";
 import { approveOpportunity, rejectOpportunity, requestOpportunityChanges } from "@/lib/actions/operations";
 import {
@@ -510,6 +511,19 @@ function Shortlist({ opportunity, canRunInterviews }: { opportunity: Row; canRun
       {opportunity.shortlist_sent_at && (
         <p className="mb-2 text-xs text-slate">Last shortlist sent {fmtDateTime(opportunity.shortlist_sent_at)}.</p>
       )}
+      <p className="mb-2 text-xs text-slate">
+        {opportunity.account_contact_id ? "This employer has a named AdorWorks contact." : "No named account contact yet — the first person to send a shortlist becomes it."}{" "}
+        <button
+          type="button"
+          className="font-semibold text-teal-ink underline"
+          onClick={async () => {
+            const r = await becomeAccountContact(opportunity.id);
+            setSendMsg(r.error ?? "You're now this employer's account contact.");
+          }}
+        >
+          Make me the contact
+        </button>
+      </p>
       {opportunity.shortlisting_mode === "self_service" && (
         <p className="mb-2 text-xs text-slate">This employer chose to shortlist candidates themselves — you can still help if asked.</p>
       )}

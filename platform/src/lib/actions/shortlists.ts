@@ -97,6 +97,9 @@ export async function sendShortlist(opportunityId: string): Promise<{ error?: st
     .from("opportunities")
     .update({ shortlist_sent_at: new Date().toISOString(), more_candidates_requested_at: null, more_candidates_note: null })
     .eq("id", opportunityId);
+  // 0120: the staff member who sends the first shortlist becomes the
+  // employer's named account contact (staff can take it over later).
+  await admin.from("opportunities").update({ account_contact_id: session.userId }).eq("id", opportunityId).is("account_contact_id", null);
 
   await logAuditEvent(admin, {
     name: DOMAIN_EVENTS.SHORTLIST_SENT,

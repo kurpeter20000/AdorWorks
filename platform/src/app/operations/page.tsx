@@ -11,6 +11,7 @@ import { loadWorkQueue } from "@/lib/dal/workQueue";
 import { WorkList } from "./work-list";
 import { HealthPanel } from "./health-panel";
 import { CharterMonitor } from "./charter-monitor";
+import { GuaranteeQueue } from "./guarantee-queue";
 import { loadPlatformHealth } from "@/lib/dal/platformHealth";
 
 export const metadata: Metadata = { title: "Operations" };
@@ -122,6 +123,7 @@ export default async function OperationsPage() {
 
       <WorkList items={work.items} failed={work.failed} now={work.now} />
       <HealthPanel {...health} />
+      <GuaranteeQueue role={session.role} />
       <CharterMonitor role={session.role} />
 
       {failed.length > 0 && (

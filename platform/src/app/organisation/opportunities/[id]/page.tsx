@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { requireOrganisationMembership } from "@/lib/dal/organisation";
 import { APPLICATION_STATES, OPPORTUNITY_STATES } from "@/lib/domain/states";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { AppealRejectionForm } from "./appeal-rejection-form";
 import { ApplicantEvaluationPanel } from "./applicant-evaluation-panel";
 import { CloseOpportunityActions } from "./close-opportunity-actions";
@@ -167,6 +168,12 @@ export default async function OpportunityDetailPage({
     );
   }
 
+  // 0120: the named AdorWorks contact (staff profile, read with the admin client).
+  const { data: contactProfile } = opportunity.account_contact_id
+    ? await createAdminClient().from("profiles").select("full_name").eq("id", opportunity.account_contact_id).maybeSingle()
+    : { data: null };
+  const accountContactName = contactProfile?.full_name ?? null;
+
   // 0119: staff-built shortlist awaiting the employer's decision.
   const reviewCandidates = (applications ?? [])
     .filter((a) => a.source === "matched" && a.stage === "shortlisted")
@@ -258,6 +265,12 @@ export default async function OpportunityDetailPage({
       {resubmitted && (
         <p className="mt-4 rounded-lg bg-teal/10 px-4 py-3 text-sm font-semibold text-teal-ink">
           Submitted for review.
+        </p>
+      )}
+
+      {accountContactName && (
+        <p className="mt-6 rounded-lg border border-slate/15 bg-white px-4 py-3 text-sm text-midnight">
+          Your AdorWorks account contact: <strong>{accountContactName}</strong>. Message us through Support and they&rsquo;ll pick it up.
         </p>
       )}
 
