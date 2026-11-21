@@ -19,7 +19,7 @@ export default async function PhonePage({ searchParams }: { searchParams: Promis
 
   return (
     <div>
-      <h1 className="text-[2.25rem] leading-tight font-extrabold text-midnight">{mode === "signup" ? t("Create your account") : t("Welcome back")}</h1>
+      <h1 className="text-[2rem] leading-tight font-extrabold text-midnight">{mode === "signup" ? t("Create your account") : t("Welcome back")}</h1>
       <p className="mt-1.5 text-[#4a5263]">{t("Use your phone number — we'll text you a code. No email needed.")}</p>
       <PhoneForm mode={mode} intent={intent} next={returnTo} defaultPhone={/^\+?[0-9 ]{9,16}$/.test(phone ?? "") ? phone : undefined} />
       <p className="mt-5 text-center text-[#4a5263]">

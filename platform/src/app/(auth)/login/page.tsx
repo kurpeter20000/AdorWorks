@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Briefcase, Search } from "lucide-react";
+import { Briefcase, Clock, Search, Smartphone } from "lucide-react";
 import { resolveReturnPath } from "@/lib/domain/redirects";
 import { LoginForm } from "./login-form";
 import { msg } from "@/i18n/config";
@@ -35,12 +35,11 @@ export default async function LoginPage({
 
   return (
     <div>
-      <h1 className="text-[2.25rem] leading-tight font-extrabold text-midnight">
-        {t("Welcome back")}
-      </h1>
-      <p className="mt-1.5 text-[#4a5263]">{t(INTENT_COPY[intent])}</p>
+      <h1 className="text-[2rem] leading-tight font-extrabold text-midnight">{t("Welcome back")}</h1>
+      <p className="mt-1 text-[15px] text-[#4a5263]">{t(INTENT_COPY[intent])}</p>
       {reason === "idle" && (
-        <p className="mt-3 rounded-xl bg-[#f7f3ec] px-3 py-2 text-sm text-slate ring-1 ring-[#e6dfd2]" role="status">
+        <p className="mt-4 flex items-center gap-2 rounded-lg bg-[#f7f3ec] px-3 py-2 text-[13px] text-[#4a5263]" role="status">
+          <Clock className="size-4 flex-none text-[#596274]" aria-hidden="true" />
           {t("You were signed out after 10 minutes of inactivity. Sign in again to continue.")}
         </p>
       )}
@@ -58,14 +57,14 @@ export default async function LoginPage({
           fired 4 server renders on load and competed with /login itself
           for CPU during CI's Lighthouse LCP window. None of these links
           needs instant navigation. */}
-      <div className="mt-6 flex gap-1 rounded-[14px] bg-[#efe8dc] p-1 font-extrabold" role="tablist" aria-label={t("Signing in as")}>
+      <div className="mt-6 flex gap-1 rounded-xl bg-[#f1ece3] p-1 text-[15px] font-bold" role="tablist" aria-label={t("Signing in as")}>
         <Link
           href={withNext("/login?as=talent")}
           prefetch={false}
           role="tab"
           aria-selected={intent === "talent"}
-          className={`flex min-h-[46px] flex-1 items-center justify-center gap-1.5 rounded-[11px] text-center transition-all ${
-            intent === "talent" ? "bg-white text-midnight shadow-sm" : "text-slate hover:text-midnight"
+          className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg text-center transition-all ${
+            intent === "talent" ? "bg-white text-midnight shadow-sm" : "text-[#596274] hover:text-midnight"
           }`}
         >
           <Search className="size-4" aria-hidden="true" />
@@ -76,8 +75,8 @@ export default async function LoginPage({
           prefetch={false}
           role="tab"
           aria-selected={intent === "hire"}
-          className={`flex min-h-[46px] flex-1 items-center justify-center gap-1.5 rounded-[11px] text-center transition-all ${
-            intent === "hire" ? "bg-white text-midnight shadow-sm" : "text-slate hover:text-midnight"
+          className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg text-center transition-all ${
+            intent === "hire" ? "bg-white text-midnight shadow-sm" : "text-[#596274] hover:text-midnight"
           }`}
         >
           <Briefcase className="size-4" aria-hidden="true" />
@@ -86,14 +85,20 @@ export default async function LoginPage({
       </div>
 
       <LoginForm next={returnTo} />
+      <div className="my-4 flex items-center gap-3 text-xs font-semibold tracking-wide text-[#596274] uppercase" aria-hidden="true">
+        <span className="h-px flex-1 bg-[#e6dfd2]" />
+        {t("or")}
+        <span className="h-px flex-1 bg-[#e6dfd2]" />
+      </div>
       <Link
         href={withNext(`/phone?mode=signin&intent=${intent}`)}
         prefetch={false}
-        className="mt-3 flex min-h-[50px] w-full items-center justify-center rounded-[14px] border border-[#d9d0bf] bg-white text-[15px] font-extrabold text-midnight hover:bg-[#f7f3ec]"
+        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#d9d0bf] bg-white text-[15px] font-bold text-midnight transition-colors hover:bg-[#f7f3ec]"
       >
+        <Smartphone className="size-[18px]" aria-hidden="true" />
         {t("Sign in with your phone number")}
       </Link>
-      <p className="mt-5 text-center text-[#4a5263]">
+      <p className="mt-6 text-center text-[15px] text-[#4a5263]">
         {t("New to AdorWorks?")}{" "}
         <Link href={withNext(`/signup?intent=${intent}`)} prefetch={false} className="font-extrabold text-teal-ink hover:underline">
           {t("Create a free account")}
