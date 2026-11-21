@@ -593,3 +593,23 @@
   .job-card:hover, .cover-card:hover, .who-card:hover, .service-card:hover, .policy-card:hover { transform: none; }
   .hero-stat { animation: none; }
 }
+
+/* ---------- Pages on phones (owner, Nov 2026) ---------- */
+@media (max-width: 640px) {
+  .page-section { padding-block: 3.25rem; }
+  .page-hero-photo img { height: clamp(220px, 62vw, 300px); }
+  /* Small print readable without zooming. */
+  .service-card-body > .service-get { font-size: 0.9rem; }
+  .pop-panel .pop-note { font-size: 0.9rem; }
+  /* Pathways stages: icon beside the text instead of big stacked circles. */
+  .path-steps { gap: 1rem; }
+  .path-steps li { display: grid; grid-template-columns: 44px 1fr; column-gap: 0.9rem; row-gap: 0.1rem; }
+  .path-dot { width: 44px; height: 44px; grid-row: span 2; border-width: 2px; }
+  .path-dot svg { width: 20px; height: 20px; }
+  .path-steps strong { font-size: 1.02rem; align-self: end; }
+  /* Closing call-outs and form intros: still the boldest line on the
+     page, but sized for a phone. */
+  .closing-cta h2 { font-size: clamp(1.75rem, 7.6vw, 2rem); line-height: 1.1; }
+  .form-panel-intro h2, .request-intro h2 { font-size: clamp(1.6rem, 6.8vw, 1.85rem); }
+  .help-band h2, .pilot-empty h2, .bigger-band h2 { font-size: clamp(1.5rem, 6.4vw, 1.75rem); }
+}
