@@ -22,3 +22,22 @@ describe("transfer reference", () => {
     }
   });
 });
+
+describe("bank accounts by currency", () => {
+  const equity = { bankName: "Equity Bank", accountName: "AdorWorks", accountNumber: "111", branch: "", swiftCode: "" };
+  const kcb = { bankName: "KCB", accountName: "AdorWorks", accountNumber: "222", branch: "", swiftCode: "" };
+
+  it("shows each employer the account for their payment's currency", async () => {
+    const { parseReceivingBankAccounts, pickBankAccount, receivingBankAccountsToJson } = await import("./bankTransfer");
+    const accounts = parseReceivingBankAccounts(receivingBankAccountsToJson({ SSP: equity, USD: kcb }));
+    expect(pickBankAccount(accounts, "SSP")?.bankName).toBe("Equity Bank");
+    expect(pickBankAccount(accounts, "USD")?.bankName).toBe("KCB");
+    expect(pickBankAccount(parseReceivingBankAccounts(receivingBankAccountsToJson({ SSP: equity })), "USD")).toBeNull();
+  });
+
+  it("still reads an account saved before the split, for any currency", async () => {
+    const { parseReceivingBankAccounts, pickBankAccount, receivingBankAccountToJson } = await import("./bankTransfer");
+    const accounts = parseReceivingBankAccounts(receivingBankAccountToJson(kcb));
+    expect(pickBankAccount(accounts, "SSP")?.bankName).toBe("KCB");
+  });
+});

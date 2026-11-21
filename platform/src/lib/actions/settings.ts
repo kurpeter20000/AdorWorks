@@ -6,11 +6,11 @@ import { requireRole } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
-import { getCollectionAccounts, getEscrowRates, getFeeRates, getReceivingBankAccount } from "@/lib/dal/settings";
+import { getCollectionAccounts, getEscrowRates, getFeeRates, getReceivingBankAccounts } from "@/lib/dal/settings";
 import { collectionAccountsToJson, type MobileMoneyAccount } from "@/lib/domain/collectionAccounts";
 import { normalisePhone } from "@/lib/domain/payoutMethods";
 import { MAX_FEE_PERCENT } from "@/lib/domain/fees";
-import { receivingBankAccountToJson } from "@/lib/domain/bankTransfer";
+import { BANK_CURRENCIES, receivingBankAccountsToJson, type ReceivingBankAccounts } from "@/lib/domain/bankTransfer";
 import { MAX_DISPUTE_WINDOW_DAYS, MIN_DISPUTE_WINDOW_DAYS } from "@/lib/domain/escrow";
 import type { FormState } from "./auth";
 
@@ -111,32 +111,42 @@ const BankAccountSchema = z.object({
   accountNumber: z.string().trim().regex(/^[0-9A-Za-z -]{4,40}$/, "Enter the account number (letters, numbers, spaces or dashes)."),
   branch: z.string().trim().max(120),
   swiftCode: z.string().trim().max(20),
-  reason: z.string().trim().min(10, "Say why this is changing (at least 10 characters) — it goes in the audit log."),
 });
 
 /**
- * Finance/admin only (0116). AdorWorks' own account that employers pay
- * into by bank transfer, from any bank. Until this is saved, bank
- * transfer isn't offered at checkout. A change applies to transfers
- * started from now on: each transfer already under way keeps the details
- * it was started with (payment_intentions.bank_account), so keep an old
- * account open until those transfers have landed.
+ * Finance/admin only. AdorWorks' own bank accounts, one per currency
+ * (owner: SSP at Equity, USD at KCB), that employers pay into by bank
+ * transfer from any bank. A currency left empty has no bank transfer
+ * option. Each transfer already under way keeps the details it was
+ * started with (payment_intentions.bank_account), so keep an old account
+ * open until those have landed.
  */
 export async function updateReceivingBankAccount(_prev: FormState, formData: FormData): Promise<FormState & { saved?: boolean }> {
   const session = await requireRole("finance", "admin");
-  const parsed = BankAccountSchema.safeParse({
-    bankName: formData.get("bankName") ?? "",
-    accountName: formData.get("accountName") ?? "",
-    accountNumber: formData.get("accountNumber") ?? "",
-    branch: formData.get("branch") ?? "",
-    swiftCode: formData.get("swiftCode") ?? "",
-    reason: formData.get("reason") ?? "",
-  });
-  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
-  const v = parsed.data;
+  const errors: Record<string, string[]> = {};
+  const accounts: ReceivingBankAccounts = {};
+  for (const c of BANK_CURRENCIES) {
+    const raw = {
+      bankName: String(formData.get(`${c}_bankName`) ?? ""),
+      accountName: String(formData.get(`${c}_accountName`) ?? ""),
+      accountNumber: String(formData.get(`${c}_accountNumber`) ?? ""),
+      branch: String(formData.get(`${c}_branch`) ?? ""),
+      swiftCode: String(formData.get(`${c}_swiftCode`) ?? ""),
+    };
+    if (!raw.bankName.trim() && !raw.accountName.trim() && !raw.accountNumber.trim()) continue;
+    const parsed = BankAccountSchema.safeParse(raw);
+    if (!parsed.success) {
+      for (const [k, v] of Object.entries(parsed.error.flatten().fieldErrors)) if (v?.length) errors[`${c}_${k}`] = v;
+      continue;
+    }
+    accounts[c] = parsed.data;
+  }
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (reason.length < 10) errors.reason = ["Say why this is changing (at least 10 characters) — it goes in the audit log."];
+  if (Object.keys(errors).length > 0) return { errors };
 
-  const before = await getReceivingBankAccount();
-  const value = { bank_name: v.bankName, account_name: v.accountName, account_number: v.accountNumber, branch: v.branch, swift_code: v.swiftCode };
+  const before = await getReceivingBankAccounts();
+  const value = receivingBankAccountsToJson(accounts);
   const admin = createAdminClient();
   const { error } = await admin
     .from("platform_settings")
@@ -149,8 +159,8 @@ export async function updateReceivingBankAccount(_prev: FormState, formData: For
     entityType: "platform_settings",
     entityId: "bank_account",
     source: "platform",
-    reason: v.reason,
-    before: before ? receivingBankAccountToJson(before) : null,
+    reason,
+    before: receivingBankAccountsToJson(before),
     after: value,
   });
   revalidatePath("/operations/settings");

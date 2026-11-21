@@ -504,7 +504,7 @@ describe("payMilestone (MTN, mGurush, bank transfer)", () => {
     seed();
     as("employer", "u-rep");
     const result = await payMilestone("m-1", {}, checkout("bank_transfer"));
-    expect(result.message).toMatch(/isn't available yet/);
+    expect(result.message).toMatch(/isn't available for this currency yet/);
     expect(state.fake!.db.payment_intentions).toHaveLength(0);
   });
 
