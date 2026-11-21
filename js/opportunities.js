@@ -10,9 +10,19 @@
 
   var list = document.getElementById("opportunity-list");
   var pending = document.getElementById("opportunity-pending");
+  var none = document.getElementById("opportunity-none");
   var countEl = document.getElementById("opportunity-count");
   var filterEmpty = document.getElementById("opportunity-filter-empty");
-  if (!list || !window.ADORWORKS_SUPABASE_URL || !window.ADORWORKS_SUPABASE_ANON_KEY) return;
+  // Placeholder cards show while loading; if there's nothing to show, a
+  // short one-line note replaces them (never a big notice).
+  function showNone() {
+    if (pending) pending.hidden = true;
+    if (none) none.hidden = false;
+  }
+  if (!list || !window.ADORWORKS_SUPABASE_URL || !window.ADORWORKS_SUPABASE_ANON_KEY) {
+    showNone();
+    return;
+  }
 
   var PLATFORM_URL = "https://ador-works.vercel.app";
   var API = window.ADORWORKS_SUPABASE_URL.replace(/\/$/, "") + "/rest/v1/";
@@ -307,7 +317,10 @@
   )
     .then(function (rows) {
       opportunities = rows.filter(isStillOpen);
-      if (!opportunities.length) return;
+      if (!opportunities.length) {
+        showNone();
+        return;
+      }
 
       var orgIds = opportunities
         .map(function (o) { return o.organisation_id; })
@@ -325,6 +338,6 @@
         });
     })
     .catch(function () {
-      // Leave the static "No open opportunities" panel in place.
+      showNone();
     });
 })();
