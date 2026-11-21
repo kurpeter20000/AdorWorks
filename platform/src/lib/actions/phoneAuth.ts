@@ -26,6 +26,32 @@ const CURRENT_POLICY_VERSION = "1.0";
 
 export interface PhoneCodeState extends FormState {
   sentTo?: string;
+  /** Sign-in with a number that has no account yet: offer to create one with it. */
+  noAccountFor?: string;
+}
+
+/**
+ * Turns Supabase's reason into something the person can act on. Codes are
+ * Supabase Auth error codes; the message fallbacks cover older servers.
+ */
+function explainOtpError(code: string | undefined, message: string, mode: "signin" | "signup"): string {
+  const m = message.toLowerCase();
+  if (code === "phone_provider_disabled" || m.includes("unsupported phone provider") || m.includes("phone provider")) {
+    return msg("Phone sign-in isn't switched on yet. Please use your email for now, or try again later.");
+  }
+  if (code === "signup_disabled" || (mode === "signup" && m.includes("signups not allowed"))) {
+    return msg("New sign-ups are paused right now. Please try again later.");
+  }
+  if (code === "over_sms_send_rate_limit" || code === "over_request_rate_limit" || m.includes("rate limit")) {
+    return msg("Too many codes requested. Please wait an hour and try again.");
+  }
+  if (code === "sms_send_failed" || m.includes("error sending") || m.includes("sms")) {
+    return msg("The SMS service couldn't send a code to this number. Check the number, or try again in a few minutes.");
+  }
+  if (code === "validation_failed" || m.includes("invalid phone")) {
+    return msg("Enter a valid phone number, e.g. 0912 345 678 or +211 912 345 678.");
+  }
+  return msg("We couldn't send a code to that number. Check it and try again.");
 }
 
 const SendSchema = z.discriminatedUnion("mode", [
@@ -81,11 +107,11 @@ export async function sendPhoneSignInCode(_prev: PhoneCodeState, formData: FormD
 
   if (error) {
     // Signing in with a number that has no account: say so plainly.
-    if (parsed.data.mode === "signin" && /signups not allowed|not found|otp_disabled/i.test(error.message)) {
-      return { message: msg("No account uses this phone number yet. Create an account with it instead.") };
+    if (parsed.data.mode === "signin" && (error.code === "otp_disabled" || /signups not allowed|not found/i.test(error.message))) {
+      return { message: msg("No account uses this phone number yet. Create an account with it instead."), noAccountFor: phone };
     }
-    console.error("[phone-auth] signInWithOtp failed:", error.message);
-    return { message: msg("We couldn't send a code to that number. Check it and try again.") };
+    console.error("[phone-auth] signInWithOtp failed (%s): %s", error.code ?? "no code", error.message);
+    return { message: explainOtpError(error.code, error.message, parsed.data.mode) };
   }
   return { sentTo: phone };
 }
