@@ -61,6 +61,8 @@ export const NOTIFICATION_TYPES = {
   // 0120: Employer Guarantee.
   GUARANTEE_REQUESTED: "guarantee_requested",
   GUARANTEE_RESOLVED: "guarantee_resolved",
+  // 0123: Pathways.
+  CERTIFICATE_ISSUED: "certificate_issued",
 } as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];

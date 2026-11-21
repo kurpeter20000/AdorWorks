@@ -98,6 +98,13 @@ export default async function PassportPage() {
     );
   }
 
+  // 0123: Pathways certificates.
+  const { data: certificates } = await supabase
+    .from("programme_certificates")
+    .select("check_code, issued_at")
+    .eq("talent_id", session.userId)
+    .is("revoked_at", null);
+
   // 0120: programme-partner consent, only once switched on.
   const sharingOn = await isProgrammeSharingEnabled();
   const { count: programmeCount } = sharingOn
@@ -116,9 +123,29 @@ export default async function PassportPage() {
         </Link>
       </p>
       <ShareVerifiedProfile talentId={session.userId} />
-      <Link href="/pathways/join" className="mt-3 flex min-h-11 items-center rounded-card border border-line bg-white px-4 py-3 text-sm font-semibold text-teal-ink underline">
-        Joined a Pathways session? Enter your programme code
-      </Link>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <Link href="/pathways/join" className="flex min-h-11 items-center rounded-card border border-line bg-white px-4 py-3 text-sm font-semibold text-teal-ink underline">
+          Joined a Pathways programme? Enter your code
+        </Link>
+        <Link href="/pathways/checkin" className="flex min-h-11 items-center rounded-card border border-line bg-white px-4 py-3 text-sm font-semibold text-teal-ink underline">
+          Check in to a session
+        </Link>
+      </div>
+      {(certificates ?? []).length > 0 && (
+        <section className="mt-4 rounded-card border border-teal/30 bg-teal/5 p-4">
+          <h2 className="text-sm font-extrabold text-midnight">Certificates</h2>
+          <ul className="mt-2 space-y-1 text-sm">
+            {(certificates ?? []).map((c) => (
+              <li key={c.check_code} className="flex flex-wrap items-center justify-between gap-2">
+                <span>Pathways certificate · issued {new Date(c.issued_at).toLocaleDateString("en-GB")}</span>
+                <Link href={`/verify/certificate/${c.check_code}`} className="font-mono text-xs font-bold text-teal-ink underline">
+                  {c.check_code}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {sharingOn && (programmeCount ?? 0) > 0 && (
         <Link href="/programme-sharing" className="mt-3 flex min-h-11 items-center rounded-card border border-line bg-white px-4 py-3 text-sm font-semibold text-teal-ink underline">
           Programme sharing — choose what your programme partner can see

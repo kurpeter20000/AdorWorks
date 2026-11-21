@@ -3,6 +3,7 @@
 import { useActionState, useState, useTransition } from "react";
 import { addPartnerUser, addProgrammeMember, createProgramme, markAgreementSigned, recordGuardianConsent } from "@/lib/actions/programmeConsent";
 import { PROGRAMME_TYPES, type ProgrammeType } from "@/lib/domain/pathways";
+import { addFacilitator, recordBackgroundCheck } from "@/lib/actions/pathwaysSessions";
 import { formatDate } from "@/lib/domain/format";
 
 export interface ProgrammeView {
@@ -14,6 +15,7 @@ export interface ProgrammeView {
   programmeType: string | null;
   joinCode: string | null;
   partnerUsers: string[];
+  facilitators: { userId: string; name: string; checkedAt: string | null; note: string | null }[];
   members: {
     talentId: string;
     name: string;
@@ -104,6 +106,7 @@ function ProgrammeCard({ p, canEdit }: { p: ProgrammeView; canEdit: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [state, action, adding] = useActionState(addProgrammeMember.bind(null, p.id), {});
   const [pState, pAction, pAdding] = useActionState(addPartnerUser.bind(null, p.id), {});
+  const [fState, fAction, fAdding] = useActionState(addFacilitator.bind(null, p.id), {});
   const yes = (b: boolean) => (b ? "Yes" : "No");
 
   return (
@@ -165,6 +168,42 @@ function ProgrammeCard({ p, canEdit }: { p: ProgrammeView; canEdit: boolean }) {
           {"saved" in pState && pState.saved && <span className="w-full text-xs text-teal-ink">Access given.</span>}
         </form>
       )}
+
+      <div className="mt-3 rounded-lg bg-cloud/60 p-3">
+        <p className="text-xs font-bold text-midnight">Facilitators (run sessions, attendance, certificates)</p>
+        {p.facilitators.length === 0 ? (
+          <p className="mt-1 text-xs text-slate">None yet.</p>
+        ) : (
+          <ul className="mt-1 space-y-1 text-xs">
+            {p.facilitators.map((f) => (
+              <li key={f.userId}>
+                <span className="font-semibold text-midnight">{f.name}</span>{" "}
+                {f.checkedAt ? (
+                  <span className="text-teal-ink">· background check recorded {formatDate(f.checkedAt)}</span>
+                ) : (
+                  <>
+                    <span className="text-coral-ink">· no background check yet — can&rsquo;t run sessions</span>
+                    {canEdit && <BackgroundCheckForm programmeId={p.id} userId={f.userId} />}
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+        {canEdit && (
+          <form action={fAction} className="mt-2 flex flex-wrap items-end gap-2">
+            <label className="text-xs">
+              <span className="mb-1 block font-semibold text-midnight">Add facilitator (email or phone)</span>
+              <input name="account" required className="w-64 rounded-lg border border-slate/25 px-2 py-1.5 text-xs" />
+            </label>
+            <button type="submit" disabled={fAdding} className="rounded-lg border border-slate/25 px-3 py-1.5 text-xs font-bold text-midnight disabled:opacity-60">
+              {fAdding ? "Adding…" : "Add"}
+            </button>
+            {fState.errors?.account && <span className="w-full text-xs text-coral-ink">{fState.errors.account[0]}</span>}
+            {fState.message && <span className="w-full text-xs text-coral-ink">{fState.message}</span>}
+          </form>
+        )}
+      </div>
 
       {p.members.length > 0 && (
         <div className="mt-3 overflow-x-auto">
@@ -249,6 +288,20 @@ function GuardianForm({ programmeId, talentId }: { programmeId: string; talentId
       </button>
       {state.errors?.guardianName && <p className="text-[11px] text-coral-ink">{state.errors.guardianName[0]}</p>}
       {"saved" in state && state.saved && <p className="text-[11px] text-teal-ink">Saved.</p>}
+    </form>
+  );
+}
+
+function BackgroundCheckForm({ programmeId, userId }: { programmeId: string; userId: string }) {
+  const [state, action, pending] = useActionState(recordBackgroundCheck.bind(null, programmeId, userId), {});
+  if ("saved" in state && state.saved) return <span className="ms-1 text-teal-ink">· recorded</span>;
+  return (
+    <form action={action} className="mt-1 flex flex-wrap items-center gap-1.5">
+      <input name="note" required minLength={5} placeholder="What was checked, e.g. police clearance seen 3 Jan" className="w-72 rounded border border-slate/25 px-2 py-1 text-[11px]" />
+      <button type="submit" disabled={pending} className="rounded bg-teal px-2 py-1 text-[11px] font-bold text-midnight disabled:opacity-60">
+        {pending ? "Saving…" : "Record background check"}
+      </button>
+      {state.errors?.note && <span className="w-full text-[11px] text-coral-ink">{state.errors.note[0]}</span>}
     </form>
   );
 }

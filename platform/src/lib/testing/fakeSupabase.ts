@@ -22,7 +22,8 @@ export function createFakeSupabase(tables: Record<string, Row[]>) {
 
   function from(table: string) {
     db[table] ??= [];
-    let op: "select" | "insert" | "update" | "delete" = "select";
+    let op: "select" | "insert" | "update" | "delete" | "upsert" = "select";
+    let upsertOpts: { onConflict?: string; ignoreDuplicates?: boolean } = {};
     let payload: Row | Row[] | null = null;
     let returning = false;
     let single: "maybe" | "one" | null = null;
@@ -46,6 +47,12 @@ export function createFakeSupabase(tables: Record<string, Row[]>) {
       insert(rows: Row | Row[]) {
         op = "insert";
         payload = rows;
+        return builder;
+      },
+      upsert(rows: Row | Row[], opts: { onConflict?: string; ignoreDuplicates?: boolean } = {}) {
+        op = "upsert";
+        payload = rows;
+        upsertOpts = opts;
         return builder;
       },
       update(values: Row) {
@@ -119,6 +126,22 @@ export function createFakeSupabase(tables: Record<string, Row[]>) {
         const list = Array.isArray(payload) ? payload : [payload as Row];
         out = list.map((r) => ({ id: `fake-${nextId++}`, ...r }));
         rows.push(...out);
+        if (!returning) return { data: null, error: null };
+      } else if (op === "upsert") {
+        const list = Array.isArray(payload) ? payload : [payload as Row];
+        const keys = (upsertOpts.onConflict ?? "id").split(",").map((k) => k.trim());
+        out = [];
+        for (const r of list) {
+          const existing = rows.find((x) => keys.every((k) => x[k] === r[k]));
+          if (existing) {
+            if (!upsertOpts.ignoreDuplicates) Object.assign(existing, r);
+            out.push(existing);
+          } else {
+            const row = { id: `fake-${nextId++}`, ...r };
+            rows.push(row);
+            out.push(row);
+          }
+        }
         if (!returning) return { data: null, error: null };
       } else if (op === "update") {
         out = rows.filter(match);

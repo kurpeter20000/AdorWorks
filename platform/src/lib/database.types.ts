@@ -653,6 +653,56 @@ export type ProgrammeConsentRow = {
   created_at: string;
 }
 
+/** 0123: Pathways sessions, attendance, facilitators, certificates; Internship Bridge reviews. */
+export type ProgrammeFacilitatorRow = {
+  programme_id: string;
+  user_id: string;
+  background_check_recorded_at: string | null;
+  background_check_note: string | null;
+  recorded_by: string | null;
+  created_at: string;
+}
+export type ProgrammeSessionRow = {
+  id: string;
+  programme_id: string;
+  title: string;
+  starts_at: string;
+  location: string | null;
+  checkin_code: string;
+  checkin_open: boolean;
+  created_by: string | null;
+  created_at: string;
+}
+export type ProgrammeAttendanceRow = {
+  session_id: string;
+  talent_id: string;
+  method: "code" | "facilitator";
+  marked_by: string | null;
+  feedback_score: number | null;
+  checked_in_at: string;
+}
+export type ProgrammeCertificateRow = {
+  id: string;
+  programme_id: string;
+  talent_id: string;
+  check_code: string;
+  issued_by: string | null;
+  issued_at: string;
+  revoked_at: string | null;
+}
+export type InternshipReviewRow = {
+  id: string;
+  contract_id: string;
+  stage: "mid_point" | "final";
+  supervisor_id: string;
+  score_skills: number;
+  score_reliability: number;
+  score_growth: number;
+  strengths: string | null;
+  to_improve: string | null;
+  created_at: string;
+}
+
 export type PaymentIntentionStatus = "processing" | "awaiting_transfer" | "succeeded" | "failed";
 /** 0116: visa_mastercard only on old simulated rows; the app no longer offers card. */
 export type PayInProvider = "mtn_momo" | "mgurush" | "bank_transfer" | "visa_mastercard";
@@ -1262,6 +1312,36 @@ export type Database = {
         Update: Partial<ProgrammeConsentRow>;
         Relationships: [];
       };
+      programme_facilitators: {
+        Row: ProgrammeFacilitatorRow;
+        Insert: Partial<ProgrammeFacilitatorRow> & { programme_id: string; user_id: string };
+        Update: Partial<ProgrammeFacilitatorRow>;
+        Relationships: [];
+      };
+      programme_sessions: {
+        Row: ProgrammeSessionRow;
+        Insert: Partial<ProgrammeSessionRow> & { programme_id: string; title: string; starts_at: string; checkin_code: string };
+        Update: Partial<ProgrammeSessionRow>;
+        Relationships: [];
+      };
+      programme_attendance: {
+        Row: ProgrammeAttendanceRow;
+        Insert: Partial<ProgrammeAttendanceRow> & { session_id: string; talent_id: string; method: ProgrammeAttendanceRow["method"] };
+        Update: Partial<ProgrammeAttendanceRow>;
+        Relationships: [];
+      };
+      programme_certificates: {
+        Row: ProgrammeCertificateRow;
+        Insert: Partial<ProgrammeCertificateRow> & { programme_id: string; talent_id: string; check_code: string };
+        Update: Partial<ProgrammeCertificateRow>;
+        Relationships: [];
+      };
+      internship_reviews: {
+        Row: InternshipReviewRow;
+        Insert: Partial<InternshipReviewRow> & { contract_id: string; stage: InternshipReviewRow["stage"]; supervisor_id: string; score_skills: number; score_reliability: number; score_growth: number };
+        Update: Partial<InternshipReviewRow>;
+        Relationships: [];
+      };
       payment_intentions: {
         Row: PaymentIntentionRow;
         Insert: Partial<PaymentIntentionRow> & {
@@ -1467,6 +1547,10 @@ export type Database = {
       };
     };
     Functions: {
+      verify_certificate: {
+        Args: { p_code: string };
+        Returns: { talent_name: string; programme_name: string; partner_name: string; programme_type: string | null; issued_at: string; revoked: boolean }[];
+      };
       review_highlights: {
         Args: { p_kind: "talent" | "organisation"; p_id: string };
         Returns: { reviews: number; avg_quality: number | null; avg_communication: number | null; avg_timeliness: number | null; would_work_again_pct: number | null }[];
