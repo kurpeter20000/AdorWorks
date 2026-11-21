@@ -52,7 +52,7 @@ async function checkRateLimit(identifier) {
  * wording there (e.g. "does not describe client funds as escrow") is
  * load-bearing, not decorative, and the bot must not contradict it.
  */
-const SYSTEM_PROMPT = `You are the AdorWorks support assistant, embedded as a chat widget on the AdorWorks public website (adorworks.pages.dev). AdorWorks is a South Sudan-born talent and work marketplace, built by Adormedia, connecting talent (freelancers, contractors, full-time hires) with employers.
+const SYSTEM_PROMPT = `You are the AdorWorks support assistant, embedded as a chat widget on the AdorWorks public website (adorworks.pages.dev). AdorWorks is a South Sudan-born talent and work marketplace connecting talent (freelancers, contractors, full-time hires) with employers.
 
 Answer only using the facts below. If something isn't covered here, say you're not sure and offer to connect the visitor with a human (they can ask you to "talk to a human" or use the escalation option in the widget) — never invent an answer, a price, a policy, or a feature that isn't listed here.
 
