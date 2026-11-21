@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { partnerOrgsAdminedBy } from "@/lib/dal/pathways";
 import Link from "next/link";
 import { requireSession } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
@@ -517,7 +518,9 @@ export default async function DashboardPage({
     .from("programme_partner_users")
     .select("programme_id", { count: "exact", head: true })
     .eq("user_id", session.userId);
-  const partnerBanner = (partnerCohorts ?? 0) > 0 && (
+  // 0124: admins of an approved partner organisation can create cohorts.
+  const partnerOrgIds = (partnerCohorts ?? 0) > 0 ? [] : await partnerOrgsAdminedBy(session.userId);
+  const partnerBanner = ((partnerCohorts ?? 0) > 0 || partnerOrgIds.length > 0) && (
     <Link href="/partner" className="mt-4 flex min-h-11 items-center justify-between rounded-card border border-teal/30 bg-teal/5 px-4 py-3 text-sm font-bold text-teal-ink">
       {t("Programme dashboard — see your cohort's verified results")}
       <span aria-hidden="true">→</span>

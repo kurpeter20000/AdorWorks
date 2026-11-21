@@ -5,6 +5,7 @@ import { getCollectionAccounts, getEscrowRates, getFeeRates, getReceivingBankAcc
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FeatureSwitchForm } from "./feature-switch-form";
 import { ProgrammesPanel, type ProgrammeView } from "./programmes-panel";
+import { PartnerOrgs } from "./partner-orgs";
 import { guaranteeRemedy } from "@/lib/domain/guarantee";
 import { calculateFees } from "@/lib/domain/fees";
 import { StatePanel } from "@/components/state-panel";
@@ -24,6 +25,12 @@ export default async function OperationsSettingsPage() {
   const collection = await getCollectionAccounts();
   const [guaranteeOn, sharingOn] = await Promise.all([isGuaranteeEnabled(), isProgrammeSharingEnabled()]);
   const programmes = await loadProgrammes();
+  const { data: orgRows } = await createAdminClient()
+    .from("organisations")
+    .select("id, name, verification_status, is_programme_partner")
+    .order("name", { ascending: true })
+    .limit(500);
+  const partnerOrgOptions = (orgRows ?? []).map((o) => ({ id: o.id, name: o.name, verified: o.verification_status === "verified", partner: o.is_programme_partner }));
   const canEdit = session.role === "finance" || session.role === "admin";
   const example = calculateFees(10000, { ...rates, enabled: true });
 
@@ -193,6 +200,7 @@ export default async function OperationsSettingsPage() {
             warning="Only switch on once counsel has approved the consent wording and a native speaker has checked the Arabic and Swahili."
           />
         )}
+        <PartnerOrgs orgs={partnerOrgOptions} canEdit={canEdit} />
         <ProgrammesPanel programmes={programmes} canEdit={canEdit} />
       </section>
     </div>

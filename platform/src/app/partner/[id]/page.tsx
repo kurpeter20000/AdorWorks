@@ -62,9 +62,12 @@ export default async function PartnerCohortPage({ params }: { params: Promise<{ 
         </dl>
       </header>
 
-      <p className="mt-4">
+      <p className="mt-4 flex flex-wrap gap-2">
         <Link href={`/partner/${programme.id}/sessions`} className="inline-flex min-h-11 items-center rounded-control border border-teal/40 bg-white px-4 text-sm font-bold text-teal-ink">
           {t("Sessions, attendance and certificates")}
+        </Link>
+        <Link href={`/partner/${programme.id}/team`} className="inline-flex min-h-11 items-center rounded-control border border-teal/40 bg-white px-4 text-sm font-bold text-teal-ink">
+          {t("Team and join code")}
         </Link>
       </p>
 

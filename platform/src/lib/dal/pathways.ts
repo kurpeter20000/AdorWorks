@@ -13,12 +13,17 @@ export async function partnerProgrammesFor(userId: string, role: UserRole): Prom
     const { data } = await admin.from("programmes").select("*").order("created_at", { ascending: false });
     return data ?? [];
   }
-  // Partner staff and facilitators (0123) both open the partner dashboard.
-  const [{ data: links }, { data: facil }] = await Promise.all([
+  // Partner staff, facilitators (0123), and admins of the partner
+  // organisation that owns the cohort (0124) all open the partner dashboard.
+  const [{ data: links }, { data: facil }, orgIds] = await Promise.all([
     admin.from("programme_partner_users").select("programme_id").eq("user_id", userId),
     admin.from("programme_facilitators").select("programme_id").eq("user_id", userId),
+    partnerOrgsAdminedBy(userId),
   ]);
-  const ids = [...new Set([...(links ?? []), ...(facil ?? [])].map((l) => l.programme_id))];
+  const { data: owned } = orgIds.length
+    ? await admin.from("programmes").select("id").in("partner_organisation_id", orgIds)
+    : { data: [] as { id: string }[] };
+  const ids = [...new Set([...(links ?? []), ...(facil ?? [])].map((l) => l.programme_id).concat((owned ?? []).map((o) => o.id)))];
   if (!ids.length) return [];
   const { data } = await admin.from("programmes").select("*").in("id", ids).order("created_at", { ascending: false });
   return data ?? [];
@@ -91,4 +96,27 @@ export async function canRunSessions(userId: string, role: UserRole, programmeId
     .eq("user_id", userId)
     .maybeSingle();
   return Boolean(data?.background_check_recorded_at);
+}
+
+/** Approved partner organisations (0124) where this person is an organisation admin. */
+export async function partnerOrgsAdminedBy(userId: string): Promise<string[]> {
+  const admin = createAdminClient();
+  const { data: memberships } = await admin.from("organisation_members").select("organisation_id").eq("user_id", userId).eq("role", "admin");
+  const ids = (memberships ?? []).map((m) => m.organisation_id);
+  if (!ids.length) return [];
+  const { data: orgs } = await admin.from("organisations").select("id").in("id", ids).eq("is_programme_partner", true);
+  return (orgs ?? []).map((o) => o.id);
+}
+
+/** May manage this cohort and its team: staff, a partner admin of the cohort, or an admin of its partner organisation. */
+export async function canManageCohort(userId: string, role: UserRole, programmeId: string): Promise<boolean> {
+  if (STAFF_ROLES.includes(role)) return true;
+  const admin = createAdminClient();
+  const [{ data: link }, { data: programme }] = await Promise.all([
+    admin.from("programme_partner_users").select("role").eq("programme_id", programmeId).eq("user_id", userId).maybeSingle(),
+    admin.from("programmes").select("partner_organisation_id").eq("id", programmeId).maybeSingle(),
+  ]);
+  if (link?.role === "admin") return true;
+  if (!programme?.partner_organisation_id) return false;
+  return (await partnerOrgsAdminedBy(userId)).includes(programme.partner_organisation_id);
 }
