@@ -86,6 +86,13 @@ export default async function LoginPage({
       </div>
 
       <LoginForm next={returnTo} />
+      <Link
+        href={withNext(`/phone?mode=signin&intent=${intent}`)}
+        prefetch={false}
+        className="mt-3 flex min-h-[50px] w-full items-center justify-center rounded-[14px] border border-[#d9d0bf] bg-white text-[15px] font-extrabold text-midnight hover:bg-[#f7f3ec]"
+      >
+        {t("Sign in with your phone number")}
+      </Link>
       <p className="mt-5 text-center text-[#4a5263]">
         {t("New to AdorWorks?")}{" "}
         <Link href={withNext(`/signup?intent=${intent}`)} prefetch={false} className="font-extrabold text-teal-ink hover:underline">

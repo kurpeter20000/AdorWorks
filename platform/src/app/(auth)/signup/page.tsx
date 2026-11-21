@@ -25,6 +25,13 @@ export default async function SignupPage({
       <p className="mt-1 text-sm text-slate">
         {t("Free to register, always. We'll never charge you to be considered for work.")}
       </p>
+      <Link
+        href={`/phone?mode=signup&intent=${defaultIntent}${returnTo ? `&next=${encodeURIComponent(returnTo)}` : ""}`}
+        prefetch={false}
+        className="mt-4 flex min-h-[50px] w-full items-center justify-center rounded-[14px] border border-[#d9d0bf] bg-white text-[15px] font-extrabold text-midnight hover:bg-[#f7f3ec]"
+      >
+        {t("No email? Sign up with your phone number")}
+      </Link>
       <SignupForm defaultIntent={defaultIntent} next={returnTo} />
       <p className="mt-4 text-center text-sm text-slate">
         {t("Already have an account?")}{" "}

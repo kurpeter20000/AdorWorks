@@ -614,6 +614,13 @@ export type ProgrammeRow = {
   partner_name: string;
   agreement_signed_at: string | null;
   ends_on: string | null;
+  /** 0122: Pathways cohort details. */
+  programme_type: string | null;
+  funder: string | null;
+  region: string | null;
+  starts_on: string | null;
+  target_placed: number | null;
+  join_code: string | null;
   active: boolean;
   created_by: string | null;
   created_at: string;
@@ -624,6 +631,13 @@ export type ProgrammeMemberRow = {
   is_minor: boolean;
   joined_at: string;
   added_by: string | null;
+  joined_via: "staff" | "code";
+}
+export type ProgrammePartnerUserRow = {
+  programme_id: string;
+  user_id: string;
+  added_by: string | null;
+  created_at: string;
 }
 export type ProgrammeConsentRow = {
   id: string;
@@ -1234,6 +1248,12 @@ export type Database = {
         Row: ProgrammeMemberRow;
         Insert: Partial<ProgrammeMemberRow> & { programme_id: string; talent_id: string };
         Update: Partial<ProgrammeMemberRow>;
+        Relationships: [];
+      };
+      programme_partner_users: {
+        Row: ProgrammePartnerUserRow;
+        Insert: Partial<ProgrammePartnerUserRow> & { programme_id: string; user_id: string };
+        Update: Partial<ProgrammePartnerUserRow>;
         Relationships: [];
       };
       programme_consents: {

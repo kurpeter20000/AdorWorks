@@ -205,10 +205,15 @@ async function loadProgrammes(): Promise<ProgrammeView[]> {
   const { data: programmes } = await admin.from("programmes").select("*").order("created_at", { ascending: false });
   if (!programmes?.length) return [];
   const ids = programmes.map((p) => p.id);
-  const [{ data: members }, { data: consents }] = await Promise.all([
+  const [{ data: members }, { data: consents }, { data: partnerLinks }] = await Promise.all([
     admin.from("programme_members").select("*").in("programme_id", ids),
     admin.from("programme_consents").select("*").in("programme_id", ids).order("created_at", { ascending: false }),
+    admin.from("programme_partner_users").select("programme_id, user_id").in("programme_id", ids),
   ]);
+  const partnerIds = [...new Set((partnerLinks ?? []).map((l) => l.user_id))];
+  const { data: partnerProfiles } = partnerIds.length
+    ? await admin.from("profiles").select("id, full_name").in("id", partnerIds)
+    : { data: [] as { id: string; full_name: string | null }[] };
   const talentIds = [...new Set((members ?? []).map((m) => m.talent_id))];
   const { data: people } = talentIds.length
     ? await admin.from("talent_profiles").select("id, display_name").in("id", talentIds)
@@ -229,6 +234,11 @@ async function loadProgrammes(): Promise<ProgrammeView[]> {
     partnerName: p.partner_name,
     agreementSignedAt: p.agreement_signed_at,
     endsOn: p.ends_on,
+    programmeType: p.programme_type,
+    joinCode: p.join_code,
+    partnerUsers: (partnerLinks ?? [])
+      .filter((l) => l.programme_id === p.id)
+      .map((l) => (partnerProfiles ?? []).find((x) => x.id === l.user_id)?.full_name ?? "Partner user"),
     members: (members ?? [])
       .filter((m) => m.programme_id === p.id)
       .map((m) => {

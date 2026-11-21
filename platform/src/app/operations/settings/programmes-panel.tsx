@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { addProgrammeMember, createProgramme, markAgreementSigned, recordGuardianConsent } from "@/lib/actions/programmeConsent";
+import { addPartnerUser, addProgrammeMember, createProgramme, markAgreementSigned, recordGuardianConsent } from "@/lib/actions/programmeConsent";
+import { PROGRAMME_TYPES, type ProgrammeType } from "@/lib/domain/pathways";
 import { formatDate } from "@/lib/domain/format";
 
 export interface ProgrammeView {
@@ -10,6 +11,9 @@ export interface ProgrammeView {
   partnerName: string;
   agreementSignedAt: string | null;
   endsOn: string | null;
+  programmeType: string | null;
+  joinCode: string | null;
+  partnerUsers: string[];
   members: {
     talentId: string;
     name: string;
@@ -46,17 +50,44 @@ function NewProgrammeForm() {
   return (
     <form action={action} className="grid gap-3 rounded-lg border border-slate/15 p-4 sm:grid-cols-3">
       <label className="text-sm">
-        <span className="mb-1 block font-semibold text-midnight">Programme name</span>
-        <input name="name" required className={input} placeholder="e.g. Youth Digital Skills 2027" />
+        <span className="mb-1 block font-semibold text-midnight">Cohort name</span>
+        <input name="name" required className={input} placeholder="e.g. EduPower Career Readiness — Juba, Jan 2027" />
         {state.errors?.name && <span className="mt-1 block text-xs text-coral-ink">{state.errors.name[0]}</span>}
       </label>
       <label className="text-sm">
         <span className="mb-1 block font-semibold text-midnight">Partner</span>
-        <input name="partnerName" required className={input} placeholder="e.g. EduPower Youth Foundation" />
+        <input name="partnerName" required className={input} defaultValue="EduPower Youth Foundation" />
         {state.errors?.partnerName && <span className="mt-1 block text-xs text-coral-ink">{state.errors.partnerName[0]}</span>}
       </label>
       <label className="text-sm">
-        <span className="mb-1 block font-semibold text-midnight">Ends on (optional)</span>
+        <span className="mb-1 block font-semibold text-midnight">Programme</span>
+        <select name="programmeType" className={input} defaultValue="career_readiness">
+          {(Object.keys(PROGRAMME_TYPES) as ProgrammeType[]).map((k) => (
+            <option key={k} value={k}>
+              {PROGRAMME_TYPES[k]}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="text-sm">
+        <span className="mb-1 block font-semibold text-midnight">Funder (optional)</span>
+        <input name="funder" className={input} />
+      </label>
+      <label className="text-sm">
+        <span className="mb-1 block font-semibold text-midnight">Region (optional)</span>
+        <input name="region" className={input} placeholder="e.g. Juba" />
+      </label>
+      <label className="text-sm">
+        <span className="mb-1 block font-semibold text-midnight">Placement target (optional)</span>
+        <input name="targetPlaced" inputMode="numeric" className={input} placeholder="e.g. 20" />
+        {state.errors?.targetPlaced && <span className="mt-1 block text-xs text-coral-ink">{state.errors.targetPlaced[0]}</span>}
+      </label>
+      <label className="text-sm">
+        <span className="mb-1 block font-semibold text-midnight">Starts on</span>
+        <input name="startsOn" type="date" className={input} />
+      </label>
+      <label className="text-sm">
+        <span className="mb-1 block font-semibold text-midnight">Ends on</span>
         <input name="endsOn" type="date" className={input} />
       </label>
       {state.message && <p className="text-sm text-coral-ink sm:col-span-3">{state.message}</p>}
@@ -72,6 +103,7 @@ function ProgrammeCard({ p, canEdit }: { p: ProgrammeView; canEdit: boolean }) {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [state, action, adding] = useActionState(addProgrammeMember.bind(null, p.id), {});
+  const [pState, pAction, pAdding] = useActionState(addPartnerUser.bind(null, p.id), {});
   const yes = (b: boolean) => (b ? "Yes" : "No");
 
   return (
@@ -80,7 +112,7 @@ function ProgrammeCard({ p, canEdit }: { p: ProgrammeView; canEdit: boolean }) {
         <div>
           <p className="font-bold text-midnight">{p.name}</p>
           <p className="text-xs text-slate">
-            Run by {p.partnerName}
+            {PROGRAMME_TYPES[(p.programmeType ?? "other") as ProgrammeType] ?? "Programme"} · Run by {p.partnerName}
             {p.endsOn ? ` · ends ${formatDate(p.endsOn)}` : ""} · {p.members.length} member{p.members.length === 1 ? "" : "s"}
             {p.members.length < 5 ? " · group totals hidden until 5 members" : ""}
           </p>
@@ -107,6 +139,32 @@ function ProgrammeCard({ p, canEdit }: { p: ProgrammeView; canEdit: boolean }) {
         )}
       </div>
       {error && <p className="mt-2 text-xs text-coral-ink">{error}</p>}
+      {p.joinCode && (
+        <p className="mt-2 text-sm text-midnight">
+          Join code for participants: <span className="rounded bg-cloud px-2 py-0.5 font-mono font-bold tracking-widest">{p.joinCode}</span>{" "}
+          <span className="text-xs text-slate">— they sign up (phone is fine), then enter it at /pathways/join</span>
+        </p>
+      )}
+      <p className="mt-1 text-xs text-slate">
+        Partner dashboard access: {p.partnerUsers.length ? p.partnerUsers.join(", ") : "nobody yet"} ·{" "}
+        <a href={`/partner/${p.id}`} className="font-semibold text-teal-ink underline">
+          Preview their dashboard
+        </a>
+      </p>
+      {canEdit && (
+        <form action={pAction} className="mt-2 flex flex-wrap items-end gap-2">
+          <label className="text-xs">
+            <span className="mb-1 block font-semibold text-midnight">Give a partner staff member access (email or phone)</span>
+            <input name="account" required className="w-64 rounded-lg border border-slate/25 px-2 py-1.5 text-xs" />
+          </label>
+          <button type="submit" disabled={pAdding} className="rounded-lg border border-slate/25 px-3 py-1.5 text-xs font-bold text-midnight disabled:opacity-60">
+            {pAdding ? "Adding…" : "Give access"}
+          </button>
+          {pState.errors?.account && <span className="w-full text-xs text-coral-ink">{pState.errors.account[0]}</span>}
+          {pState.message && <span className="w-full text-xs text-coral-ink">{pState.message}</span>}
+          {"saved" in pState && pState.saved && <span className="w-full text-xs text-teal-ink">Access given.</span>}
+        </form>
+      )}
 
       {p.members.length > 0 && (
         <div className="mt-3 overflow-x-auto">
