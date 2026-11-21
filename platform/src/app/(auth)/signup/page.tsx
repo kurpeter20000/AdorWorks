@@ -21,14 +21,14 @@ export default async function SignupPage({
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-midnight">{t("Create your account")}</h1>
-      <p className="mt-1 text-sm text-slate">
+      <h1 className="text-[2rem] leading-tight font-extrabold text-midnight">{t("Create your account")}</h1>
+      <p className="mt-1 text-[15px] text-[#4a5263]">
         {t("Free to register, always. We'll never charge you to be considered for work.")}
       </p>
       <Link
         href={`/phone?mode=signup&intent=${defaultIntent}${returnTo ? `&next=${encodeURIComponent(returnTo)}` : ""}`}
         prefetch={false}
-        className="mt-4 flex min-h-[50px] w-full items-center justify-center rounded-[14px] border border-[#d9d0bf] bg-white text-[15px] font-extrabold text-midnight hover:bg-[#f7f3ec]"
+        className="mt-4 flex min-h-12 w-full items-center justify-center rounded-xl border border-[#d9d0bf] bg-white text-[15px] font-bold text-midnight hover:bg-[#f7f3ec]"
       >
         {t("No email? Sign up with your phone number")}
       </Link>

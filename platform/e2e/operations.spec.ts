@@ -39,40 +39,26 @@ test.describe("operations console", () => {
     try {
       await loginAsStaff(page, staff.email);
       await page.goto("/operations/people");
-      // people/page.tsx renders this message server-side instead of the
-      // PeopleConsole component when the session's role isn't admin —
-      // never a redirect, so the URL stays on /operations/people.
-      await expect(page.getByText(/admins only/i)).toBeVisible();
-      await expect(page.getByText(/managing accounts and roles needs the admin role/i)).toBeVisible();
+      // Phase B2: each staff role only opens its own areas — a reviewer is
+      // sent back to their workspace instead of seeing the people console.
+      await expect(page.getByText(/you do not have access to that workspace/i)).toBeVisible();
+      await expect(page).not.toHaveURL(/\/operations\/people/);
     } finally {
       await deleteTestUser(staff.id);
     }
   });
 
   test("a reviewer cannot refund a dispute's settled payment — S14-04", async ({ page }) => {
+    // Phase B2: contracts and refunds belong to finance and trust & safety,
+    // so a reviewer can't even open the contracts console.
     const staff = await createTestUser("opsreviewer2", "reviewer");
     const talent = await createTestUser("disputetalent", "talent");
     const seed = await seedDisputeWithSettledPayment(talent.id);
     try {
       await loginAsStaff(page, staff.email);
       await page.goto("/operations/contracts");
-
-      const row = page.getByRole("row", { name: new RegExp(seed.opportunityTitle) });
-      await expect(row).toBeVisible({ timeout: 15000 });
-      await row.click();
-
-      await page.getByLabel(/refund which milestone/i).selectOption(seed.milestoneId);
-
-      // contracts-console.tsx confirms via window.confirm() before
-      // calling the API, then surfaces the thrown error (the staff
-      // API's real 403) through ActionStatus — capture both.
-      page.on("dialog", (dialog) => dialog.accept());
-      await page.getByRole("button", { name: /refund settled payment/i }).click();
-
-      await expect(page.getByText(/finance.*access required/i)).toBeVisible({ timeout: 10000 });
-
-      // The real point of this test: the payment must not actually have
-      // been refunded, not just that some error text appeared.
+      await expect(page.getByText(/you do not have access to that workspace/i)).toBeVisible();
+      await expect(page.getByRole("button", { name: /refund settled payment/i })).toHaveCount(0);
       const { data: paymentAfter } = await admin.from("payment_events").select("status").eq("id", seed.paymentId).single();
       expect(paymentAfter?.status).toBe("succeeded");
     } finally {
@@ -109,7 +95,7 @@ test.describe("operations console", () => {
   });
 
   test("a staff member can set a report's severity and resolve it with notes", async ({ page }) => {
-    const staff = await createTestUser("opsreports", "reviewer");
+    const staff = await createTestUser("opsreports", "trust_safety");
     const org = await createTestOrganisation("reportorg");
     const opportunity = await seedOpportunity(org.id);
     const report = await seedReport(org.rep.id, opportunity.id);
@@ -141,7 +127,7 @@ test.describe("operations console", () => {
   });
 
   test("resolving a report without notes is blocked client-side", async ({ page }) => {
-    const staff = await createTestUser("opsreports2", "reviewer");
+    const staff = await createTestUser("opsreports2", "trust_safety");
     const org = await createTestOrganisation("reportorg2");
     const opportunity = await seedOpportunity(org.id);
     const report = await seedReport(org.rep.id, opportunity.id);

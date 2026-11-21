@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/i18n/client";
 
-const field = "h-[52px] rounded-[14px] border-[#d9d0bf] ps-10 text-base";
+const field = "h-12 rounded-xl border-[#d9d0bf] ps-10 text-base";
 const icon = "pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2 text-slate/50";
 
 export function PhoneForm({ mode, intent, next, defaultPhone }: { mode: "signin" | "signup"; intent: "talent" | "hire"; next: string | null; defaultPhone?: string }) {
@@ -38,7 +38,7 @@ export function PhoneForm({ mode, intent, next, defaultPhone }: { mode: "signin"
           </div>
           {verifyState.errors?.token && <p className="mt-1 text-sm text-coral-ink">{t(verifyState.errors.token[0])}</p>}
         </div>
-        <Button type="submit" loading={verifying} size="lg" className="h-[54px] w-full rounded-[14px] text-[17px] font-extrabold">
+        <Button type="submit" loading={verifying} size="lg" className="h-12 w-full rounded-xl text-base font-bold">
           {verifying ? t("Checking…") : mode === "signup" ? t("Create my account") : t("Sign in")}
         </Button>
         <button type="button" onClick={() => setRestart((n) => n + 1)} className="w-full text-sm font-bold text-teal-ink underline">
@@ -107,7 +107,7 @@ export function PhoneForm({ mode, intent, next, defaultPhone }: { mode: "signin"
           {t("Create an account with this number")}
         </Link>
       )}
-      <Button type="submit" loading={sending} size="lg" className="h-[54px] w-full rounded-[14px] text-[17px] font-extrabold">
+      <Button type="submit" loading={sending} size="lg" className="h-12 w-full rounded-xl text-base font-bold">
         {sending ? t("Sending…") : t("Send me a code")}
       </Button>
       <p className="text-center text-xs text-slate">{t("Standard SMS rates from your network may apply.")}</p>
