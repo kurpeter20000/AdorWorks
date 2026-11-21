@@ -31,7 +31,7 @@
 <link rel="stylesheet" href="css/themes.css">
 <link rel="stylesheet" href="css/styles.css?v=26">
 <link rel="stylesheet" href="css/site.css?v=26">
-<link rel="stylesheet" href="css/pages.css?v=29">
+<link rel="stylesheet" href="css/pages.css?v=30">
 <script src="js/i18n-early.js"></script>
 <style>
   /* This page has a second sticky bar (.jump-nav) below the header, so
@@ -124,7 +124,10 @@
           <a href="#brief-form" class="btn btn-primary">Post a project</a>
           <a href="#categories" class="btn btn-ghost">See what we cover</a>
         </div>
-        <p class="page-hero-note rise rise-3">New here? <a href="https://ador-works.vercel.app/signup">Create a free account</a>. Already registered? <a href="https://ador-works.vercel.app/login">Log in</a> to review your shortlists.</p>
+        <ul class="hero-account rise rise-3">
+          <li><span>New here?</span> <a href="https://ador-works.vercel.app/signup?intent=hire">Create a free account <span aria-hidden="true">&rarr;</span></a></li>
+          <li><span>Already registered?</span> <a href="https://ador-works.vercel.app/login?as=hire">Log in to your shortlists <span aria-hidden="true">&rarr;</span></a></li>
+        </ul>
       </div>
       <div class="page-hero-media rise rise-2">
         <picture class="photo-slot page-hero-photo">
@@ -241,7 +244,7 @@
   </section>
 
   <section class="page-section page-dark" id="verification">
-    <div class="container verify-grid">
+    <div class="container verify-grid verify-grid-even">
       <div class="site-reveal">
         <p class="eyebrow">Employer verification</p>
         <h2>We verify you before we share anyone with you.</h2>
