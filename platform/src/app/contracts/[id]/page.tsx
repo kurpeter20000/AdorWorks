@@ -20,10 +20,13 @@ import { TimesheetsSection } from "./timesheets-section";
 import { DisputeSection } from "./dispute-section";
 import { CancelContractSection } from "./cancel-contract-section";
 import Link from "next/link";
-import { getFeeSettings } from "@/lib/dal/settings";
+import { getFeeSettings, getReceivingBankAccount } from "@/lib/dal/settings";
+import { parseReceivingBankAccount } from "@/lib/domain/bankTransfer";
+import type { AwaitingTransfer } from "./payment-checkout";
 import { isInstitutional } from "@/lib/domain/institutional";
 import { InstitutionalInvoicePanel } from "./institutional-invoice-panel";
 import { must } from "@/lib/dal/must";
+import { getT } from "@/i18n/server";
 
 export const metadata: Metadata = { title: "Contract" };
 
@@ -36,6 +39,7 @@ const PaymentCheckout = dynamic(() => import("./payment-checkout").then((m) => m
 
 export default async function ContractDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await requireSession();
+  const t = await getT();
   const { id } = await params;
   const supabase = await createClient();
 
@@ -116,11 +120,35 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
   const { data: paymentEvents } = must(await supabase
     .from("payment_events")
     .select(
-      "milestone_id, external_reference, amount, currency, provider_name, payer_phone, card_last4, card_brand, receipt_number, created_at, fee_percent, fee_amount, net_amount, employer_fee_percent, employer_fee_amount, total_charged, is_simulated, escrow_status, dispute_window_ends_at, disbursed_at"
+      "milestone_id, external_reference, amount, currency, provider_name, payer_phone, card_last4, card_brand, receipt_number, created_at, fee_percent, fee_amount, net_amount, employer_fee_percent, employer_fee_amount, total_charged, is_simulated, escrow_status, dispute_window_ends_at, disbursed_at, disbursement_status, payout_destination, payout_receipt_number, disbursement_reference"
     )
     .eq("contract_id", contract.id), "payment events");
   const paymentByMilestone = new Map((paymentEvents ?? []).map((p) => [p.milestone_id, p]));
   const feeSettings = await getFeeSettings();
+
+  // 0116: bank transfers the employer has started but AdorWorks hasn't
+  // received yet — the checkout shows the reference and account instead.
+  const bankAccount = isEmployer ? await getReceivingBankAccount() : null;
+  const { data: awaitingIntentions } = must(isEmployer
+    ? await supabase
+        .from("payment_intentions")
+        .select("id, milestone_id, transfer_reference, amount, currency, bank_account, created_at")
+        .eq("contract_id", contract.id)
+        .eq("status", "awaiting_transfer")
+    : { data: [] }, "pending bank transfers");
+  const awaitingByMilestone = new Map<string, AwaitingTransfer>(
+    (awaitingIntentions ?? []).map((i) => [
+      i.milestone_id,
+      {
+        id: i.id,
+        reference: i.transfer_reference ?? "",
+        amount: i.amount,
+        currency: i.currency,
+        account: parseReceivingBankAccount(i.bank_account) ?? bankAccount,
+        createdAt: i.created_at,
+      },
+    ])
+  );
 
   // Institutional orgs (Stage 16 step 5) pay by invoice + bank transfer
   // instead of mobile money — approveDeliverable() already raises this
@@ -259,17 +287,17 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                 <StatusBadge state={MILESTONE_STATES[m.status]} className="whitespace-nowrap" />
               </div>
               {(() => {
-                const step = milestoneTimelineStep(m.status, payment?.escrow_status);
+                const step = milestoneTimelineStep(m.status, payment?.escrow_status, payment?.disbursement_status);
                 if (step === null) return null;
                 return (
                   <div className="mt-3 flex items-center gap-3">
                     <Stepper
                       className="w-full max-w-64"
-                      steps={[...MILESTONE_STEPS]}
+                      steps={MILESTONE_STEPS.map((s) => t(s))}
                       current={step}
-                      label={`Payment step ${step + 1} of ${MILESTONE_STEPS.length}: ${MILESTONE_STEPS[step]}`}
+                      label={t("Payment step {step} of {total}: {name}", { step: step + 1, total: MILESTONE_STEPS.length, name: t(MILESTONE_STEPS[step]) })}
                     />
-                    <span className="text-xs font-semibold whitespace-nowrap text-slate">{MILESTONE_STEPS[step]}</span>
+                    <span className="text-xs font-semibold whitespace-nowrap text-slate">{t(MILESTONE_STEPS[step])}</span>
                   </div>
                 );
               })()}
@@ -287,8 +315,9 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
               {payment && (
                 <div className="mt-3">
                   <p className="text-xs font-semibold text-teal-ink">
-                    {payment.is_simulated ? "Simulated" : "Live"} payment recorded ({payment.currency}{" "}
-                    {payment.amount.toLocaleString()}){payment.is_simulated ? " — no real money moved." : "."}
+                    {payment.is_simulated
+                      ? t("Test payment recorded ({amount}) — no real money moved.", { amount: `${payment.currency} ${payment.amount.toLocaleString()}` })
+                      : t("Payment received ({amount}).", { amount: `${payment.currency} ${payment.amount.toLocaleString()}` })}
                   </p>
                   <ReceiptView
                     receiptNumber={payment.receipt_number}
@@ -310,6 +339,9 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                     escrowStatus={payment.escrow_status}
                     disputeWindowEndsAt={payment.dispute_window_ends_at}
                     disbursedAt={payment.disbursed_at}
+                    payoutDestination={isTalent || !isEmployer ? payment.payout_destination : null}
+                    payoutReceiptNumber={payment.payout_receipt_number}
+                    payoutReference={isTalent || !isEmployer ? payment.disbursement_reference : null}
                   />
                 </div>
               )}
@@ -333,6 +365,8 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                   currency={m.currency}
                   realPaymentsEnabled={isFeatureEnabled(FEATURE_FLAGS.REAL_PAYMENTS)}
                   fees={feeSettings}
+                  bankTransferAvailable={bankAccount !== null}
+                  awaitingTransfer={awaitingByMilestone.get(m.id) ?? null}
                 />
               )}
             </div>

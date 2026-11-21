@@ -7,13 +7,11 @@ import { getPaymentProvider, type PaymentProvider } from "./paymentProviders";
  * MoMo/m-Gurush implementation when ADORWORKS_FF_REAL_PAYMENTS is on (see
  * paymentProviders.real.ts — off by default, and there are no credentials
  * in this environment to have tested it against), otherwise the same
- * simulated provider getPaymentProvider() always returns. Card payments
- * are untouched by the flag — no card-processor decision has been made,
- * so visa_mastercard stays simulated either way.
+ * simulated provider getPaymentProvider() always returns.
  *
  * This lives in its own "server-only" file, separate from
  * paymentProviders.ts, deliberately: paymentProviders.ts is also imported
- * by the client component payment-checkout.tsx, and Turbopack's build
+ * by client code, and Turbopack's build
  * traces a dynamic import()'s target even when it's behind a runtime
  * flag — keeping the real module out of that file's import graph
  * entirely is what actually keeps it (and its network calls) out of the

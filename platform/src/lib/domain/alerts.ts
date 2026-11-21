@@ -16,6 +16,8 @@ const TOPIC_BY_TYPE: Record<string, AlertTopic> = {
   milestone_approved: "application_updates",
   milestone_paid: "application_updates",
   escrow_released: "application_updates",
+  payout_failed: "application_updates",
+  bank_transfer_received: "application_updates",
   message_received: "messages",
   support_message_received: "messages",
 };

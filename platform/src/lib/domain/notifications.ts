@@ -53,6 +53,9 @@ export const NOTIFICATION_TYPES = {
   INTERVIEW_TIMES_OFFERED: "interview_times_offered",
   INTERVIEW_TIME_CHOSEN: "interview_time_chosen",
   INTERVIEW_REMINDER: "interview_reminder",
+  // 0116: payment partners.
+  PAYOUT_FAILED: "payout_failed",
+  BANK_TRANSFER_RECEIVED: "bank_transfer_received",
 } as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];

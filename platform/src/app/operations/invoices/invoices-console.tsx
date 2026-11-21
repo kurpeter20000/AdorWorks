@@ -17,10 +17,10 @@ interface InvoiceRow {
 
 export function InvoicesConsole({ rows, canConfirm }: { rows: InvoiceRow[]; canConfirm: boolean }) {
   if (rows.length === 0) {
-    return <p className="mt-8 text-sm text-slate">Nothing awaiting confirmation right now.</p>;
+    return <p className="mt-2 text-sm text-slate">Nothing awaiting confirmation right now.</p>;
   }
   return (
-    <ul className="mt-6 space-y-3">
+    <ul className="mt-3 space-y-3">
       {rows.map((row) => (
         <InvoiceRowItem key={row.id} row={row} canConfirm={canConfirm} />
       ))}

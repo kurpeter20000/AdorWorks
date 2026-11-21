@@ -6,8 +6,9 @@ import { requireRole } from "@/lib/dal/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
-import { getEscrowRates, getFeeRates } from "@/lib/dal/settings";
+import { getEscrowRates, getFeeRates, getReceivingBankAccount } from "@/lib/dal/settings";
 import { MAX_FEE_PERCENT } from "@/lib/domain/fees";
+import { receivingBankAccountToJson } from "@/lib/domain/bankTransfer";
 import { MAX_DISPUTE_WINDOW_DAYS, MIN_DISPUTE_WINDOW_DAYS } from "@/lib/domain/escrow";
 import type { FormState } from "./auth";
 
@@ -96,6 +97,58 @@ export async function updateEscrowSettings(_prev: FormState, formData: FormData)
     source: "platform",
     reason: v.reason,
     before: { enabled: before.enabled, dispute_window_days: before.disputeWindowDays },
+    after: value,
+  });
+  revalidatePath("/operations/settings");
+  return { saved: true };
+}
+
+const BankAccountSchema = z.object({
+  bankName: z.string().trim().min(2, "Enter the bank's name.").max(120),
+  accountName: z.string().trim().min(2, "Enter the name on the account.").max(120),
+  accountNumber: z.string().trim().regex(/^[0-9A-Za-z -]{4,40}$/, "Enter the account number (letters, numbers, spaces or dashes)."),
+  branch: z.string().trim().max(120),
+  swiftCode: z.string().trim().max(20),
+  reason: z.string().trim().min(10, "Say why this is changing (at least 10 characters) — it goes in the audit log."),
+});
+
+/**
+ * Finance/admin only (0116). AdorWorks' own account that employers pay
+ * into by bank transfer, from any bank. Until this is saved, bank
+ * transfer isn't offered at checkout. A change applies to transfers
+ * started from now on: each transfer already under way keeps the details
+ * it was started with (payment_intentions.bank_account), so keep an old
+ * account open until those transfers have landed.
+ */
+export async function updateReceivingBankAccount(_prev: FormState, formData: FormData): Promise<FormState & { saved?: boolean }> {
+  const session = await requireRole("finance", "admin");
+  const parsed = BankAccountSchema.safeParse({
+    bankName: formData.get("bankName") ?? "",
+    accountName: formData.get("accountName") ?? "",
+    accountNumber: formData.get("accountNumber") ?? "",
+    branch: formData.get("branch") ?? "",
+    swiftCode: formData.get("swiftCode") ?? "",
+    reason: formData.get("reason") ?? "",
+  });
+  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
+  const v = parsed.data;
+
+  const before = await getReceivingBankAccount();
+  const value = { bank_name: v.bankName, account_name: v.accountName, account_number: v.accountNumber, branch: v.branch, swift_code: v.swiftCode };
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("platform_settings")
+    .upsert({ key: "bank_account", value, updated_by: session.userId, updated_at: new Date().toISOString() });
+  if (error) return { message: `Could not save: ${error.message}` };
+
+  await logAuditEvent(admin, {
+    name: DOMAIN_EVENTS.PLATFORM_SETTINGS_CHANGED,
+    actorId: session.userId,
+    entityType: "platform_settings",
+    entityId: "bank_account",
+    source: "platform",
+    reason: v.reason,
+    before: before ? receivingBankAccountToJson(before) : null,
     after: value,
   });
   revalidatePath("/operations/settings");
