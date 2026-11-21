@@ -40,11 +40,12 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
       <aside className="relative isolate hidden h-dvh flex-col overflow-hidden bg-midnight text-[#f7f3ec] lg:sticky lg:top-0 lg:flex lg:w-[44%] xl:w-[42%]">
         <HeroVideoBackgroundFrom query="(min-width: 1024px)" className="absolute inset-0 -z-20 h-full w-full object-cover" />
         <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-[#0b1118] via-[#10171f]/85 to-[#10171f]/55" />
-        <div className="flex h-full flex-col justify-between px-10 py-9 xl:px-14">
+        <div className="flex h-full flex-col px-10 py-9 xl:px-14">
           <a href={MARKETING_SITE_URL} className="self-start text-lg font-extrabold tracking-tight text-[#f7f3ec]">
             AdorWorks
           </a>
-          <div className="flex max-w-[26rem] flex-col gap-7 pb-2">
+          {/* Centred in the panel (owner: move it up), level with the form. */}
+          <div className="my-auto flex max-w-[26rem] flex-col gap-7 pb-10">
             <p className="font-[family-name:var(--font-auth-display)] text-4xl leading-[1.08] font-extrabold tracking-tight xl:text-[2.9rem]">
               {t("Talent found.")}
               <br />
