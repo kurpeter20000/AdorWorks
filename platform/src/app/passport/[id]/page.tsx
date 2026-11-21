@@ -123,6 +123,21 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
   const { data: orgs } =
     orgIds.length > 0 ? await supabase.from("public_organisation_names").select("id, name").in("id", orgIds) : { data: [] };
   const orgNameById = new Map((orgs ?? []).map((o) => [o.id, o.name]));
+
+  // 0107 — only ever status='confirmed' reaches here: vouches_select's
+  // own RLS already restricts a non-owner, non-staff viewer to confirmed
+  // rows, but the explicit filter keeps that intent visible here too.
+  // Deliberately not fetching the voucher's own name: unlike
+  // talent_profiles.display_name, profiles.full_name was never opted
+  // into public exposure, and a voucher could be anyone — an employer,
+  // an individual client, even staff. Same anonymize-to-role pattern
+  // reviews already use (reviewer_role, never the reviewer's name).
+  const { data: vouches } = await supabase
+    .from("vouches")
+    .select("id, relationship, statement, created_at")
+    .eq("talent_id", id)
+    .eq("status", "confirmed")
+    .order("created_at", { ascending: false });
   const avatarUrl = profile.avatar_path
     ? supabase.storage.from("talent-avatars").getPublicUrl(profile.avatar_path).data.publicUrl
     : null;
@@ -278,6 +293,26 @@ export default async function PublicPassportPage({ params }: { params: Promise<{
       )}
 
       <TrackRecord kind="talent" id={id} />
+
+      {vouches && vouches.length > 0 && (
+        <div className="mt-6">
+          <h2 className="font-bold text-midnight">Vouches</h2>
+          <p className="mt-1 text-xs text-slate">People who personally know this AdorWorks member and have confirmed it.</p>
+          <ul className="mt-3 space-y-3">
+            {vouches.map((v) => (
+              <li key={v.id} className="rounded-xl border border-slate/15 bg-white p-4">
+                <p className="text-sm font-semibold text-midnight">{v.relationship}</p>
+                {v.statement && <p className="mt-2 text-xs text-slate">&ldquo;{v.statement}&rdquo;</p>}
+                {session && (
+                  <div className="mt-2">
+                    <ReportButton targetType="vouch" targetId={v.id} />
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {workHistory && workHistory.length > 0 && (
         <div className="mt-6">

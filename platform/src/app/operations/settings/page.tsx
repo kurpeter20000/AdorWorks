@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { requireRole, STAFF_ROLES } from "@/lib/dal/session";
+import { requireRole } from "@/lib/dal/session";
+import { staffAreaRoles } from "@/lib/domain/staffAccess";
 import { getEscrowRates, getFeeRates } from "@/lib/dal/settings";
 import { calculateFees } from "@/lib/domain/fees";
 import { StatePanel } from "@/components/state-panel";
@@ -9,14 +10,14 @@ import { EscrowSettingsForm } from "./escrow-settings-form";
 export const metadata: Metadata = { title: "Settings — Operations" };
 
 export default async function OperationsSettingsPage() {
-  const session = await requireRole(...STAFF_ROLES);
+  const session = await requireRole(...staffAreaRoles("settings"));
   const rates = await getFeeRates();
   const escrowRates = await getEscrowRates();
   const canEdit = session.role === "finance" || session.role === "admin";
   const example = calculateFees(10000, { ...rates, enabled: true });
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-4xl">
       <h1 className="text-2xl font-extrabold text-midnight">Settings</h1>
       <p className="mt-1 text-sm text-slate">Platform-wide settings that change without a new release.</p>
 

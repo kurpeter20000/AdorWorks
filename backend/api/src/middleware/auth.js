@@ -1,6 +1,8 @@
 import { supabaseAdmin } from "../supabaseAdmin.js";
 
-const STAFF_ROLES = new Set(["reviewer", "matcher", "finance", "admin"]);
+// Phase B2 (0111): the staff role list and which areas each role may
+// use live in ./staffAccess.js.
+import { STAFF_ROLES } from "./staffAccess.js";
 const FINANCE_ROLES = new Set(["finance", "admin"]);
 
 /**

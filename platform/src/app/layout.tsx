@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope, Noto_Sans_Arabic } from "next/font/google";
+import localFont from "next/font/local";
 import { ConnectivityBanner } from "@/components/connectivity-banner";
 import { InstallAppBanner } from "@/components/install-app-banner";
 import { PwaRegister } from "@/components/pwa-register";
@@ -9,17 +9,24 @@ import { dirOf } from "@/i18n/config";
 import { getLocale, getMessages, getT } from "@/i18n/server";
 import "./globals.css";
 
-const manrope = Manrope({
+// Fonts are self-hosted (files in ./fonts, variable-weight woff2 from
+// Google Fonts, SIL Open Font License). next/font/google downloaded them
+// from fonts.googleapis.com during every build, with no retry, and that
+// fetch kept failing intermittently in CI ("Run npm run build" in the
+// Lighthouse job). Local files make the build fully offline.
+const manrope = localFont({
+  src: "./fonts/manrope-latin.woff2",
   variable: "--font-manrope",
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
+  weight: "500 800",
+  display: "swap",
 });
 
 // Only downloaded when an Arabic page actually uses it (preload: false).
-const notoArabic = Noto_Sans_Arabic({
+const notoArabic = localFont({
+  src: "./fonts/noto-sans-arabic.woff2",
   variable: "--font-arabic",
-  subsets: ["arabic"],
-  weight: ["500", "600", "700", "800"],
+  weight: "500 800",
+  display: "swap",
   preload: false,
 });
 

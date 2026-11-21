@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { supabaseAdmin } from "../supabaseAdmin.js";
 import { requireAuth, requireStaff } from "../middleware/auth.js";
+import { requireStaffArea } from "../middleware/staffAccess.js";
 import { asyncRoute, HttpError } from "../asyncRoute.js";
 
 // Read-only oversight for the self-service offer -> accept -> contract ->
@@ -13,7 +14,7 @@ import { asyncRoute, HttpError } from "../asyncRoute.js";
 // to that flow — no dispute visibility, no quality/payment oversight —
 // the way they would be without it.
 export const contractsRouter = Router();
-contractsRouter.use(requireAuth, requireStaff);
+contractsRouter.use(requireAuth, requireStaff, requireStaffArea("contracts"));
 
 const listQuerySchema = z.object({
   status: z.enum(["active", "completed", "cancelled", "disputed"]).optional(),

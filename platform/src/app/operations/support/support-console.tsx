@@ -28,7 +28,7 @@ export function SupportConsole({ threads }: { threads: Thread[] }) {
   }
 
   return (
-    <div className="mt-6 grid gap-4 sm:grid-cols-[260px_1fr]">
+    <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-[260px_minmax(0,1fr)]">
       <ul className="space-y-1">
         {threads.map((thread) => {
           const last = thread.messages[thread.messages.length - 1];

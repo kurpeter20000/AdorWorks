@@ -45,4 +45,12 @@ describe("dashboard navigation contract", () => {
     expect(experience.kind).toBe("partner");
     expect(experience.actions).toEqual([]);
   });
+
+  it("puts every talent and employer page under a menu heading, so nothing drops out of the grouped menu", () => {
+    for (const role of ["talent", "individual_client"] as const) {
+      for (const action of getDashboardExperience(role).actions) {
+        expect(action.group, action.href).toBeTruthy();
+      }
+    }
+  });
 });

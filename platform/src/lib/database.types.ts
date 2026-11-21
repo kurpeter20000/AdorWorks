@@ -32,7 +32,10 @@ export type UserRole =
   | "org_member"
   | "org_admin"
   | "onboarding_agent"
-  | "partner_hub_admin";
+  | "partner_hub_admin"
+  | "verifier"
+  | "trust_safety"
+  | "field_support";
 
 export type VerificationTier =
   | "registered"
@@ -78,6 +81,8 @@ export type ProfileRow = {
   phone_verified: boolean;
   email_verified: boolean;
   status: "active" | "suspended" | "deleted";
+  suspended_reason: string | null;
+  suspended_at: string | null;
   consent_terms_at: string | null;
   policy_consent_at: string | null;
   policy_version: string | null;
@@ -276,6 +281,8 @@ export type OpportunityRow = {
   status_note: string | null;
   appeal_note: string | null;
   appealed_at: string | null;
+  /** 0112: fields staff asked the employer to fix (lib/domain/changeFields). */
+  changes_fields: string[];
   service_package_id: string | null;
   shortlisting_mode: "self_service" | "staff_assisted";
   created_at: string;
@@ -330,6 +337,10 @@ export type ApplicationRow = {
   decision_reason: string | null;
   interview_scheduled_at: string | null;
   interview_notes: string | null;
+  /** 0110: last stage change — the clock for the 14-day auto-close. */
+  stage_changed_at: string;
+  /** 0110: when the employer first saw this application ("Viewed" step). */
+  viewed_at: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -422,6 +433,8 @@ export type OfferRow = {
   created_by: string;
   created_at: string;
   responded_at: string | null;
+  /** 0113: the talent must answer by this time. */
+  expires_at: string | null;
 }
 
 export type ContractRow = {
@@ -679,7 +692,8 @@ export type ReportTargetType =
   | "talent_profile"
   | "organisation"
   | "talent_video"
-  | "portfolio_item";
+  | "portfolio_item"
+  | "vouch";
 export type ReportReason = "spam" | "scam" | "inappropriate" | "misleading" | "safeguarding" | "other";
 export type ReportStatus = "open" | "reviewed" | "dismissed" | "actioned";
 
@@ -769,6 +783,87 @@ export type PublicOrganisationNameRow = {
   id: string;
   name: string;
   verification_status: "pending" | "verified" | "rejected" | "suspended";
+}
+
+export type PublicProfileNameRow = {
+  id: string;
+  full_name: string | null;
+}
+
+export type VouchStatus = "pending" | "confirmed" | "declined";
+
+/** 0112: a suspended person's appeal; written and decided by the backend only. */
+export type AccountAppealRow = {
+  id: string;
+  profile_id: string;
+  message: string;
+  status: "open" | "upheld" | "reinstated";
+  decided_by: string | null;
+  decided_at: string | null;
+  decision_note: string | null;
+  created_at: string;
+};
+
+/** 0113: one side's confirmation of a contract's written terms. */
+export type ContractSignatureRow = {
+  id: string;
+  contract_id: string;
+  terms_version: number;
+  content_hash: string;
+  party: "talent" | "organisation";
+  signed_by: string | null;
+  signed_at: string;
+};
+
+/** 0113: a time offered for an interview. */
+export type InterviewSlotRow = {
+  id: string;
+  application_id: string;
+  starts_at: string;
+  duration_minutes: number;
+  mode: "video" | "phone" | "in_person";
+  details: string | null;
+  status: "offered" | "chosen" | "declined" | "cancelled";
+  created_by: string | null;
+  created_at: string;
+  reminded_24h_at: string | null;
+  reminded_1h_at: string | null;
+};
+
+/** 0114: where a talent wants to be paid. */
+export type TalentPayoutMethodRow = {
+  talent_id: string;
+  method: "bank" | "mtn_momo" | "mgurush";
+  phone: string | null;
+  bank_name: string | null;
+  account_name: string | null;
+  account_number: string | null;
+  updated_at: string;
+};
+
+/** 0114: a person's alert settings. */
+export type AlertPreferencesRow = {
+  user_id: string;
+  whatsapp_enabled: boolean;
+  whatsapp_number: string | null;
+  application_updates: boolean;
+  new_matching_work: boolean;
+  messages: boolean;
+  quiet_from: string | null;
+  quiet_until: string | null;
+  timezone: string;
+  updated_at: string;
+};
+
+export type VouchRow = {
+  id: string;
+  talent_id: string;
+  voucher_id: string;
+  relationship: string;
+  statement: string | null;
+  status: VouchStatus;
+  created_at: string;
+  responded_at: string | null;
 }
 
 export type PublicTalentProfileRow = {
@@ -1151,6 +1246,42 @@ export type Database = {
         Update: Partial<NotificationRow>;
         Relationships: [];
       };
+      account_appeals: {
+        Row: AccountAppealRow;
+        Insert: Partial<AccountAppealRow> & { profile_id: string; message: string };
+        Update: Partial<AccountAppealRow>;
+        Relationships: [];
+      };
+      contract_signatures: {
+        Row: ContractSignatureRow;
+        Insert: Partial<ContractSignatureRow> & { contract_id: string; terms_version: number; content_hash: string; party: "talent" | "organisation" };
+        Update: Partial<ContractSignatureRow>;
+        Relationships: [];
+      };
+      interview_slots: {
+        Row: InterviewSlotRow;
+        Insert: Partial<InterviewSlotRow> & { application_id: string; starts_at: string };
+        Update: Partial<InterviewSlotRow>;
+        Relationships: [];
+      };
+      talent_payout_methods: {
+        Row: TalentPayoutMethodRow;
+        Insert: Partial<TalentPayoutMethodRow> & { talent_id: string; method: TalentPayoutMethodRow["method"] };
+        Update: Partial<TalentPayoutMethodRow>;
+        Relationships: [];
+      };
+      alert_preferences: {
+        Row: AlertPreferencesRow;
+        Insert: Partial<AlertPreferencesRow> & { user_id: string };
+        Update: Partial<AlertPreferencesRow>;
+        Relationships: [];
+      };
+      vouches: {
+        Row: VouchRow;
+        Insert: Partial<VouchRow> & { talent_id: string; voucher_id: string; relationship: string };
+        Update: Partial<VouchRow>;
+        Relationships: [];
+      };
       partner_hubs: {
         Row: PartnerHubRow;
         Insert: Partial<PartnerHubRow> & { name: string };
@@ -1207,6 +1338,10 @@ export type Database = {
         Row: PublicOrganisationNameRow;
         Relationships: [];
       };
+      public_profile_names: {
+        Row: PublicProfileNameRow;
+        Relationships: [];
+      };
     };
     Functions: {
       organisation_activity_log: {
@@ -1236,6 +1371,10 @@ export type Database = {
           milestones_to_pay_count: number;
           milestones_to_pay_amount: number;
         }[];
+      };
+      mark_applications_viewed: {
+        Args: { p_opportunity_id: string };
+        Returns: number;
       };
       escrow_release_eligible: {
         Args: Record<string, never>;

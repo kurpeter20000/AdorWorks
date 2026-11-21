@@ -41,7 +41,8 @@ const base = `http://localhost:${server.address().port}`;
 const pages = readdirSync(ROOT).filter((f) => f.endsWith(".html")).sort();
 const found = new Map(); // english -> Set(pages)
 
-const browser = await chromium.launch();
+// PW_CHANNEL=chrome uses an installed Chrome when Playwright's own browser isn't downloaded.
+const browser = await chromium.launch(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {});
 try {
   for (const page of pages) {
     const tab = await browser.newPage({ viewport: { width: 1280, height: 900 } });

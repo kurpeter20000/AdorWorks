@@ -101,6 +101,16 @@
   });
 
   document.addEventListener("DOMContentLoaded", function () {
+    // Pages with a sticky "on this page" menu need the header's height.
+    var siteHeader = document.querySelector(".site-header");
+    if (siteHeader && document.querySelector(".section-nav, .journey-photo")) {
+      var setHeaderH = function () {
+        document.documentElement.style.setProperty("--site-header-h", siteHeader.offsetHeight + "px");
+      };
+      setHeaderH();
+      window.addEventListener("resize", setHeaderH);
+    }
+
     // Mobile nav toggle
     var toggle = document.querySelector(".nav-toggle");
     var nav = document.getElementById("site-nav");
@@ -125,7 +135,7 @@
     // would add complexity for without changing what a keyboard user can
     // actually reach. Desktop opens on hover (with a short close delay so
     // moving the mouse from trigger to panel doesn't drop it) and on
-    // click/Enter for keyboard and touch; under 960px it's an inline
+    // click/Enter for keyboard and touch; under 1180px it's an inline
     // disclosure inside the already-open mobile drawer instead of a flyout,
     // since a hover panel makes no sense on a touch screen.
     document.querySelectorAll("[data-nav-megamenu]").forEach(function (item) {
@@ -135,8 +145,11 @@
 
       var catButtons = Array.from(panel.querySelectorAll("[data-megamenu-cat]"));
       var catGroups = Array.from(panel.querySelectorAll("[data-megamenu-items]"));
-      var desktopQuery = window.matchMedia("(min-width: 960px)");
+      var desktopQuery = window.matchMedia("(min-width: 1180px)");
       var closeTimer = null;
+      // When the pointer opened it a moment ago, the click that follows is
+      // the same intent ("show me the menu"), not a request to close it.
+      var hoverOpenedAt = 0;
 
       function showCategory(key) {
         catButtons.forEach(function (b) {
@@ -163,12 +176,18 @@
         trigger.setAttribute("aria-expanded", "false");
       }
 
-      item.addEventListener("mouseenter", function () { if (desktopQuery.matches) open(); });
+      item.addEventListener("mouseenter", function () {
+        if (desktopQuery.matches && !item.classList.contains("is-open")) {
+          open();
+          hoverOpenedAt = Date.now();
+        }
+      });
       item.addEventListener("mouseleave", function () {
         if (desktopQuery.matches) closeTimer = setTimeout(close, 200);
       });
       trigger.addEventListener("click", function (e) {
         e.preventDefault();
+        if (item.classList.contains("is-open") && Date.now() - hoverOpenedAt < 600) return;
         item.classList.contains("is-open") ? close() : open();
       });
       item.addEventListener("keydown", function (e) {
@@ -358,251 +377,6 @@
       }
     }
 
-    // Service detail modal (services.html): each category card's photo
-    // tiles open a shared <dialog> with the full deliverable/inputs/
-    // excludes detail plus prev/next through that same category's tiles.
-    var serviceModal = document.getElementById("service-modal");
-    if (serviceModal && typeof serviceModal.showModal === "function") {
-      var serviceGroups = Array.from(document.querySelectorAll("[data-service-group]")).map(function (group) {
-        return {
-          name: group.getAttribute("data-service-group"),
-          tiles: Array.from(group.querySelectorAll(".service-tile")),
-        };
-      });
-      var modalPhoto = document.getElementById("service-modal-photo");
-      var modalCategory = document.getElementById("service-modal-category");
-      var modalTitle = document.getElementById("service-modal-title");
-      var modalFacts = document.getElementById("service-modal-facts");
-      var modalPosition = document.getElementById("service-modal-position");
-      var modalRequest = document.getElementById("service-modal-request");
-      var modalPrev = serviceModal.querySelector("[data-modal-prev]");
-      var modalNext = serviceModal.querySelector("[data-modal-next]");
-      var activeGroup = null;
-      var activeIndex = 0;
-
-      function renderService() {
-        var tile = activeGroup.tiles[activeIndex];
-        var img = tile.querySelector("img");
-        modalPhoto.src = img.currentSrc || img.src;
-        modalCategory.textContent = activeGroup.name;
-        modalTitle.textContent = tile.getAttribute("data-title");
-        modalRequest.setAttribute("data-service-title", tile.getAttribute("data-title"));
-
-        var facts = "";
-        facts += "<dt>Deliverable</dt><dd>" + tile.getAttribute("data-deliverable") + "</dd>";
-        facts += "<dt>Inputs needed</dt><dd>" + tile.getAttribute("data-inputs") + "</dd>";
-        var timeframe = tile.getAttribute("data-timeframe");
-        if (timeframe) facts += "<dt>Typical timeframe</dt><dd>" + timeframe + "</dd>";
-        facts += "<dt>Excludes</dt><dd>" + tile.getAttribute("data-excludes") + "</dd>";
-        modalFacts.innerHTML = facts;
-
-        modalPosition.textContent = (activeIndex + 1) + " of " + activeGroup.tiles.length;
-        modalPrev.disabled = activeGroup.tiles.length < 2;
-        modalNext.disabled = activeGroup.tiles.length < 2;
-      }
-
-      function openService(group, index) {
-        activeGroup = group;
-        activeIndex = index;
-        renderService();
-        if (!serviceModal.open) serviceModal.showModal();
-        track("service_detail_view", { service: activeGroup.tiles[activeIndex].getAttribute("data-title") });
-      }
-
-      function step(delta) {
-        if (!activeGroup) return;
-        var len = activeGroup.tiles.length;
-        activeIndex = (activeIndex + delta + len) % len;
-        renderService();
-      }
-
-      // Tile clicks are wired by initServiceCoverflows() below, not here
-      // directly -- each category's tiles now sit inside their own mini
-      // 3D coverflow, so a click needs to mean "select" when the tile
-      // isn't already centred and only "open the detail modal" (this
-      // openService) once it is. Passing this function in keeps the
-      // modal itself unaware that coverflow exists.
-      initServiceCoverflows(serviceGroups, openService);
-
-      // Deep link from the Services mega-menu: ?service=<exact data-title>
-      // opens straight into that service's detail modal instead of
-      // landing on the category section and making the visitor click
-      // again. Matches on data-title text, same as the request-form
-      // preselect above, so it stays correct if a modal label is ever
-      // reworded without this link list being updated in lockstep.
-      var deepLinkService = new URLSearchParams(window.location.search).get("service");
-      if (deepLinkService) {
-        outer: for (var gi = 0; gi < serviceGroups.length; gi++) {
-          var tiles = serviceGroups[gi].tiles;
-          for (var ti = 0; ti < tiles.length; ti++) {
-            if (tiles[ti].getAttribute("data-title") === deepLinkService) {
-              openService(serviceGroups[gi], ti);
-              break outer;
-            }
-          }
-        }
-      }
-
-      modalPrev.addEventListener("click", function () { step(-1); });
-      modalNext.addEventListener("click", function () { step(1); });
-
-      serviceModal.addEventListener("click", function (e) {
-        if (e.target === serviceModal || e.target.closest("[data-modal-close]")) {
-          serviceModal.close();
-        }
-      });
-
-      serviceModal.addEventListener("keydown", function (e) {
-        if (e.key === "ArrowLeft") step(-1);
-        if (e.key === "ArrowRight") step(1);
-      });
-
-      // Preselect the matching option in the "Request a service" form below
-      // instead of just scrolling to a blank dropdown.
-      modalRequest.addEventListener("click", function () {
-        var select = document.getElementById("sv-service");
-        var title = modalRequest.getAttribute("data-service-title");
-        if (select && title) {
-          // Match on value too: js/i18n.js pins each option's value to its
-          // English text, so this still finds it when labels are translated.
-          var match = Array.from(select.options).find(function (opt) { return opt.value === title || opt.text === title; });
-          if (match) select.value = match.value;
-        }
-        serviceModal.close();
-      });
-    }
-
-    // Service coverflow (services.html): each category's four service
-    // tiles are their own independent 3D coverflow -- one active,
-    // sharp, slightly enlarged card in front, the other three receding
-    // (smaller, faded, lightly blurred and rotated) either side. Same
-    // index-driven, --offset-custom-property mechanism as the CSS
-    // (see .service-coverflow-slide in styles.css): one activeIndex per
-    // panel, written to each slide, with every visual property a pure
-    // calc() function of that number in CSS -- this function only ever
-    // manages one integer per category.
-    //
-    // Interaction: clicking a tile that ISN'T the active one re-centres
-    // it (same "select" pattern as the old homepage coverflow); clicking
-    // the ALREADY-active tile calls openService(group, index) -- the
-    // exact function the modal itself uses, passed in as a parameter so
-    // this function never needs to know how the modal works internally.
-    // Supports touch swipe and mouse drag via pointer events (not
-    // setPointerCapture -- see the flat carousels elsewhere in this file
-    // for why that breaks click targeting) and Left/Right arrow keys.
-    function initServiceCoverflows(serviceGroups, openService) {
-      var reduceMotionForServiceCoverflow = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-      document.querySelectorAll("[data-service-coverflow]").forEach(function (coverflow) {
-        var groupName = coverflow.getAttribute("data-service-group");
-        var group = serviceGroups.filter(function (g) { return g.name === groupName; })[0];
-        if (!group) return;
-
-        var slides = Array.from(coverflow.querySelectorAll("[data-service-coverflow-slide]"));
-        var prevBtn = coverflow.querySelector("[data-service-coverflow-prev]");
-        var nextBtn = coverflow.querySelector("[data-service-coverflow-next]");
-        var dots = Array.from(coverflow.querySelectorAll("[data-service-coverflow-dot]"));
-        var stage = coverflow.querySelector("[data-service-coverflow-stage]");
-        var activeIndex = 0;
-
-        function render() {
-          slides.forEach(function (slide, i) {
-            var offset = i - activeIndex;
-            var isActive = offset === 0;
-            slide.style.setProperty("--offset", String(offset));
-            slide.dataset.active = String(isActive);
-            var tile = slide.querySelector(".service-tile");
-            if (tile) tile.tabIndex = isActive ? 0 : -1;
-          });
-          if (prevBtn) prevBtn.disabled = activeIndex <= 0;
-          if (nextBtn) nextBtn.disabled = activeIndex >= slides.length - 1;
-          dots.forEach(function (dot, i) {
-            dot.setAttribute("aria-selected", String(i === activeIndex));
-          });
-        }
-
-        function goTo(index) {
-          var clamped = Math.max(0, Math.min(slides.length - 1, index));
-          if (clamped === activeIndex) return;
-          activeIndex = clamped;
-          render();
-          track("service_coverflow_select", { category: groupName, index: activeIndex });
-        }
-
-        if (prevBtn) prevBtn.addEventListener("click", function () { goTo(activeIndex - 1); });
-        if (nextBtn) nextBtn.addEventListener("click", function () { goTo(activeIndex + 1); });
-        dots.forEach(function (dot, i) {
-          dot.addEventListener("click", function () { goTo(i); });
-        });
-
-        slides.forEach(function (slide, i) {
-          var tile = slide.querySelector(".service-tile");
-          if (!tile) return;
-          tile.addEventListener("click", function () {
-            if (i === activeIndex) {
-              openService(group, i);
-            } else {
-              goTo(i);
-            }
-          });
-        });
-
-        if (stage) {
-          stage.addEventListener("keydown", function (e) {
-            if (e.key === "ArrowLeft") {
-              e.preventDefault();
-              goTo(activeIndex - 1);
-            }
-            if (e.key === "ArrowRight") {
-              e.preventDefault();
-              goTo(activeIndex + 1);
-            }
-          });
-
-          // Touch swipe / mouse drag to navigate: a release-time
-          // direction check, not continuous tracking, since slides are
-          // absolutely positioned (not a real scroll container) --
-          // there's no scrollLeft to drag. window-level listeners so a
-          // swipe that leaves the stage mid-gesture still resolves.
-          var swiping = false;
-          var swiped = false;
-          var swipeStartX = 0;
-          stage.addEventListener("pointerdown", function (e) {
-            swiping = true;
-            swiped = false;
-            swipeStartX = e.clientX;
-          });
-          window.addEventListener("pointermove", function (e) {
-            if (!swiping) return;
-            if (Math.abs(e.clientX - swipeStartX) > 6) swiped = true;
-          });
-          window.addEventListener("pointerup", function (e) {
-            if (!swiping) return;
-            swiping = false;
-            if (!swiped) return;
-            var delta = e.clientX - swipeStartX;
-            if (Math.abs(delta) > 40) goTo(activeIndex + (delta < 0 ? 1 : -1));
-          });
-          window.addEventListener("pointercancel", function () { swiping = false; });
-          // Swallow the click a real swipe would otherwise also fire on
-          // release, same "dragged" suppression pattern used by the
-          // flat scroll carousels elsewhere in this file.
-          stage.addEventListener(
-            "click",
-            function (e) {
-              if (swiped) {
-                e.stopPropagation();
-                e.preventDefault();
-              }
-            },
-            true
-          );
-        }
-
-        render();
-      });
-    }
-
     // Click tracking: WhatsApp, phone, downloads
     document.querySelectorAll('a[href^="https://wa.me"]').forEach(function (a) {
       a.addEventListener("click", function () {
@@ -683,6 +457,12 @@
 
       form.addEventListener("submit", function (e) {
         e.preventDefault();
+        // Forms carry novalidate so the browser doesn't block on load;
+        // required fields (and consent boxes) are checked here instead.
+        if (typeof form.checkValidity === "function" && !form.checkValidity()) {
+          form.reportValidity();
+          return;
+        }
         var data = new FormData(form);
 
         // Silent honeypot: a filled hidden field means a bot filled the

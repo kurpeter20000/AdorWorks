@@ -29,7 +29,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/themes.css">
-<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/styles.css?v=26">
+<link rel="stylesheet" href="css/site.css?v=26">
+<link rel="stylesheet" href="css/pages.css?v=26">
 <script src="js/i18n-early.js"></script>
 </head>
 <body>
@@ -45,221 +47,286 @@
       <span class="visually-hidden">Menu</span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
-        <nav class="site-nav" id="site-nav" aria-label="Primary">
+    <nav class="site-nav" id="site-nav" aria-label="Primary">
       <ul>
-        <li><a href="index.html">Home</a></li>
-        <li><a href="jobs-projects.html">Find Jobs</a></li>
-        <li><a href="for-employers.html">Find Talent</a></li>
+        <li><a href="jobs-projects.html">Find work</a></li>
+        <li><a href="for-employers.html">Find talent</a></li>
         <li class="nav-megamenu" data-nav-megamenu>
           <button type="button" class="nav-megamenu-trigger" data-megamenu-trigger aria-expanded="false" aria-controls="services-megamenu">
             Services
             <svg class="nav-megamenu-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
           </button>
           <div class="services-megamenu" id="services-megamenu" data-megamenu-panel>
-            <div class="services-megamenu-grid">
-              <div class="services-megamenu-cats" role="tablist" aria-label="Service categories">
-                <button type="button" class="services-megamenu-cat" data-megamenu-cat="creative" role="tab" aria-selected="true">
-                  <span class="services-megamenu-cat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.4-.3-.4-.5-.9-.5-1.4 0-1.1.9-2 2-2h2a4 4 0 0 0 4-4C21 5.8 17 3 12 3z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="12" cy="7.5" r="1"/><circle cx="16.5" cy="10.5" r="1"/></svg></span>
-                  <span class="services-megamenu-cat-label">Creative &amp; media</span>
-                  <svg class="services-megamenu-cat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-                </button>
-                <button type="button" class="services-megamenu-cat" data-megamenu-cat="digital" role="tab" aria-selected="false">
-                  <span class="services-megamenu-cat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m8 9-4 3 4 3M16 9l4 3-4 3M13 6l-2 12"/></svg></span>
-                  <span class="services-megamenu-cat-label">Digital &amp; technology</span>
-                  <svg class="services-megamenu-cat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-                </button>
-                <button type="button" class="services-megamenu-cat" data-megamenu-cat="business" role="tab" aria-selected="false">
-                  <span class="services-megamenu-cat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18"/></svg></span>
-                  <span class="services-megamenu-cat-label">Business &amp; project support</span>
-                  <svg class="services-megamenu-cat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-                </button>
+            <div class="mm-grid">
+              <div class="mm-col" data-megamenu-items="creative">
+                <p class="mm-cat">Creative &amp; media</p>
+                <p class="mm-tag">Design → delivery</p>
+                <ul>
+                  <li><a class="mm-item" href="services.html?service=Brand%20%26%20graphic%20design#service-deck-creative"><strong>Brand &amp; graphic design</strong><small>Logos, brand marks and print-ready collateral</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Photography%20%26%20video%20production#service-deck-creative"><strong>Photography &amp; video production</strong><small>Shoot days with fully edited assets</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Editing%20%26%20animation#service-deck-creative"><strong>Editing &amp; animation</strong><small>Video editing, motion graphics and animation</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Content%20creation%20%26%20copywriting#service-deck-creative"><strong>Content creation &amp; copywriting</strong><small>Written and social content, on brief</small></a></li>
+                </ul>
               </div>
-              <div class="services-megamenu-items">
-                <div class="services-megamenu-items-group" data-megamenu-items="creative">
-                  <p class="services-megamenu-group-heading">Creative &amp; media</p>
-                  <a class="services-megamenu-item" href="services.html?service=Brand%20%26%20graphic%20design#service-deck-creative">
-                    <picture><source type="image/webp" srcset="img/photos/tile-brand-design-480.webp"><img src="img/photos/tile-brand-design-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Brand &amp; graphic design</strong><small>Logos, brand marks and print-ready collateral</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Photography%20%26%20video%20production#service-deck-creative">
-                    <picture><source type="image/webp" srcset="img/photos/tile-photo-video-480.webp"><img src="img/photos/tile-photo-video-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Photography &amp; video production</strong><small>Shoot days with fully edited assets</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Editing%20%26%20animation#service-deck-creative">
-                    <picture><source type="image/webp" srcset="img/photos/tile-editing-animation-480.webp"><img src="img/photos/tile-editing-animation-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Editing &amp; animation</strong><small>Video editing, motion graphics and animation</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Content%20creation%20%26%20copywriting#service-deck-creative">
-                    <picture><source type="image/webp" srcset="img/photos/tile-content-copy-480.webp"><img src="img/photos/tile-content-copy-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Content creation &amp; copywriting</strong><small>Written and social content, on-brief</small></span>
-                  </a>
-                </div>
-                <div class="services-megamenu-items-group" data-megamenu-items="digital" hidden>
-                  <p class="services-megamenu-group-heading">Digital &amp; technology</p>
-                  <a class="services-megamenu-item" href="services.html?service=Web%20development#service-deck-digital">
-                    <picture><source type="image/webp" srcset="img/photos/tile-web-dev-480.webp"><img src="img/photos/tile-web-dev-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Web development</strong><small>Websites and web apps, built and handed over working</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Data%20support%20%26%20analytics#service-deck-digital">
-                    <picture><source type="image/webp" srcset="img/photos/tile-data-analytics-480.webp"><img src="img/photos/tile-data-analytics-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Data support &amp; analytics</strong><small>Cleaned datasets, dashboards and analysis</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Digital%20advertising#service-deck-digital">
-                    <picture><source type="image/webp" srcset="img/photos/tile-digital-ads-480.webp"><img src="img/photos/tile-digital-ads-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Digital advertising</strong><small>Set-up and managed ad campaigns</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=IT%20%26%20software%20support#service-deck-digital">
-                    <picture><source type="image/webp" srcset="img/photos/tile-it-support-480.webp"><img src="img/photos/tile-it-support-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>IT &amp; software support</strong><small>Scoped fixes, integrations and small builds</small></span>
-                  </a>
-                </div>
-                <div class="services-megamenu-items-group" data-megamenu-items="business" hidden>
-                  <p class="services-megamenu-group-heading">Business &amp; project support</p>
-                  <a class="services-megamenu-item" href="services.html?service=Virtual%20assistance%20%26%20bookkeeping#service-deck-business">
-                    <picture><source type="image/webp" srcset="img/photos/tile-virtual-assistance-480.webp"><img src="img/photos/tile-virtual-assistance-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Virtual assistance &amp; bookkeeping</strong><small>Ongoing admin and bookkeeping support</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Research%20%26%20enumeration#service-deck-business">
-                    <picture><source type="image/webp" srcset="img/photos/tile-research-480.webp"><img src="img/photos/tile-research-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Research &amp; enumeration</strong><small>Research reports and field data collection</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Transcription%20%26%20translation#service-deck-business">
-                    <picture><source type="image/webp" srcset="img/photos/tile-translation-480.webp"><img src="img/photos/tile-translation-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Transcription &amp; translation</strong><small>Transcribed and translated documents or audio</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Project%20administration#service-deck-business">
-                    <picture><source type="image/webp" srcset="img/photos/tile-project-admin-480.webp"><img src="img/photos/tile-project-admin-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Project administration</strong><small>Scheduling, reporting and vendor liaison</small></span>
-                  </a>
-                </div>
+              <div class="mm-col" data-megamenu-items="digital">
+                <p class="mm-cat">Digital &amp; technology</p>
+                <p class="mm-tag">Build → handover</p>
+                <ul>
+                  <li><a class="mm-item" href="services.html?service=Web%20development#service-deck-digital"><strong>Web development</strong><small>Websites and web apps, handed over with training</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Data%20support%20%26%20analytics#service-deck-digital"><strong>Data support &amp; analytics</strong><small>Clean data, dashboards and simple reports</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Digital%20advertising#service-deck-digital"><strong>Digital advertising</strong><small>Campaign setup, targeting and reporting</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=IT%20%26%20software%20support#service-deck-digital"><strong>IT &amp; software support</strong><small>Setup, fixes and ongoing help for your team</small></a></li>
+                </ul>
               </div>
-            </div>
-            <div class="services-megamenu-footer">
-              <a href="services.html">Browse all services &rarr;</a>
-              <a href="pricing.html">How pricing works &rarr;</a>
-              <a href="how-it-works.html">See how it works &rarr;</a>
+              <div class="mm-col" data-megamenu-items="business">
+                <p class="mm-cat">Business &amp; project support</p>
+                <p class="mm-tag">One-off or ongoing</p>
+                <ul>
+                  <li><a class="mm-item" href="services.html?service=Virtual%20assistance%20%26%20bookkeeping#service-deck-business"><strong>Virtual assistance &amp; bookkeeping</strong><small>Admin, scheduling and tidy books</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Research%20%26%20enumeration#service-deck-business"><strong>Research &amp; enumeration</strong><small>Surveys, field data collection and desk research</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Transcription%20%26%20translation#service-deck-business"><strong>Transcription &amp; translation</strong><small>Arabic, English, Kiswahili and local languages</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Project%20administration#service-deck-business"><strong>Project administration</strong><small>Tracking, reporting and coordination</small></a></li>
+                </ul>
+              </div>
+              <div class="mm-note">
+                <p class="mm-note-text">Prices are agreed with you before any work starts.</p>
+                <a href="services.html">Browse all services &rarr;</a>
+                <a href="pricing.html">How pricing works &rarr;</a>
+                <a href="how-it-works.html">See how it works &rarr;</a>
+              </div>
             </div>
           </div>
         </li>
-        <li><a href="how-it-works.html">How It Works</a></li>
+        <li><a href="pathways.html">Pathways</a></li>
+        <li><a href="how-it-works.html">How it works</a></li>
         <li><a href="trust-safety.html" aria-current="page">Trust &amp; Safety</a></li>
+        <li class="nav-login"><a href="https://ador-works.vercel.app/login">Log in</a></li>
         <li class="nav-cta"><a href="for-employers.html#brief-form" class="btn btn-primary">Post a project</a></li>
       </ul>
     </nav>
   </div>
 </header>
 
-<main id="main">
+<main id="main" class="page">
 
-  <section class="hero">
-    <div class="container">
-      <div class="section-icon" style="background:rgba(255,255,255,0.14); color:#fff;" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg></div>
-      <h1>A marketplace built on proof.</h1>
-      <p class="lede">AdorWorks verifies talent and employers, defines scopes, tracks milestones and provides accountable support. Every badge explains what has been checked, and every engagement follows documented terms.</p>
+  <section class="page-hero">
+    <div class="container page-hero-grid">
+      <div class="page-hero-copy">
+        <p class="eyebrow rise">Trust &amp; Safety</p>
+        <h1 class="rise rise-1">A marketplace <em>built on proof.</em></h1>
+        <p class="lede rise rise-2">We verify talent and employers, define every scope, track milestones and stay accountable when something goes wrong.</p>
+        <div class="page-actions rise rise-3">
+          <a href="#report" class="btn btn-primary">Report a concern</a>
+          <a href="#policies" class="btn btn-ghost">Read our policies</a>
+        </div>
+      </div>
+      <picture class="photo-slot page-hero-photo photo-slot--dark rise rise-2">
+        <source type="image/webp" srcset="img/photos/tile-virtual-assistance-480.webp 480w, img/photos/tile-virtual-assistance-960.webp 960w" sizes="(min-width: 860px) 45vw, 100vw">
+        <img src="img/photos/tile-virtual-assistance-960.jpg" srcset="img/photos/tile-virtual-assistance-480.jpg 480w, img/photos/tile-virtual-assistance-960.jpg 960w" sizes="(min-width: 860px) 45vw, 100vw" alt="A laptop, notebook and headphones on a work desk" fetchpriority="high">
+      </picture>
     </div>
   </section>
 
-  <section class="section">
+  <section class="page-section page-section-tight" aria-label="Talent never pays">
     <div class="container">
-      <div class="section-header">
-        <h2>Verification framework</h2>
-        <p>Five tiers, each backed by specific, checkable requirements.</p>
-      </div>
-      <div class="tier-grid">
-        <div class="tier-card"><span class="tier-name">Registered</span><p>Phone/email confirmed, a minimum profile and agreement to the code of conduct. A real account — capability not yet verified.</p></div>
-        <div class="tier-card"><span class="tier-name">Identity verified</span><p>Government-issued identification checked and securely recorded. Identity has been reviewed.</p></div>
-        <div class="tier-card"><span class="tier-name">AdorVerified</span><p>Identity, portfolio, references, an interview and a category-specific assessment. Evidence supports ability to perform the listed work.</p></div>
-        <div class="tier-card"><span class="tier-name">AdorCertified</span><p>A live simulation, client-readiness assessment and a successful platform engagement. Demonstrated work quality and reliability.</p></div>
-        <div class="tier-card"><span class="tier-name">Team lead</span><p>Multiple successful engagements, communication strength and a leadership review. Eligible to lead managed squads.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section section-alt">
-    <div class="container">
-      <div class="section-header">
-        <h2>How we verify employers</h2>
-      </div>
-      <ul class="check-list">
-        <li>Organisation registration or other credible evidence of operations.</li>
-        <li>A verified representative with confirmed decision-making authority.</li>
-        <li>Corporate email/domain where available, plus phone verification.</li>
-        <li>A clear role, scope, budget, workplace and reporting line before matching begins.</li>
-        <li>Agreement to fair hiring, non-discrimination, confidentiality and payment terms.</li>
-        <li>A deposit or approved credit terms before higher-risk work begins.</li>
-        <li>Enhanced review for overseas placements, relocation, field safety or access to vulnerable groups.</li>
-      </ul>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="container">
-      <div class="notice">
-        <span class="notice-label">Regulatory rule</span>
-        <p class="mt-0 mb-0">AdorWorks does not describe client funds as escrow, and does not hold client money in an informal account. Any pre-funding or deposit runs through a licensed, documented payment process. The minimum safe workflow is: signed scope, client deposit or pre-funding, milestone evidence, client approval, invoice, payout instruction and an audit trail. We are confirming licensing and a compliant local payment partner before handling client funds at scale — see the current model on <a href="pricing.html">Pricing</a>.</p>
-      </div>
-      <div class="notice notice-violet">
-        <span class="notice-label">Fair recruitment</span>
-        <p class="mt-0 mb-0">Talent never pays to register or to be considered for legitimate work. This follows <a href="https://www.ilo.org/publications/general-principles-and-operational-guidelines-fair-recruitment-and-0">ILO fair-recruitment guidance</a> that workers and jobseekers should not be charged recruitment fees or related costs. If anyone claims to represent AdorWorks and asks a professional for payment to "unlock" opportunities, that is not us — please report it immediately.</p>
+      <div class="warning-band rise rise-3">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v5M12 16h.01M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+        <p><strong>Talent never pays to register or to be considered.</strong> Anyone asking you to pay to "unlock" work is not AdorWorks. Please report them.</p>
+        <a href="#report" class="text-link">Report it &rarr;</a>
       </div>
     </div>
   </section>
 
-  <section class="section section-alt">
+  <section class="page-section" id="verification">
     <div class="container">
-      <div class="section-header">
-        <h2>What happens when something goes wrong</h2>
+      <div class="section-intro site-reveal">
+        <p class="eyebrow">Verification framework</p>
+        <h2>Five tiers. Each one is earned, and each one can be checked.</h2>
       </div>
-      <ol class="check-list">
-        <li>The affected milestone is paused and both parties are acknowledged.</li>
-        <li>We review the brief, contract, messages, files, approvals and timeline.</li>
-        <li>We attempt facilitated resolution — correction, a revised milestone, partial acceptance or replacement.</li>
-        <li>Material fraud, safety, harassment or legal concerns are escalated to authorised leadership and advisers.</li>
-        <li>The outcome is recorded, confidential information is protected, and the underlying policy is improved.</li>
-      </ol>
+      <div class="tier-box site-reveal" data-tiers>
+        <ol class="tier-tabs" role="tablist" aria-label="Verification tiers" aria-orientation="vertical">
+          <li><button type="button" role="tab" id="tier-tab-1" aria-controls="tier-panel-1" aria-selected="false" tabindex="-1" class="tier-tab is-reached" data-tier-tab><span class="tier-dot">1</span><span>Registered</span></button></li>
+          <li><button type="button" role="tab" id="tier-tab-2" aria-controls="tier-panel-2" aria-selected="false" tabindex="-1" class="tier-tab is-reached" data-tier-tab><span class="tier-dot">2</span><span>Identity verified</span></button></li>
+          <li><button type="button" role="tab" id="tier-tab-3" aria-controls="tier-panel-3" aria-selected="true" tabindex="0" class="tier-tab is-reached" data-tier-tab><span class="tier-dot">3</span><span>AdorVerified</span></button></li>
+          <li><button type="button" role="tab" id="tier-tab-4" aria-controls="tier-panel-4" aria-selected="false" tabindex="-1" class="tier-tab" data-tier-tab><span class="tier-dot">4</span><span>AdorCertified</span></button></li>
+          <li><button type="button" role="tab" id="tier-tab-5" aria-controls="tier-panel-5" aria-selected="false" tabindex="-1" class="tier-tab" data-tier-tab><span class="tier-dot">5</span><span>Team lead</span></button></li>
+        </ol>
+        <div class="tier-panel" role="tabpanel" id="tier-panel-1" aria-labelledby="tier-tab-1" data-tier-panel hidden>
+          <p class="eyebrow">Tier 1 of 5</p>
+          <h3>Registered</h3>
+          <p class="tier-means">An account with the basics in place. Skills are not yet checked.</p>
+          <p class="tier-checks-label">What's checked</p>
+          <ul class="tier-checks">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>Phone or email confirmed</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>Minimum profile completed</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>Code of conduct accepted</li>
+          </ul>
+        </div>
+        <div class="tier-panel" role="tabpanel" id="tier-panel-2" aria-labelledby="tier-tab-2" data-tier-panel hidden>
+          <p class="eyebrow">Tier 2 of 5</p>
+          <h3>Identity verified</h3>
+          <p class="tier-means">We have checked who you are.</p>
+          <p class="tier-checks-label">What's checked</p>
+          <ul class="tier-checks">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>Government ID checked</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>ID securely recorded</li>
+          </ul>
+        </div>
+        <div class="tier-panel" role="tabpanel" id="tier-panel-3" aria-labelledby="tier-tab-3" data-tier-panel>
+          <p class="eyebrow">Tier 3 of 5</p>
+          <h3>AdorVerified</h3>
+          <p class="tier-means">Your skills are shown with real evidence.</p>
+          <p class="tier-checks-label">What's checked</p>
+          <ul class="tier-checks">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>Identity verified</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>Portfolio and references reviewed</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>Interview</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>Category assessment passed</li>
+          </ul>
+        </div>
+        <div class="tier-panel" role="tabpanel" id="tier-panel-4" aria-labelledby="tier-tab-4" data-tier-panel hidden>
+          <p class="eyebrow">Tier 4 of 5</p>
+          <h3>AdorCertified</h3>
+          <p class="tier-means">Fully verified, with your documents on record and your skills proven through real, paid work. You're eligible to work and ready for clients.</p>
+          <p class="tier-checks-label">What's checked</p>
+          <ul class="tier-checks">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>Documents verified and recorded</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>Live work simulation</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>Client-readiness assessment</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>A successful engagement on AdorWorks</li>
+          </ul>
+        </div>
+        <div class="tier-panel" role="tabpanel" id="tier-panel-5" aria-labelledby="tier-tab-5" data-tier-panel hidden>
+          <p class="eyebrow">Tier 5 of 5</p>
+          <h3>Team lead</h3>
+          <p class="tier-means">Trusted to lead managed squads.</p>
+          <p class="tier-checks-label">What's checked</p>
+          <ul class="tier-checks">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>Several successful engagements</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>Strong communication</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>Leadership review</li>
+          </ul>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section class="section">
-    <div class="container">
-      <div class="section-header">
-        <h2>Legal and ethical foundation</h2>
-        <p>South Sudan's Labour Act contains licensing provisions for private employment agencies. Before offering full-time placement or cross-border recruitment at scale, AdorWorks is confirming applicable licensing and operating conditions covering:</p>
+  <section class="page-section page-band">
+    <div class="container verify-grid">
+      <div class="site-reveal">
+        <h2 class="mt-0">How we verify employers</h2>
+        <ol class="circle-list">
+          <li>Organisation registration or proof of operations</li>
+          <li>A verified representative with decision-making authority</li>
+          <li>Corporate email or domain, plus phone check</li>
+          <li>Role, scope and budget defined before matching</li>
+          <li>Agreement to fair-hiring and payment terms</li>
+          <li>Deposit or approved credit for higher-risk work</li>
+          <li>Extra review for overseas, relocation, field-safety or vulnerable-group work</li>
+        </ol>
       </div>
-      <div class="grid grid-2">
-        <ul class="marker-list mb-0">
-          <li>Employment-agency licensing and permitted classes or territories.</li>
-          <li>Correct classification of employees, contractors and independent businesses.</li>
-          <li>Employment contracts, minimum protections and workplace safety.</li>
+      <div class="stack site-reveal">
+        <div class="payments-card payments-card-white">
+          <h3>How money is handled</h3>
+          <p>We never call client funds "escrow" or hold them informally. Pre-funding runs through a licensed, documented process, with an audit trail from scope to payout.</p>
+          <p class="status-pill">Payment partner licensing in progress</p>
+        </div>
+        <div class="payments-card payments-card-teal">
+          <h3>Fair recruitment</h3>
+          <p>We follow the ILO's fair-recruitment guidance: no fees or costs charged to workers.</p>
+          <a class="text-link" href="https://www.ilo.org/publications/general-principles-and-operational-guidelines-fair-recruitment-and-0" rel="noopener">Read the ILO guidance &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page-section">
+    <div class="container">
+      <div class="legal-band site-reveal">
+        <div>
+          <h2>Legal and ethical foundation</h2>
+          <p>South Sudan's Labour Act includes licensing for private employment agencies. We are confirming every requirement before we scale full-time or cross-border placement.</p>
+        </div>
+        <ul class="legal-chips">
+          <li>Agency licensing</li>
+          <li>Worker classification</li>
+          <li>Contracts and safety</li>
+          <li>Tax and cross-border pay</li>
+          <li>Data privacy</li>
+          <li>Anti-discrimination and grievances</li>
         </ul>
-        <ul class="marker-list mb-0">
-          <li>Tax registration, withholding, invoices and cross-border payments.</li>
-          <li>Data privacy, consent, retention, deletion and access controls.</li>
-          <li>Anti-discrimination, safeguarding, harassment reporting and grievance handling.</li>
-        </ul>
       </div>
     </div>
   </section>
 
-  <section class="section section-alt">
+  <section class="page-section page-section-tight" id="report">
     <div class="container">
-      <div class="section-header">
-        <h2>Report a concern</h2>
-        <p>If you experience or witness fraud, non-payment, harassment, discrimination or a safety risk connected to AdorWorks, tell us directly.</p>
+      <div class="form-panel site-reveal">
+        <div class="form-panel-intro">
+          <p class="eyebrow">Report a concern</p>
+          <h2>Tell us. We take every report seriously.</h2>
+          <p>Fraud, non-payment, harassment, discrimination or a safety risk. If someone is in immediate danger, contact local emergency services first.</p>
+          <p>A member of our Trust &amp; Safety team reads every report. Urgent reports are looked at first.</p>
+        </div>
+        <form class="js-form site-form" name="adorworks-contact" data-form-id="concern-report" data-success-message="Thank you. Your report has reached our Trust &amp; Safety team. If you left contact details, we'll follow up with you." method="POST" data-netlify="true" data-netlify-honeypot="bot-field" novalidate>
+          <input type="hidden" name="form-name" value="adorworks-contact">
+          <input type="hidden" name="name" value="Trust &amp; Safety report">
+          <input type="hidden" name="topic" value="Trust &amp; Safety concern">
+          <p class="netlify-honeypot" aria-hidden="true">
+            <label>Leave this field blank: <input name="bot-field" tabindex="-1" autocomplete="off"></label>
+          </p>
+          <fieldset>
+            <legend class="visually-hidden">Your report</legend>
+            <div class="field">
+              <label for="rp-type">What happened?</label>
+              <select id="rp-type" name="concern_type" required>
+                <option value="">Choose one</option>
+                <option>Asked to pay to get work</option>
+                <option>Not paid for approved work</option>
+                <option>Harassment or discrimination</option>
+                <option>Fake profile or listing</option>
+                <option>Safety risk</option>
+                <option>Something else</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="rp-urgency">How urgent is it?</label>
+              <select id="rp-urgency" name="urgency" required>
+                <option>Not urgent</option>
+                <option>Urgent: someone may be at risk</option>
+              </select>
+            </div>
+            <div class="field field-full">
+              <label for="rp-message">Tell us what happened</label>
+              <textarea id="rp-message" name="message" rows="4" required placeholder="What happened, when, and who was involved, if you know"></textarea>
+            </div>
+            <div class="field field-full">
+              <label for="rp-contact">Your email or phone (optional)</label>
+              <input type="text" id="rp-contact" name="contact" autocomplete="email" data-report-contact>
+            </div>
+          </fieldset>
+          <label class="consent">
+            <input type="checkbox" name="anonymous" value="yes" data-report-anonymous>
+            <span>Report anonymously. We won't be able to follow up with you.</span>
+          </label>
+          <button type="submit" class="btn btn-primary form-submit">Send report</button>
+          <div class="form-status" role="status"></div>
+        </form>
       </div>
-      <div class="pending">
-        <span class="pending-label">Content pending</span>
-        <p class="mt-0 mb-0">A dedicated reporting channel (email address and/or form) will be published here once staffed and monitored — we won't publish a channel we can't yet respond to reliably. Until then, use the <a href="contact.html">Contact</a> page and choose “Trust &amp; Safety concern.” Mark an immediate risk clearly in your message.</p>
+    </div>
+  </section>
+
+  <section class="page-section" id="policies">
+    <div class="container">
+      <div class="section-intro site-reveal">
+        <h2>Our policies</h2>
+        <p>Pilot-stage policies, to be reviewed with qualified counsel.</p>
       </div>
-      <div class="section-header mt-1" id="policies">
-        <h2>Policies</h2>
-        <p>These pilot-stage policies explain the rules and protections that apply now. They will be reviewed with qualified counsel as the operating model, registrations and cross-border services are confirmed.</p>
-      </div>
-      <div class="grid grid-2">
-        <div class="card"><h3><a href="privacy.html">Privacy Policy</a></h3><p>What information we collect, why we use it, who may receive it and the choices available to you.</p></div>
-        <div class="card"><h3><a href="terms.html">Terms of Use</a></h3><p>The rules for accounts, listings, contracts, direct payments, content and use of the AdorWorks pilot.</p></div>
-        <div class="card"><h3><a href="community-standards.html">Community Standards</a></h3><p>Our requirements for honest opportunities, dignity, fair work, safety, privacy and professional conduct.</p></div>
-        <div class="card"><h3><a href="cancellation-refunds.html">Cancellation &amp; Refund Policy</a></h3><p>How project cancellations and direct-payment disputes work while AdorWorks charges 0% and does not hold funds.</p></div>
+      <div class="policy-grid">
+        <a href="privacy.html" class="policy-card site-reveal"><span class="policy-name">Privacy Policy</span><span class="policy-desc">What we collect, how we use and share it, and your choices.</span><span class="policy-read">Read &rarr;</span></a>
+        <a href="terms.html" class="policy-card site-reveal"><span class="policy-name">Terms of Use</span><span class="policy-desc">Accounts, listings, contracts, payments and content.</span><span class="policy-read">Read &rarr;</span></a>
+        <a href="community-standards.html" class="policy-card site-reveal"><span class="policy-name">Community Standards</span><span class="policy-desc">Honest opportunities, dignity, fair work, safety and conduct.</span><span class="policy-read">Read &rarr;</span></a>
+        <a href="cancellation-refunds.html" class="policy-card site-reveal"><span class="policy-name">Cancellation &amp; Refunds</span><span class="policy-desc">Cancellations and payment disputes during the pilot.</span><span class="policy-read">Read &rarr;</span></a>
       </div>
     </div>
   </section>
@@ -269,53 +336,50 @@
 <footer class="site-footer">
   <div class="container">
     <div class="footer-grid">
-      <div>
+      <div class="footer-brand">
         <a class="brand" href="index.html">
           <img src="img/adorworks-mark-reversed.svg" alt="AdorWorks" width="32" height="32">
           <span>AdorWorks</span>
         </a>
-        <p class="footer-about">A South Sudan-born talent and work marketplace, built by Adormedia.</p>
-        <p class="footer-trust">0% platform fee for talent during our founding pilot &middot; every shortlist is human-reviewed.</p>
+        <p class="footer-tagline">A South Sudan-born talent and work marketplace.</p>
+        <p class="footer-about">Built by Adormedia. 0% platform fee for talent during our founding pilot &middot; every shortlist is human-reviewed.</p>
       </div>
-      <div>
-        <h3 class="footer-heading">Explore</h3>
+      <nav aria-label="Explore">
+        <h2 class="footer-heading">Explore</h2>
         <ul class="footer-list">
           <li><a href="services.html">Services</a></li>
-          <li><a href="jobs-projects.html">Jobs &amp; Projects</a></li>
-          <li><a href="how-it-works.html">How It Works</a></li>
+          <li><a href="jobs-projects.html">Jobs &amp; projects</a></li>
+          <li><a href="pathways.html">Pathways for schools</a></li>
+          <li><a href="how-it-works.html">How it works</a></li>
           <li><a href="pricing.html">Pricing</a></li>
-          <li><a href="impact-stories.html">Impact &amp; Stories</a></li>
+          <li><a href="impact-stories.html">Impact &amp; stories</a></li>
           <li><a href="insights.html">Insights</a></li>
         </ul>
-      </div>
-      <div>
-        <h3 class="footer-heading">Company</h3>
+      </nav>
+      <nav aria-label="Company">
+        <h2 class="footer-heading">Company</h2>
         <ul class="footer-list">
-          <li><a href="for-employers.html">For Employers</a></li>
-          <li><a href="for-talent.html">For Talent</a></li>
-          <li><a href="assisted-hiring.html">Assisted Hiring</a></li>
+          <li><a href="for-employers.html">For employers</a></li>
+          <li><a href="for-talent.html">For talent</a></li>
+          <li><a href="assisted-hiring.html">Assisted hiring</a></li>
           <li><a href="trust-safety.html">Trust &amp; Safety</a></li>
-          <li><a href="trust-safety.html#policies">Legal policies</a></li>
-          <li><a href="help.html">Help &amp; FAQ</a></li>
           <li><a href="about.html">About</a></li>
         </ul>
-      </div>
-          <div>
-        <h3 class="footer-heading">Get in touch</h3>
-        <ul class="footer-list footer-contact">
-          <li>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-            South Sudan
-          </li>
-          <li>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
-            <a href="mailto:info@adorworks.net">info@adorworks.net</a>
-          </li>
-          <li><a href="contact.html">Contact form &rarr;</a></li>
+      </nav>
+      <nav aria-label="Support">
+        <h2 class="footer-heading">Support</h2>
+        <ul class="footer-list">
+          <li><a href="help.html">Help &amp; FAQ</a></li>
+          <li><a href="contact.html">Contact us</a></li>
+          <li><a href="trust-safety.html#report">Report a concern</a></li>
+          <li><a href="trust-safety.html#policies">Legal policies</a></li>
         </ul>
-      </div>
+      </nav>
     </div>
-    <div class="footer-bottom">&copy; 2026 AdorWorks, a venture of Adormedia Ltd. All rights reserved. AdorWorks is a working name pending company, trademark and domain clearance. Contact details above are placeholders pending setup.</div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 AdorWorks, a venture of Adormedia Ltd. <span class="footer-note">AdorWorks is a working name pending company, trademark and domain clearance.</span></span>
+      <span><a href="mailto:info@adorworks.net">info@adorworks.net</a> &middot; South Sudan</span>
+    </div>
   </div>
 </footer>
 
@@ -327,7 +391,8 @@
 <script src="js/supabase-config.js"></script>
 <script src="js/api-config.js"></script>
 <script src="js/i18n.js"></script>
-<script src="js/main.js"></script>
+<script src="js/main.js?v=26"></script>
+<script src="js/trust.js"></script>
 <script src="js/analytics-config.js"></script>
 <script src="js/analytics.js"></script>
 <script src="js/chat-widget.js"></script>

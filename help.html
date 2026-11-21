@@ -29,7 +29,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/themes.css">
-<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/styles.css?v=26">
+<link rel="stylesheet" href="css/site.css?v=26">
+<link rel="stylesheet" href="css/pages.css?v=26">
 <script src="js/i18n-early.js"></script>
 <script type="application/ld+json">
 {
@@ -73,197 +75,166 @@
       <span class="visually-hidden">Menu</span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
-        <nav class="site-nav" id="site-nav" aria-label="Primary">
+    <nav class="site-nav" id="site-nav" aria-label="Primary">
       <ul>
-        <li><a href="index.html">Home</a></li>
-        <li><a href="jobs-projects.html">Find Jobs</a></li>
-        <li><a href="for-employers.html">Find Talent</a></li>
+        <li><a href="jobs-projects.html">Find work</a></li>
+        <li><a href="for-employers.html">Find talent</a></li>
         <li class="nav-megamenu" data-nav-megamenu>
           <button type="button" class="nav-megamenu-trigger" data-megamenu-trigger aria-expanded="false" aria-controls="services-megamenu">
             Services
             <svg class="nav-megamenu-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
           </button>
           <div class="services-megamenu" id="services-megamenu" data-megamenu-panel>
-            <div class="services-megamenu-grid">
-              <div class="services-megamenu-cats" role="tablist" aria-label="Service categories">
-                <button type="button" class="services-megamenu-cat" data-megamenu-cat="creative" role="tab" aria-selected="true">
-                  <span class="services-megamenu-cat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.4-.3-.4-.5-.9-.5-1.4 0-1.1.9-2 2-2h2a4 4 0 0 0 4-4C21 5.8 17 3 12 3z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="12" cy="7.5" r="1"/><circle cx="16.5" cy="10.5" r="1"/></svg></span>
-                  <span class="services-megamenu-cat-label">Creative &amp; media</span>
-                  <svg class="services-megamenu-cat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-                </button>
-                <button type="button" class="services-megamenu-cat" data-megamenu-cat="digital" role="tab" aria-selected="false">
-                  <span class="services-megamenu-cat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m8 9-4 3 4 3M16 9l4 3-4 3M13 6l-2 12"/></svg></span>
-                  <span class="services-megamenu-cat-label">Digital &amp; technology</span>
-                  <svg class="services-megamenu-cat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-                </button>
-                <button type="button" class="services-megamenu-cat" data-megamenu-cat="business" role="tab" aria-selected="false">
-                  <span class="services-megamenu-cat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18"/></svg></span>
-                  <span class="services-megamenu-cat-label">Business &amp; project support</span>
-                  <svg class="services-megamenu-cat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-                </button>
+            <div class="mm-grid">
+              <div class="mm-col" data-megamenu-items="creative">
+                <p class="mm-cat">Creative &amp; media</p>
+                <p class="mm-tag">Design → delivery</p>
+                <ul>
+                  <li><a class="mm-item" href="services.html?service=Brand%20%26%20graphic%20design#service-deck-creative"><strong>Brand &amp; graphic design</strong><small>Logos, brand marks and print-ready collateral</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Photography%20%26%20video%20production#service-deck-creative"><strong>Photography &amp; video production</strong><small>Shoot days with fully edited assets</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Editing%20%26%20animation#service-deck-creative"><strong>Editing &amp; animation</strong><small>Video editing, motion graphics and animation</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Content%20creation%20%26%20copywriting#service-deck-creative"><strong>Content creation &amp; copywriting</strong><small>Written and social content, on brief</small></a></li>
+                </ul>
               </div>
-              <div class="services-megamenu-items">
-                <div class="services-megamenu-items-group" data-megamenu-items="creative">
-                  <p class="services-megamenu-group-heading">Creative &amp; media</p>
-                  <a class="services-megamenu-item" href="services.html?service=Brand%20%26%20graphic%20design#service-deck-creative">
-                    <picture><source type="image/webp" srcset="img/photos/tile-brand-design-480.webp"><img src="img/photos/tile-brand-design-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Brand &amp; graphic design</strong><small>Logos, brand marks and print-ready collateral</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Photography%20%26%20video%20production#service-deck-creative">
-                    <picture><source type="image/webp" srcset="img/photos/tile-photo-video-480.webp"><img src="img/photos/tile-photo-video-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Photography &amp; video production</strong><small>Shoot days with fully edited assets</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Editing%20%26%20animation#service-deck-creative">
-                    <picture><source type="image/webp" srcset="img/photos/tile-editing-animation-480.webp"><img src="img/photos/tile-editing-animation-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Editing &amp; animation</strong><small>Video editing, motion graphics and animation</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Content%20creation%20%26%20copywriting#service-deck-creative">
-                    <picture><source type="image/webp" srcset="img/photos/tile-content-copy-480.webp"><img src="img/photos/tile-content-copy-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Content creation &amp; copywriting</strong><small>Written and social content, on-brief</small></span>
-                  </a>
-                </div>
-                <div class="services-megamenu-items-group" data-megamenu-items="digital" hidden>
-                  <p class="services-megamenu-group-heading">Digital &amp; technology</p>
-                  <a class="services-megamenu-item" href="services.html?service=Web%20development#service-deck-digital">
-                    <picture><source type="image/webp" srcset="img/photos/tile-web-dev-480.webp"><img src="img/photos/tile-web-dev-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Web development</strong><small>Websites and web apps, built and handed over working</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Data%20support%20%26%20analytics#service-deck-digital">
-                    <picture><source type="image/webp" srcset="img/photos/tile-data-analytics-480.webp"><img src="img/photos/tile-data-analytics-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Data support &amp; analytics</strong><small>Cleaned datasets, dashboards and analysis</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Digital%20advertising#service-deck-digital">
-                    <picture><source type="image/webp" srcset="img/photos/tile-digital-ads-480.webp"><img src="img/photos/tile-digital-ads-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Digital advertising</strong><small>Set-up and managed ad campaigns</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=IT%20%26%20software%20support#service-deck-digital">
-                    <picture><source type="image/webp" srcset="img/photos/tile-it-support-480.webp"><img src="img/photos/tile-it-support-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>IT &amp; software support</strong><small>Scoped fixes, integrations and small builds</small></span>
-                  </a>
-                </div>
-                <div class="services-megamenu-items-group" data-megamenu-items="business" hidden>
-                  <p class="services-megamenu-group-heading">Business &amp; project support</p>
-                  <a class="services-megamenu-item" href="services.html?service=Virtual%20assistance%20%26%20bookkeeping#service-deck-business">
-                    <picture><source type="image/webp" srcset="img/photos/tile-virtual-assistance-480.webp"><img src="img/photos/tile-virtual-assistance-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Virtual assistance &amp; bookkeeping</strong><small>Ongoing admin and bookkeeping support</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Research%20%26%20enumeration#service-deck-business">
-                    <picture><source type="image/webp" srcset="img/photos/tile-research-480.webp"><img src="img/photos/tile-research-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Research &amp; enumeration</strong><small>Research reports and field data collection</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Transcription%20%26%20translation#service-deck-business">
-                    <picture><source type="image/webp" srcset="img/photos/tile-translation-480.webp"><img src="img/photos/tile-translation-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Transcription &amp; translation</strong><small>Transcribed and translated documents or audio</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Project%20administration#service-deck-business">
-                    <picture><source type="image/webp" srcset="img/photos/tile-project-admin-480.webp"><img src="img/photos/tile-project-admin-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Project administration</strong><small>Scheduling, reporting and vendor liaison</small></span>
-                  </a>
-                </div>
+              <div class="mm-col" data-megamenu-items="digital">
+                <p class="mm-cat">Digital &amp; technology</p>
+                <p class="mm-tag">Build → handover</p>
+                <ul>
+                  <li><a class="mm-item" href="services.html?service=Web%20development#service-deck-digital"><strong>Web development</strong><small>Websites and web apps, handed over with training</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Data%20support%20%26%20analytics#service-deck-digital"><strong>Data support &amp; analytics</strong><small>Clean data, dashboards and simple reports</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Digital%20advertising#service-deck-digital"><strong>Digital advertising</strong><small>Campaign setup, targeting and reporting</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=IT%20%26%20software%20support#service-deck-digital"><strong>IT &amp; software support</strong><small>Setup, fixes and ongoing help for your team</small></a></li>
+                </ul>
               </div>
-            </div>
-            <div class="services-megamenu-footer">
-              <a href="services.html">Browse all services &rarr;</a>
-              <a href="pricing.html">How pricing works &rarr;</a>
-              <a href="how-it-works.html">See how it works &rarr;</a>
+              <div class="mm-col" data-megamenu-items="business">
+                <p class="mm-cat">Business &amp; project support</p>
+                <p class="mm-tag">One-off or ongoing</p>
+                <ul>
+                  <li><a class="mm-item" href="services.html?service=Virtual%20assistance%20%26%20bookkeeping#service-deck-business"><strong>Virtual assistance &amp; bookkeeping</strong><small>Admin, scheduling and tidy books</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Research%20%26%20enumeration#service-deck-business"><strong>Research &amp; enumeration</strong><small>Surveys, field data collection and desk research</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Transcription%20%26%20translation#service-deck-business"><strong>Transcription &amp; translation</strong><small>Arabic, English, Kiswahili and local languages</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Project%20administration#service-deck-business"><strong>Project administration</strong><small>Tracking, reporting and coordination</small></a></li>
+                </ul>
+              </div>
+              <div class="mm-note">
+                <p class="mm-note-text">Prices are agreed with you before any work starts.</p>
+                <a href="services.html">Browse all services &rarr;</a>
+                <a href="pricing.html">How pricing works &rarr;</a>
+                <a href="how-it-works.html">See how it works &rarr;</a>
+              </div>
             </div>
           </div>
         </li>
-        <li><a href="how-it-works.html">How It Works</a></li>
+        <li><a href="pathways.html">Pathways</a></li>
+        <li><a href="how-it-works.html">How it works</a></li>
         <li><a href="trust-safety.html">Trust &amp; Safety</a></li>
+        <li class="nav-login"><a href="https://ador-works.vercel.app/login">Log in</a></li>
         <li class="nav-cta"><a href="for-employers.html#brief-form" class="btn btn-primary">Post a project</a></li>
       </ul>
     </nav>
   </div>
 </header>
 
-<main id="main">
+<main id="main" class="page">
 
-  <section class="hero">
+  <section class="page-hero">
     <div class="container">
-      <h1>Help &amp; frequently asked questions.</h1>
-      <p class="lede">Quick answers about registering, verification, fees and payments. For a hiring-specific FAQ, see the bottom of <a href="for-employers.html#faq">For Employers</a>. Can't find it here? <a href="contact.html">Contact us</a> directly.</p>
+      <div class="page-hero-copy">
+        <p class="eyebrow rise">Help</p>
+        <h1 class="rise rise-1">Help &amp; frequently asked <em>questions.</em></h1>
+        <p class="lede rise rise-2">Quick answers about registering, verification, fees and payments. For a hiring-specific FAQ, see the bottom of <a href="for-employers.html#faq">For Employers</a>. Can't find it here? <a href="contact.html">Contact us</a> directly.</p>
+      </div>
     </div>
   </section>
 
-  <section class="section faq">
+  <nav class="section-nav" aria-label="Help topics">
     <div class="container">
-      <div class="section-header"><h2>Getting started</h2></div>
-      <details>
-        <summary>Does it cost anything for talent to register?</summary>
+      <a href="#getting-started">Getting started</a> <a href="#verification">Verification</a> <a href="#fees-and-payments">Fees and payments</a> <a href="#trust-and-support">Trust &amp; support</a>
+      <a href="contact.html" class="section-nav-cta">Contact us &rarr;</a>
+    </div>
+  </nav>
+
+  <section class="page-section">
+    <div class="container help-wrap">
+      <div class="help-group site-reveal" id="getting-started">
+        <h2>Getting started</h2>
+        <div class="faq-list">
+        <details>
+        <summary>Does it cost anything for talent to register?<span class="faq-icon" aria-hidden="true"></span></summary>
         <p>No. Registration and access to legitimate work is free for talent, and always will be — see <a href="pricing.html">Pricing</a>. AdorWorks never charges a jobseeker a fee to be considered.</p>
-      </details>
-      <details>
-        <summary>How do I sign up?</summary>
+        </details>
+        <details>
+        <summary>How do I sign up?<span class="faq-icon" aria-hidden="true"></span></summary>
         <p><a href="https://ador-works.vercel.app/signup">Create an account</a> directly, any time — it's self-service. If getting online to do that is the hard part, see <a href="assisted-hiring.html">in-person help</a> instead.</p>
-      </details>
-      <details>
-        <summary>I already have an account — where do I sign in?</summary>
+        </details>
+        <details>
+        <summary>I already have an account — where do I sign in?<span class="faq-icon" aria-hidden="true"></span></summary>
         <p>At <a href="https://ador-works.vercel.app/login">ador-works.vercel.app/login</a>, from any device.</p>
-      </details>
-    </div>
-  </section>
-
-  <section class="section section-alt faq">
-    <div class="container">
-      <div class="section-header"><h2>Verification</h2></div>
-      <details>
-        <summary>How does AdorWorks verify talent?</summary>
+        </details>
+        </div>
+      </div>
+      <div class="help-group site-reveal" id="verification">
+        <h2>Verification</h2>
+        <div class="faq-list">
+        <details>
+        <summary>How does AdorWorks verify talent?<span class="faq-icon" aria-hidden="true"></span></summary>
         <p>Through staged tiers — registered, identity verified, AdorVerified (portfolio and references checked) and AdorCertified (a practical assessment) — each one checked by a person, not just an automated score. See the full breakdown on <a href="for-talent.html#verification">For Talent</a>.</p>
-      </details>
-      <details>
-        <summary>Does a higher tier mean the talent below it isn't checked at all?</summary>
+        </details>
+        <details>
+        <summary>Does a higher tier mean the talent below it isn't checked at all?<span class="faq-icon" aria-hidden="true"></span></summary>
         <p>No — every tier above "registered" involves a real check; higher tiers mean more was verified, not that anything lower is unchecked. An automated score is never presented as a complete judgement on its own.</p>
-      </details>
-      <details>
-        <summary>How does AdorWorks verify employers?</summary>
+        </details>
+        <details>
+        <summary>How does AdorWorks verify employers?<span class="faq-icon" aria-hidden="true"></span></summary>
         <p>Organisations go through their own verification step before a brief is matched against talent — see <a href="trust-safety.html">Trust &amp; Safety</a> for what that covers.</p>
-      </details>
-    </div>
-  </section>
-
-  <section class="section faq">
-    <div class="container">
-      <div class="section-header"><h2>Fees and payments</h2></div>
-      <details>
-        <summary>Is there a platform fee right now?</summary>
+        </details>
+        </div>
+      </div>
+      <div class="help-group site-reveal" id="fees-and-payments">
+        <h2>Fees and payments</h2>
+        <div class="faq-list">
+        <details>
+        <summary>Is there a platform fee right now?<span class="faq-icon" aria-hidden="true"></span></summary>
         <p>No. AdorWorks charges a 0% platform fee today, while it's in its founding pilot — see <a href="pricing.html">Pricing</a> for the model being tested for later.</p>
-      </details>
-      <details>
-        <summary>Does AdorWorks hold payments in escrow?</summary>
+        </details>
+        <details>
+        <summary>Does AdorWorks hold payments in escrow?<span class="faq-icon" aria-hidden="true"></span></summary>
         <p>Not yet. AdorWorks doesn't describe client funds as escrow, since a licensed local payment partner hasn't been confirmed. Engagements are currently scoped and invoiced directly while that's finalised — see <a href="trust-safety.html">Trust &amp; Safety</a>.</p>
-      </details>
-      <details>
-        <summary>How will I actually get paid, or pay someone?</summary>
+        </details>
+        <details>
+        <summary>How will I actually get paid, or pay someone?<span class="faq-icon" aria-hidden="true"></span></summary>
         <p>Milestone-based payment tracking exists in the platform today for confirmed engagements; live third-party payment processing depends on the payment-partner question above being resolved first.</p>
-      </details>
-    </div>
-  </section>
-
-  <section class="section section-alt faq">
-    <div class="container">
-      <div class="section-header"><h2>Trust &amp; support</h2></div>
-      <details>
-        <summary>What if something goes wrong on an engagement?</summary>
+        </details>
+        </div>
+      </div>
+      <div class="help-group site-reveal" id="trust-and-support">
+        <h2>Trust &amp; support</h2>
+        <div class="faq-list">
+        <details>
+        <summary>What if something goes wrong on an engagement?<span class="faq-icon" aria-hidden="true"></span></summary>
         <p>Every engagement has a named AdorWorks contact and a documented dispute process, mediated by staff rather than left between the two parties — see <a href="trust-safety.html">Trust &amp; Safety</a>.</p>
-      </details>
-      <details>
-        <summary>How do I report a concern?</summary>
-        <p>See the reporting section on <a href="trust-safety.html">Trust &amp; Safety</a>, or <a href="contact.html">contact us</a> directly if it's urgent.</p>
-      </details>
-      <details>
-        <summary>Do I have to do the whole process myself?</summary>
+        </details>
+        <details>
+        <summary>How do I report a concern?<span class="faq-icon" aria-hidden="true"></span></summary>
+        <p>See the reporting section on <a href="trust-safety.html#report">Trust &amp; Safety</a>, or <a href="contact.html">contact us</a> directly if it's urgent.</p>
+        </details>
+        <details>
+        <summary>Do I have to do the whole process myself?<span class="faq-icon" aria-hidden="true"></span></summary>
         <p>No — AdorWorks is staff-assisted by default for both employers and talent. See <a href="assisted-hiring.html">Assisted Hiring</a> for how that works, including in-person help for talent who need it.</p>
-      </details>
+        </details>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section class="cta-band">
+  <section class="page-section page-section-tight">
     <div class="container">
-      <h2>Still stuck?</h2>
-      <p>Reach the AdorWorks team directly and we'll route it to the right place.</p>
-      <div class="hero-ctas justify-center" style="margin-top:1.5rem;">
-        <a href="contact.html" class="btn btn-outline-light">Contact us</a>
+      <div class="bigger-band site-reveal">
+        <div>
+          <h2>Still stuck?</h2>
+          <p>Reach the AdorWorks team directly and we'll route it to the right place.</p>
+        </div>
+        <a href="contact.html" class="btn btn-primary">Contact us</a>
       </div>
     </div>
   </section>
@@ -273,53 +244,50 @@
 <footer class="site-footer">
   <div class="container">
     <div class="footer-grid">
-      <div>
+      <div class="footer-brand">
         <a class="brand" href="index.html">
           <img src="img/adorworks-mark-reversed.svg" alt="AdorWorks" width="32" height="32">
           <span>AdorWorks</span>
         </a>
-        <p class="footer-about">A South Sudan-born talent and work marketplace, built by Adormedia. We verify, match and support delivery — so ability, not just connections, decides who gets hired.</p>
-        <p class="footer-trust">0% platform fee for talent during our founding pilot &middot; every shortlist is human-reviewed.</p>
+        <p class="footer-tagline">A South Sudan-born talent and work marketplace.</p>
+        <p class="footer-about">Built by Adormedia. 0% platform fee for talent during our founding pilot &middot; every shortlist is human-reviewed.</p>
       </div>
-      <div>
-        <h3 class="footer-heading">Explore</h3>
+      <nav aria-label="Explore">
+        <h2 class="footer-heading">Explore</h2>
         <ul class="footer-list">
           <li><a href="services.html">Services</a></li>
-          <li><a href="jobs-projects.html">Jobs &amp; Projects</a></li>
-          <li><a href="how-it-works.html">How It Works</a></li>
+          <li><a href="jobs-projects.html">Jobs &amp; projects</a></li>
+          <li><a href="pathways.html">Pathways for schools</a></li>
+          <li><a href="how-it-works.html">How it works</a></li>
           <li><a href="pricing.html">Pricing</a></li>
-          <li><a href="impact-stories.html">Impact &amp; Stories</a></li>
+          <li><a href="impact-stories.html">Impact &amp; stories</a></li>
           <li><a href="insights.html">Insights</a></li>
         </ul>
-      </div>
-      <div>
-        <h3 class="footer-heading">Company</h3>
+      </nav>
+      <nav aria-label="Company">
+        <h2 class="footer-heading">Company</h2>
         <ul class="footer-list">
-          <li><a href="for-employers.html">For Employers</a></li>
-          <li><a href="for-talent.html">For Talent</a></li>
-          <li><a href="assisted-hiring.html">Assisted Hiring</a></li>
+          <li><a href="for-employers.html">For employers</a></li>
+          <li><a href="for-talent.html">For talent</a></li>
+          <li><a href="assisted-hiring.html">Assisted hiring</a></li>
           <li><a href="trust-safety.html">Trust &amp; Safety</a></li>
-          <li><a href="trust-safety.html#policies">Legal policies</a></li>
-          <li><a href="help.html">Help &amp; FAQ</a></li>
           <li><a href="about.html">About</a></li>
         </ul>
-      </div>
-          <div>
-        <h3 class="footer-heading">Get in touch</h3>
-        <ul class="footer-list footer-contact">
-          <li>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-            South Sudan
-          </li>
-          <li>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
-            <a href="mailto:info@adorworks.net">info@adorworks.net</a>
-          </li>
-          <li><a href="contact.html">Contact form &rarr;</a></li>
+      </nav>
+      <nav aria-label="Support">
+        <h2 class="footer-heading">Support</h2>
+        <ul class="footer-list">
+          <li><a href="help.html">Help &amp; FAQ</a></li>
+          <li><a href="contact.html">Contact us</a></li>
+          <li><a href="trust-safety.html#report">Report a concern</a></li>
+          <li><a href="trust-safety.html#policies">Legal policies</a></li>
         </ul>
-      </div>
+      </nav>
     </div>
-    <div class="footer-bottom">&copy; 2026 AdorWorks, a venture of Adormedia Ltd. All rights reserved. AdorWorks is a working name pending company, trademark and domain clearance. Contact details above are placeholders pending setup.</div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 AdorWorks, a venture of Adormedia Ltd. <span class="footer-note">AdorWorks is a working name pending company, trademark and domain clearance.</span></span>
+      <span><a href="mailto:info@adorworks.net">info@adorworks.net</a> &middot; South Sudan</span>
+    </div>
   </div>
 </footer>
 
@@ -331,7 +299,7 @@
 <script src="js/supabase-config.js"></script>
 <script src="js/api-config.js"></script>
 <script src="js/i18n.js"></script>
-<script src="js/main.js"></script>
+<script src="js/main.js?v=26"></script>
 <script src="js/analytics-config.js"></script>
 <script src="js/analytics.js"></script>
 <script src="js/chat-widget.js"></script>

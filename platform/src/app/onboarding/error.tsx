@@ -6,10 +6,10 @@ import { useT } from "@/i18n/client";
 
 export default function OnboardingError({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }) {
   const t = useT();
   useEffect(() => {
@@ -21,7 +21,7 @@ export default function OnboardingError({
       <p>{t("Your progress so far is saved. Try again, or come back later.")}</p>
       <button
         type="button"
-        onClick={reset}
+        onClick={() => retry()}
         className="mt-4 rounded-lg bg-midnight px-4 py-2 font-semibold text-white"
       >
         {t("Try again")}

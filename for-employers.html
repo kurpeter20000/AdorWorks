@@ -29,7 +29,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/themes.css">
-<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/styles.css?v=26">
+<link rel="stylesheet" href="css/site.css?v=26">
+<link rel="stylesheet" href="css/pages.css?v=26">
 <script src="js/i18n-early.js"></script>
 <style>
   /* This page has a second sticky bar (.jump-nav) below the header, so
@@ -50,315 +52,305 @@
       <span class="visually-hidden">Menu</span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
-        <nav class="site-nav" id="site-nav" aria-label="Primary">
+    <nav class="site-nav" id="site-nav" aria-label="Primary">
       <ul>
-        <li><a href="index.html">Home</a></li>
-        <li><a href="jobs-projects.html">Find Jobs</a></li>
-        <li><a href="for-employers.html" aria-current="page">Find Talent</a></li>
+        <li><a href="jobs-projects.html">Find work</a></li>
+        <li><a href="for-employers.html" aria-current="page">Find talent</a></li>
         <li class="nav-megamenu" data-nav-megamenu>
           <button type="button" class="nav-megamenu-trigger" data-megamenu-trigger aria-expanded="false" aria-controls="services-megamenu">
             Services
             <svg class="nav-megamenu-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
           </button>
           <div class="services-megamenu" id="services-megamenu" data-megamenu-panel>
-            <div class="services-megamenu-grid">
-              <div class="services-megamenu-cats" role="tablist" aria-label="Service categories">
-                <button type="button" class="services-megamenu-cat" data-megamenu-cat="creative" role="tab" aria-selected="true">
-                  <span class="services-megamenu-cat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.4-.3-.4-.5-.9-.5-1.4 0-1.1.9-2 2-2h2a4 4 0 0 0 4-4C21 5.8 17 3 12 3z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="12" cy="7.5" r="1"/><circle cx="16.5" cy="10.5" r="1"/></svg></span>
-                  <span class="services-megamenu-cat-label">Creative &amp; media</span>
-                  <svg class="services-megamenu-cat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-                </button>
-                <button type="button" class="services-megamenu-cat" data-megamenu-cat="digital" role="tab" aria-selected="false">
-                  <span class="services-megamenu-cat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m8 9-4 3 4 3M16 9l4 3-4 3M13 6l-2 12"/></svg></span>
-                  <span class="services-megamenu-cat-label">Digital &amp; technology</span>
-                  <svg class="services-megamenu-cat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-                </button>
-                <button type="button" class="services-megamenu-cat" data-megamenu-cat="business" role="tab" aria-selected="false">
-                  <span class="services-megamenu-cat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18"/></svg></span>
-                  <span class="services-megamenu-cat-label">Business &amp; project support</span>
-                  <svg class="services-megamenu-cat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-                </button>
+            <div class="mm-grid">
+              <div class="mm-col" data-megamenu-items="creative">
+                <p class="mm-cat">Creative &amp; media</p>
+                <p class="mm-tag">Design → delivery</p>
+                <ul>
+                  <li><a class="mm-item" href="services.html?service=Brand%20%26%20graphic%20design#service-deck-creative"><strong>Brand &amp; graphic design</strong><small>Logos, brand marks and print-ready collateral</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Photography%20%26%20video%20production#service-deck-creative"><strong>Photography &amp; video production</strong><small>Shoot days with fully edited assets</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Editing%20%26%20animation#service-deck-creative"><strong>Editing &amp; animation</strong><small>Video editing, motion graphics and animation</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Content%20creation%20%26%20copywriting#service-deck-creative"><strong>Content creation &amp; copywriting</strong><small>Written and social content, on brief</small></a></li>
+                </ul>
               </div>
-              <div class="services-megamenu-items">
-                <div class="services-megamenu-items-group" data-megamenu-items="creative">
-                  <p class="services-megamenu-group-heading">Creative &amp; media</p>
-                  <a class="services-megamenu-item" href="services.html?service=Brand%20%26%20graphic%20design#service-deck-creative">
-                    <picture><source type="image/webp" srcset="img/photos/tile-brand-design-480.webp"><img src="img/photos/tile-brand-design-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Brand &amp; graphic design</strong><small>Logos, brand marks and print-ready collateral</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Photography%20%26%20video%20production#service-deck-creative">
-                    <picture><source type="image/webp" srcset="img/photos/tile-photo-video-480.webp"><img src="img/photos/tile-photo-video-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Photography &amp; video production</strong><small>Shoot days with fully edited assets</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Editing%20%26%20animation#service-deck-creative">
-                    <picture><source type="image/webp" srcset="img/photos/tile-editing-animation-480.webp"><img src="img/photos/tile-editing-animation-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Editing &amp; animation</strong><small>Video editing, motion graphics and animation</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Content%20creation%20%26%20copywriting#service-deck-creative">
-                    <picture><source type="image/webp" srcset="img/photos/tile-content-copy-480.webp"><img src="img/photos/tile-content-copy-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Content creation &amp; copywriting</strong><small>Written and social content, on-brief</small></span>
-                  </a>
-                </div>
-                <div class="services-megamenu-items-group" data-megamenu-items="digital" hidden>
-                  <p class="services-megamenu-group-heading">Digital &amp; technology</p>
-                  <a class="services-megamenu-item" href="services.html?service=Web%20development#service-deck-digital">
-                    <picture><source type="image/webp" srcset="img/photos/tile-web-dev-480.webp"><img src="img/photos/tile-web-dev-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Web development</strong><small>Websites and web apps, built and handed over working</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Data%20support%20%26%20analytics#service-deck-digital">
-                    <picture><source type="image/webp" srcset="img/photos/tile-data-analytics-480.webp"><img src="img/photos/tile-data-analytics-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Data support &amp; analytics</strong><small>Cleaned datasets, dashboards and analysis</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Digital%20advertising#service-deck-digital">
-                    <picture><source type="image/webp" srcset="img/photos/tile-digital-ads-480.webp"><img src="img/photos/tile-digital-ads-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Digital advertising</strong><small>Set-up and managed ad campaigns</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=IT%20%26%20software%20support#service-deck-digital">
-                    <picture><source type="image/webp" srcset="img/photos/tile-it-support-480.webp"><img src="img/photos/tile-it-support-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>IT &amp; software support</strong><small>Scoped fixes, integrations and small builds</small></span>
-                  </a>
-                </div>
-                <div class="services-megamenu-items-group" data-megamenu-items="business" hidden>
-                  <p class="services-megamenu-group-heading">Business &amp; project support</p>
-                  <a class="services-megamenu-item" href="services.html?service=Virtual%20assistance%20%26%20bookkeeping#service-deck-business">
-                    <picture><source type="image/webp" srcset="img/photos/tile-virtual-assistance-480.webp"><img src="img/photos/tile-virtual-assistance-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Virtual assistance &amp; bookkeeping</strong><small>Ongoing admin and bookkeeping support</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Research%20%26%20enumeration#service-deck-business">
-                    <picture><source type="image/webp" srcset="img/photos/tile-research-480.webp"><img src="img/photos/tile-research-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Research &amp; enumeration</strong><small>Research reports and field data collection</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Transcription%20%26%20translation#service-deck-business">
-                    <picture><source type="image/webp" srcset="img/photos/tile-translation-480.webp"><img src="img/photos/tile-translation-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Transcription &amp; translation</strong><small>Transcribed and translated documents or audio</small></span>
-                  </a>
-                  <a class="services-megamenu-item" href="services.html?service=Project%20administration#service-deck-business">
-                    <picture><source type="image/webp" srcset="img/photos/tile-project-admin-480.webp"><img src="img/photos/tile-project-admin-480.jpg" alt="" loading="lazy" width="56" height="56"></picture>
-                    <span><strong>Project administration</strong><small>Scheduling, reporting and vendor liaison</small></span>
-                  </a>
-                </div>
+              <div class="mm-col" data-megamenu-items="digital">
+                <p class="mm-cat">Digital &amp; technology</p>
+                <p class="mm-tag">Build → handover</p>
+                <ul>
+                  <li><a class="mm-item" href="services.html?service=Web%20development#service-deck-digital"><strong>Web development</strong><small>Websites and web apps, handed over with training</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Data%20support%20%26%20analytics#service-deck-digital"><strong>Data support &amp; analytics</strong><small>Clean data, dashboards and simple reports</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Digital%20advertising#service-deck-digital"><strong>Digital advertising</strong><small>Campaign setup, targeting and reporting</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=IT%20%26%20software%20support#service-deck-digital"><strong>IT &amp; software support</strong><small>Setup, fixes and ongoing help for your team</small></a></li>
+                </ul>
               </div>
-            </div>
-            <div class="services-megamenu-footer">
-              <a href="services.html">Browse all services &rarr;</a>
-              <a href="pricing.html">How pricing works &rarr;</a>
-              <a href="how-it-works.html">See how it works &rarr;</a>
+              <div class="mm-col" data-megamenu-items="business">
+                <p class="mm-cat">Business &amp; project support</p>
+                <p class="mm-tag">One-off or ongoing</p>
+                <ul>
+                  <li><a class="mm-item" href="services.html?service=Virtual%20assistance%20%26%20bookkeeping#service-deck-business"><strong>Virtual assistance &amp; bookkeeping</strong><small>Admin, scheduling and tidy books</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Research%20%26%20enumeration#service-deck-business"><strong>Research &amp; enumeration</strong><small>Surveys, field data collection and desk research</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Transcription%20%26%20translation#service-deck-business"><strong>Transcription &amp; translation</strong><small>Arabic, English, Kiswahili and local languages</small></a></li>
+                  <li><a class="mm-item" href="services.html?service=Project%20administration#service-deck-business"><strong>Project administration</strong><small>Tracking, reporting and coordination</small></a></li>
+                </ul>
+              </div>
+              <div class="mm-note">
+                <p class="mm-note-text">Prices are agreed with you before any work starts.</p>
+                <a href="services.html">Browse all services &rarr;</a>
+                <a href="pricing.html">How pricing works &rarr;</a>
+                <a href="how-it-works.html">See how it works &rarr;</a>
+              </div>
             </div>
           </div>
         </li>
-        <li><a href="how-it-works.html">How It Works</a></li>
+        <li><a href="pathways.html">Pathways</a></li>
+        <li><a href="how-it-works.html">How it works</a></li>
         <li><a href="trust-safety.html">Trust &amp; Safety</a></li>
+        <li class="nav-login"><a href="https://ador-works.vercel.app/login">Log in</a></li>
         <li class="nav-cta"><a href="for-employers.html#brief-form" class="btn btn-primary">Post a project</a></li>
       </ul>
     </nav>
   </div>
 </header>
 
-<main id="main">
+<main id="main" class="page">
 
-  <section class="hero hero-photo">
-    <picture>
-      <source type="image/webp" srcset="img/photos/hero-employers-480.webp 480w, img/photos/hero-employers-960.webp 960w, img/photos/hero-employers-1440.webp 1440w" sizes="100vw">
-      <img class="hero-photo-img" src="img/photos/hero-employers-1440.jpg" srcset="img/photos/hero-employers-480.jpg 480w, img/photos/hero-employers-960.jpg 960w, img/photos/hero-employers-1440.jpg 1440w" sizes="100vw" alt="" fetchpriority="high">
-    </picture>
-    <div class="container">
-      <h1>Hire verified talent without the guesswork.</h1>
-      <p class="lede">Tell us what you need. We verify, match and support delivery — from a single service, through to a full managed team.</p>
-      <div class="hero-ctas">
-        <a href="#brief-form" class="btn btn-primary">Post a project</a>
-        <a href="#categories" class="btn btn-outline-light">See what we cover</a>
-      </div>
-      <div class="auth-cta">
-        <div class="auth-cta-copy">
-          <p class="auth-cta-eyebrow">Your AdorWorks account</p>
-          <p class="auth-cta-text">New here? Create a free account to post briefs and review shortlists — already registered? Welcome back.</p>
+  <section class="page-hero">
+    <div class="container page-hero-grid">
+      <div class="page-hero-copy">
+        <p class="eyebrow rise">For employers</p>
+        <h1 class="rise rise-1">Hire verified talent <em>without the guesswork.</em></h1>
+        <p class="lede rise rise-2">Tell us what you need. We verify, match and support delivery, from a single service to a managed team.</p>
+        <div class="page-actions rise rise-3">
+          <a href="#brief-form" class="btn btn-primary">Post a project</a>
+          <a href="#categories" class="btn btn-ghost">See what we cover</a>
         </div>
-        <div class="auth-cta-actions">
-          <a href="https://ador-works.vercel.app/signup" class="btn btn-primary">Create your account</a>
-          <a href="https://ador-works.vercel.app/login" class="btn btn-outline-light">Log in</a>
+        <p class="page-hero-note rise rise-3">New here? <a href="https://ador-works.vercel.app/signup">Create a free account</a>. Already registered? <a href="https://ador-works.vercel.app/login">Log in</a> to review your shortlists.</p>
+      </div>
+      <div class="page-hero-media rise rise-2">
+        <picture class="photo-slot page-hero-photo">
+          <source type="image/webp" srcset="img/photos/hero-employers-480.webp 480w, img/photos/hero-employers-960.webp 960w, img/photos/hero-employers-1440.webp 1440w" sizes="(min-width: 860px) 45vw, 100vw">
+          <img src="img/photos/hero-employers-960.jpg" srcset="img/photos/hero-employers-480.jpg 480w, img/photos/hero-employers-960.jpg 960w, img/photos/hero-employers-1440.jpg 1440w" sizes="(min-width: 860px) 45vw, 100vw" alt="A laptop open on a sunny office desk, ready for a new hire" width="960" height="640" fetchpriority="high">
+        </picture>
+        <div class="hero-stat">
+          <span class="hero-stat-num">3–5</span>
+          <span class="hero-stat-text">candidates per shortlist,<br>each checked by a person</span>
         </div>
       </div>
     </div>
   </section>
 
-  <nav class="jump-nav" aria-label="On this page">
-    <div class="container jump-nav-inner">
-      <a href="#categories">Categories</a>
-      <a href="#hiring-modes">Hiring modes</a>
+  <nav class="section-nav" aria-label="On this page">
+    <div class="container">
+      <a href="#categories">What we cover</a>
+      <a href="#hiring-modes">Ways to hire</a>
       <a href="#who-we-work-with">Who we work with</a>
-      <a href="#verification">Verification</a>
+      <a href="#verification">Verification &amp; payments</a>
       <a href="#faq">FAQ</a>
-      <a href="#brief-form" class="jump-nav-cta">Post a project &rarr;</a>
+      <a href="#brief-form" class="section-nav-cta">Submit a brief &rarr;</a>
     </div>
   </nav>
 
-  <section class="section" id="categories">
+  <section class="page-section" id="categories">
     <div class="container">
-      <div class="section-header">
-        <h2>What we cover</h2>
-        <p>We only recruit and sell into categories Adormedia can properly assess. Pick one to jump straight to the brief form with it pre-filled.</p>
-      </div>
-      <div class="grid grid-3">
-        <div class="card card-accent-top category-card">
-          <h3>Creative &amp; media</h3>
-          <p class="muted text-sm">Graphic design &middot; Photography &middot; Video production &middot; Editing &middot; Animation &middot; Content creation &middot; Copywriting</p>
-          <button type="button" class="btn btn-secondary btn-block" data-request-category="Creative &amp; media">Request this category &rarr;</button>
+      <div class="section-head site-reveal">
+        <div>
+          <p class="eyebrow">What we cover</p>
+          <h2>Three areas we can assess properly.</h2>
         </div>
-        <div class="card card-accent-top category-card">
-          <h3>Digital &amp; technology</h3>
-          <p class="muted text-sm">Web development &middot; Software &middot; Data support &middot; Digital advertising &middot; Analytics &middot; IT support</p>
-          <button type="button" class="btn btn-secondary btn-block" data-request-category="Digital &amp; technology">Request this category &rarr;</button>
+        <p>Need something else? Send your brief anyway. These show our strengths, not our limits.</p>
+      </div>
+      <div class="cover-grid">
+        <article class="cover-card site-reveal">
+          <picture class="cover-photo">
+            <source type="image/webp" srcset="img/photos/tile-photo-video-480.webp 480w, img/photos/tile-photo-video-960.webp 960w" sizes="(min-width: 1000px) 400px, 100vw">
+            <img src="img/photos/tile-photo-video-480.jpg" srcset="img/photos/tile-photo-video-480.jpg 480w, img/photos/tile-photo-video-960.jpg 960w" sizes="(min-width: 1000px) 400px, 100vw" alt="A creator with headphones working at a screen at sunset" loading="lazy">
+          </picture>
+          <div class="cover-body">
+            <h3>Creative &amp; media</h3>
+            <ul class="skill-pills">
+              <li>Graphic design</li><li>Photography</li><li>Video production</li><li>Editing</li><li>Animation</li><li>Content creation</li><li>Copywriting</li>
+            </ul>
+            <button type="button" class="link-button cover-link" data-request-category="Creative &amp; media">Request this category &rarr;</button>
+          </div>
+        </article>
+        <article class="cover-card site-reveal">
+          <picture class="cover-photo">
+            <source type="image/webp" srcset="img/photos/tile-web-dev-480.webp 480w, img/photos/tile-web-dev-960.webp 960w" sizes="(min-width: 1000px) 400px, 100vw">
+            <img src="img/photos/tile-web-dev-480.jpg" srcset="img/photos/tile-web-dev-480.jpg 480w, img/photos/tile-web-dev-960.jpg 960w" sizes="(min-width: 1000px) 400px, 100vw" alt="A developer working at a desktop computer" loading="lazy">
+          </picture>
+          <div class="cover-body">
+            <h3>Digital &amp; technology</h3>
+            <ul class="skill-pills">
+              <li>Web development</li><li>Software</li><li>Data support</li><li>Digital advertising</li><li>Analytics</li><li>IT support</li>
+            </ul>
+            <button type="button" class="link-button cover-link" data-request-category="Digital &amp; technology">Request this category &rarr;</button>
+          </div>
+        </article>
+        <article class="cover-card site-reveal">
+          <picture class="cover-photo">
+            <source type="image/webp" srcset="img/photos/tile-research-480.webp 480w, img/photos/tile-research-960.webp 960w" sizes="(min-width: 1000px) 400px, 100vw">
+            <img src="img/photos/tile-research-480.jpg" srcset="img/photos/tile-research-480.jpg 480w, img/photos/tile-research-960.jpg 960w" sizes="(min-width: 1000px) 400px, 100vw" alt="A group discussion in a classroom" loading="lazy">
+          </picture>
+          <div class="cover-body">
+            <h3>Business &amp; project support</h3>
+            <ul class="skill-pills">
+              <li>Virtual assistance</li><li>Bookkeeping</li><li>Research</li><li>Enumeration</li><li>Transcription</li><li>Translation</li><li>Project admin</li>
+            </ul>
+            <button type="button" class="link-button cover-link" data-request-category="Business &amp; project support">Request this category &rarr;</button>
+          </div>
+        </article>
+      </div>
+      <div class="inline-note site-reveal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4"/></svg>
+        <p><strong>Why there's no public directory.</strong> We keep talent profiles and contact details private until a verified employer receives a shortlist. <a href="trust-safety.html">Read about Trust &amp; Safety</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="page-section page-band" id="hiring-modes">
+    <div class="container">
+      <div class="section-intro site-reveal">
+        <p class="eyebrow">Five ways to hire</p>
+        <h2>Matched to your needs, never picked from a directory.</h2>
+      </div>
+      <ol class="ways-list">
+        <li class="site-reveal"><span class="num">01</span><span class="ways-name">Buy a service</span><span class="ways-role">Pick a defined deliverable. We quality-check the provider and the delivery.</span><span class="ways-best">Best for: design, editing, web, translation</span></li>
+        <li class="site-reveal"><span class="num">02</span><span class="ways-name">Post a project</span><span class="ways-role">Share scope, budget and deadline. We send a reviewed shortlist.</span><span class="ways-best">Best for: one-off freelance work</span></li>
+        <li class="site-reveal"><span class="num">03</span><span class="ways-name">Hire contract talent</span><span class="ways-role">Staff for weeks or months. We assess, match and administer.</span><span class="ways-best">Best for: specialists and project staff</span></li>
+        <li class="site-reveal"><span class="num">04</span><span class="ways-name">Recruit full-time</span><span class="ways-role">Post a permanent role, or ask us to run the search.</span><span class="ways-best">Best for: permanent employment</span></li>
+        <li class="site-reveal"><span class="num">05</span><span class="ways-name">Build a talent squad</span><span class="ways-role">Define the outcome and timeline. We assemble and lead the team.</span><span class="ways-best">Best for: enterprise, NGO and agency projects</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="page-section" id="who-we-work-with">
+    <div class="container">
+      <div class="section-intro site-reveal">
+        <p class="eyebrow">Who we work with</p>
+        <h2>From a first logo to a national programme.</h2>
+      </div>
+      <div class="who-grid">
+        <article class="who-card site-reveal"><h3>SMEs &amp; startups</h3><p>Packaged services or a curated freelancer for your next step.</p></article>
+        <article class="who-card site-reveal"><h3>NGOs &amp; development programmes</h3><p>Communications, research and field talent, as a shortlist or a managed squad.</p></article>
+        <article class="who-card site-reveal"><h3>Banks, telecoms &amp; large companies</h3><p>Specialists, managed projects or placements.</p></article>
+        <article class="who-card site-reveal"><h3>Diaspora businesses</h3><p>A managed project or a trusted local representative.</p></article>
+        <article class="who-card site-reveal"><h3>East African agencies</h3><p>White-label creative or digital squads with South Sudan know-how.</p></article>
+        <article class="who-card site-reveal"><h3>Public institutions &amp; education</h3><p>Campaigns, assessments and talent programmes.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="page-section page-dark" id="verification">
+    <div class="container verify-grid">
+      <div class="site-reveal">
+        <p class="eyebrow">Employer verification</p>
+        <h2>We verify you before we share anyone with you.</h2>
+        <ol class="verify-list">
+          <li>Organisation registration or other proof you operate</li>
+          <li>A verified representative who can make decisions</li>
+          <li>Corporate email or domain where available, plus phone check</li>
+          <li>A clear role, scope, budget, workplace and reporting line</li>
+          <li>Agreement to fair hiring, non-discrimination, confidentiality and payment terms</li>
+          <li>A deposit or approved credit terms before higher-risk work</li>
+          <li>Extra review for overseas placements, relocation, field safety or vulnerable groups</li>
+        </ol>
+      </div>
+      <div class="payments-card site-reveal">
+        <h3>Payments and protection</h3>
+        <p>We don't hold your money in informal accounts or call it "escrow". Pre-funding runs through a licensed, documented process:</p>
+        <ol>
+          <li>Signed scope</li><li>Deposit</li><li>Milestone evidence</li><li>Your approval</li><li>Invoice</li><li>Payout to talent</li>
+        </ol>
+        <p class="payments-note">Our licensed local payment partner is being finalised. Until then, work is scoped and invoiced directly.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="page-section" id="faq">
+    <div class="container faq-wrap">
+      <h2 class="site-reveal">Questions employers ask</h2>
+      <div class="faq-list">
+        <details open>
+          <summary>How fast can I get a shortlist?<span class="faq-icon" aria-hidden="true"></span></summary>
+          <p>Usually within 10 business days of confirming your brief, depending on how specialised the role is.</p>
+        </details>
+        <details>
+          <summary>What if my need doesn't fit the three categories?<span class="faq-icon" aria-hidden="true"></span></summary>
+          <p>Send it anyway. The categories show our current strengths, not our limits.</p>
+        </details>
+        <details>
+          <summary>What if the person or team doesn't work out?<span class="faq-icon" aria-hidden="true"></span></summary>
+          <p>Every engagement has a named account contact and a written replacement process.</p>
+        </details>
+        <details>
+          <summary>Do you only work with South Sudanese clients?<span class="faq-icon" aria-hidden="true"></span></summary>
+          <p>No. Diaspora and East African clients are welcome.</p>
+        </details>
+        <details>
+          <summary>What does it cost?<span class="faq-icon" aria-hidden="true"></span></summary>
+          <p>Fees depend on how you hire; see <a href="pricing.html">Pricing</a>. Talent never pays to be considered. Employers pay for matching, support and accountability.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="page-section page-section-tight" id="brief-form">
+    <div class="container">
+      <div class="form-panel site-reveal">
+        <div class="form-panel-intro">
+          <p class="eyebrow">Submit a brief</p>
+          <h2>Tell us what success looks like.</h2>
+          <p>We verify your organisation, confirm the scope, and come back with a shortlist, a candidate or a delivery plan. Usually within 10 business days.</p>
+          <ol class="form-steps">
+            <li><span>1</span>Your organisation</li>
+            <li><span>2</span>The work</li>
+            <li><span>3</span>Budget and timing</li>
+          </ol>
         </div>
-        <div class="card card-accent-top category-card">
-          <h3>Business &amp; project support</h3>
-          <p class="muted text-sm">Virtual assistance &middot; Bookkeeping &middot; Research &middot; Enumeration &middot; Transcription &middot; Translation &middot; Project administration</p>
-          <button type="button" class="btn btn-secondary btn-block" data-request-category="Business &amp; project support">Request this category &rarr;</button>
-        </div>
-      </div>
-      <div class="notice mt-1">
-        <span class="notice-label">Why there's no public directory</span>
-        <p class="mt-0 mb-0">We don't publish talent contact details or full profiles to anonymous visitors — private phone numbers, email addresses and identity documents stay behind AdorWorks' review until a shortlist is formally presented to a verified employer. Submit a brief below and an AdorWorks matcher searches verified supply on your behalf. See how on <a href="trust-safety.html">Trust &amp; Safety</a>.</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="section section-alt" id="hiring-modes">
-    <div class="container">
-      <div class="section-header">
-        <h2>Five ways to hire</h2>
-        <p>Every recommended professional is matched against your requirements — not simply placed in a directory.</p>
-      </div>
-      <div class="table-wrap">
-        <table class="compare">
-          <thead>
-            <tr><th>Mode</th><th>What you do</th><th>AdorWorks' role</th><th>Best for</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><strong>Buy a service</strong></td><td>Select a defined deliverable and provide inputs</td><td>Quality-control the package, provider and delivery</td><td>Design, editing, web, translation, content</td></tr>
-            <tr><td><strong>Post a project</strong></td><td>Submit scope, budget and deadline</td><td>Validate the brief and recommend talent</td><td>One-off freelance assignments</td></tr>
-            <tr><td><strong>Hire contract talent</strong></td><td>Request a role for weeks or months</td><td>Assess, match and administer the engagement</td><td>Specialists, project staff, fractional roles</td></tr>
-            <tr><td><strong>Recruit full-time</strong></td><td>Post a role or commission a search</td><td>Verify the opportunity and shortlist candidates</td><td>Permanent employment</td></tr>
-            <tr><td><strong>Build a talent squad</strong></td><td>Define outcome, timeline and service level</td><td>Assemble the team, lead the project and report</td><td>Enterprise, NGO and agency projects</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <section class="section" id="who-we-work-with">
-    <div class="container">
-      <div class="section-header">
-        <h2>Who we work with</h2>
-      </div>
-      <div class="grid grid-3">
-        <div class="card"><h3>SMEs &amp; startups</h3><p>Affordable digital and business support — a packaged service or a curated freelancer.</p></div>
-        <div class="card"><h3>NGOs &amp; development programmes</h3><p>Local communications, research, field and project talent — a verified shortlist or a managed talent squad.</p></div>
-        <div class="card"><h3>Banks, telecoms &amp; larger companies</h3><p>Reliable specialists and employer-brand reach — contract talent, a managed project or a placement.</p></div>
-        <div class="card"><h3>Diaspora businesses</h3><p>Trusted execution and local presence — a managed project or a local representative.</p></div>
-        <div class="card"><h3>East African agencies</h3><p>South Sudan expertise and flexible production capacity — a white-label creative or digital squad.</p></div>
-        <div class="card"><h3>Public institutions &amp; education providers</h3><p>Transparent hiring and graduate pipelines — a campaign, assessment or talent programme.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section section-alt" id="verification">
-    <div class="container">
-      <div class="section-header">
-        <h2>How employer verification works</h2>
-        <p>We verify the organisation before we verify a shortlist for it.</p>
-      </div>
-      <ul class="check-list">
-        <li>Organisation registration or other credible evidence of operations.</li>
-        <li>A verified representative with decision-making authority.</li>
-        <li>Corporate email/domain where available, plus phone verification.</li>
-        <li>A clear role, scope, budget, workplace and reporting line.</li>
-        <li>Agreement to fair hiring, non-discrimination, confidentiality and payment terms.</li>
-        <li>A deposit or approved credit terms before higher-risk work begins.</li>
-        <li>Enhanced review for overseas placements, relocation, field safety or access to vulnerable groups.</li>
-      </ul>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="container">
-      <div class="notice">
-        <span class="notice-label">Payments and protection</span>
-        <p class="mt-0 mb-0">AdorWorks does not describe client funds as escrow, and we don't hold money in an informal account. Where pre-funding applies, it runs through a licensed, documented payment process — signed scope, deposit, milestone evidence, client approval, invoice, then payout. We're finalising the licensed local payment partner before any funds move through the platform; until then, engagements are scoped and invoiced directly. See the full model on <a href="trust-safety.html">Trust &amp; Safety</a>.</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="section section-alt faq" id="faq">
-    <div class="container">
-      <div class="section-header"><h2>Frequently asked</h2></div>
-      <details>
-        <summary>How fast can I get a shortlist?</summary>
-        <p>We're targeting a shortlist generally within 10 business days once your brief is confirmed, though this depends on how specialised the role is and how deep our verified pool is in that category during the pilot.</p>
-      </details>
-      <details>
-        <summary>What if my need doesn't fit one of the three categories?</summary>
-        <p>Tell us anyway in the brief below — categories describe where we're strongest today, not a hard limit on what we'll consider, especially for larger or ongoing engagements.</p>
-      </details>
-      <details>
-        <summary>What happens if the person or team doesn't work out?</summary>
-        <p>Every engagement has a named AdorWorks account contact and a documented replacement process — flag it early and we'll work the fix, whether that's a corrected milestone or a substitute candidate.</p>
-      </details>
-      <details>
-        <summary>Do you only work with South Sudanese clients?</summary>
-        <p>No — we actively welcome diaspora and East African clients looking for South Sudanese expertise or a trusted local presence, delivered with the same verification and support model.</p>
-      </details>
-      <details>
-        <summary>What does it cost?</summary>
-        <p>Fees vary by hiring mode — see the model on <a href="pricing.html">Pricing</a>. Talent never pays to be considered for legitimate work; the employer pays for matching, delivery support and accountability.</p>
-      </details>
-    </div>
-  </section>
-
-  <section class="section" id="brief-form">
-    <div class="container">
-      <h2>Submit a brief</h2>
-      <p class="muted max-65ch">Tell us what you need. We'll verify your organisation, confirm scope with you, and come back with a shortlist, candidate or delivery plan.</p>
-      <form class="js-form" name="adorworks-employer" data-form-id="employer-brief" method="POST" data-netlify="true" data-netlify-honeypot="bot-field" novalidate>
-        <input type="hidden" name="form-name" value="adorworks-employer">
-        <p class="netlify-honeypot" aria-hidden="true">
-          <label>Leave this field blank: <input name="bot-field" tabindex="-1" autocomplete="off"></label>
-        </p>
-        <div class="form-grid">
-          <h3 class="mb-0">Organisation</h3>
-          <div class="form-grid form-grid-2">
-            <div>
+        <form class="js-form site-form" name="adorworks-employer" data-form-id="employer-brief" method="POST" data-netlify="true" data-netlify-honeypot="bot-field" novalidate>
+          <input type="hidden" name="form-name" value="adorworks-employer">
+          <p class="netlify-honeypot" aria-hidden="true">
+            <label>Leave this field blank: <input name="bot-field" tabindex="-1" autocomplete="off"></label>
+          </p>
+          <fieldset>
+            <legend>1 · Your organisation</legend>
+            <div class="field">
               <label for="em-org">Organisation name</label>
               <input type="text" id="em-org" name="organisation" autocomplete="organization" required>
             </div>
-            <div>
+            <div class="field">
               <label for="em-sector">Sector</label>
-              <input type="text" id="em-sector" name="sector">
+              <select id="em-sector" name="sector" required>
+                <option value="">Choose a sector</option>
+                <option>NGO / development</option>
+                <option>Business / SME</option>
+                <option>Bank / telecom / large company</option>
+                <option>Public institution</option>
+                <option>Education</option>
+                <option>Agency</option>
+                <option>Other</option>
+              </select>
             </div>
-          </div>
-          <div class="form-grid form-grid-2">
-            <div>
+            <div class="field">
               <label for="em-rep-name">Your name</label>
               <input type="text" id="em-rep-name" name="representative_name" autocomplete="name" required>
             </div>
-            <div>
+            <div class="field">
               <label for="em-rep-role">Your role</label>
               <input type="text" id="em-rep-role" name="representative_role" required>
             </div>
-          </div>
-          <div class="form-grid form-grid-2">
-            <div>
+            <div class="field">
               <label for="em-email">Work email</label>
               <input type="email" id="em-email" name="email" autocomplete="email" required>
             </div>
-            <div>
+            <div class="field">
               <label for="em-phone">Phone / WhatsApp</label>
               <input type="tel" id="em-phone" name="phone" autocomplete="tel" required>
             </div>
-          </div>
-
-          <h3 class="mt-1 mb-0">The brief</h3>
-          <div class="form-grid form-grid-2">
-            <div>
+          </fieldset>
+          <fieldset>
+            <legend>2 · The work</legend>
+            <div class="field">
               <label for="em-mode">How would you like to hire?</label>
               <select id="em-mode" name="hiring_mode" required>
                 <option value="">Select one</option>
@@ -370,7 +362,7 @@
                 <option>Not sure yet</option>
               </select>
             </div>
-            <div>
+            <div class="field">
               <label for="em-category">Category</label>
               <select id="em-category" name="category">
                 <option value="">Not sure / other</option>
@@ -379,43 +371,59 @@
                 <option>Business &amp; project support</option>
               </select>
             </div>
-          </div>
-          <div>
-            <label for="em-problem">Business problem and desired outcome</label>
-            <textarea id="em-problem" name="problem_outcome" required></textarea>
-          </div>
-          <div>
-            <label for="em-skills">Specific skills or expertise needed</label>
-            <input type="text" id="em-skills" name="skills_category" placeholder="e.g. brand designer, WordPress developer, French–English translator">
-          </div>
-          <div class="form-grid form-grid-2">
-            <div>
+            <div class="field field-full">
+              <label for="em-problem">What problem should this solve, and what does success look like?</label>
+              <textarea id="em-problem" name="problem_outcome" rows="3" required></textarea>
+            </div>
+            <div class="field field-full">
+              <label for="em-skills">Skills or expertise needed</label>
+              <input type="text" id="em-skills" name="skills_category" placeholder="e.g. brand designer, WordPress developer, French–English translator">
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>3 · Budget and timing</legend>
+            <div class="field">
               <label for="em-location">Location / work mode</label>
-              <input type="text" id="em-location" name="location_mode" placeholder="e.g. remote, Juba on-site, hybrid">
+              <input type="text" id="em-location" name="location_mode" placeholder="e.g. remote, Juba, hybrid">
             </div>
-            <div>
+            <div class="field">
               <label for="em-start">Start date / duration</label>
-              <input type="text" id="em-start" name="start_duration">
+              <input type="text" id="em-start" name="start_duration" placeholder="e.g. March, for 3 months">
             </div>
-          </div>
-          <div class="form-grid form-grid-2">
-            <div>
-              <label for="em-budget">Budget or rate range</label>
-              <input type="text" id="em-budget" name="budget_range">
+            <div class="field">
+              <label for="em-budget">Budget (US dollar equivalent)</label>
+              <select id="em-budget" name="budget_range">
+                <option value="">Not sure yet, advise me</option>
+                <option>Under $500</option>
+                <option>$500 – $2,000</option>
+                <option>$2,000 – $10,000</option>
+                <option>$10,000 – $50,000</option>
+                <option>Over $50,000</option>
+              </select>
             </div>
-            <div>
-              <label for="em-currency">Currency</label>
-              <input type="text" id="em-currency" name="currency" placeholder="e.g. SSP, USD">
+            <div class="field">
+              <label for="em-currency">Currency you'll pay in</label>
+              <select id="em-currency" name="currency">
+                <option>USD</option>
+                <option>SSP</option>
+                <option>KES</option>
+                <option>UGX</option>
+                <option>Other</option>
+              </select>
             </div>
-          </div>
-          <div>
-            <label for="em-confidential">Confidentiality or safeguarding considerations</label>
-            <textarea id="em-confidential" name="confidentiality_notes" placeholder="Optional — flag anything sensitive we should know before matching"></textarea>
-          </div>
-        </div>
-        <button type="submit" class="btn btn-primary" style="margin-top:1.25rem;">Submit brief</button>
-        <div class="form-status" role="status"></div>
-      </form>
+            <div class="field field-full">
+              <label for="em-confidential">Confidentiality or safeguarding needs (optional)</label>
+              <textarea id="em-confidential" name="confidentiality_notes" rows="2" placeholder="Flag anything sensitive we should know before matching"></textarea>
+            </div>
+          </fieldset>
+          <label class="consent">
+            <input type="checkbox" name="consent" value="yes" required>
+            <span>I agree to the fair-hiring, non-discrimination and payment <a href="terms.html">terms</a>, and to AdorWorks storing these details to handle my brief (<a href="privacy.html">Privacy Policy</a>).</span>
+          </label>
+          <button type="submit" class="btn btn-primary form-submit">Submit brief</button>
+          <div class="form-status" role="status"></div>
+        </form>
+      </div>
     </div>
   </section>
 
@@ -424,54 +432,50 @@
 <footer class="site-footer">
   <div class="container">
     <div class="footer-grid">
-      <div>
+      <div class="footer-brand">
         <a class="brand" href="index.html">
           <img src="img/adorworks-mark-reversed.svg" alt="AdorWorks" width="32" height="32">
           <span>AdorWorks</span>
         </a>
-        <p class="footer-about">A South Sudan-born talent and work marketplace, built by Adormedia.</p>
-        <p class="footer-trust">0% platform fee for talent during our founding pilot &middot; every shortlist is human-reviewed.</p>
+        <p class="footer-tagline">A South Sudan-born talent and work marketplace.</p>
+        <p class="footer-about">Built by Adormedia. 0% platform fee for talent during our founding pilot &middot; every shortlist is human-reviewed.</p>
       </div>
-      <div>
-        <h3 class="footer-heading">Explore</h3>
+      <nav aria-label="Explore">
+        <h2 class="footer-heading">Explore</h2>
         <ul class="footer-list">
-          <li><a href="for-employers.html#categories">Browse categories</a></li>
           <li><a href="services.html">Services</a></li>
-          <li><a href="jobs-projects.html">Jobs &amp; Projects</a></li>
-          <li><a href="how-it-works.html">How It Works</a></li>
+          <li><a href="jobs-projects.html">Jobs &amp; projects</a></li>
+          <li><a href="pathways.html">Pathways for schools</a></li>
+          <li><a href="how-it-works.html">How it works</a></li>
           <li><a href="pricing.html">Pricing</a></li>
-          <li><a href="impact-stories.html">Impact &amp; Stories</a></li>
+          <li><a href="impact-stories.html">Impact &amp; stories</a></li>
           <li><a href="insights.html">Insights</a></li>
         </ul>
-      </div>
-      <div>
-        <h3 class="footer-heading">Company</h3>
+      </nav>
+      <nav aria-label="Company">
+        <h2 class="footer-heading">Company</h2>
         <ul class="footer-list">
-          <li><a href="for-employers.html">For Employers</a></li>
-          <li><a href="for-talent.html">For Talent</a></li>
-          <li><a href="assisted-hiring.html">Assisted Hiring</a></li>
+          <li><a href="for-employers.html">For employers</a></li>
+          <li><a href="for-talent.html">For talent</a></li>
+          <li><a href="assisted-hiring.html">Assisted hiring</a></li>
           <li><a href="trust-safety.html">Trust &amp; Safety</a></li>
-          <li><a href="trust-safety.html#policies">Legal policies</a></li>
-          <li><a href="help.html">Help &amp; FAQ</a></li>
           <li><a href="about.html">About</a></li>
         </ul>
-      </div>
-          <div>
-        <h3 class="footer-heading">Get in touch</h3>
-        <ul class="footer-list footer-contact">
-          <li>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-            South Sudan
-          </li>
-          <li>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
-            <a href="mailto:info@adorworks.net">info@adorworks.net</a>
-          </li>
-          <li><a href="contact.html">Contact form &rarr;</a></li>
+      </nav>
+      <nav aria-label="Support">
+        <h2 class="footer-heading">Support</h2>
+        <ul class="footer-list">
+          <li><a href="help.html">Help &amp; FAQ</a></li>
+          <li><a href="contact.html">Contact us</a></li>
+          <li><a href="trust-safety.html#report">Report a concern</a></li>
+          <li><a href="trust-safety.html#policies">Legal policies</a></li>
         </ul>
-      </div>
+      </nav>
     </div>
-    <div class="footer-bottom">&copy; 2026 AdorWorks, a venture of Adormedia Ltd. All rights reserved. AdorWorks is a working name pending company, trademark and domain clearance. Contact details above are placeholders pending setup.</div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 AdorWorks, a venture of Adormedia Ltd. <span class="footer-note">AdorWorks is a working name pending company, trademark and domain clearance.</span></span>
+      <span><a href="mailto:info@adorworks.net">info@adorworks.net</a> &middot; South Sudan</span>
+    </div>
   </div>
 </footer>
 
@@ -483,7 +487,7 @@
 <script src="js/supabase-config.js"></script>
 <script src="js/api-config.js"></script>
 <script src="js/i18n.js"></script>
-<script src="js/main.js"></script>
+<script src="js/main.js?v=26"></script>
 <script src="js/analytics-config.js"></script>
 <script src="js/analytics.js"></script>
 <script>
@@ -495,9 +499,10 @@
       var label = btn.getAttribute("data-request-category");
       var select = document.getElementById("em-category");
       Array.from(select.options).forEach(function (opt) {
-        if (opt.textContent.trim() === label) select.value = opt.value;
+        // Match on the value: the translator pins it to the English text.
+        if (opt.value === label) select.value = opt.value;
       });
-      document.getElementById("brief-form").scrollIntoView();
+      document.getElementById("brief-form").scrollIntoView({ behavior: "smooth" });
       var firstField = document.getElementById("em-org");
       if (firstField) firstField.focus({ preventScroll: true });
     });

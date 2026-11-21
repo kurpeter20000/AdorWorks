@@ -57,3 +57,8 @@ export function workModeOptions() {
 export function paymentBasisOptions() {
   return Object.entries(PAYMENT_BASIS_LABEL) as [PaymentBasis, string][];
 }
+
+/** Pay options for posting an opportunity: every option states real pay ("negotiable" is not allowed, 0110). */
+export function opportunityPaymentBasisOptions() {
+  return paymentBasisOptions().filter(([value]) => value !== "negotiable");
+}

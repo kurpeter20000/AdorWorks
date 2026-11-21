@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { requireRole, STAFF_ROLES } from "@/lib/dal/session";
+import { requireRole } from "@/lib/dal/session";
+import { staffAreaRoles } from "@/lib/domain/staffAccess";
 import { createClient } from "@/lib/supabase/server";
 import { SupportConsole } from "./support-console";
 
@@ -13,7 +14,7 @@ export const metadata: Metadata = { title: "Support — Operations" };
  * follow-up inbox until a dedicated one exists.
  */
 export default async function OperationsSupportPage() {
-  await requireRole(...STAFF_ROLES);
+  await requireRole(...staffAreaRoles("support"));
   const supabase = await createClient();
 
   const { data: conversations } = await supabase

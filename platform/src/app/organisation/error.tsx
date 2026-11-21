@@ -5,10 +5,10 @@ import { StatePanel } from "@/components/state-panel";
 
 export default function OrganisationErrorPage({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }) {
   useEffect(() => {
     console.error(error);
@@ -20,7 +20,7 @@ export default function OrganisationErrorPage({
         <p>We could not load your organisation. Your existing data has not been changed.</p>
         <button
           type="button"
-          onClick={reset}
+          onClick={() => retry()}
           className="mt-4 rounded-lg bg-midnight px-4 py-2 font-semibold text-white"
         >
           Try again
