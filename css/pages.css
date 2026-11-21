@@ -366,15 +366,23 @@
 .pill-tabs { flex: 0 1 380px; display: flex; gap: 4px; background: var(--site-sand); border-radius: 999px; padding: 5px; }
 .pill-tabs [role="tab"] { flex: 1; font: inherit; font-size: 0.95rem; font-weight: 800; border: 0; border-radius: 999px; min-height: 48px; padding: 0 1rem; cursor: pointer; background: transparent; color: var(--site-muted); transition: background 0.2s ease, color 0.2s ease; }
 .pill-tabs [role="tab"][aria-selected="true"] { background: var(--site-ink); color: #f7f3ec; }
-.journey { display: grid; gap: 3rem; align-items: start; }
-@media (min-width: 900px) { .journey { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); } .journey-photo { position: sticky; top: calc(var(--site-header-h, 68px) + 24px); } }
-.journey-photo img { height: clamp(280px, 45vw, 520px); }
-.journey-steps { list-style: none; margin: 0; padding: 0; position: relative; }
-.journey-steps::before { content: ""; position: absolute; inset-inline-start: 27px; top: 28px; bottom: 64px; width: 2px; background: var(--site-line-strong); }
-.journey-steps li { position: relative; display: flex; gap: 1.5rem; padding-bottom: 2.25rem; }
-.journey-num { flex: none; width: 56px; height: 56px; border-radius: 50%; background: #fff; border: 2px solid var(--site-teal); color: var(--site-teal); font-family: var(--font-display); font-weight: 800; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; z-index: 1; }
-.journey-steps h2 { margin: 0.6rem 0 0.4rem; font-size: 1.6rem; line-height: 1.2; }
-.journey-steps p { margin: 0; color: var(--site-muted); }
+/* How it works journey (owner, Nov 2026: tighter, level with the photo).
+   Compact steps; on wide screens the photo stretches to the steps' height
+   so the two columns start and end together. */
+.journey { display: grid; gap: 2.5rem; align-items: start; }
+.journey-photo img { height: clamp(260px, 60vw, 420px); }
+@media (min-width: 900px) {
+  .journey { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: stretch; }
+  .journey-photo { display: block; height: 100%; }
+  .journey-photo img { height: 100%; min-height: 360px; width: 100%; object-fit: cover; }
+}
+.journey-steps { list-style: none; margin: 0; padding: 0; position: relative; display: flex; flex-direction: column; justify-content: space-between; }
+.journey-steps::before { content: ""; position: absolute; inset-inline-start: 19px; top: 20px; bottom: 20px; width: 2px; background: var(--site-line-strong); }
+.journey-steps li { position: relative; display: flex; gap: 1rem; padding-bottom: 1.15rem; }
+.journey-steps li:last-child { padding-bottom: 0; }
+.journey-num { flex: none; width: 40px; height: 40px; border-radius: 50%; background: #fff; border: 2px solid var(--site-teal); color: var(--site-teal); font-family: var(--font-display); font-weight: 800; font-size: 1rem; display: flex; align-items: center; justify-content: center; z-index: 1; }
+.journey-steps h2 { margin: 0.45rem 0 0.2rem; font-size: 1.15rem; line-height: 1.25; }
+.journey-steps p { margin: 0; color: var(--site-muted); font-size: 0.95rem; line-height: 1.5; }
 .page-dark .section-head > p, .page-dark .section-head h2 { color: #f7f3ec; }
 .dark-link { color: var(--site-mint); }
 .dark-link:hover { color: #fff; }
