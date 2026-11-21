@@ -82,8 +82,11 @@ h1 em, h2 em { font-style: normal; color: var(--site-teal); }
 .site-nav .nav-login a { font-weight: 700; }
 .site-nav .nav-cta .btn { color: #fff; min-height: 44px; padding: 0 1.25rem; }
 
-@media (min-width: 960px) {
+@media (min-width: 1180px) {
+  /* The full menu shows from 1180px, where it fits on one line;
+     narrower screens use the menu button. */
   .site-nav ul { gap: 1.4rem; justify-content: flex-start; flex-wrap: nowrap; }
+  .site-nav a, .nav-megamenu-trigger { white-space: nowrap; }
   .site-nav a,
   .nav-megamenu-trigger {
     display: inline-flex;
@@ -159,7 +162,7 @@ h1 em, h2 em { font-style: normal; color: var(--site-teal); }
 .site-nav .mm-note a:hover { color: #fff; }
 
 .services-megamenu { background: var(--site-surface); border-color: var(--site-line); }
-@media (min-width: 960px) {
+@media (min-width: 1180px) {
   /* Full-width panel under the header, anchored to it (sticky header is
      the positioned ancestor) rather than to the Services button. */
   .nav-megamenu { position: static; }
@@ -182,7 +185,7 @@ h1 em, h2 em { font-style: normal; color: var(--site-teal); }
     gap: 2rem;
   }
 }
-@media (max-width: 959px) {
+@media (max-width: 1179px) {
   .mm-grid { padding-inline: 0.25rem; }
 }
 
