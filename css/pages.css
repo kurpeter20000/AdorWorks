@@ -503,7 +503,9 @@
 .prog-card h3 { margin: 0; font-size: 1.3rem; font-weight: 800; line-height: 1.25; }
 .prog-leave { margin: 0; background: #fff; border-radius: 14px; padding: 0.7rem 0.9rem; font-weight: 700; }
 .prog-leave span { display: block; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--site-teal); }
-.prog-who { margin: auto 0 0; font-size: 0.9rem; color: var(--site-muted); }
+.prog-price { margin: auto 0 0; font-size: 1.1rem; font-weight: 800; color: var(--site-ink); }
+.prog-price span { font-size: 0.88rem; font-weight: 600; color: var(--site-muted); }
+.prog-who { margin: 0; font-size: 0.9rem; color: var(--site-muted); }
 .partner-grid { align-items: center; }
 .partner-points { margin: 0 0 1.5rem; padding-inline-start: 1.2rem; color: #c9d1dd; display: flex; flex-direction: column; gap: 0.35rem; }
 .funnel-card { background: var(--site-surface); color: var(--site-ink); border-radius: 28px; padding: 1.75rem; box-shadow: 0 30px 80px rgb(0 0 0 / 0.35); }
