@@ -20,11 +20,11 @@ import { TimesheetsSection } from "./timesheets-section";
 import { DisputeSection } from "./dispute-section";
 import { CancelContractSection } from "./cancel-contract-section";
 import Link from "next/link";
-import { getCollectionAccounts, getFeeSettings, getReceivingBankAccount, isGuaranteeEnabled } from "@/lib/dal/settings";
+import { getCollectionAccounts, getFeeSettings, getReceivingBankAccounts, isGuaranteeEnabled } from "@/lib/dal/settings";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { guaranteeRemedy, guaranteeWindowEnds } from "@/lib/domain/guarantee";
 import { GuaranteeCard, type GuaranteeState } from "./guarantee-card";
-import { parseReceivingBankAccount } from "@/lib/domain/bankTransfer";
+import { parseReceivingBankAccount, pickBankAccount } from "@/lib/domain/bankTransfer";
 import type { AwaitingTransfer } from "./payment-checkout";
 import { isInstitutional } from "@/lib/domain/institutional";
 import { InstitutionalInvoicePanel } from "./institutional-invoice-panel";
@@ -149,7 +149,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
 
   // 0116: bank transfers the employer has started but AdorWorks hasn't
   // received yet — the checkout shows the reference and account instead.
-  const bankAccount = isEmployer ? await getReceivingBankAccount() : null;
+  const bankAccounts = isEmployer ? await getReceivingBankAccounts() : {};
   const collection = isEmployer ? await getCollectionAccounts() : null;
   const { data: awaitingIntentions } = must(isEmployer
     ? await supabase
@@ -166,7 +166,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
         reference: i.transfer_reference ?? "",
         amount: i.amount,
         currency: i.currency,
-        account: parseReceivingBankAccount(i.bank_account) ?? bankAccount,
+        account: parseReceivingBankAccount(i.bank_account) ?? pickBankAccount(bankAccounts, i.currency),
         createdAt: i.created_at,
       },
     ])
@@ -387,7 +387,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                   currency={m.currency}
                   realPaymentsEnabled={isFeatureEnabled(FEATURE_FLAGS.REAL_PAYMENTS)}
                   fees={feeSettings}
-                  bankTransferAvailable={bankAccount !== null}
+                  bankTransferAvailable={pickBankAccount(bankAccounts, m.currency) !== null}
                   awaitingTransfer={awaitingByMilestone.get(m.id) ?? null}
                   collectionAccountNames={{ mtn_momo: collection?.mtn_momo?.accountName ?? null, mgurush: collection?.mgurush?.accountName ?? null }}
                 />

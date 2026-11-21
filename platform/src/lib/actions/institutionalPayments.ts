@@ -98,7 +98,7 @@ export async function confirmInstitutionalPayment(
     invoice_id: invoice.id,
     provider_name: "bank_transfer",
     external_reference: validated.data.bankReference,
-    received_into: describeReceivingBankAccount(await getReceivingBankAccount()),
+    received_into: describeReceivingBankAccount(await getReceivingBankAccount(invoice.currency)),
     receipt_number: receiptNumber,
     amount: invoice.amount,
     currency: invoice.currency,

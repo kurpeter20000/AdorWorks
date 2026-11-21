@@ -37,6 +37,45 @@ export function receivingBankAccountToJson(a: ReceivingBankAccount) {
   return { bank_name: a.bankName, account_name: a.accountName, account_number: a.accountNumber, branch: a.branch, swift_code: a.swiftCode };
 }
 
+/**
+ * One AdorWorks account per currency (owner, 2026-11-21: SSP at Equity
+ * Bank, USD at KCB). Stored as { by_currency: { SSP: {...}, USD: {...} } }.
+ * The older single-account shape still reads, as an account for any
+ * currency, until staff save the new form.
+ */
+export const BANK_CURRENCIES = ["SSP", "USD"] as const;
+export type BankCurrency = (typeof BANK_CURRENCIES)[number];
+export type ReceivingBankAccounts = Partial<Record<BankCurrency | "*", ReceivingBankAccount>>;
+
+export function parseReceivingBankAccounts(value: unknown): ReceivingBankAccounts {
+  if (!value || typeof value !== "object") return {};
+  const v = value as Record<string, unknown>;
+  if (v.by_currency && typeof v.by_currency === "object") {
+    const out: ReceivingBankAccounts = {};
+    for (const c of BANK_CURRENCIES) {
+      const a = parseReceivingBankAccount((v.by_currency as Record<string, unknown>)[c]);
+      if (a) out[c] = a;
+    }
+    return out;
+  }
+  const legacy = parseReceivingBankAccount(value);
+  return legacy ? { "*": legacy } : {};
+}
+
+export function receivingBankAccountsToJson(accounts: ReceivingBankAccounts) {
+  const by_currency: Record<string, ReturnType<typeof receivingBankAccountToJson>> = {};
+  for (const c of BANK_CURRENCIES) {
+    const a = accounts[c];
+    if (a) by_currency[c] = receivingBankAccountToJson(a);
+  }
+  return { by_currency };
+}
+
+/** The account an employer paying in `currency` should send to, or null (bank transfer then isn't offered). */
+export function pickBankAccount(accounts: ReceivingBankAccounts, currency: string): ReceivingBankAccount | null {
+  return accounts[currency as BankCurrency] ?? accounts["*"] ?? null;
+}
+
 /** No 0/O or 1/I/L, so it survives being read out over the phone or typed into a banking app. */
 const REFERENCE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
