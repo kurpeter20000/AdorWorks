@@ -9,6 +9,9 @@ describe("milestone payment timeline", () => {
     expect(milestoneTimelineStep("approved", null)).toBe(1);
     expect(milestoneTimelineStep("paid", "held")).toBe(2);
     expect(milestoneTimelineStep("paid", "released")).toBe(3);
-    expect(milestoneTimelineStep("paid", "not_applicable")).toBe(3);
+    // Escrow off: paid in, but not released until the payout is sent (0116).
+    expect(milestoneTimelineStep("paid", "not_applicable")).toBe(2);
+    expect(milestoneTimelineStep("paid", "not_applicable", "pending")).toBe(2);
+    expect(milestoneTimelineStep("paid", "not_applicable", "succeeded")).toBe(3);
   });
 });

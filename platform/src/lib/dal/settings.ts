@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FEES_OFF, parseFeeRates, parseFeeSettings, type FeeSettings } from "@/lib/domain/fees";
+import { parseReceivingBankAccount, type ReceivingBankAccount } from "@/lib/domain/bankTransfer";
 import { ESCROW_OFF, parseEscrowRates, parseEscrowSettings, type EscrowSettings } from "@/lib/domain/escrow";
 
 async function readSetting(key: string): Promise<unknown> {
@@ -39,4 +40,15 @@ export async function getEscrowSettings(): Promise<EscrowSettings> {
 export async function getEscrowRates(): Promise<EscrowSettings & { loaded: boolean }> {
   const value = await readSetting("escrow");
   return { ...parseEscrowRates(value), loaded: value !== null };
+}
+
+/** AdorWorks' own account employers pay into by bank transfer (0116). Null = not set up, so bank transfer isn't offered. */
+export async function getReceivingBankAccount(): Promise<ReceivingBankAccount | null> {
+  return parseReceivingBankAccount(await readSetting("bank_account"));
+}
+
+/** When payments made with escrow off started going into the payouts queue (0116). Null = migration not run yet. */
+export async function getPayoutsQueueStart(): Promise<string | null> {
+  const value = await readSetting("payouts_queue_start");
+  return typeof value === "string" && !Number.isNaN(Date.parse(value)) ? value : null;
 }

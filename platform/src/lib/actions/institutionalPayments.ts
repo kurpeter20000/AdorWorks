@@ -14,6 +14,7 @@ import { renderEmail } from "@/lib/emailTemplate";
 import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
+import { nextReceiptNumber } from "@/lib/payments/receiptNumber";
 import type { FormState } from "./auth";
 
 const ConfirmSchema = z.object({
@@ -88,7 +89,7 @@ export async function confirmInstitutionalPayment(
   const fee = calculateFees(invoice.amount, await getFeeSettings());
   const escrow = await getEscrowSettings();
   const escrowEndsAt = escrow.enabled ? disputeWindowEndsAt(escrow) : null;
-  const receiptNumber = `RCPT-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${invoiceId.slice(0, 8).toUpperCase()}`;
+  const receiptNumber = await nextReceiptNumber(admin, invoiceId);
 
   const { error: paymentError } = await admin.from("payment_events").insert({
     milestone_id: invoice.milestone_id,
@@ -131,10 +132,10 @@ export async function confirmInstitutionalPayment(
   });
 
   const amountSummary = `${invoice.currency} ${fee.netAmount.toLocaleString()} net (${invoice.currency} ${invoice.amount.toLocaleString()} agreed${fee.talentFeeAmount > 0 ? `, ${invoice.currency} ${fee.talentFeeAmount.toLocaleString()} AdorWorks fee` : ""})`;
-  const title = escrow.enabled ? "Payment received — held briefly before release" : "You were paid";
+  const title = escrow.enabled ? "Payment received — held briefly before payout" : "Your client has paid";
   const body = escrow.enabled
-    ? `${amountSummary} received by bank transfer and held until ${escrowEndsAt!.toLocaleDateString()} (AdorWorks' dispute window), then released to you automatically unless a dispute is raised. Receipt ${receiptNumber}.`
-    : `${amountSummary}. Receipt ${receiptNumber}.`;
+    ? `${amountSummary} received by bank transfer and held until ${escrowEndsAt!.toLocaleDateString()} (AdorWorks' dispute window). Unless a dispute is raised, AdorWorks then sends it to the payout method you chose under Finance. Receipt ${receiptNumber}.`
+    : `${amountSummary} received by bank transfer. AdorWorks will send it to the payout method you chose under Finance. Receipt ${receiptNumber}.`;
   await notifyUser(admin, {
     userId: contract.talent_id,
     type: NOTIFICATION_TYPES.MILESTONE_PAID,

@@ -552,6 +552,13 @@ export type PaymentEventRow = {
   disbursement_status: "pending" | "succeeded" | "failed" | null;
   disbursement_failure_reason: string | null;
   disbursed_at: string | null;
+  /** 0116: how the talent was paid, and the record of it. */
+  payout_method: "mtn_momo" | "mgurush" | "bank" | null;
+  payout_destination: string | null;
+  payout_attempts: number;
+  payout_last_attempt_at: string | null;
+  payout_recorded_by: string | null;
+  payout_receipt_number: string | null;
   created_at: string;
 }
 
@@ -573,14 +580,16 @@ export type ContractTermsRow = {
   generated_at: string;
 }
 
-export type PaymentIntentionStatus = "processing" | "succeeded" | "failed";
+export type PaymentIntentionStatus = "processing" | "awaiting_transfer" | "succeeded" | "failed";
+/** 0116: visa_mastercard only on old simulated rows; the app no longer offers card. */
+export type PayInProvider = "mtn_momo" | "mgurush" | "bank_transfer" | "visa_mastercard";
 
 export type PaymentIntentionRow = {
   id: string;
   contract_id: string;
   milestone_id: string;
   invoice_id: string | null;
-  provider: "mgurush" | "mtn_momo" | "visa_mastercard";
+  provider: PayInProvider;
   payer_phone: string | null;
   card_last4: string | null;
   card_brand: string | null;
@@ -591,6 +600,12 @@ export type PaymentIntentionRow = {
   created_by: string;
   created_at: string;
   resolved_at: string | null;
+  /** 0116: the reference the employer quotes on a bank transfer. */
+  transfer_reference: string | null;
+  /** 0116: the fee rates quoted when a bank transfer was chosen. */
+  fee_settings: unknown;
+  /** 0116: the AdorWorks account details the employer was shown. */
+  bank_account: unknown;
 }
 
 export type FinanceRecordType = "deposit" | "invoice" | "fee" | "payout" | "refund";
@@ -1144,7 +1159,7 @@ export type Database = {
         Insert: Partial<PaymentIntentionRow> & {
           contract_id: string;
           milestone_id: string;
-          provider: "mgurush" | "mtn_momo" | "visa_mastercard";
+          provider: PayInProvider;
           amount: number;
           created_by: string;
         };
@@ -1344,6 +1359,10 @@ export type Database = {
       };
     };
     Functions: {
+      next_receipt_number: {
+        Args: Record<string, never>;
+        Returns: string;
+      };
       organisation_activity_log: {
         Args: { p_limit?: number };
         Returns: {

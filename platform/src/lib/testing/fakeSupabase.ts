@@ -1,8 +1,8 @@
 /**
  * A tiny in-memory stand-in for the Supabase query builder, for unit-testing
  * Server Actions without a database. Supports the subset the money actions
- * use: select/insert/update/delete with eq/neq/or/in/limit/order and
- * maybeSingle/single.
+ * use: select/insert/update/delete with eq/neq/or/in/gte/limit/order and
+ * maybeSingle/single, plus rpc("next_receipt_number").
  *
  * Each query runs as ONE step when awaited (like a single SQL statement),
  * and every await yields to other pending work first — so firing two
@@ -63,6 +63,10 @@ export function createFakeSupabase(tables: Record<string, Row[]>) {
       },
       neq(col: string, val: unknown) {
         filters.push((r) => r[col] !== val);
+        return builder;
+      },
+      gte(col: string, val: unknown) {
+        filters.push((r) => String(r[col] ?? "") >= String(val));
         return builder;
       },
       in(col: string, vals: unknown[]) {
@@ -139,8 +143,16 @@ export function createFakeSupabase(tables: Record<string, Row[]>) {
     return builder;
   }
 
+  let receiptSeq = 0;
+  async function rpc(name: string): Promise<Result> {
+    await new Promise<void>((r) => setTimeout(r, 0));
+    if (failures[`rpc.${name}`]) return { data: null, error: { message: failures[`rpc.${name}`] } };
+    if (name === "next_receipt_number") return { data: `AW-TEST-${String(++receiptSeq).padStart(6, "0")}`, error: null };
+    return { data: null, error: { message: `fakeSupabase: unknown rpc ${name}` } };
+  }
+
   return {
-    client: { from },
+    client: { from, rpc },
     db,
     /** Make every `<table>.<op>` query fail with this message, e.g. failNext("milestones.insert", "boom"). */
     fail(key: string, message: string) {

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { requireRole } from "@/lib/dal/session";
 import { staffAreaRoles } from "@/lib/domain/staffAccess";
-import { getEscrowRates, getFeeRates } from "@/lib/dal/settings";
+import { getEscrowRates, getFeeRates, getReceivingBankAccount } from "@/lib/dal/settings";
 import { calculateFees } from "@/lib/domain/fees";
 import { StatePanel } from "@/components/state-panel";
 import { FeeSettingsForm } from "./fee-settings-form";
 import { EscrowSettingsForm } from "./escrow-settings-form";
+import { BankAccountForm } from "./bank-account-form";
 
 export const metadata: Metadata = { title: "Settings — Operations" };
 
@@ -13,6 +14,7 @@ export default async function OperationsSettingsPage() {
   const session = await requireRole(...staffAreaRoles("settings"));
   const rates = await getFeeRates();
   const escrowRates = await getEscrowRates();
+  const bankAccount = await getReceivingBankAccount();
   const canEdit = session.role === "finance" || session.role === "admin";
   const example = calculateFees(10000, { ...rates, enabled: true });
 
@@ -84,6 +86,31 @@ export default async function OperationsSettingsPage() {
         ) : (
           <p className="mt-4 text-sm text-slate">
             Dispute window {escrowRates.disputeWindowDays} day{escrowRates.disputeWindowDays === 1 ? "" : "s"}. Only
+            finance and admin staff can change this.
+          </p>
+        )}
+      </section>
+
+      <section className="mt-6 rounded-xl border border-slate/15 bg-white p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-bold text-midnight">Bank account for employer payments</h2>
+          <span
+            className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${bankAccount ? "bg-teal/10 text-teal-ink" : "bg-slate/10 text-slate"}`}
+          >
+            {bankAccount ? "Bank transfer offered" : "Not set — bank transfer hidden"}
+          </span>
+        </div>
+        <p className="mt-2 text-sm text-slate">
+          AdorWorks&rsquo; own account that employers pay into when they choose bank transfer. Employers can send from any
+          bank; this is only where the money lands. Confirm transfers as they arrive under{" "}
+          <a href="/operations/invoices" className="font-semibold text-teal-ink underline">Invoices</a>.
+        </p>
+
+        {canEdit ? (
+          <BankAccountForm current={bankAccount} />
+        ) : (
+          <p className="mt-4 text-sm text-slate">
+            {bankAccount ? `${bankAccount.bankName} · ${bankAccount.accountName} · ${bankAccount.accountNumber}` : "No account saved yet."} Only
             finance and admin staff can change this.
           </p>
         )}
