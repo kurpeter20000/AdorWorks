@@ -61,7 +61,7 @@ export function ApplyForm({
   // little status line — it never blocks typing or sending.
   const dirty = useRef(false);
   useEffect(() => {
-    if (!dirty.current) return;
+    if (!dirty.current || pending) return;
     const handle = setTimeout(() => {
       setSave("saving");
       saveApplicationDraft(opportunityId, pitch, answers)
@@ -69,7 +69,7 @@ export function ApplyForm({
         .catch(() => setSave("offline"));
     }, AUTOSAVE_MS);
     return () => clearTimeout(handle);
-  }, [pitch, answers, opportunityId]);
+  }, [pitch, answers, opportunityId, pending]);
 
   function edit(fn: () => void) {
     dirty.current = true;
@@ -202,11 +202,15 @@ export function ApplyForm({
           </button>
         )}
         {step < 2 ? (
-          <button type="button" onClick={next} className="min-h-11 flex-1 rounded-control bg-primary px-4 text-sm font-extrabold text-white hover:bg-primary-hover">
+          // Separate keys: without them React reuses this <button> for the
+          // Send button below and flips its type to "submit" during the
+          // click, which sent the application straight from step 2.
+          <button key="next" type="button" onClick={next} className="min-h-11 flex-1 rounded-control bg-primary px-4 text-sm font-extrabold text-white hover:bg-primary-hover">
             {step === 0 ? t("Looks right — continue") : t("Continue to step 3")}
           </button>
         ) : (
           <button
+            key="send"
             type="submit"
             disabled={pending}
             className="min-h-11 flex-1 rounded-control bg-primary px-4 text-sm font-extrabold text-white hover:bg-primary-hover disabled:opacity-60"

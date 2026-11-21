@@ -106,13 +106,13 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
           </div>
         </div>
 
-        <p className="text-center text-[13px] text-[#7a8394]">
+        <p className="text-center text-[13px] text-[#596274]">
           © 2026 AdorWorks ·{" "}
-          <a href={`${MARKETING_SITE_URL}/privacy.html`} className="text-slate hover:underline">
+          <a href={`${MARKETING_SITE_URL}/privacy.html`} className="text-slate underline underline-offset-2 hover:text-midnight">
             {t("Privacy")}
           </a>{" "}
           ·{" "}
-          <a href={`${MARKETING_SITE_URL}/terms.html`} className="text-slate hover:underline">
+          <a href={`${MARKETING_SITE_URL}/terms.html`} className="text-slate underline underline-offset-2 hover:text-midnight">
             {t("Terms")}
           </a>
         </p>

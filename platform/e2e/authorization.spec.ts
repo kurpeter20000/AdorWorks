@@ -18,9 +18,11 @@ test.describe("authorization boundaries", () => {
     try {
       await loginAs(page, intruder.email);
       const response = await page.goto(`/contracts/${contract.contractId}`);
-      // The DAL calls Next's notFound() for a non-participant — expect a
-      // 404, and in no case the owner's contract details leaking through.
-      expect(response?.status()).toBe(404);
+      // The DAL calls Next's notFound() for a non-participant. The page
+      // streams (loading.tsx), so the HTTP status can already be 200 —
+      // what matters is the not-found screen and no contract details.
+      expect([200, 404]).toContain(response?.status());
+      await expect(page.getByRole("heading", { name: /page not found/i })).toBeVisible();
       await expect(page.getByText(/E2E Opportunity/)).not.toBeVisible();
     } finally {
       await contract.cleanup();
@@ -67,7 +69,9 @@ test.describe("authorization boundaries", () => {
       // opportunity ID must come back not-found, never someone else's
       // draft.
       const response = await page.goto(`/organisation/opportunities/${opportunity.id}/edit`);
-      expect(response?.status()).toBe(404);
+      expect([200, 404]).toContain(response?.status());
+      await expect(page.getByRole("heading", { name: /page not found/i })).toBeVisible();
+      await expect(page.getByLabel(/title/i)).toHaveCount(0);
     } finally {
       await opportunity.cleanup();
       await owner.cleanup();
