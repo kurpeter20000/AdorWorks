@@ -76,7 +76,7 @@ export function ReceiptView({
   const row = (label: string, value: ReactNode, strong = false) => (
     <div className="flex flex-wrap justify-between gap-x-3">
       <dt className={strong ? "font-semibold text-midnight" : "text-slate"}>{label}</dt>
-      <dd className={`${strong ? "font-semibold text-midnight" : ""} break-all`}>{value}</dd>
+      <dd className={`${strong ? "font-semibold text-midnight" : ""} [overflow-wrap:anywhere]`}>{value}</dd>
     </div>
   );
 

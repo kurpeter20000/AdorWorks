@@ -50,8 +50,8 @@ export function RecommendedOpportunities({ opportunities }: { opportunities: Rec
         <li key={o.id}>
           <Link href={`/opportunities/${o.id}/apply`} className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-cloud sm:px-5">
             <span className="min-w-0 flex-1">
-              <span className="line-clamp-2 block text-sm font-bold text-midnight">{o.title}</span>
-              <span className="mt-0.5 block truncate text-xs text-slate">{o.orgName}</span>
+              <span className="block text-sm font-bold text-pretty break-words text-midnight">{o.title}</span>
+              <span className="mt-0.5 block text-xs text-pretty break-words text-slate">{o.orgName}</span>
               {o.asked > 0 && (
                 <span className="mt-2 flex flex-wrap items-center gap-1.5">
                   {o.fit && (

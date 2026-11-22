@@ -12,6 +12,8 @@ import { ShareButton } from "./share-button";
 import type { Category, EngagementType, WorkMode } from "@/lib/database.types";
 import { msg } from "@/i18n/config";
 import { getT } from "@/i18n/server";
+import { ExpandableText } from "@/components/expandable-text";
+import { featuredFirst, isFeatured } from "@/lib/domain/featured";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
@@ -111,7 +113,7 @@ export default async function OpportunitiesPage({
   let query = supabase
     .from("opportunities")
     .select(
-      "id, title, brief, category, skills, location, work_mode, engagement_type, payment_basis, compensation_amount, compensation_min, compensation_max, currency, organisation_id, application_deadline, created_at"
+      "id, title, brief, category, skills, location, work_mode, engagement_type, payment_basis, compensation_amount, compensation_min, compensation_max, currency, organisation_id, application_deadline, created_at, approved_at, featured_until"
     )
     .eq("status", "open")
     .eq("visibility", "public")
@@ -162,7 +164,9 @@ export default async function OpportunitiesPage({
   // candidates feature (staff/js/opportunities.js): rank by skill
   // overlap, tie-break by recency, never by anything paid or reputation-
   // based, so a new opportunity/new talent isn't buried.
-  const ranked = sortMode === "relevant" ? rankBySkillOverlap(visible, myProfile?.skills ?? []) : visible;
+  // 0126: "Newest" lists paid featured jobs first, then the newest.
+  // "Relevant" stays purely skill-based (paid placement never changes it).
+  const ranked = sortMode === "relevant" ? rankBySkillOverlap(visible, myProfile?.skills ?? []) : featuredFirst(visible);
 
   const totalPages = Math.max(1, Math.ceil(ranked.length / PAGE_SIZE));
   const pageItems = ranked.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -380,7 +384,10 @@ export default async function OpportunitiesPage({
               <li key={o.id} className="flex flex-col rounded-xl border border-slate/15 bg-white p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <Link href={`/jobs/${o.id}`} className="font-bold text-midnight hover:underline">
+                    {sortMode === "recent" && isFeatured(o) && (
+                      <span className="mb-1 inline-flex items-center rounded-full bg-violet/10 px-2 py-0.5 text-[11px] font-bold text-violet">{t("Featured")}</span>
+                    )}
+                    <Link href={`/jobs/${o.id}`} className="block font-bold text-midnight hover:underline">
                       {o.title}
                     </Link>
                     <p className="flex items-center gap-1.5 text-xs text-slate">
@@ -399,7 +406,7 @@ export default async function OpportunitiesPage({
                     {t(formatCompensation(o))}
                   </span>
                 </div>
-                {o.brief && <p className="mt-2 line-clamp-3 text-sm text-slate">{o.brief}</p>}
+                {o.brief && <ExpandableText text={o.brief} className="mt-2 text-sm text-slate" />}
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {(o.skills ?? []).slice(0, 6).map((s) => (
                     <span key={s} className="rounded-full bg-cloud px-2.5 py-1 text-xs text-slate">

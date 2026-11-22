@@ -62,6 +62,10 @@ export const DOMAIN_EVENTS = {
   // 0107: digitized personal referrals.
   VOUCH_REQUESTED: "trust.vouch.requested",
   VOUCH_RESPONDED: "trust.vouch.responded",
+  // 0126: paid featured jobs.
+  OPPORTUNITY_FEATURE_REQUESTED: "opportunity.feature_requested",
+  OPPORTUNITY_FEATURED: "opportunity.featured",
+  OPPORTUNITY_UNFEATURED: "opportunity.unfeatured",
 } as const;
 
 export type DomainEventName = (typeof DOMAIN_EVENTS)[keyof typeof DOMAIN_EVENTS];

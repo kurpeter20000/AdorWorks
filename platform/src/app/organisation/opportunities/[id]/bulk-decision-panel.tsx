@@ -86,8 +86,8 @@ export function BulkDecisionPanel({ opportunityId, applicants }: { opportunityId
             <label className="flex min-h-11 cursor-pointer items-center gap-3 px-3 py-2 hover:bg-cloud">
               <input type="checkbox" className="size-5 shrink-0 accent-[var(--color-primary)]" checked={selected.has(a.id)} onChange={() => toggle(a.id)} />
               <span className="min-w-0">
-                <span className="block truncate text-sm font-semibold text-midnight">{a.name}</span>
-                {a.headline && <span className="block truncate text-xs text-slate">{a.headline}</span>}
+                <span className="block text-sm font-semibold text-pretty break-words text-midnight">{a.name}</span>
+                {a.headline && <span className="block text-xs text-pretty break-words text-slate">{a.headline}</span>}
               </span>
             </label>
           </li>

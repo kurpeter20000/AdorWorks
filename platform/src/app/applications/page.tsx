@@ -144,7 +144,7 @@ export default async function ApplicationsPage({
                 return (
                   <li key={d.opportunity_id} className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-slate/30 bg-white p-4">
                     <div className="min-w-0">
-                      <p className="truncate font-semibold text-midnight">{opp.title}</p>
+                      <p className="font-semibold text-pretty break-words text-midnight">{opp.title}</p>
                       <p className="text-xs text-slate">{orgNameById.get(opp.organisation_id) ?? t("AdorWorks employer")}</p>
                     </div>
                     <Link href={`/opportunities/${d.opportunity_id}/apply`} className="shrink-0 rounded-control bg-primary px-4 py-2.5 text-sm font-extrabold text-white hover:bg-primary-hover">

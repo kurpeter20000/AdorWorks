@@ -76,6 +76,8 @@ export default async function DashboardPage({
   // onboarding yet just sees the existing "Onboarding" action card
   // instead of a panel listing every field as missing.
   let readinessState = null;
+  // 0126: nudge talent who haven't switched job alerts on yet.
+  let jobAlertsOn = true;
   let recommendedOpportunities: { id: string; title: string; compensationLabel: string; orgName: string; matched: number; asked: number; fit: FitLevel | null }[] = [];
   const talentAttention: { href: string; label: string; count: number; tone: "warning" | "danger" | "info"; meta?: string }[] = [];
   const employerPipeline: { href: string; label: string; count: number; tone: "warning" | "danger" | "info"; meta?: string }[] = [];
@@ -109,6 +111,8 @@ export default async function DashboardPage({
       .eq("id", session.userId)
       .maybeSingle();
     if (talentProfile) readinessState = getTalentReadiness(talentProfile);
+    const { data: alertRow } = await supabase.from("alert_preferences").select("job_alerts_enabled").eq("user_id", session.userId).maybeSingle();
+    jobAlertsOn = Boolean(alertRow?.job_alerts_enabled);
 
     // Stage 8: "Today" — recommended opportunities (same fairness-ranked
     // skill-overlap rule as /opportunities?sort=relevant, see matching.ts)
@@ -648,6 +652,15 @@ export default async function DashboardPage({
             <Section title={<span className="flex items-center gap-2">{t("Needs your attention")}{attentionCount > 0 && <CountBadge n={attentionCount} />}</span>}>
               <TalentAttentionList items={talentAttention} />
             </Section>
+            {!jobAlertsOn && (
+              <div className="rounded-card border border-line bg-white p-4 shadow-card">
+                <p className="text-sm font-extrabold text-midnight">{t("Get job alerts")}</p>
+                <p className="mt-1 text-sm text-pretty text-slate">{t("Choose your field, skills and town, and we'll tell you the moment a matching job is published.")}</p>
+                <Link href="/notifications#job-alerts" className={`mt-3 ${buttonVariants({ variant: "secondary" })}`}>
+                  {t("Set up job alerts")}
+                </Link>
+              </div>
+            )}
             {readinessState && <ReadinessPanel state={readinessState} completeHref="/passport" />}
             <HelpCard audience="talent" />
           </aside>

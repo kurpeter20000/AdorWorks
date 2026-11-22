@@ -11,6 +11,8 @@ import { sendShortlist } from "@/lib/actions/shortlists";
 import { becomeAccountContact } from "@/lib/actions/guarantee";
 import { CHANGE_FIELDS, CHANGE_FIELD_KEYS, type ChangeField } from "@/lib/domain/changeFields";
 import { approveOpportunity, rejectOpportunity, requestOpportunityChanges } from "@/lib/actions/operations";
+import { featureOpportunity, unfeatureOpportunity } from "@/lib/actions/featuredJobs";
+import { FEATURE_DAY_OPTIONS, isFeatured } from "@/lib/domain/featured";
 import {
   ActionRow,
   ActionStatus,
@@ -35,6 +37,8 @@ import {
   useAction,
   useStaffData,
   viaAction,
+  talentName,
+  shortPlace,
 } from "../_components/staff-ui";
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- staff API payloads are untyped JSON from backend/api */
@@ -49,6 +53,8 @@ const FILTERS: [string, string][] = [
   ["closed", "Closed"],
   ["expired", "Expired"],
   ["rejected", "Rejected"],
+  ["featured:requested", "Feature requests"],
+  ["featured:active", "Featured"],
   ["", "All"],
 ];
 const OPP_STATUSES = ["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected", "changes_required", "paused", "expired"];
@@ -57,7 +63,10 @@ const STAGES = ["submitted", "shortlisted", "interviewing", "offered", "accepted
 export function OpportunitiesConsole({ initialFilter, canRunInterviews = false, canReview = false }: { initialFilter: string; canRunInterviews?: boolean; canReview?: boolean }) {
   const [filter, setFilter] = useState(initialFilter);
   const [creating, setCreating] = useState(false);
-  const list = useStaffData<{ data: Row[] }>(`/api/opportunities${qs({ status: filter, limit: 100 })}`);
+  const featuredFilter = filter.startsWith("featured:") ? filter.slice(9) : undefined;
+  const list = useStaffData<{ data: Row[] }>(
+    `/api/opportunities${qs({ status: featuredFilter ? undefined : filter, featured: featuredFilter, limit: 100 })}`
+  );
 
   return (
     <>
@@ -89,7 +98,14 @@ export function OpportunitiesConsole({ initialFilter, canRunInterviews = false, 
         onRetry={list.reload}
         rowKey={(r) => r.id}
         cells={(r) => [
-          r.title,
+          <span key="t" className="block min-w-[10rem]">
+            <span className="block font-semibold text-midnight">{r.title}</span>
+            {isFeatured(r) ? (
+              <span className="text-xs font-semibold text-violet">Featured until {fmtDate(r.featured_until)}</span>
+            ) : r.featured_requested_at ? (
+              <span className="text-xs font-semibold text-warning-ink">Asked to be featured · {fmtDate(r.featured_requested_at)}</span>
+            ) : null}
+          </span>,
           r.organisations?.name || "—",
           humanize(r.type),
           r.shortlisting_mode === "self_service" ? <Badge key="m" value="Self-service" tone="info" /> : <Badge key="m" value="Staff" tone="neutral" />,
@@ -378,6 +394,8 @@ function OpportunityDetail({ row, onChanged, canRunInterviews, canReview }: { ro
             <AutomaticChecks row={row} />
           )}
 
+          {canReview && (row.status === "open" || row.featured_requested_at) && <FeaturePanel row={row} onChanged={onChanged} />}
+
           {/* Publishing decisions are the reviewer's (and admin's). */}
           {canReview && row.status === "pending_review" && (
             <div className="mt-4 space-y-2">
@@ -480,7 +498,7 @@ function Shortlist({ opportunity, canRunInterviews }: { opportunity: Row; canRun
     setSearchError(null);
     setResults(null);
     try {
-      const res = await api<{ data: Row[] }>(`/api/talent${qs({ q: q.trim(), limit: 10 })}`);
+      const res = await api<{ data: Row[] }>(`/api/talent${qs({ name: q.trim(), limit: 10 })}`);
       setResults(res.data);
     } catch (e) {
       setSearchError((e as Error).message);
@@ -534,7 +552,7 @@ function Shortlist({ opportunity, canRunInterviews }: { opportunity: Row; canRun
         {(apps.data?.data ?? []).map((a) => (
           <li key={a.id} className="rounded-lg border border-slate/15 bg-white p-3 text-sm">
             <p>
-              <strong>{a.talent_profiles?.headline || a.talent_id}</strong> — {humanize(a.talent_profiles?.category)}{" "}
+              <strong>{talentName(a.talent_profiles, a.talent_id)}</strong> — {[a.talent_profiles?.headline, humanize(a.talent_profiles?.category), shortPlace(a.talent_profiles)].filter((x) => x && x !== "—").join(" · ")}{" "}
               <Badge value={a.talent_profiles?.verification_tier} />
             </p>
             {a.interview_scheduled_at && <p className="mt-1 text-xs text-slate">Interview: {fmtDateTime(a.interview_scheduled_at)}</p>}
@@ -618,7 +636,8 @@ function Shortlist({ opportunity, canRunInterviews }: { opportunity: Row; canRun
           {candidates.map((c) => (
             <li key={c.talent.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <span>
-                <strong>{c.talent.headline || c.talent.id}</strong> <Badge value={c.talent.verification_tier} />
+                <strong>{talentName(c.talent, c.talent.id)}</strong> <Badge value={c.talent.verification_tier} />
+                <span className="block text-xs text-slate">{[c.talent.headline, shortPlace(c.talent)].filter(Boolean).join(" · ")}</span>
                 <span className="block text-xs text-slate">
                   {c.matches.length ? `Matches: ${c.matches.join(", ")}` : "No listed skills overlap — shown for category fit"}
                 </span>
@@ -631,7 +650,7 @@ function Shortlist({ opportunity, canRunInterviews }: { opportunity: Row; canRun
         </ul>
       )}
 
-      <SubHeading>Search by headline</SubHeading>
+      <SubHeading>Search by name or profession</SubHeading>
       <form
         className="flex flex-col gap-2 sm:flex-row"
         onSubmit={(e) => {
@@ -639,7 +658,7 @@ function Shortlist({ opportunity, canRunInterviews }: { opportunity: Row; canRun
           search();
         }}
       >
-        <input aria-label="Search talent by headline" className={inputClass} placeholder="Search by headline…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input aria-label="Search talent by name or profession" className={inputClass} placeholder="Name or profession…" value={q} onChange={(e) => setQ(e.target.value)} />
         <Btn type="submit">Search</Btn>
       </form>
       {searchError && <p className="mt-2 text-sm text-slate">{searchError}</p>}
@@ -649,7 +668,8 @@ function Shortlist({ opportunity, canRunInterviews }: { opportunity: Row; canRun
           {results.map((t) => (
             <li key={t.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <span>
-                {t.headline || t.id} <Badge value={t.verification_tier} />
+                <strong>{talentName(t, t.id)}</strong> <Badge value={t.verification_tier} />
+                <span className="block text-xs text-slate">{[t.headline, shortPlace(t)].filter(Boolean).join(" · ")}</span>
               </span>
               {shortlisted.has(t.id) ? (
                 <span className="text-xs text-slate">Already shortlisted</span>
@@ -662,6 +682,59 @@ function Shortlist({ opportunity, canRunInterviews }: { opportunity: Row; canRun
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+/**
+ * Featured jobs (0126): featuring is paid. Once finance confirms the
+ * payment, set how long the job stays at the top of the jobs list.
+ */
+function FeaturePanel({ row, onChanged }: { row: Row; onChanged: () => void }) {
+  const { run, pending, status } = useAction(onChanged);
+  const [days, setDays] = useState<number>(14);
+  const [note, setNote] = useState("");
+  const live = isFeatured(row);
+  const act = (p: Promise<{ ok?: boolean; error?: string }>) =>
+    p.then((r) => {
+      if (r.error) throw new Error(r.error);
+    });
+
+  return (
+    <div className="mt-4 rounded-lg border border-violet/25 bg-violet/5 p-3">
+      <SubHeading>Featured listing</SubHeading>
+      <p className="text-xs text-pretty text-slate">
+        {live
+          ? `Featured until ${fmtDate(row.featured_until)}. Adding days extends it from that date.`
+          : row.featured_requested_at
+            ? `The employer asked to be featured on ${fmtDate(row.featured_requested_at)}. Send them the price and payment details, then switch it on once paid.`
+            : "Paid placement at the top of the public jobs list and the in-app job search."}
+      </p>
+      {row.status === "open" ? (
+        <div className="mt-2 grid gap-2 sm:grid-cols-[auto_1fr_auto]">
+          <select aria-label="How long" className={`${inputClass} sm:w-auto`} value={days} onChange={(e) => setDays(Number(e.target.value))}>
+            {FEATURE_DAY_OPTIONS.map((d) => (
+              <option key={d} value={d}>
+                {d} days
+              </option>
+            ))}
+          </select>
+          <input aria-label="Payment reference" className={inputClass} placeholder="Payment reference (required)" value={note} onChange={(e) => setNote(e.target.value)} />
+          <Btn variant="primary" disabled={pending || note.trim().length < 3} onClick={() => run(() => act(featureOpportunity(row.id, days, note)), live ? "Featuring extended." : "Job featured.")}>
+            {live ? "Extend" : "Feature this job"}
+          </Btn>
+        </div>
+      ) : (
+        <p className="mt-2 text-xs text-slate">It can be featured once it&apos;s published.</p>
+      )}
+      {(live || row.featured_requested_at) && (
+        <ActionRow>
+          <Btn disabled={pending} onClick={() => run(() => act(unfeatureOpportunity(row.id, live ? "Stopped early by staff" : "Request closed by staff")), live ? "Featuring stopped." : "Request cleared.")}>
+            {live ? "Stop featuring" : "Clear request"}
+          </Btn>
+        </ActionRow>
+      )}
+      <ActionStatus status={status} />
     </div>
   );
 }

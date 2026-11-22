@@ -4,6 +4,7 @@ import { requireSession } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { CATEGORY_LABEL } from "@/lib/domain/taxonomy";
 import { SaveServiceButton } from "../save-button";
+import { ExpandableText } from "@/components/expandable-text";
 
 export const metadata: Metadata = { title: "Saved services" };
 
@@ -78,7 +79,7 @@ export default async function SavedServicesPage() {
                   </div>
                   <span className="whitespace-nowrap text-sm font-semibold text-teal-ink">{formatPrice(s)}</span>
                 </div>
-                {s.problem_solved && <p className="mt-2 line-clamp-3 text-sm text-slate">{s.problem_solved}</p>}
+                {s.problem_solved && <ExpandableText text={s.problem_solved} className="mt-2 text-sm text-slate" />}
                 <div className="mt-3 flex items-center justify-between">
                   <p className="text-xs text-slate">{s.category ? CATEGORY_LABEL[s.category] : null}</p>
                   <SaveServiceButton serviceId={s.id} initialSaved={true} />

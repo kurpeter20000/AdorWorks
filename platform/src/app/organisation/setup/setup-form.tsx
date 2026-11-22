@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { createOrganisation } from "@/lib/actions/organisation";
 import type { FormState } from "@/lib/actions/auth";
+import { LocationFields } from "@/components/location-fields";
 import { ORG_TYPES, ORG_TYPE_LABEL, type OrgType } from "@/lib/domain/institutional";
 
 const initialState: FormState = {};
@@ -64,6 +65,12 @@ export function SetupForm() {
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
       </div>
+
+      <LocationFields
+        legend="Where the organisation is based"
+        initial={null}
+        errors={state.errors as Record<string, string[] | undefined> | undefined}
+      />
 
       <div>
         <label htmlFor="billingEmail" className="text-sm font-semibold text-midnight">

@@ -84,8 +84,8 @@ function CandidateCard({ c, canDecide }: { c: ShortlistCandidate; canDecide: boo
           {c.name.trim().charAt(0).toUpperCase()}
         </span>
         <div className="min-w-0">
-          <p className="truncate font-bold text-midnight">{c.name}</p>
-          {c.headline && <p className="line-clamp-2 text-xs text-slate">{c.headline}</p>}
+          <p className="font-bold text-pretty break-words text-midnight">{c.name}</p>
+          {c.headline && <p className="text-xs text-pretty break-words text-slate">{c.headline}</p>}
           {c.tier && (
             <span className="mt-1 inline-block">
               <VerificationBadge tier={c.tier} />

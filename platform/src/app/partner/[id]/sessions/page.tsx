@@ -68,8 +68,17 @@ export default async function SessionsPage({ params }: { params: Promise<{ id: s
         {cards.length === 0 && <li className="text-sm text-slate">{t("No sessions yet.")}</li>}
         {cards.map(({ s, present, avg, qr }) => (
           <li key={s.id} className="rounded-card border border-line bg-white p-5 shadow-card">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="min-w-0">
+            {/* QR and session details side by side (owner, Nov 2026); on phones the QR sits on top. */}
+            <div className={`grid items-center gap-5 ${qr ? "sm:grid-cols-[auto_minmax(0,1fr)]" : ""}`}>
+              {qr && (
+                <div
+                  className="justify-self-center rounded-xl border border-line bg-white p-2 sm:justify-self-start [&_svg]:block [&_svg]:size-[168px]"
+                  role="img"
+                  aria-label={t("QR code for check-in")}
+                  dangerouslySetInnerHTML={{ __html: qr }}
+                />
+              )}
+              <div className="min-w-0 text-pretty">
                 <p className="font-extrabold text-midnight">
                   <span className="no-i18n">{s.title}</span>
                 </p>
@@ -97,7 +106,6 @@ export default async function SessionsPage({ params }: { params: Promise<{ id: s
                   </>
                 )}
               </div>
-              {qr && <div className="shrink-0 rounded-lg border border-line bg-white p-1" aria-label={t("QR code for check-in")} dangerouslySetInnerHTML={{ __html: qr }} />}
             </div>
           </li>
         ))}

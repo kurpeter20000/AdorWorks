@@ -23,7 +23,7 @@ engagementsRouter.get(
     const query = listQuerySchema.parse(req.query);
     let q = supabaseAdmin
       .from("engagements")
-      .select("*, organisations(name), talent_profiles(headline)", { count: "exact" })
+      .select("*, organisations(name), talent_profiles(display_name, legal_name, city, state, headline)", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(query.offset, query.offset + query.limit - 1);
     if (query.status) q = q.eq("status", query.status);
@@ -43,7 +43,7 @@ engagementsRouter.get(
     const [engagement, events, financeRecords, reviews, disputes] = await Promise.all([
       supabaseAdmin
         .from("engagements")
-        .select("*, organisations(name), talent_profiles(headline), opportunities(title, type)")
+        .select("*, organisations(name), talent_profiles(display_name, legal_name, city, state, headline), opportunities(title, type)")
         .eq("id", req.params.id)
         .single(),
       supabaseAdmin

@@ -25,7 +25,7 @@ applicationsRouter.get(
     const query = listQuerySchema.parse(req.query);
     let q = supabaseAdmin
       .from("applications")
-      .select("*, talent_profiles(headline, category, verification_tier, location)", { count: "exact" })
+      .select("*, talent_profiles(display_name, legal_name, city, state, headline, category, verification_tier, location)", { count: "exact" })
       .order("suitability_score", { ascending: false, nullsFirst: false })
       .range(query.offset, query.offset + query.limit - 1);
     if (query.opportunity_id) q = q.eq("opportunity_id", query.opportunity_id);

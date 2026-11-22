@@ -6,6 +6,7 @@ import { PhoneVerificationWidget } from "@/components/phone-verification-widget"
 import { NotificationsList } from "./notifications-list";
 import { EmailPreferenceToggle } from "./email-preference-toggle";
 import { AlertPreferencesForm } from "./alert-preferences-form";
+import { JobAlertsForm } from "./job-alerts-form";
 import { isWhatsAppConfigured } from "@/lib/whatsapp";
 import { getT } from "@/i18n/server";
 
@@ -45,6 +46,7 @@ export default async function NotificationsPage() {
 
       {!session.phoneVerified && <PhoneVerificationWidget />}
 
+      {session.role === "talent" && <JobAlertsForm current={alertPrefs ?? null} />}
       <EmailPreferenceToggle initialEnabled={profile?.email_notifications_enabled ?? true} />
       <AlertPreferencesForm current={alertPrefs ?? null} whatsappLive={isWhatsAppConfigured()} />
 

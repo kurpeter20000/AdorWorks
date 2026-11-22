@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { updateOrganisation } from "@/lib/actions/organisation";
 import type { FormState } from "@/lib/actions/auth";
+import { LocationFields } from "@/components/location-fields";
 import type { OrganisationRow } from "@/lib/database.types";
 import { ORG_TYPES, ORG_TYPE_LABEL, type OrgType } from "@/lib/domain/institutional";
 
@@ -74,6 +75,12 @@ export function OrgInfoForm({ organisationId, initial }: { organisationId: strin
           className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
         />
       </div>
+
+      <LocationFields
+        legend="Where the organisation is based"
+        initial={{ city: initial.city, county: initial.county, state: initial.state, country: initial.country }}
+        errors={state.errors as Record<string, string[] | undefined> | undefined}
+      />
 
       <div>
         <label htmlFor="billingEmail" className="text-sm font-semibold text-midnight">

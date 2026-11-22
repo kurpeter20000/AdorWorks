@@ -63,6 +63,9 @@ export const NOTIFICATION_TYPES = {
   GUARANTEE_RESOLVED: "guarantee_resolved",
   // 0123: Pathways.
   CERTIFICATE_ISSUED: "certificate_issued",
+  // 0126: tailored job alerts.
+  JOB_ALERT: "job_alert",
+  OPPORTUNITY_FEATURED: "opportunity_featured",
 } as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];

@@ -22,6 +22,11 @@ const OrganisationSchema = z.object({
   website: z.string().trim().optional(),
   billingEmail: z.string().trim().email("Enter a valid email address.").optional().or(z.literal("")),
   orgType: z.enum(ORG_TYPES).default("company"),
+  // 0126: where the organisation is.
+  city: z.string().trim().min(2, "Enter the city or town.").max(80),
+  county: z.string().trim().max(80).optional(),
+  state: z.string().trim().max(80).optional(),
+  country: z.string().trim().min(2, "Enter the country.").max(80),
 });
 
 /**
@@ -42,6 +47,10 @@ export async function createOrganisation(_prevState: FormState, formData: FormDa
     website: formData.get("website") || undefined,
     billingEmail: formData.get("billingEmail") || undefined,
     orgType: formData.get("orgType") || undefined,
+    city: formData.get("city"),
+    county: formData.get("county") || undefined,
+    state: formData.get("state") || undefined,
+    country: formData.get("country"),
   });
   if (!validated.success) {
     return { errors: validated.error.flatten().fieldErrors };
@@ -55,6 +64,10 @@ export async function createOrganisation(_prevState: FormState, formData: FormDa
     website: v.website || null,
     billing_email: v.billingEmail || null,
     org_type: v.orgType,
+    city: v.city,
+    county: v.county || null,
+    state: v.state || null,
+    country: v.country,
     representative_id: session.userId,
   });
 
@@ -83,6 +96,10 @@ export async function updateOrganisation(
     website: formData.get("website") || undefined,
     billingEmail: formData.get("billingEmail") || undefined,
     orgType: formData.get("orgType") || undefined,
+    city: formData.get("city"),
+    county: formData.get("county") || undefined,
+    state: formData.get("state") || undefined,
+    country: formData.get("country"),
   });
   if (!validated.success) {
     return { errors: validated.error.flatten().fieldErrors };
@@ -98,6 +115,10 @@ export async function updateOrganisation(
       website: v.website || null,
       billing_email: v.billingEmail || null,
       org_type: v.orgType,
+      city: v.city,
+      county: v.county || null,
+      state: v.state || null,
+      country: v.country,
     })
     .eq("id", organisationId);
 

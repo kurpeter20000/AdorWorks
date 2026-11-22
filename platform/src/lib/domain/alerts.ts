@@ -20,6 +20,7 @@ const TOPIC_BY_TYPE: Record<string, AlertTopic> = {
   bank_transfer_received: "application_updates",
   shortlist_ready: "application_updates",
   certificate_issued: "application_updates",
+  job_alert: "new_matching_work",
   message_received: "messages",
   support_message_received: "messages",
 };

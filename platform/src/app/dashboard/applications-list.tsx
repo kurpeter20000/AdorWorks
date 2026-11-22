@@ -56,8 +56,8 @@ export async function ApplicationsList({ applications }: { applications: TalentA
           <li key={a.id}>
             <Link href="/applications" className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-4 py-4 transition-colors hover:bg-cloud sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto_auto] sm:px-5">
               <span className="min-w-0">
-                <span className="block truncate text-sm font-extrabold text-midnight">{a.title}</span>
-                <span className="mt-0.5 block truncate text-xs text-slate">
+                <span className="block text-sm font-extrabold text-pretty break-words text-midnight">{a.title}</span>
+                <span className="mt-0.5 block text-xs text-pretty break-words text-slate">
                   {a.orgName} · {t("applied {date}", { date: formatDate(a.createdAt, { day: "numeric", month: "short" }) })}
                 </span>
               </span>

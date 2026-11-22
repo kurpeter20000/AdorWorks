@@ -42,7 +42,7 @@ export function SupportConsole({ threads }: { threads: Thread[] }) {
                 }`}
               >
                 <p className="font-semibold text-midnight">{thread.userName}</p>
-                <p className="truncate text-xs text-slate">{last ? last.body : "No messages yet."}</p>
+                <p className="line-clamp-2 text-xs text-pretty break-words text-slate">{last ? last.body : "No messages yet."}</p>
               </button>
             </li>
           );

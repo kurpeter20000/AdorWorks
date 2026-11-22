@@ -23,6 +23,11 @@ const searchSchema = z.object({
   skill: z.string().optional(), // matches if this skill is in the talent's skills[]
   q: z.string().optional(), // free-text match against headline (shortlist-builder search box)
   public_visible: z.coerce.boolean().optional(),
+  // 0126: staff console — find talent by name and by where they are.
+  name: z.string().trim().max(80).optional(),
+  country: z.string().trim().max(80).optional(),
+  state: z.string().trim().max(80).optional(),
+  place: z.string().trim().max(80).optional(), // city/town or county
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });
@@ -43,6 +48,18 @@ talentRouter.get(
     if (query.skill) q = q.contains("skills", [query.skill]);
     if (query.q) q = q.ilike("headline", `%${query.q}%`);
     if (query.public_visible !== undefined) q = q.eq("public_visible", query.public_visible);
+    // PostgREST or() values can't carry commas or brackets; strip them.
+    const term = (v) => v.replace(/[,()*%\\]/g, " ").trim();
+    if (query.name) {
+      const n = term(query.name);
+      if (n) q = q.or(`display_name.ilike.%${n}%,legal_name.ilike.%${n}%,headline.ilike.%${n}%`);
+    }
+    if (query.country) q = q.ilike("country", term(query.country));
+    if (query.state) q = q.eq("state", query.state);
+    if (query.place) {
+      const p = term(query.place);
+      if (p) q = q.or(`city.ilike.%${p}%,county.ilike.%${p}%,location.ilike.%${p}%`);
+    }
 
     const { data, error, count } = await q;
     if (error) throw new HttpError(500, error.message);
@@ -60,7 +77,7 @@ talentRouter.get(
   asyncRoute(async (req, res) => {
     const { data, error } = await supabaseAdmin
       .from("talent_introduction_videos")
-      .select("talent_id, created_at, talent_profiles(headline, category)")
+      .select("talent_id, created_at, talent_profiles(display_name, legal_name, city, state, headline, category)")
       .eq("status", "pending")
       .order("created_at", { ascending: true });
     if (error) throw new HttpError(500, error.message);

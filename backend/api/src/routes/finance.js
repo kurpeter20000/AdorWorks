@@ -29,8 +29,8 @@ financeRouter.get(
     let q = supabaseAdmin
       .from("finance_records")
       .select(
-        "*, engagements(organisation_id, talent_id, organisations(name), talent_profiles(headline)), " +
-          "contracts(opportunities(title), organisations(name), talent_profiles(headline))",
+        "*, engagements(organisation_id, talent_id, organisations(name), talent_profiles(display_name, legal_name, city, state, headline)), " +
+          "contracts(opportunities(title), organisations(name), talent_profiles(display_name, legal_name, city, state, headline))",
         { count: "exact" }
       )
       .order("created_at", { ascending: false })

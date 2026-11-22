@@ -110,6 +110,13 @@ html[lang="ar"] body {
   line-height: 1.7;
 }
 
+/* Text that reads straight (owner, Nov 2026, matching the public site):
+   paragraphs never end with one word stranded on its own line, headings
+   balance their lines, and a long word or link wraps instead of pushing
+   the layout sideways. */
+p, li, dd, label, td { text-wrap: pretty; overflow-wrap: break-word; }
+h1, h2, h3 { text-wrap: balance; }
+
 /* Visible focus rings everywhere (WCAG 2.2 AA) — Tailwind's default
    outline-none-on-focus reset needs an explicit replacement, not just
    removal, or keyboard users lose their place entirely. */

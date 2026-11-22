@@ -275,6 +275,10 @@ h1 em, h2 em { font-style: normal; color: var(--site-teal); }
 .mobile-contact-bar { background: rgb(255 255 255 / 0.97); border-top: 1px solid var(--site-line); }
 .mobile-contact-bar a.is-primary { background: var(--site-teal); color: #fff; }
 
+/* No lone last word (owner, Nov 2026): a paragraph never ends with one
+   word stranded on its own line; the browser evens out the last lines. */
+main p, main li, main dd, .lede, .footer-about { text-wrap: pretty; }
+
 /* ---------- Phones (owner, Nov 2026: text sizes and photos at their best) ----------
    One consistent type scale on small screens: page titles clearly biggest,
    section headings a step down, comfortable body text, and calmer

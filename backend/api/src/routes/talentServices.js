@@ -26,7 +26,7 @@ talentServicesRouter.get(
     const query = listQuerySchema.parse(req.query);
     let q = supabaseAdmin
       .from("talent_services")
-      .select("*, talent_profiles(headline, verification_tier)", { count: "exact" })
+      .select("*, talent_profiles(display_name, legal_name, city, state, headline, verification_tier)", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(query.offset, query.offset + query.limit - 1);
     if (query.status) q = q.eq("status", query.status);
@@ -44,7 +44,7 @@ talentServicesRouter.get(
   asyncRoute(async (req, res) => {
     const { data, error } = await supabaseAdmin
       .from("talent_services")
-      .select("*, talent_profiles(headline, verification_tier)")
+      .select("*, talent_profiles(display_name, legal_name, city, state, headline, verification_tier)")
       .eq("id", req.params.id)
       .single();
     if (error) throw new HttpError(404, "Service not found.");

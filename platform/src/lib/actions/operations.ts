@@ -10,6 +10,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuditEvent } from "@/lib/domain/audit";
 import { DOMAIN_EVENTS } from "@/lib/domain/events";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
+import { sendJobAlerts } from "@/lib/domain/jobAlertsSend";
 import { sendEmailSafely, getUserEmail } from "@/lib/email";
 import { renderEmail, escapeHtml } from "@/lib/emailTemplate";
 import { buildUnsubscribeUrl } from "@/lib/unsubscribeToken";
@@ -111,6 +112,9 @@ export async function approveOpportunity(opportunityId: string): Promise<FormSta
       { admin, recipientUserId: found.representativeId }
     );
   }
+
+  // 0126: tell talent whose job alerts match.
+  await sendJobAlerts(admin, opportunityId);
 
   revalidateOpportunity(opportunityId);
   return {};

@@ -140,6 +140,20 @@
     return Math.ceil((end.getTime() - Date.now()) / 86400000);
   }
 
+  // Featured jobs (paid; staff set featured_until) list first, then the
+  // newest. Twelve show at a time; "Show more jobs" adds twelve more.
+  var PAGE_SIZE = 12;
+  var shownLimit = PAGE_SIZE;
+  function isFeatured(o) {
+    return Boolean(o.featured_until && new Date(o.featured_until).getTime() > Date.now());
+  }
+  function featuredThenNewest(a, b) {
+    var fa = isFeatured(a) ? 1 : 0;
+    var fb = isFeatured(b) ? 1 : 0;
+    if (fa !== fb) return fb - fa;
+    return new Date(b.approved_at || b.created_at) - new Date(a.approved_at || a.created_at);
+  }
+
   // Below laptop width job cards start compact (see pages.css).
   var compactQuery = window.matchMedia("(max-width: 1099px)");
 
@@ -168,6 +182,10 @@
 
     // A list, so each tag is translated on its own.
     var tags = el("ul", "job-tags");
+    if (isFeatured(o)) {
+      card.classList.add("is-featured");
+      tags.appendChild(el("li", "job-featured", "Featured"));
+    }
     if (ENGAGEMENT_LABEL[o.engagement_type]) tags.appendChild(el("li", "job-type", ENGAGEMENT_LABEL[o.engagement_type]));
     if (WORK_MODE_LABEL[o.work_mode] && o.work_mode !== "any") tags.appendChild(el("li", "job-mode", WORK_MODE_LABEL[o.work_mode]));
     if (tags.childNodes.length) card.appendChild(tags);
@@ -307,12 +325,15 @@
         if (!b.application_deadline) return -1;
         return new Date(a.application_deadline) - new Date(b.application_deadline);
       });
+    } else {
+      visible = visible.slice().sort(featuredThenNewest);
     }
 
     list.textContent = "";
-    visible.forEach(function (o) {
+    visible.slice(0, shownLimit).forEach(function (o) {
       list.appendChild(renderCard(o));
     });
+    if (moreButton) moreButton.hidden = visible.length <= shownLimit;
 
     list.hidden = visible.length === 0;
     filterEmpty.hidden = visible.length !== 0;
@@ -331,6 +352,7 @@
   [searchInput, modeSelect, categorySelect, sortSelect].forEach(function (input) {
     if (!input) return;
     input.addEventListener(input.tagName === "INPUT" ? "input" : "change", function () {
+      shownLimit = PAGE_SIZE;
       if (opportunities.length) render();
     });
   });
@@ -343,14 +365,28 @@
   document.querySelectorAll("[data-filter]").forEach(function (btn) {
     btn.addEventListener("click", function () {
       activeFilter = btn.getAttribute("data-filter");
+      shownLimit = PAGE_SIZE;
       if (opportunities.length) render();
     });
   });
 
+  var moreButton = null;
+  if (list) {
+    moreButton = el("button", "btn btn-ghost jobs-more", "Show more jobs");
+    moreButton.type = "button";
+    moreButton.hidden = true;
+    moreButton.addEventListener("click", function () {
+      shownLimit += PAGE_SIZE;
+      render();
+    });
+    list.insertAdjacentElement("afterend", moreButton);
+  }
+
   get(
     "opportunities?select=id,title,brief,skills,location,work_mode,engagement_type,category,payment_basis," +
-      "compensation_amount,compensation_min,compensation_max,currency,application_deadline,organisation_id" +
-      "&status=eq.open&visibility=eq.public&order=created_at.desc&limit=50"
+      "compensation_amount,compensation_min,compensation_max,currency,application_deadline,organisation_id," +
+      "created_at,approved_at,featured_until" +
+      "&status=eq.open&visibility=eq.public&order=featured_until.desc.nullslast,created_at.desc&limit=100"
   )
     .then(function (rows) {
       opportunities = rows.filter(isStillOpen);
