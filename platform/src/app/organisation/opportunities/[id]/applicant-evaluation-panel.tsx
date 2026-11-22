@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { submitScorecardScore } from "@/lib/actions/scorecards";
@@ -168,7 +169,13 @@ export function ApplicantEvaluationPanel({
       </div>
 
       <div>
-        <p className="text-xs font-semibold text-midnight">Team notes</p>
+        <p className="flex flex-wrap items-baseline justify-between gap-2 text-xs font-semibold text-midnight">
+          Team notes
+          {/* 0127: the same notes, as a live chat in Team chat. */}
+          <Link href={`/team-chat?t=a:${applicationId}`} className="font-bold text-teal-ink hover:underline">
+            Discuss in team chat →
+          </Link>
+        </p>
         <ul className="mt-2 space-y-2">
           {notes.length === 0 && <li className="text-xs text-slate">No notes yet.</li>}
           {notes.map((n) => (

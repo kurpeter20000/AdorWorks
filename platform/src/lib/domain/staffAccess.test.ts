@@ -28,12 +28,12 @@ describe("staff access (Phase B2)", () => {
 
   it("menus show each role only its own work", () => {
     const hrefs = (role: Parameters<typeof getDashboardExperience>[0]) => getDashboardExperience(role).actions.map((a) => a.href);
-    expect(hrefs("verifier")).toEqual(["/operations", "/operations/talent", "/operations/organisations"]);
-    expect(hrefs("trust_safety")).toEqual(["/operations", "/operations/reports", "/operations/contracts", "/operations/people", "/operations/support"]);
-    expect(hrefs("field_support")).toEqual(["/operations", "/operations/assisted-onboarding", "/operations/people", "/operations/support"]);
-    expect(hrefs("finance")).toEqual(["/operations", "/operations/contracts", "/operations/invoices", "/operations/payouts", "/operations/settings"]);
-    expect(hrefs("reviewer")).toEqual(["/operations", "/operations/intake", "/operations/opportunities", "/operations/services"]);
-    expect(hrefs("matcher")).toEqual(["/operations", "/operations/opportunities", "/operations/engagements"]);
+    expect(hrefs("verifier")).toEqual(["/operations", "/operations/talent", "/operations/organisations", "/team-chat"]);
+    expect(hrefs("trust_safety")).toEqual(["/operations", "/operations/reports", "/operations/contracts", "/operations/people", "/operations/support", "/team-chat"]);
+    expect(hrefs("field_support")).toEqual(["/operations", "/operations/assisted-onboarding", "/operations/people", "/operations/support", "/team-chat"]);
+    expect(hrefs("finance")).toEqual(["/operations", "/operations/contracts", "/operations/invoices", "/operations/payouts", "/operations/settings", "/team-chat"]);
+    expect(hrefs("reviewer")).toEqual(["/operations", "/operations/intake", "/operations/opportunities", "/operations/services", "/team-chat"]);
+    expect(hrefs("matcher")).toEqual(["/operations", "/operations/opportunities", "/operations/engagements", "/team-chat"]);
   });
 
   it("people management is admin-only; query strings don't change the answer", () => {
@@ -41,5 +41,7 @@ describe("staff access (Phase B2)", () => {
     expect(canOpenStaffPath("trust_safety", "/operations/contracts?status=disputed")).toBe(true);
     expect(canOpenStaffPath("reviewer", "/operations/payouts")).toBe(false);
     expect(canOpenStaffPath("verifier", "/operations/unknown-area")).toBe(false);
+    // Team chat is for every staff role; what each sees is decided by RLS.
+    expect(canOpenStaffPath("verifier", "/team-chat")).toBe(true);
   });
 });

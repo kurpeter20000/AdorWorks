@@ -78,6 +78,8 @@ export default async function DashboardPage({
   let readinessState = null;
   // 0126: nudge talent who haven't switched job alerts on yet.
   let jobAlertsOn = true;
+  // 0127: talent in a Pathways cohort get a way into its chat.
+  let inCohort = false;
   let recommendedOpportunities: { id: string; title: string; compensationLabel: string; orgName: string; matched: number; asked: number; fit: FitLevel | null }[] = [];
   const talentAttention: { href: string; label: string; count: number; tone: "warning" | "danger" | "info"; meta?: string }[] = [];
   const employerPipeline: { href: string; label: string; count: number; tone: "warning" | "danger" | "info"; meta?: string }[] = [];
@@ -113,6 +115,8 @@ export default async function DashboardPage({
     if (talentProfile) readinessState = getTalentReadiness(talentProfile);
     const { data: alertRow } = await supabase.from("alert_preferences").select("job_alerts_enabled").eq("user_id", session.userId).maybeSingle();
     jobAlertsOn = Boolean(alertRow?.job_alerts_enabled);
+    const { count: cohortCount } = await supabase.from("programme_members").select("programme_id", { count: "exact", head: true }).eq("talent_id", session.userId);
+    inCohort = (cohortCount ?? 0) > 0;
 
     // Stage 8: "Today" — recommended opportunities (same fairness-ranked
     // skill-overlap rule as /opportunities?sort=relevant, see matching.ts)
@@ -652,6 +656,15 @@ export default async function DashboardPage({
             <Section title={<span className="flex items-center gap-2">{t("Needs your attention")}{attentionCount > 0 && <CountBadge n={attentionCount} />}</span>}>
               <TalentAttentionList items={talentAttention} />
             </Section>
+            {inCohort && (
+              <div className="rounded-card border border-line bg-white p-4 shadow-card">
+                <p className="text-sm font-extrabold text-midnight">{t("Your Pathways cohort chat")}</p>
+                <p className="mt-1 text-sm text-pretty text-slate">{t("Ask questions and share updates with your cohort and facilitators.")}</p>
+                <Link href="/team-chat" className={`mt-3 ${buttonVariants({ variant: "secondary" })}`}>
+                  {t("Open cohort chat")}
+                </Link>
+              </div>
+            )}
             {!jobAlertsOn && (
               <div className="rounded-card border border-line bg-white p-4 shadow-card">
                 <p className="text-sm font-extrabold text-midnight">{t("Get job alerts")}</p>

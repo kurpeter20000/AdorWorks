@@ -63,6 +63,7 @@ const experiences: Record<DashboardKind, Omit<DashboardExperience, "kind">> = {
       { href: "/finance", label: msg("Finance"), description: msg("Spend, pending invoices, and milestones owed."), group: msg("Work and pay") },
       { href: "/organisation/details", label: msg("Organisation details"), description: msg("Name, sector, website and billing details."), section: "support", group: msg("Organisation") },
       { href: "/organisation/verification", label: msg("Verification"), description: msg("Registration evidence and verification status."), section: "support", group: msg("Organisation") },
+      { href: "/team-chat", label: msg("Team chat"), description: msg("Talk with your team and discuss applicants together."), group: msg("Hire") },
       { href: "/organisation/team", label: msg("Team"), description: msg("Review organisation membership and access."), group: msg("Organisation") },
       { href: "/organisation/activity", label: msg("Activity"), description: msg("Who on your team did what, and when."), section: "support", group: msg("Organisation") },
       { href: "/support", label: msg("Message support"), description: msg("Talk directly with AdorWorks staff."), section: "support", group: msg("Help") },
@@ -98,6 +99,7 @@ const experiences: Record<DashboardKind, Omit<DashboardExperience, "kind">> = {
       { href: "/operations/payouts", label: msg("Payouts"), description: msg("Escrow-held milestone payments due for release to talent.") },
       { href: "/operations/settings", label: msg("Settings"), description: msg("Platform fees and other settings (finance and admins).") },
       { href: "/operations/support", label: msg("Support"), description: msg("Reply to users messaging AdorWorks staff directly.") },
+      { href: "/team-chat", label: msg("Team chat"), description: msg("Internal staff channels and Pathways cohort chats.") },
     ],
   },
   partner: {
