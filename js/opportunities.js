@@ -140,6 +140,9 @@
     return Math.ceil((end.getTime() - Date.now()) / 86400000);
   }
 
+  // Below laptop width job cards start compact (see pages.css).
+  var compactQuery = window.matchMedia("(max-width: 1099px)");
+
   function renderCard(o) {
     var card = el("article", "job-card");
     if (o.category) card.setAttribute("data-category", o.category);
@@ -235,6 +238,40 @@
       }
       card.appendChild(skills);
     }
+
+    // Tablets and phones (owner, Nov 2026): cards start compact (who, what, pay,
+    // where, when) so about three fit on a screen; a tap anywhere on the
+    // card opens the description, skills and Apply button. The toggle
+    // only shows below laptop width (pages.css).
+    var toggle = el("button", "job-toggle");
+    toggle.type = "button";
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.appendChild(el("span", "visually-hidden", "More details"));
+    var chevron = document.createElementNS(SVG_NS, "svg");
+    chevron.setAttribute("viewBox", "0 0 24 24");
+    chevron.setAttribute("aria-hidden", "true");
+    chevron.setAttribute("class", "job-toggle-icon");
+    var chevronPath = document.createElementNS(SVG_NS, "path");
+    chevronPath.setAttribute("d", "m6 9 6 6 6-6");
+    chevron.appendChild(chevronPath);
+    toggle.appendChild(chevron);
+    toggle.setAttribute("aria-describedby", titleLink.id);
+    var setOpen = function (open) {
+      card.classList.toggle("is-open", open);
+      toggle.setAttribute("aria-expanded", String(open));
+    };
+    toggle.addEventListener("click", function (e) {
+      e.stopPropagation();
+      setOpen(!card.classList.contains("is-open"));
+    });
+    // While closed, a tap anywhere on the card (title included) opens it
+    // instead of leaving the page; once open, links work as normal.
+    card.addEventListener("click", function (e) {
+      if (!compactQuery.matches || card.classList.contains("is-open")) return;
+      e.preventDefault();
+      setOpen(true);
+    });
+    card.appendChild(toggle);
 
     var foot = el("div", "job-foot");
     if (CATEGORY_LABEL[o.category]) foot.appendChild(el("p", "job-category", CATEGORY_LABEL[o.category]));

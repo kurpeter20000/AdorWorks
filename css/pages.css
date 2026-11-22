@@ -689,3 +689,72 @@
   /* Hover lifts don't belong on touch screens. */
   .cover-card:hover, .who-card:hover, .policy-card:hover { transform: none; box-shadow: none; }
 }
+
+/* ---------- Job cards: four across, compact on tablets and phones (owner, Nov 2026) ----------
+   Laptops and iPads show four cards per row. Below laptop width (and on
+   phones, where about three fit on one screen) each card starts compact:
+   who, what, pay, where and when. A tap on the card opens the
+   description, skills and Apply button; the round arrow closes it. */
+.job-toggle { display: none; }
+@media (min-width: 641px) {
+  .job-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.9rem; align-items: start; }
+}
+@media (min-width: 1100px) {
+  /* Full card, a size smaller so four sit comfortably side by side. */
+  .job-grid { align-items: stretch; }
+  .job-card { padding: 1.1rem 1.1rem 0.95rem; gap: 0.7rem; }
+  .job-initial { width: 36px; height: 36px; font-size: 1rem; }
+  .job-title { font-size: 1.08rem; }
+  .job-brief { font-size: 0.86rem; }
+  .job-facts { padding: 0.7rem 0.8rem; gap: 0.5rem; }
+  .job-pay dd { font-size: 1.12rem; }
+  .job-meta-row dd { font-size: 0.8rem; }
+  .job-category { font-size: 0.74rem; }
+  .job-apply { min-height: 40px; padding: 0 0.9rem; font-size: 0.84rem; }
+}
+@media (max-width: 1099px) {
+  .job-grid { gap: 0.6rem; }
+  .job-card { padding: 0.85rem 0.95rem 0.8rem; gap: 0.45rem; border-radius: 16px; cursor: pointer; }
+  .job-card.is-open { cursor: auto; }
+  .job-card::before { height: 3px; }
+  .job-card:hover { transform: none; box-shadow: 0 1px 2px rgb(24 34 48 / 0.04); }
+  .job-card-head { gap: 0.55rem; padding-inline-end: 2.25rem; }
+  .job-initial { width: 30px; height: 30px; border-radius: 9px; font-size: 0.9rem; }
+  .job-org { flex-direction: row; align-items: center; gap: 0.4rem; }
+  .job-org-name { font-size: 0.8rem; }
+  .job-verified { font-size: 0; gap: 0; }
+  .job-verified .job-icon-check { width: 13px; height: 13px; }
+  .job-tags { gap: 4px; }
+  .job-type, .job-mode { font-size: 0.68rem; padding: 2px 8px; }
+  .job-title { font-size: 1.02rem; line-height: 1.28; }
+  .job-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 0.15rem 0.9rem; padding: 0; background: none; border: 0; border-radius: 0; }
+  .job-pay { padding: 0; border: 0; }
+  .job-pay dt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .job-pay dd { font-size: 0.95rem; }
+  .job-pay dd.job-pay-text { font-size: 0.85rem; }
+  .job-meta { gap: 0.15rem 0.8rem; }
+  .job-meta-row dd { font-size: 0.78rem; gap: 4px; color: var(--site-muted); }
+  .job-meta-row .job-icon { width: 14px; height: 14px; }
+
+  /* Closed: description, skills and footer wait behind the tap. */
+  .job-card:not(.is-open) .job-brief,
+  .job-card:not(.is-open) .job-skills,
+  .job-card:not(.is-open) .job-foot { display: none; }
+  .job-card.is-open .job-brief { display: block; -webkit-line-clamp: unset; overflow: visible; font-size: 0.9rem; }
+  .job-card.is-open .job-title { -webkit-line-clamp: unset; }
+  .job-card.is-open { border-color: var(--site-line-strong); box-shadow: 0 10px 28px rgb(24 34 48 / 0.08); }
+  .job-skills li { font-size: 0.74rem; padding: 2px 8px; }
+  .job-foot { padding-top: 0.6rem; }
+  .job-apply { min-height: 42px; font-size: 0.88rem; }
+
+  .job-toggle { display: flex; align-items: center; justify-content: center; position: absolute; top: 0.7rem; inset-inline-end: 0.7rem; width: 32px; height: 32px; padding: 0; border: 1px solid var(--site-line); border-radius: 50%; background: #fff; color: var(--site-ink); cursor: pointer; z-index: 2; }
+  .job-toggle-icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.2s ease; }
+  .job-card.is-open .job-toggle-icon { transform: rotate(180deg); }
+  .job-toggle:focus-visible { outline: 3px solid var(--site-teal); outline-offset: 2px; }
+}
+@media (min-width: 641px) and (max-width: 1099px) {
+  /* Narrow tablet columns: the apply button takes the full width. */
+  .job-foot { flex-direction: column; align-items: stretch; }
+  .job-apply { margin-inline-start: 0; justify-content: center; }
+}
+@media (max-width: 1099px) and (prefers-reduced-motion: reduce) { .job-toggle-icon { transition: none; } }
