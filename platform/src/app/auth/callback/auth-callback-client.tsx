@@ -143,8 +143,13 @@ export function AuthCallbackClient() {
   }, []);
 
   useEffect(() => {
-    if (failed) router.replace("/login?error=confirmation_failed");
-  }, [failed, router]);
+    if (!failed) return;
+    // A reset link that's expired or already used (Supabase links work
+    // once, for about an hour, and only the newest one counts): send the
+    // person to ask for a fresh one, not to a login page they can't use.
+    const wantedReset = searchParams.get("next") === "/reset-password" || /type=recovery/.test(window.location.hash);
+    router.replace(wantedReset ? "/forgot-password?expired=1" : "/login?error=confirmation_failed");
+  }, [failed, router, searchParams]);
 
   return (
     <main className="mx-auto max-w-md p-8">

@@ -82,3 +82,46 @@ test("a real signup-confirmation email link actually signs the user in", async (
     await deleteTestUser(created.user.id);
   }
 });
+
+/**
+ * Owner report (Nov 2026): "the reset link takes users to the login
+ * portal". A reset link that can't sign the person in (opened a second
+ * time, expired, or — before the fix in lib/supabase/emailLink.ts —
+ * opened on a different device from the one that asked) must send them
+ * to ask for a fresh link, with an explanation, not to the login page.
+ */
+test("a used or broken reset link sends the person to request a new one", async ({ page }) => {
+  const talent = await createTestUser("resetreuse", "talent");
+  try {
+    const { data, error } = await admin.auth.admin.generateLink({
+      type: "recovery",
+      email: talent.email,
+      options: { redirectTo: "http://localhost:3000/auth/callback?next=%2Freset-password" },
+    });
+    expect(error).toBeNull();
+    if (!data?.properties) throw new Error("generateLink returned no data");
+    const actionLink = data.properties.action_link;
+
+    // First click works.
+    await page.goto(actionLink);
+    await page.waitForURL("**/reset-password", { timeout: 15000 });
+
+    // Second click of the same link (it works once) in a fresh browser.
+    const fresh = await page.context().browser()!.newContext();
+    const second = await fresh.newPage();
+    await second.goto(actionLink);
+    await second.waitForURL("**/forgot-password?expired=1", { timeout: 15000 });
+    await expect(second.getByText(/expired or was already used/i)).toBeVisible();
+    await fresh.close();
+
+    // A code the browser can't use (the old cross-device failure) lands
+    // in the same helpful place.
+    const other = await page.context().browser()!.newContext();
+    const third = await other.newPage();
+    await third.goto("http://localhost:3000/auth/callback?next=%2Freset-password&code=not-a-real-code");
+    await third.waitForURL("**/forgot-password?expired=1", { timeout: 15000 });
+    await other.close();
+  } finally {
+    await deleteTestUser(talent.id);
+  }
+});
