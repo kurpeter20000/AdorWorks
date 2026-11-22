@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createEmailLinkClient } from "@/lib/supabase/emailLink";
 import { notifyUser, NOTIFICATION_TYPES } from "@/lib/domain/notifications";
 import { checkAndRecordAttempt, getClientIp } from "@/lib/domain/rateLimit";
 import { sendEmailSafely } from "@/lib/email";
@@ -79,8 +80,6 @@ export async function signup(_prevState: FormState, formData: FormData): Promise
     return { message: msg("Too many signup attempts. Please try again later.") };
   }
 
-  const supabase = await createClient();
-
   // The intended role travels in signUp's user_metadata, not a
   // follow-up `profiles.update()` — this project requires email
   // confirmation, so signUp() does NOT establish a session immediately
@@ -95,7 +94,10 @@ export async function signup(_prevState: FormState, formData: FormData): Promise
   const nextPath = intent === "talent" ? "/onboarding" : "/organisation";
   const safeNextPath = nextPath.startsWith("/") ? nextPath : "/dashboard";
 
-  const { data, error } = await supabase.auth.signUp({
+  // Implicit-flow client so the confirmation link works on any device
+  // (see lib/supabase/emailLink.ts). Signup always ends at /check-email,
+  // so no session cookie is needed here.
+  const { data, error } = await createEmailLinkClient().auth.signUp({
     email,
     password,
     options: {
@@ -232,8 +234,9 @@ export async function requestPasswordReset(_prevState: FormState, formData: Form
     return { message: msg("Too many reset requests for this email. Please wait a few minutes and try again.") };
   }
 
-  const supabase = await createClient();
-  await supabase.auth.resetPasswordForEmail(validated.data.email, {
+  // Implicit-flow client: the link must work on whatever device the
+  // email is opened on (see lib/supabase/emailLink.ts).
+  await createEmailLinkClient().auth.resetPasswordForEmail(validated.data.email, {
     redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent("/reset-password")}`,
   });
 

@@ -12,9 +12,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ForgotPasswordPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sent?: string }>;
+  searchParams: Promise<{ sent?: string; expired?: string }>;
 }) {
-  const { sent } = await searchParams;
+  const { sent, expired } = await searchParams;
   const t = await getT();
 
   if (sent) {
@@ -24,6 +24,7 @@ export default async function ForgotPasswordPage({
         <p className="mt-3 text-sm text-slate">
           {t("If that email matches an AdorWorks account, we've sent a link to reset your password.")}
         </p>
+        <p className="mt-3 text-sm text-slate">{t("The link works once, for one hour. If you ask more than once, use the newest email.")}</p>
         <p className="mt-3 text-sm text-slate">
           {rich(t("Didn't get it? Check spam, or <again>try again</again>."), {
             again: (text) => (
@@ -40,6 +41,11 @@ export default async function ForgotPasswordPage({
   return (
     <div>
       <h1 className="text-2xl font-bold text-midnight">{t("Reset your password")}</h1>
+      {expired && (
+        <p className="mt-3 rounded-lg border border-warning/40 bg-amber-tint px-3 py-2 text-sm text-warning-ink" role="alert">
+          {t("That reset link has expired or was already used. Enter your email to get a new one.")}
+        </p>
+      )}
       <p className="mt-1 text-sm text-slate">{t("Enter your account email and we'll send you a reset link.")}</p>
       <ForgotPasswordForm />
       <p className="mt-4 text-center text-sm text-slate">
