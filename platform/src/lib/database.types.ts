@@ -1034,6 +1034,37 @@ export type TalentPayoutMethodRow = {
 };
 
 /** 0114: a person's alert settings. */
+/** 0127: team chat — internal group channels. */
+export type TeamChannelRow = {
+  id: string;
+  scope: "organisation" | "staff" | "programme";
+  kind: "general" | "cohort" | "team";
+  organisation_id: string | null;
+  programme_id: string | null;
+  name: string;
+  description: string | null;
+  created_by: string | null;
+  created_at: string;
+  archived_at: string | null;
+};
+
+export type TeamMessageRow = {
+  id: string;
+  channel_id: string;
+  sender_id: string;
+  body: string;
+  application_id: string | null;
+  hidden_at: string | null;
+  hidden_by: string | null;
+  created_at: string;
+};
+
+export type TeamChatReadRow = {
+  user_id: string;
+  thread_key: string;
+  last_read_at: string;
+};
+
 export type AlertPreferencesRow = {
   user_id: string;
   whatsapp_enabled: boolean;
@@ -1534,6 +1565,24 @@ export type Database = {
         Row: TalentPayoutMethodRow;
         Insert: Partial<TalentPayoutMethodRow> & { talent_id: string; method: TalentPayoutMethodRow["method"] };
         Update: Partial<TalentPayoutMethodRow>;
+        Relationships: [];
+      };
+      team_channels: {
+        Row: TeamChannelRow;
+        Insert: Partial<TeamChannelRow> & { scope: TeamChannelRow["scope"]; name: string };
+        Update: Partial<TeamChannelRow>;
+        Relationships: [];
+      };
+      team_messages: {
+        Row: TeamMessageRow;
+        Insert: Partial<TeamMessageRow> & { channel_id: string; sender_id: string; body: string };
+        Update: Partial<TeamMessageRow>;
+        Relationships: [];
+      };
+      team_chat_reads: {
+        Row: TeamChatReadRow;
+        Insert: Partial<TeamChatReadRow> & { user_id: string; thread_key: string };
+        Update: Partial<TeamChatReadRow>;
         Relationships: [];
       };
       alert_preferences: {

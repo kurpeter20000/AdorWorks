@@ -68,6 +68,8 @@ export const DOMAIN_EVENTS = {
   OPPORTUNITY_FEATURE_REQUESTED: "opportunity.feature_requested",
   OPPORTUNITY_FEATURED: "opportunity.featured",
   OPPORTUNITY_UNFEATURED: "opportunity.unfeatured",
+  // 0127: team chat moderation.
+  TEAM_MESSAGE_HIDDEN: "communication.team_message.hidden",
 } as const;
 
 export type DomainEventName = (typeof DOMAIN_EVENTS)[keyof typeof DOMAIN_EVENTS];

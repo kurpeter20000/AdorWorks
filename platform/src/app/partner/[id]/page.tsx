@@ -29,6 +29,10 @@ export default async function PartnerCohortPage({ params }: { params: Promise<{ 
   const report = buildPartnerReport(await loadParticipantFacts(createAdminClient(), id), programme.agreement_signed_at !== null);
   const top = report.funnel[0]?.count || 1;
   const earned = Object.entries(report.earnings);
+  // 0127: the cohort's two team chat channels.
+  const { data: chats } = await createAdminClient().from("team_channels").select("id, kind").eq("programme_id", id);
+  const cohortChat = (chats ?? []).find((c) => c.kind === "cohort");
+  const teamChat = (chats ?? []).find((c) => c.kind === "team");
 
   return (
     <main className="mx-auto max-w-4xl p-6 sm:p-8">
@@ -69,6 +73,16 @@ export default async function PartnerCohortPage({ params }: { params: Promise<{ 
         <Link href={`/partner/${programme.id}/team`} className="inline-flex min-h-11 items-center rounded-control border border-teal/40 bg-white px-4 text-sm font-bold text-teal-ink">
           {t("Team and join code")}
         </Link>
+        {cohortChat && (
+          <Link href={`/team-chat?t=c:${cohortChat.id}`} className="inline-flex min-h-11 items-center rounded-control border border-teal/40 bg-white px-4 text-sm font-bold text-teal-ink">
+            {t("Cohort chat")}
+          </Link>
+        )}
+        {teamChat && (
+          <Link href={`/team-chat?t=c:${teamChat.id}`} className="inline-flex min-h-11 items-center rounded-control border border-teal/40 bg-white px-4 text-sm font-bold text-teal-ink">
+            {t("Team chat")}
+          </Link>
+        )}
       </p>
 
       {!report.visible ? (

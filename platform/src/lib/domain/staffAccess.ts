@@ -78,6 +78,8 @@ export function canUseStaffArea(role: UserRole, area: StaffArea): boolean {
 export function canOpenStaffPath(role: UserRole, href: string): boolean {
   const path = href.split("?")[0].replace(/\/+$/, "");
   if (path === "/operations") return true;
+  // Team chat (0127) is for every staff role; RLS decides what each sees.
+  if (path === "/team-chat") return true;
   const area = path.split("/")[2] as StaffArea | undefined;
   if (!area || !(area in STAFF_AREA_ROLES)) return role === "admin";
   return canUseStaffArea(role, area);
