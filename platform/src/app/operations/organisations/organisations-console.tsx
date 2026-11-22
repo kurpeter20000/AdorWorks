@@ -25,6 +25,8 @@ import {
   useStaffData,
 } from "../_components/staff-ui";
 import { RiskFlags } from "../_components/risk-flags";
+import { PendingEmployerApprovals } from "../_components/pending-approvals";
+import type { PendingEmployer } from "@/lib/dal/approvals";
 import { formatPlace, SOUTH_SUDAN_STATES } from "@/lib/domain/locations";
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- staff API payloads are untyped JSON from backend/api */
@@ -41,7 +43,7 @@ const OVERALL = ["pending", "verified", "rejected", "suspended"];
 const CHECK_STATUSES = ["not_started", "information_required", "submitted", "under_review", "verified", "rejected", "suspended", "expired"];
 const CHECK_METHODS = ["formal_registration", "alternative_referral", "physical_review", "representative_attestation"];
 
-export function OrganisationsConsole({ initialFilter }: { initialFilter: string }) {
+export function OrganisationsConsole({ initialFilter, pending }: { initialFilter: string; pending?: { rows: PendingEmployer[]; total: number } }) {
   const [filter, setFilter] = useState(initialFilter);
   const [name, setName] = useState("");
   const [country, setCountry] = useState("");
@@ -57,6 +59,8 @@ export function OrganisationsConsole({ initialFilter }: { initialFilter: string 
         title="Organisations"
         description="The employer verification checklist (Blueprint §5.4) is followed manually off-platform; record the outcome here."
       />
+      {pending && <PendingEmployerApprovals rows={pending.rows} total={pending.total} />}
+      <h2 className="mt-8 mb-2 text-base font-bold text-midnight">Organisation verification</h2>
       <FilterBar>
         <Chips label="Verification status" value={filter} onChange={setFilter} options={FILTERS} />
       </FilterBar>

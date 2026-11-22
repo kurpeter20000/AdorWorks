@@ -5,6 +5,7 @@ import { z } from "zod";
 import { MAX_OPEN_APPLICATIONS, OPEN_APPLICATION_STAGES } from "@/lib/domain/fitCheck";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { approvalBlock } from "@/lib/domain/approval";
 import { requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -89,6 +90,9 @@ export async function applyToOpportunity(
   formData: FormData
 ): Promise<FormState> {
   const session = await requireRole("talent");
+  // 0128: new accounts wait for staff approval.
+  const blocked = approvalBlock(session);
+  if (blocked) return { message: blocked };
 
   const validated = PitchSchema.safeParse({ pitch: formData.get("pitch") });
   if (!validated.success) {

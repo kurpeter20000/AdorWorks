@@ -62,6 +62,8 @@ export const DOMAIN_EVENTS = {
   // 0107: digitized personal referrals.
   VOUCH_REQUESTED: "trust.vouch.requested",
   VOUCH_RESPONDED: "trust.vouch.responded",
+  // 0128: staff approval of new accounts.
+  ACCOUNT_APPROVAL_DECIDED: "identity.account.approval_decided",
   // 0126: paid featured jobs.
   OPPORTUNITY_FEATURE_REQUESTED: "opportunity.feature_requested",
   OPPORTUNITY_FEATURED: "opportunity.featured",

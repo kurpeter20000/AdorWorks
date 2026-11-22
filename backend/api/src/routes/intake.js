@@ -137,6 +137,20 @@ async function provisionTalentAccountWithInvite(email, metadata) {
   });
 }
 
+/**
+ * 0128: an account staff create from a reviewed intake submission is
+ * already approved — the submission review was the approval. Failing to
+ * record it isn't fatal (staff can approve in the console), so it's
+ * logged, not thrown. Ignores a database without 0128 yet.
+ */
+async function markApprovedByStaff(userId, staffId) {
+  const { error } = await supabaseAdmin
+    .from("profiles")
+    .update({ approval_status: "approved", approval_decided_at: new Date().toISOString(), approval_decided_by: staffId })
+    .eq("id", userId);
+  if (error && !/approval_/.test(error.message)) console.error("markApprovedByStaff failed for %s: %s", userId, error.message);
+}
+
 async function loadSubmission(id, expectedType) {
   const { data, error } = await supabaseAdmin
     .from("intake_submissions")
@@ -184,6 +198,7 @@ intakeRouter.post(
       );
     }
     const talentId = created.user.id;
+    await markApprovedByStaff(talentId, req.user.id);
 
     const { data: talentProfile, error: profileError } = await supabaseAdmin
       .from("talent_profiles")
@@ -277,6 +292,7 @@ intakeRouter.post(
       );
     }
     const representativeId = created.user.id;
+    await markApprovedByStaff(representativeId, req.user.id);
 
     // The signup trigger defaults everyone to 'talent' — this person is
     // signing up as an employer representative, so correct that here.
