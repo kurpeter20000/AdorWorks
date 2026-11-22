@@ -172,13 +172,17 @@ values
 on conflict do nothing;
 
 -- Live updates (RLS still decides who receives each row) --------------------
+-- Only where Supabase Realtime exists: the CI test database (PGlite) has
+-- no supabase_realtime publication, and this must still apply there.
 do $$
 begin
-  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'team_messages') then
-    alter publication supabase_realtime add table team_messages;
-  end if;
-  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'application_notes') then
-    alter publication supabase_realtime add table application_notes;
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'team_messages') then
+      execute 'alter publication supabase_realtime add table team_messages';
+    end if;
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'application_notes') then
+      execute 'alter publication supabase_realtime add table application_notes';
+    end if;
   end if;
 end $$;
 
