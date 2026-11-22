@@ -134,7 +134,7 @@
     // which is the accessible baseline a full roving-tabindex tab pattern
     // would add complexity for without changing what a keyboard user can
     // actually reach. Desktop opens on hover (with a short close delay so
-    // moving the mouse from trigger to panel doesn't drop it) and on
+    // moving the mouse from trigger to panel doesn't drop it; a click pins it open) and on
     // click/Enter for keyboard and touch; under 1180px it's an inline
     // disclosure inside the already-open mobile drawer instead of a flyout,
     // since a hover panel makes no sense on a touch screen.
@@ -147,9 +147,6 @@
       var catGroups = Array.from(panel.querySelectorAll("[data-megamenu-items]"));
       var desktopQuery = window.matchMedia("(min-width: 1180px)");
       var closeTimer = null;
-      // When the pointer opened it a moment ago, the click that follows is
-      // the same intent ("show me the menu"), not a request to close it.
-      var hoverOpenedAt = 0;
 
       function showCategory(key) {
         catButtons.forEach(function (b) {
@@ -166,29 +163,47 @@
         b.addEventListener("click", function () { showCategory(key); });
       });
 
+      // Owner, Nov 2026: the menu kept vanishing on the way to a service.
+      // Now a click on "Services" pins it open until the visitor clicks
+      // outside it, presses Escape or clicks "Services" again. A hover-
+      // opened menu waits much longer before closing, and coming back
+      // into it cancels the close.
+      var pinned = false;
       function open() {
         clearTimeout(closeTimer);
         item.classList.add("is-open");
         trigger.setAttribute("aria-expanded", "true");
       }
       function close() {
+        clearTimeout(closeTimer);
+        pinned = false;
         item.classList.remove("is-open");
         trigger.setAttribute("aria-expanded", "false");
       }
 
       item.addEventListener("mouseenter", function () {
-        if (desktopQuery.matches && !item.classList.contains("is-open")) {
-          open();
-          hoverOpenedAt = Date.now();
-        }
+        clearTimeout(closeTimer);
+        if (desktopQuery.matches && !item.classList.contains("is-open")) open();
       });
+      panel.addEventListener("mouseenter", function () { clearTimeout(closeTimer); });
       item.addEventListener("mouseleave", function () {
-        if (desktopQuery.matches) closeTimer = setTimeout(close, 200);
+        if (desktopQuery.matches && !pinned) {
+          clearTimeout(closeTimer);
+          closeTimer = setTimeout(close, 700);
+        }
       });
       trigger.addEventListener("click", function (e) {
         e.preventDefault();
-        if (item.classList.contains("is-open") && Date.now() - hoverOpenedAt < 600) return;
-        item.classList.contains("is-open") ? close() : open();
+        if (!item.classList.contains("is-open")) {
+          open();
+          pinned = true;
+        } else if (!pinned) {
+          // Opened by hover a moment ago: the click means "keep it open".
+          pinned = true;
+          clearTimeout(closeTimer);
+        } else {
+          close();
+        }
       });
       item.addEventListener("keydown", function (e) {
         if (e.key === "Escape" && item.classList.contains("is-open")) {
