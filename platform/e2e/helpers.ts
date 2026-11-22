@@ -45,6 +45,9 @@ export async function createTestUser(rolePrefix: string, role: string) {
   const { data, error } = await admin.auth.admin.createUser({ email, password: TEST_PASSWORD, email_confirm: true });
   if (error || !data.user) throw new Error(`Failed to create test user: ${error?.message}`);
   const { error: roleError } = await admin.from("profiles").update({ role }).eq("id", data.user.id);
+  // 0128: test accounts stand in for people staff have already approved.
+  // (Ignored on a database without the approval columns yet.)
+  await admin.from("profiles").update({ approval_status: "approved" }).eq("id", data.user.id);
   if (roleError) {
     await admin.auth.admin.deleteUser(data.user.id).catch(() => {});
     throw new Error(`Failed to assign test role: ${roleError.message}`);

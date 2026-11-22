@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { approvalBlock } from "@/lib/domain/approval";
 import { requireRole } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import type { TalentServiceRow } from "@/lib/database.types";
@@ -159,7 +160,10 @@ async function transitionService(serviceId: string, status: TalentServiceRow["st
  * security boundary.
  */
 export async function submitService(serviceId: string): Promise<{ error?: string }> {
-  await requireRole("talent");
+  const approvalSession = await requireRole("talent");
+  // 0128: new accounts wait for staff approval.
+  const blocked = approvalBlock(approvalSession);
+  if (blocked) return { error: blocked };
   const supabase = await createClient();
   const { data: service } = await supabase
     .from("talent_services")

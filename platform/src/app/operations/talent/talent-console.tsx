@@ -29,6 +29,8 @@ import {
 } from "../_components/staff-ui";
 import { youtubeEmbedUrl } from "@/lib/domain/youtube";
 import { formatPlace, SOUTH_SUDAN_STATES } from "@/lib/domain/locations";
+import { PendingTalentApprovals } from "../_components/pending-approvals";
+import type { PendingTalent } from "@/lib/dal/approvals";
 
 const CATEGORIES: [string, string][] = [
   ["creative_media", "Creative & media"],
@@ -58,7 +60,7 @@ function ProfessionCell({ r }: { r: Row }) {
   );
 }
 
-export function TalentConsole() {
+export function TalentConsole({ pending }: { pending?: { rows: PendingTalent[]; total: number } }) {
   const [category, setCategory] = useState("");
   const [tier, setTier] = useState("");
   const [name, setName] = useState("");
@@ -81,6 +83,8 @@ export function TalentConsole() {
         title="Talent"
         description="Review evidence, set verification tiers, and decide who's ready to be publicly visible in employer talent search."
       />
+
+      {pending && <PendingTalentApprovals rows={pending.rows} total={pending.total} detail={(tid) => <TalentDetail id={tid} onChanged={refreshAll} />} />}
 
       {videos.data && videos.data.data.length > 0 && (
         <Section title={`Introduction videos pending review (${videos.data.data.length})`}>

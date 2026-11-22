@@ -66,6 +66,9 @@ export const NOTIFICATION_TYPES = {
   // 0126: tailored job alerts.
   JOB_ALERT: "job_alert",
   OPPORTUNITY_FEATURED: "opportunity_featured",
+  // 0128: staff approval of new accounts.
+  ACCOUNT_APPROVED: "account_approved",
+  ACCOUNT_DECLINED: "account_declined",
 } as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];

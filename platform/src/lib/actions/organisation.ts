@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { approvalBlock } from "@/lib/domain/approval";
 import { requireRole, CLIENT_ROLES } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -260,7 +261,10 @@ function toNullableNumber(value: string | undefined) {
  * on purpose, not just because the trigger would catch it.
  */
 export async function createOpportunity(organisationId: string, _prevState: FormState, formData: FormData): Promise<FormState> {
-  await requireRole(...CLIENT_ROLES);
+  const approvalSession = await requireRole(...CLIENT_ROLES);
+  // 0128: new accounts wait for staff approval.
+  const blocked = approvalBlock(approvalSession);
+  if (blocked) return { message: blocked };
 
   const validated = OpportunitySchema.safeParse({
     type: formData.get("type"),
@@ -379,7 +383,10 @@ const BatchRowSchema = z.object({
  * set), redirecting once after every row is in.
  */
 export async function createOpportunitiesBatch(organisationId: string, _prevState: FormState, formData: FormData): Promise<FormState> {
-  await requireRole(...CLIENT_ROLES);
+  const approvalSession = await requireRole(...CLIENT_ROLES);
+  // 0128: new accounts wait for staff approval.
+  const blocked = approvalBlock(approvalSession);
+  if (blocked) return { message: blocked };
 
   const sharedValidated = BatchSharedSchema.safeParse({
     type: formData.get("type"),
@@ -526,7 +533,10 @@ export async function resubmitOpportunity(
   _prevState: FormState,
   formData: FormData
 ): Promise<FormState> {
-  await requireRole(...CLIENT_ROLES);
+  const approvalSession = await requireRole(...CLIENT_ROLES);
+  // 0128: new accounts wait for staff approval.
+  const blocked = approvalBlock(approvalSession);
+  if (blocked) return { message: blocked };
 
   const validated = OpportunitySchema.safeParse({
     type: formData.get("type"),

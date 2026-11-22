@@ -17,7 +17,7 @@ import { loadPlatformHealth } from "@/lib/dal/platformHealth";
 export const metadata: Metadata = { title: "Operations" };
 export const dynamic = "force-dynamic";
 
-type Tile = { label: string; href: string; table: string; column: string; value: string | string[] };
+type Tile = { label: string; href: string; table: string; column: string; value: string | string[]; also?: [string, string | string[]] };
 type IntakeRow = { id: string; form_type: string; status: string; created_at: string; payload: Record<string, string | undefined> | null };
 
 // Same nine live counts the old /staff dashboard showed, each linking to
@@ -27,6 +27,9 @@ const GROUPS: { title: string; tiles: Tile[] }[] = [
   {
     title: "Trust queue",
     tiles: [
+      // 0128: new accounts waiting for staff approval.
+      { label: "Talent sign-ups to approve", href: "/operations/talent", table: "profiles", column: "approval_status", value: "pending", also: ["role", "talent"] },
+      { label: "Employer sign-ups to approve", href: "/operations/organisations", table: "profiles", column: "approval_status", value: "pending", also: ["role", ["individual_client", "org_member", "org_admin", "employer"]] },
       { label: "Organisations pending verification", href: "/operations/organisations", table: "organisations", column: "verification_status", value: "pending" },
       { label: "Opportunities pending review", href: "/operations/opportunities", table: "opportunities", column: "status", value: "pending_review" },
       { label: "Services pending review", href: "/operations/services", table: "talent_services", column: "status", value: "pending_review" },
@@ -87,6 +90,7 @@ export default async function OperationsPage() {
   const count = async (t: Tile) => {
     let q = db.from(t.table).select("*", { count: "exact", head: true });
     q = Array.isArray(t.value) ? q.in(t.column, t.value) : q.eq(t.column, t.value);
+    if (t.also) q = Array.isArray(t.also[1]) ? q.in(t.also[0], t.also[1]) : q.eq(t.also[0], t.also[1]);
     const { count: n, error } = await q;
     if (error) console.error("[operations] count \"%s\" failed:", t.label, error);
     return error ? null : (n ?? 0);

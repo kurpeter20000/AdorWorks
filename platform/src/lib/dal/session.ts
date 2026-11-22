@@ -3,7 +3,7 @@ import { cache } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { UserRole } from "@/lib/database.types";
+import type { ApprovalStatus, UserRole } from "@/lib/database.types";
 import { EMPLOYER_ACCOUNT_ROLES, STAFF_ACCOUNT_ROLES, isStaffAccountRole } from "@/lib/domain/roles";
 import { REQUEST_PATH_HEADER, resolveReturnPath } from "@/lib/domain/redirects";
 
@@ -21,6 +21,9 @@ export interface VerifiedSession {
   status: "active" | "suspended" | "deleted";
   phone: string | null;
   phoneVerified: boolean;
+  /** 0128: staff approval of new talent/employer accounts. */
+  approvalStatus: ApprovalStatus;
+  approvalNote: string | null;
 }
 
 /**
@@ -52,7 +55,10 @@ export const verifySession = cache(async (): Promise<VerifiedSession | null> => 
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("role, full_name, status, phone, phone_verified")
+    // "*" rather than a column list so a session still loads if the app
+    // is deployed before a migration adds a column (0128's approval_status
+    // reads as "approved" until then, never as "signed out").
+    .select("*")
     .eq("id", user.id)
     .single();
   if (!profile) {
@@ -70,6 +76,8 @@ export const verifySession = cache(async (): Promise<VerifiedSession | null> => 
     status: profile.status,
     phone: profile.phone,
     phoneVerified: profile.phone_verified,
+    approvalStatus: (profile as { approval_status?: ApprovalStatus }).approval_status ?? "approved",
+    approvalNote: (profile as { approval_note?: string | null }).approval_note ?? null,
   };
 });
 

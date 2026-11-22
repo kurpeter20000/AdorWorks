@@ -6,6 +6,7 @@ import { getDashboardKind } from "@/lib/domain/roles";
 import { MARKETING_SITE_URL } from "@/lib/domain/marketingSite";
 import { AppShellClient } from "./app-shell-client";
 import type { SwitchableMode } from "./mode-switcher";
+import { ApprovalBanner } from "./approval-banner";
 
 /**
  * Server wrapper: reads the session (verifySession never redirects — see
@@ -82,6 +83,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
       avatarUrl={avatarUrl}
       profileHref={profileHref}
     >
+      <ApprovalBanner session={session} />
       {children}
     </AppShellClient>
   );

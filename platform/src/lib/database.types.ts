@@ -88,9 +88,16 @@ export type ProfileRow = {
   policy_version: string | null;
   policy_consent_source: string | null;
   email_notifications_enabled: boolean;
+  /** 0128: every new talent/employer account is approved by staff. */
+  approval_status: ApprovalStatus;
+  approval_note: string | null;
+  approval_decided_at: string | null;
+  approval_decided_by: string | null;
   created_at: string;
   updated_at: string;
 }
+
+export type ApprovalStatus = "pending" | "approved" | "declined";
 
 export type AuthRateLimitAttemptRow = {
   id: string;

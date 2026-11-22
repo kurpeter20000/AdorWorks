@@ -119,13 +119,21 @@ export async function inviteTeamMember(
   let temporaryPassword: string | undefined;
   if (!existing) {
     temporaryPassword = generateTemporaryPassword();
-    const { error: createError } = await admin.auth.admin.createUser({
+    const { data: createdUser, error: createError } = await admin.auth.admin.createUser({
       email: v.email,
       password: temporaryPassword,
       email_confirm: true,
       user_metadata: { full_name: v.fullName || null, intended_role: "individual_client" },
     });
     if (createError) return { message: `Could not create an account: ${createError.message}` };
+    // 0128: a teammate account made by an approved organisation admin is
+    // vouched for by them; it doesn't wait in the staff queue again.
+    if (createdUser?.user && session.approvalStatus === "approved") {
+      await admin
+        .from("profiles")
+        .update({ approval_status: "approved", approval_decided_at: new Date().toISOString(), approval_decided_by: session.userId })
+        .eq("id", createdUser.user.id);
+    }
   }
 
   await admin
