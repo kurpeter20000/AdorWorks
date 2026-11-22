@@ -8,6 +8,7 @@ import { SkillsInput } from "@/components/skills-input";
 import { ProfessionInput } from "@/components/profession-input";
 import { PROFESSION_SUGGESTIONS } from "@/lib/skills";
 import { ENGAGEMENT_TYPE_LABEL, PAYMENT_BASIS_LABEL, WORK_MODE_LABEL } from "@/lib/domain/taxonomy";
+import { ExpandableText } from "@/components/expandable-text";
 
 const initialState: FormState = {};
 
@@ -596,7 +597,7 @@ export function OpportunityForm({
                 {formatPreviewCompensation(preview)}
               </span>
             </div>
-            {preview.brief && <p className="mt-2 line-clamp-3 text-sm text-slate">{preview.brief}</p>}
+            {preview.brief && <ExpandableText text={preview.brief} className="mt-2 text-sm text-slate" />}
             {preview.skills && (
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {preview.skills

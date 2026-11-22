@@ -11,6 +11,11 @@ organisationsRouter.use(requireAuth, requireStaff, requireStaffArea("organisatio
 
 const listQuerySchema = z.object({
   verification_status: z.enum(["pending", "verified", "rejected", "suspended"]).optional(),
+  // 0126: find organisations by name and by where they are.
+  name: z.string().trim().max(120).optional(),
+  country: z.string().trim().max(80).optional(),
+  state: z.string().trim().max(80).optional(),
+  place: z.string().trim().max(80).optional(), // city/town or county
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });
@@ -26,6 +31,14 @@ organisationsRouter.get(
       .order("created_at", { ascending: false })
       .range(query.offset, query.offset + query.limit - 1);
     if (query.verification_status) q = q.eq("verification_status", query.verification_status);
+    const term = (v) => v.replace(/[,()*%\\]/g, " ").trim();
+    if (query.name && term(query.name)) q = q.ilike("name", `%${term(query.name)}%`);
+    if (query.country) q = q.ilike("country", term(query.country));
+    if (query.state) q = q.eq("state", query.state);
+    if (query.place) {
+      const p = term(query.place);
+      if (p) q = q.or(`city.ilike.%${p}%,county.ilike.%${p}%`);
+    }
 
     const { data, error, count } = await q;
     if (error) throw new HttpError(500, error.message);

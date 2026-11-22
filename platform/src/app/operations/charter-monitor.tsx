@@ -78,7 +78,7 @@ export async function CharterMonitor({ role }: { role: UserRole }) {
                   <ul className="mt-2 space-y-1.5">
                     {items.slice(0, 5).map((r) => (
                       <li key={r.ref_id} className="text-xs">
-                        <span className="block truncate font-semibold text-midnight">{r.title}</span>
+                        <span className="block font-semibold text-pretty break-words text-midnight">{r.title}</span>
                         <span className="text-slate">
                           {r.detail} · since {formatDate(r.since)}
                         </span>

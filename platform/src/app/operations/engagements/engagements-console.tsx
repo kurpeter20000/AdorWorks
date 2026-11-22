@@ -21,6 +21,7 @@ import {
   qs,
   useAction,
   useStaffData,
+  TalentInline,
 } from "../_components/staff-ui";
 import { updateDispute } from "@/lib/actions/disputes";
 import type { DisputeOutcome } from "@/lib/domain/disputes";
@@ -62,7 +63,7 @@ export function EngagementsConsole({ isFinanceStaff, initialFilter }: { isFinanc
         error={list.error}
         onRetry={list.reload}
         rowKey={(r) => r.id}
-        cells={(r) => [r.organisations?.name || "—", r.talent_profiles?.headline || "—", humanize(r.contract_type), <Badge key="s" value={r.status} />, fmtDate(r.created_at)]}
+        cells={(r) => [r.organisations?.name || "—", <TalentInline key="t" tp={r.talent_profiles} fallback="—" />, humanize(r.contract_type), <Badge key="s" value={r.status} />, fmtDate(r.created_at)]}
         detail={(r) => (
           <DetailLoader<{ data: Row }> path={`/api/engagements/${r.id}`}>
             {(res, reload) => (

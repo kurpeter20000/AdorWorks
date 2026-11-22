@@ -25,8 +25,8 @@ disputesRouter.get(
     let q = supabaseAdmin
       .from("disputes")
       .select(
-        "*, engagements(organisations(name), talent_profiles(headline)), " +
-          "contracts(opportunities(title), organisations(name), talent_profiles(headline))",
+        "*, engagements(organisations(name), talent_profiles(display_name, legal_name, city, state, headline)), " +
+          "contracts(opportunities(title), organisations(name), talent_profiles(display_name, legal_name, city, state, headline))",
         { count: "exact" }
       )
       .order("created_at", { ascending: false })

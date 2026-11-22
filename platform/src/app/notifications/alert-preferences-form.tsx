@@ -56,10 +56,6 @@ export function AlertPreferencesForm({ current, whatsappLive }: { current: Alert
           <input type="checkbox" name="messages" className={box} defaultChecked={current?.messages ?? true} />
           {t("New messages")}
         </label>
-        <label className={row}>
-          <input type="checkbox" name="new_matching_work" className={box} defaultChecked={current?.new_matching_work ?? true} />
-          {t("New work that matches my skills")}
-        </label>
       </fieldset>
 
       <label className={row}>

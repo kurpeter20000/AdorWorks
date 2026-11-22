@@ -23,6 +23,7 @@ import {
   qs,
   useAction,
   useStaffData,
+  TalentInline,
 } from "../_components/staff-ui";
 import { updateDispute } from "@/lib/actions/disputes";
 import type { DisputeOutcome } from "@/lib/domain/disputes";
@@ -65,7 +66,7 @@ export function ContractsConsole({ initialFilter, canDecide = false, canRefund =
         rowKey={(r) => r.id}
         cells={(r) => [
           r.opportunities?.title || "—",
-          r.talent_profiles?.display_name || r.talent_profiles?.headline || "—",
+          <TalentInline key="t" tp={r.talent_profiles} fallback="—" />,
           r.organisations?.name || "—",
           <Badge key="s" value={r.status} />,
           fmtDate(r.started_at),

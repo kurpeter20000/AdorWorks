@@ -213,7 +213,7 @@ function AwaitingTransferPanel({ transfer }: { transfer: AwaitingTransfer }) {
     value ? (
       <div className="flex flex-wrap justify-between gap-x-3">
         <dt className="text-slate">{label}</dt>
-        <dd className="font-semibold text-midnight break-all">{value}</dd>
+        <dd className="font-semibold text-midnight [overflow-wrap:anywhere]">{value}</dd>
       </div>
     ) : null;
 

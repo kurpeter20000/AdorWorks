@@ -104,7 +104,7 @@ export async function OpportunitiesList({
               <Link href={`/organisation/opportunities/${o.id}`} className="block px-4 py-4 transition-colors hover:bg-cloud sm:px-5">
                 <span className="flex items-start justify-between gap-3">
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-extrabold text-midnight">{o.title}</span>
+                    <span className="block text-sm font-extrabold text-pretty break-words text-midnight">{o.title}</span>
                     <span className="mt-0.5 block text-xs text-slate">
                       {t(TYPE[o.type] ?? o.type)} · {total === 1 ? t("1 applicant") : t("{n} applicants", { n: total })}
                     </span>

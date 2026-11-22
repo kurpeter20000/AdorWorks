@@ -8,6 +8,7 @@ import { SaveButton } from "../save-button";
 import { formatCompensation } from "@/lib/domain/format";
 import { getT } from "@/i18n/server";
 import { rich } from "@/i18n/rich";
+import { ExpandableText } from "@/components/expandable-text";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
@@ -76,7 +77,7 @@ export default async function SavedOpportunitiesPage() {
                 </div>
                 <span className="whitespace-nowrap text-sm font-semibold text-teal-ink">{t(formatCompensation(o))}</span>
               </div>
-              {o.brief && <p className="mt-2 line-clamp-3 text-sm text-slate">{o.brief}</p>}
+              {o.brief && <ExpandableText text={o.brief} className="mt-2 text-sm text-slate" />}
               <div className="mt-3 flex items-center justify-between">
                 <p className="text-xs text-slate">
                   {[o.location, o.work_mode && t(WORK_MODE_LABEL[o.work_mode]), o.engagement_type && t(ENGAGEMENT_TYPE_LABEL[o.engagement_type])]

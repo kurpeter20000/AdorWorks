@@ -26,7 +26,7 @@ reviewsRouter.get(
     const query = listQuerySchema.parse(req.query);
     let q = supabaseAdmin
       .from("reviews")
-      .select("*, engagements(organisations(name), talent_profiles(headline))", { count: "exact" })
+      .select("*, engagements(organisations(name), talent_profiles(display_name, legal_name, city, state, headline))", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(query.offset, query.offset + query.limit - 1);
     if (query.engagement_id) q = q.eq("engagement_id", query.engagement_id);

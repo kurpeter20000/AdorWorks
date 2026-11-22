@@ -167,6 +167,31 @@ export function Badge({ value, tone }: { value: string | null | undefined; tone?
   );
 }
 
+// --- people -----------------------------------------------------------------
+
+/* eslint-disable @typescript-eslint/no-explicit-any -- talent rows are untyped staff API JSON */
+/** The name staff know a talent by: display name, then legal name, then account name. */
+export function talentName(tp: any, fallback = "Unnamed talent"): string {
+  return tp?.display_name || tp?.legal_name || tp?.profiles?.full_name || fallback;
+}
+
+/** "Juba, Central Equatoria" from a talent or organisation row. */
+export function shortPlace(r: any): string {
+  return [r?.city, r?.state].filter(Boolean).join(", ");
+}
+
+/** Name in bold, then profession and town on a second line. */
+export function TalentInline({ tp, fallback }: { tp: any; fallback?: string }) {
+  const sub = [tp?.headline, shortPlace(tp)].filter(Boolean).join(" · ");
+  return (
+    <span className="block min-w-[9rem]">
+      <span className="block font-semibold text-midnight">{talentName(tp, fallback)}</span>
+      {sub && <span className="block text-xs text-slate">{sub}</span>}
+    </span>
+  );
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 // --- layout ---------------------------------------------------------------
 
 export function PageHeader({ title, description, actions }: { title: string; description?: ReactNode; actions?: ReactNode }) {
@@ -174,7 +199,7 @@ export function PageHeader({ title, description, actions }: { title: string; des
     <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <h1 className="text-2xl font-extrabold text-midnight">{title}</h1>
-        {description && <p className="mt-1 max-w-2xl text-sm text-slate">{description}</p>}
+        {description && <p className="mt-1 max-w-3xl text-sm text-pretty text-slate">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
     </div>
@@ -226,7 +251,7 @@ export function KV({ items }: { items: [string, ReactNode][] }) {
       {items.map(([k, v]) => (
         <Fragment key={k}>
           <dt className="font-semibold text-slate">{k}</dt>
-          <dd className="min-w-0 break-words text-midnight">{v ?? "—"}</dd>
+          <dd className="min-w-0 text-pretty break-words whitespace-pre-line text-midnight">{v ?? "—"}</dd>
         </Fragment>
       ))}
     </dl>
@@ -416,12 +441,12 @@ export function StaffTable<T>({
   else if (rows && !rows.length) status = empty;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate/15 bg-white">
+    <div className="overflow-x-auto rounded-xl border border-slate/15 bg-white">
       <table className="w-full text-start text-sm">
         <thead className="hidden bg-cloud text-xs font-bold tracking-wide text-slate uppercase md:table-header-group">
           <tr>
             {columns.map((c) => (
-              <th key={c} className="px-4 py-2.5">
+              <th key={c} className="px-4 py-2.5 whitespace-nowrap">
                 {c}
               </th>
             ))}
@@ -460,7 +485,7 @@ export function StaffTable<T>({
                     {rowCells.map((cell, i) => (
                       <td key={i} className="flex gap-2 py-0.5 md:table-cell md:px-4 md:py-3">
                         <span className="w-28 shrink-0 text-xs font-semibold text-slate md:hidden">{columns[i]}</span>
-                        <span className="min-w-0 break-words">{cell}</span>
+                        <span className="min-w-0 text-pretty break-words">{cell}</span>
                       </td>
                     ))}
                   </tr>

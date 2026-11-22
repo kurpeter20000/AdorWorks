@@ -21,12 +21,14 @@ import {
   fmtDateTime,
   humanize,
   inputClass,
+  talentName,
   openStaffFile,
   qs,
   useAction,
   useStaffData,
 } from "../_components/staff-ui";
 import { youtubeEmbedUrl } from "@/lib/domain/youtube";
+import { formatPlace, SOUTH_SUDAN_STATES } from "@/lib/domain/locations";
 
 const CATEGORIES: [string, string][] = [
   ["creative_media", "Creative & media"],
@@ -38,10 +40,34 @@ const TIERS = ["registered", "identity_verified", "adorverified", "adorcertified
 /* eslint-disable @typescript-eslint/no-explicit-any -- staff API payloads are untyped JSON from backend/api */
 type Row = any;
 
+function NameCell({ r }: { r: Row }) {
+  return (
+    <span className="block min-w-[10rem]">
+      <span className="block font-semibold text-midnight">{talentName(r)}</span>
+      {r.legal_name && r.display_name && r.legal_name !== r.display_name && <span className="block text-xs text-slate">{r.legal_name}</span>}
+    </span>
+  );
+}
+
+function ProfessionCell({ r }: { r: Row }) {
+  return (
+    <span className="block min-w-[10rem]">
+      <span className="block text-midnight">{r.headline || "—"}</span>
+      <span className="block text-xs text-slate">{humanize(r.category)}</span>
+    </span>
+  );
+}
+
 export function TalentConsole() {
   const [category, setCategory] = useState("");
   const [tier, setTier] = useState("");
-  const list = useStaffData<{ data: Row[] }>(`/api/talent${qs({ limit: 100, category, tier })}`);
+  const [name, setName] = useState("");
+  const [country, setCountry] = useState("");
+  const [stateName, setStateName] = useState("");
+  const [place, setPlace] = useState("");
+  const list = useStaffData<{ data: Row[]; count?: number }>(
+    `/api/talent${qs({ limit: 200, category, tier, name: name.trim() || undefined, country: country.trim() || undefined, state: stateName || undefined, place: place.trim() || undefined })}`
+  );
   const videos = useStaffData<{ data: Row[] }>("/api/talent/pending-videos");
 
   const refreshAll = () => {
@@ -59,33 +85,42 @@ export function TalentConsole() {
       {videos.data && videos.data.data.length > 0 && (
         <Section title={`Introduction videos pending review (${videos.data.data.length})`}>
           <StaffTable
-            columns={["Headline", "Category", "Submitted"]}
+            columns={["Name", "Profession", "Submitted"]}
             rows={videos.data.data}
             rowKey={(v) => `video-${v.talent_id}`}
-            cells={(v) => [v.talent_profiles?.headline || v.talent_id, humanize(v.talent_profiles?.category), fmtDateTime(v.created_at)]}
+            cells={(v) => [talentName(v.talent_profiles), v.talent_profiles?.headline || humanize(v.talent_profiles?.category), fmtDateTime(v.created_at)]}
             detail={(v) => <TalentDetail id={v.talent_id} onChanged={refreshAll} />}
             empty="Nothing waiting."
           />
         </Section>
       )}
 
-      <Section title="All talent">
+      <Section title={list.data?.count != null ? `All talent (${list.data.count})` : "All talent"}>
         <FilterBar>
+          <input aria-label="Search by name or profession" placeholder="Name or profession" className={`${inputClass} sm:w-56`} value={name} onChange={(e) => setName(e.target.value)} />
           <Select label="Category" value={category} onChange={setCategory} options={CATEGORIES} placeholder="All categories" />
           <Select label="Tier" value={tier} onChange={setTier} options={TIERS} placeholder="All tiers" />
         </FilterBar>
+        <FilterBar>
+          <input aria-label="Country" placeholder="Country" className={`${inputClass} sm:w-40`} value={country} onChange={(e) => setCountry(e.target.value)} />
+          <Select label="State" value={stateName} onChange={setStateName} options={SOUTH_SUDAN_STATES.map((st) => [st, st] as [string, string])} placeholder="All states" />
+          <input aria-label="City, town or county" placeholder="City, town or county" className={`${inputClass} sm:w-52`} value={place} onChange={(e) => setPlace(e.target.value)} />
+        </FilterBar>
         <StaffTable
-          columns={["Headline", "Category", "Tier", "Location", "Visibility"]}
+          columns={["Name", "Profession", "City / town", "County", "State", "Country", "Tier", "Visibility"]}
           rows={list.data?.data ?? null}
           loading={list.loading}
           error={list.error}
           onRetry={list.reload}
           rowKey={(r) => r.id}
           cells={(r) => [
-            r.headline || r.profiles?.full_name || "—",
-            humanize(r.category),
+            <NameCell key="n" r={r} />,
+            <ProfessionCell key="p" r={r} />,
+            r.city || (r.state || r.country ? "—" : r.location || "—"),
+            r.county || "—",
+            r.state || "—",
+            r.country || "—",
             <Badge key="t" value={r.verification_tier} />,
-            r.location || "—",
             r.public_visible ? <Badge key="v" value="Public" tone="success" /> : <Badge key="v" value="Hidden" tone="neutral" />,
           ]}
           detail={(r) => <TalentDetail id={r.id} onChanged={refreshAll} />}
@@ -122,6 +157,9 @@ function TalentDetailBody({ id, d, reload, onChanged }: { id: string; d: Row; re
         <div>
           <KV
             items={[
+              ["Name", talentName(p)],
+              ["Profession", [p.headline, humanize(p.category)].filter((x: string) => x && x !== "—").join(" · ") || "—"],
+              ["Location", formatPlace(p) || p.location || "—"],
               ["Contact", p.profiles ? `${p.profiles.full_name} · ${p.profiles.phone || "no phone on file"}` : "—"],
               ["Bio", p.bio || "—"],
               ["Skills", (p.skills || []).join(", ") || "—"],

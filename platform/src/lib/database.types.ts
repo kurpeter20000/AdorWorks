@@ -137,6 +137,11 @@ export type TalentProfileRow = {
   verification_tier: VerificationTier;
   public_visible: boolean;
   safety_orientation_completed_at: string | null;
+  /** 0126: structured location (city/town, county, state, country). */
+  city: string | null;
+  county: string | null;
+  state: string | null;
+  country: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -208,6 +213,11 @@ export type OrganisationRow = {
   updated_at: string;
   /** 0124: approved by staff to run Pathways cohorts. */
   is_programme_partner: boolean;
+  /** 0126: structured location (city/town, county, state, country). */
+  city: string | null;
+  county: string | null;
+  state: string | null;
+  country: string | null;
 }
 
 export type OrganisationMemberRole = "member" | "admin" | "recruiter" | "hiring_manager" | "finance" | "viewer";
@@ -295,6 +305,11 @@ export type OpportunityRow = {
   more_candidates_note: string | null;
   /** 0120: the named AdorWorks account contact (the staff member who sent the shortlist). */
   account_contact_id: string | null;
+  /** 0126: featured (paid) until this time; set by staff only. */
+  featured_until: string | null;
+  /** 0126: the employer asked for this job to be featured. */
+  featured_requested_at: string | null;
+  featured_by: string | null;
 }
 
 export type ServicePackageRow = {
@@ -1022,6 +1037,14 @@ export type AlertPreferencesRow = {
   quiet_from: string | null;
   quiet_until: string | null;
   timezone: string;
+  /** 0126: tailored job alerts (off until the talent switches them on). */
+  job_alerts_enabled: boolean;
+  job_alert_categories: string[];
+  job_alert_keywords: string[];
+  job_alert_engagement_types: string[];
+  job_alert_work_modes: string[];
+  job_alert_locations: string[];
+  job_alert_email: boolean;
   updated_at: string;
 };
 

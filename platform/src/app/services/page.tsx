@@ -9,6 +9,7 @@ import { SaveServiceButton } from "./save-button";
 import { DismissServiceButton } from "./dismiss-button";
 import { RequestServiceButton } from "./request-service-button";
 import type { Category } from "@/lib/database.types";
+import { ExpandableText } from "@/components/expandable-text";
 
 export const metadata: Metadata = { title: "Browse services" };
 
@@ -199,7 +200,7 @@ export default async function BrowseServicesPage({
                     </div>
                     <span className="whitespace-nowrap text-sm font-semibold text-teal-ink">{formatPrice(s)}</span>
                   </div>
-                  {s.problem_solved && <p className="mt-2 line-clamp-3 text-sm text-slate">{s.problem_solved}</p>}
+                  {s.problem_solved && <ExpandableText text={s.problem_solved} className="mt-2 text-sm text-slate" />}
                   <div className="mt-3 flex items-center justify-between">
                     <p className="text-xs text-slate">
                       {[s.category ? CATEGORY_LABEL[s.category] : null, s.turnaround].filter(Boolean).join(" · ")}

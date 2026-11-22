@@ -8,6 +8,7 @@ import { requireRole } from "@/lib/dal/session";
 import { createClient } from "@/lib/supabase/server";
 import { RETURN_TO_COOKIE, resolveReturnPath } from "@/lib/domain/redirects";
 import type { FormState } from "./auth";
+import { formatPlace } from "@/lib/domain/locations";
 
 const BasicsSchema = z.object({
   honorific: z.string().optional(),
@@ -15,7 +16,10 @@ const BasicsSchema = z.object({
   displayName: z.string().trim().min(2, msg("Enter a display name.")),
   headline: z.string().trim().min(5, msg("Enter a short professional headline.")),
   bio: z.string().trim().max(2000).optional(),
-  location: z.string().trim().min(2, msg("Enter your location.")),
+  city: z.string().trim().min(2, msg("Enter your city or town.")).max(80),
+  county: z.string().trim().max(80).optional(),
+  state: z.string().trim().max(80).optional(),
+  country: z.string().trim().min(2, msg("Enter your country.")).max(80),
   category: z.enum(["creative_media", "digital_technology", "business_project_support"], {
     message: msg("Choose a category."),
   }),
@@ -44,7 +48,10 @@ export async function saveBasics(_prevState: FormState, formData: FormData): Pro
     displayName: formData.get("displayName"),
     headline: formData.get("headline"),
     bio: formData.get("bio") || undefined,
-    location: formData.get("location"),
+    city: formData.get("city"),
+    county: formData.get("county") || undefined,
+    state: formData.get("state") || undefined,
+    country: formData.get("country"),
     category: formData.get("category"),
     skills: formData.get("skills"),
     languages: formData.get("languages") || undefined,
@@ -65,7 +72,12 @@ export async function saveBasics(_prevState: FormState, formData: FormData): Pro
     display_name: v.displayName,
     headline: v.headline,
     bio: v.bio || null,
-    location: v.location,
+    // 0126: structured place; the old one-line location is kept in step.
+    location: formatPlace({ city: v.city, state: v.state, country: v.country }, { short: true }),
+    city: v.city,
+    county: v.county || null,
+    state: v.state || null,
+    country: v.country,
     category: v.category,
     skills: splitList(v.skills),
     languages: splitList(v.languages),

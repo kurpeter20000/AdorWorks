@@ -12,6 +12,7 @@ import {
   Grid2,
   KV,
   PageHeader,
+  Select,
   StaffTable,
   SubHeading,
   api,
@@ -24,6 +25,7 @@ import {
   useStaffData,
 } from "../_components/staff-ui";
 import { RiskFlags } from "../_components/risk-flags";
+import { formatPlace, SOUTH_SUDAN_STATES } from "@/lib/domain/locations";
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- staff API payloads are untyped JSON from backend/api */
 type Row = any;
@@ -41,7 +43,13 @@ const CHECK_METHODS = ["formal_registration", "alternative_referral", "physical_
 
 export function OrganisationsConsole({ initialFilter }: { initialFilter: string }) {
   const [filter, setFilter] = useState(initialFilter);
-  const list = useStaffData<{ data: Row[] }>(`/api/organisations${qs({ verification_status: filter, limit: 100 })}`);
+  const [name, setName] = useState("");
+  const [country, setCountry] = useState("");
+  const [stateName, setStateName] = useState("");
+  const [place, setPlace] = useState("");
+  const list = useStaffData<{ data: Row[]; count?: number }>(
+    `/api/organisations${qs({ verification_status: filter, limit: 200, name: name.trim() || undefined, country: country.trim() || undefined, state: stateName || undefined, place: place.trim() || undefined })}`
+  );
 
   return (
     <>
@@ -52,16 +60,27 @@ export function OrganisationsConsole({ initialFilter }: { initialFilter: string 
       <FilterBar>
         <Chips label="Verification status" value={filter} onChange={setFilter} options={FILTERS} />
       </FilterBar>
+      <FilterBar>
+        <input aria-label="Search by name" placeholder="Organisation name" className={`${inputClass} sm:w-56`} value={name} onChange={(e) => setName(e.target.value)} />
+        <input aria-label="Country" placeholder="Country" className={`${inputClass} sm:w-40`} value={country} onChange={(e) => setCountry(e.target.value)} />
+        <Select label="State" value={stateName} onChange={setStateName} options={SOUTH_SUDAN_STATES.map((st) => [st, st] as [string, string])} placeholder="All states" />
+        <input aria-label="City, town or county" placeholder="City, town or county" className={`${inputClass} sm:w-52`} value={place} onChange={(e) => setPlace(e.target.value)} />
+      </FilterBar>
+      {list.data?.count != null && <p className="mb-2 text-xs text-slate">{list.data.count} organisations</p>}
       <StaffTable
-        columns={["Name", "Sector", "Representative", "Status", "Created"]}
+        columns={["Name", "Sector", "City / town", "County", "State", "Country", "Representative", "Status", "Created"]}
         rows={list.data?.data ?? null}
         loading={list.loading}
         error={list.error}
         onRetry={list.reload}
         rowKey={(r) => r.id}
         cells={(r) => [
-          r.name,
+          <span key="n" className="block min-w-[9rem] font-semibold text-midnight">{r.name}</span>,
           r.sector || "—",
+          r.city || "—",
+          r.county || "—",
+          r.state || "—",
+          r.country || "—",
           r.profiles ? `${r.profiles.full_name}${r.profiles.phone ? ` · ${r.profiles.phone}` : ""}` : "—",
           <Badge key="s" value={r.verification_status} />,
           fmtDate(r.created_at),
@@ -98,6 +117,7 @@ function OrgDetail({ row, onChanged }: { row: Row; onChanged: () => void }) {
             <div>
               <KV
                 items={[
+                  ["Location", formatPlace(row) || "Not given yet"],
                   [
                     "Representative",
                     `${row.profiles?.full_name || "—"}${row.profiles?.phone ? ` · ${row.profiles.phone}` : ""} · ${res.data.profiles?.email || "no email on file"}`,

@@ -52,8 +52,8 @@ export function WorkList({ items, failed, now }: { items: WorkItem[]; failed: st
                 >
                   <span className="min-w-0">
                     <span className="block text-xs font-bold text-slate">{item.kind}</span>
-                    <span className="block truncate text-sm font-extrabold text-midnight first-letter:uppercase">{item.title}</span>
-                    {item.detail && <span className="block truncate text-xs text-slate first-letter:uppercase">{item.detail}</span>}
+                    <span className="block text-sm font-extrabold text-pretty break-words text-midnight first-letter:uppercase">{item.title}</span>
+                    {item.detail && <span className="block text-xs text-pretty break-words text-slate first-letter:uppercase">{item.detail}</span>}
                   </span>
                   <span className="flex flex-col items-end gap-1">
                     <StatusPill tone={s.overdue ? "urgent" : "waiting"}>{s.overdue ? "Late" : "Waiting"}</StatusPill>

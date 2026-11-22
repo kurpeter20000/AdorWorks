@@ -50,19 +50,27 @@ export default async function CohortTeamPage({ params }: { params: Promise<{ id:
 
       <section className="mt-6 rounded-card border border-line bg-white p-5 shadow-card">
         <h2 className="text-lg font-extrabold text-midnight">{t("How participants join")}</h2>
-        <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0 text-sm text-midnight">
+        {/* QR and instructions side by side (owner, Nov 2026); on phones the QR sits on top. */}
+        <div className={`mt-4 grid items-center gap-5 ${qr ? "sm:grid-cols-[auto_minmax(0,1fr)]" : ""}`}>
+          {qr && (
+            <div
+              className="justify-self-center rounded-xl border border-line bg-white p-2 sm:justify-self-start [&_svg]:block [&_svg]:size-[168px]"
+              role="img"
+              aria-label={t("QR code to join")}
+              dangerouslySetInnerHTML={{ __html: qr }}
+            />
+          )}
+          <div className="min-w-0 space-y-2 text-sm text-pretty text-midnight">
             <p>{t("1. They create a free AdorWorks account — a phone number is enough.")}</p>
-            <p className="mt-1">{t("2. They scan the QR code, or open Passport → Joined a Pathways programme? and type the code:")}</p>
-            <p className="mt-2 font-mono text-2xl font-bold tracking-widest">{programme.join_code ?? "—"}</p>
-            {!programme.active && <p className="mt-2 text-sm font-semibold text-coral-ink">{t("This cohort is closed to new participants.")}</p>}
+            <p>{t("2. They scan the QR code, or open Passport → Joined a Pathways programme? and type the code:")}</p>
+            <p className="font-mono text-2xl font-bold tracking-widest">{programme.join_code ?? "—"}</p>
+            {!programme.active && <p className="text-sm font-semibold text-coral-ink">{t("This cohort is closed to new participants.")}</p>}
             {canManage && (
-              <div className="mt-3">
+              <div className="pt-1">
                 <CohortOpenToggle programmeId={id} open={programme.active} />
               </div>
             )}
           </div>
-          {qr && <div className="shrink-0 rounded-lg border border-line bg-white p-1" aria-label={t("QR code to join")} dangerouslySetInnerHTML={{ __html: qr }} />}
         </div>
       </section>
 

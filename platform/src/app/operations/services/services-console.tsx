@@ -20,6 +20,7 @@ import {
   qs,
   useAction,
   useStaffData,
+  TalentInline,
 } from "../_components/staff-ui";
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- staff API payloads are untyped JSON from backend/api */
@@ -55,7 +56,7 @@ export function ServicesConsole({ initialFilter }: { initialFilter: string }) {
         rowKey={(r) => r.id}
         cells={(r) => [
           r.title,
-          r.talent_profiles?.headline || r.talent_id,
+          <TalentInline key="t" tp={r.talent_profiles} fallback={r.talent_id} />,
           humanize(r.category),
           r.price ? money(r.price, r.currency) : "—",
           <Badge key="s" value={r.status} />,
@@ -76,7 +77,7 @@ function ServiceDetail({ row, onChanged }: { row: Row; onChanged: () => void }) 
     <div onClick={(e) => e.stopPropagation()}>
       <KV
         items={[
-          ["Talent", row.talent_profiles?.headline || row.talent_id],
+          ["Talent", <TalentInline key="t" tp={row.talent_profiles} fallback={row.talent_id} />],
           ["Problem solved", row.problem_solved || "—"],
           ["Deliverables", row.deliverables || "—"],
           ["Excludes", row.exclusions || "—"],

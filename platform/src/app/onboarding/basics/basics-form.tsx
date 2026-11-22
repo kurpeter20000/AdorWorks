@@ -8,6 +8,7 @@ import { SkillsInput } from "@/components/skills-input";
 import { ProfessionInput } from "@/components/profession-input";
 import { PROFESSION_SUGGESTIONS } from "@/lib/skills";
 import { useT } from "@/i18n/client";
+import { LocationFields } from "@/components/location-fields";
 
 const initialState: FormState = {};
 
@@ -100,20 +101,13 @@ export function BasicsForm({
         />
       </div>
 
+      <LocationFields
+        legend={t("Where you are based")}
+        initial={initial ? { city: initial.city ?? initial.location, county: initial.county, state: initial.state, country: initial.country } : null}
+        errors={state.errors as Record<string, string[] | undefined> | undefined}
+      />
+
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div>
-          <label htmlFor="location" className="text-sm font-semibold text-midnight">
-            {t("Location")}
-          </label>
-          <input
-            id="location"
-            name="location"
-            defaultValue={initial?.location ?? ""}
-            required
-            className="mt-1 w-full rounded-lg border border-slate/25 px-3 py-2 text-sm"
-          />
-          {state.errors?.location && <p className="mt-1 text-sm text-coral-ink">{err(state.errors.location)}</p>}
-        </div>
         <div>
           <label htmlFor="category" className="text-sm font-semibold text-midnight">
             {t("Category")}

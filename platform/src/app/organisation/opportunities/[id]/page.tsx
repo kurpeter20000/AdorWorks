@@ -10,6 +10,7 @@ import { AppealRejectionForm } from "./appeal-rejection-form";
 import { ApplicantEvaluationPanel } from "./applicant-evaluation-panel";
 import { CloseOpportunityActions } from "./close-opportunity-actions";
 import { ReopenOpportunityButton } from "./reopen-opportunity-button";
+import { FeatureJobBox } from "./feature-job-box";
 import { SendOfferForm } from "./send-offer-form";
 import { ShortlistingModeForm } from "./shortlisting-mode-form";
 import { ShortlistActions } from "./shortlist-actions";
@@ -412,6 +413,12 @@ export default async function OpportunityDetailPage({
           employer opens this page to do, not configuring it. */}
       <section className="mt-10 border-t border-slate/15 pt-6">
         <h2 className="font-bold text-midnight">Manage this opportunity</h2>
+        <FeatureJobBox
+          opportunityId={opportunity.id}
+          status={opportunity.status}
+          featuredUntil={opportunity.featured_until}
+          requestedAt={opportunity.featured_requested_at}
+        />
         <ShortlistingModeForm opportunityId={opportunity.id} mode={opportunity.shortlisting_mode} />
         <OpportunityAttachments opportunityId={opportunity.id} attachments={attachments ?? []} />
         {opportunity.status === "open" && <CloseOpportunityActions opportunityId={opportunity.id} />}

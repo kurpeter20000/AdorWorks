@@ -14,6 +14,8 @@ const listQuerySchema = z.object({
     .enum(["draft", "pending_review", "open", "filled", "closed", "cancelled", "rejected", "changes_required", "paused", "expired"])
     .optional(),
   organisation_id: z.string().uuid().optional(),
+  // 0126: "requested" = employer asked to be featured; "active" = featured now.
+  featured: z.enum(["requested", "active"]).optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });
@@ -30,6 +32,8 @@ opportunitiesRouter.get(
       .range(query.offset, query.offset + query.limit - 1);
     if (query.status) q = q.eq("status", query.status);
     if (query.organisation_id) q = q.eq("organisation_id", query.organisation_id);
+    if (query.featured === "requested") q = q.not("featured_requested_at", "is", null);
+    if (query.featured === "active") q = q.gt("featured_until", new Date().toISOString());
 
     const { data, error, count } = await q;
     if (error) throw new HttpError(500, error.message);
@@ -43,7 +47,7 @@ opportunitiesRouter.get(
   asyncRoute(async (req, res) => {
     const { data, error } = await supabaseAdmin
       .from("opportunities")
-      .select("*, organisations(name, verification_status), applications(*, talent_profiles(headline, verification_tier))")
+      .select("*, organisations(name, verification_status), applications(*, talent_profiles(display_name, legal_name, city, state, headline, verification_tier))")
       .eq("id", req.params.id)
       .single();
     if (error) throw new HttpError(404, "Opportunity not found.");

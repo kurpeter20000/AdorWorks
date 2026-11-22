@@ -30,7 +30,7 @@ contractsRouter.get(
     let q = supabaseAdmin
       .from("contracts")
       .select(
-        "*, opportunities(title), organisations(name), talent_profiles(display_name, headline)",
+        "*, opportunities(title), organisations(name), talent_profiles(display_name, legal_name, headline, city, state)",
         { count: "exact" }
       )
       .order("started_at", { ascending: false })
@@ -50,7 +50,7 @@ contractsRouter.get(
     const { data, error } = await supabaseAdmin
       .from("contracts")
       .select(
-        "*, opportunities(title), organisations(name), talent_profiles(display_name, headline), " +
+        "*, opportunities(title), organisations(name), talent_profiles(display_name, legal_name, headline, city, state), " +
           "milestones(*, deliverables(*)), payment_events(*), reviews(*), timesheets(*), disputes(*), " +
           "finance_records(*), payment_intentions(*)"
       )
