@@ -31,7 +31,7 @@
 <link rel="stylesheet" href="css/themes.css">
 <link rel="stylesheet" href="css/styles.css?v=26">
 <link rel="stylesheet" href="css/site.css?v=29">
-<link rel="stylesheet" href="css/home.css?v=28">
+<link rel="stylesheet" href="css/home.css?v=29">
 <script src="js/i18n-early.js"></script>
 <script type="application/ld+json">
 {
@@ -118,7 +118,7 @@
 
 <main id="main" class="home">
 
-  <!-- Hero (Site.dc): promise, role switch + search, product moments -->
+  <!-- Hero: promise, two clear choices, three trust points, one photo -->
   <section class="home-hero">
     <div class="container home-hero-grid">
       <div class="home-hero-copy">
@@ -126,39 +126,18 @@
         <h1 class="rise rise-1">Talent found.<br><em>Work delivered.</em></h1>
         <p class="lede rise rise-2">South Sudan has the talent. We verify it, match it to real work and stay with you until it's delivered.</p>
 
-        <div class="home-search rise rise-3" data-hero-audience>
-          <div class="home-search-roles" role="tablist" aria-label="I am">
-            <button type="button" role="tab" aria-selected="true" data-audience-tab="employer">I'm hiring</button>
-            <button type="button" role="tab" aria-selected="false" data-audience-tab="talent">I'm looking for work</button>
-          </div>
-          <form class="home-search-form" role="search" action="for-employers.html" data-audience-search>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            <label for="hero-search-q" class="visually-hidden" data-audience-label data-employer="Search for talent by skill or category" data-talent="Search for jobs by role or category">Search for talent by skill or category</label>
-            <input type="search" id="hero-search-q" name="q" data-audience-placeholder-employer="Search talent by skill, e.g. graphic design" data-audience-placeholder-talent="Search jobs, e.g. data collection in Juba" data-audience-placeholder-employer-mobile="Search talent by skill" data-audience-placeholder-talent-mobile="Search jobs" placeholder="Search talent by skill, e.g. graphic design">
-            <button type="submit" class="btn btn-primary" data-audience-copy data-employer="Find talent" data-talent="Find work">Find talent</button>
-          </form>
-          <div class="home-chips" data-audience-chips="employer">
-            <a href="for-employers.html#categories">Creative &amp; media</a>
-            <a href="for-employers.html#categories">Digital &amp; tech</a>
-            <a href="for-employers.html#categories">Business support</a>
-            <a href="assisted-hiring.html">Assisted hiring</a>
-          </div>
-          <div class="home-chips" data-audience-chips="talent" hidden>
-            <a href="jobs-projects.html">Design jobs</a>
-            <a href="jobs-projects.html">Tech jobs</a>
-            <a href="jobs-projects.html">Project roles</a>
-            <a href="jobs-projects.html">Remote work</a>
-          </div>
+        <!-- Owner, Nov 2026: one clear choice — hire, or find work. -->
+        <div class="home-hero-ctas rise rise-3">
+          <a class="btn btn-primary" href="https://ador-works.vercel.app/signup?intent=hire">Hire talent</a>
+          <a class="btn btn-ghost" href="jobs-projects.html">Find work</a>
         </div>
+        <p class="home-hero-login rise rise-3">Already have an account? <a href="https://ador-works.vercel.app/login">Log in</a></p>
 
-        <div class="home-account rise rise-3">
-          <a class="btn btn-ghost home-login-btn" href="https://ador-works.vercel.app/login">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
-            Log in to your account
-          </a>
-          <span class="home-account-divider" aria-hidden="true"></span>
-          <p>New here? <a href="https://ador-works.vercel.app/signup">Create a free account &rarr;</a></p>
-        </div>
+        <ul class="home-hero-points rise rise-3">
+          <li>Verified employers</li>
+          <li>Free for talent</li>
+          <li>Human-checked shortlists</li>
+        </ul>
       </div>
 
       <div class="home-hero-art" aria-hidden="true">
@@ -166,18 +145,6 @@
           <source type="image/webp" srcset="img/photos/card-team-squad-480.webp 480w, img/photos/card-team-squad-960.webp 960w" sizes="(min-width: 960px) 45vw, 100vw">
           <img src="img/photos/card-team-squad-960.jpg" srcset="img/photos/card-team-squad-480.jpg 480w, img/photos/card-team-squad-960.jpg 960w" sizes="(min-width: 960px) 45vw, 100vw" alt="" width="960" height="600" fetchpriority="high">
         </picture>
-        <div class="float-card float-profile">
-          <span class="float-avatar"></span>
-          <span><strong>Graphic designer</strong><small>Juba · Passport</small></span>
-          <span class="float-tags"><span class="tag-teal">AdorVerified</span><span>Branding</span><span>Layout</span></span>
-        </div>
-        <div class="float-card float-shortlist">
-          <span class="float-eyebrow">Shortlist · reviewed by a person</span>
-          <strong>Web developer</strong>
-          <span class="float-row"><i></i><b></b><em>6/6</em></span>
-          <span class="float-row"><i></i><b></b><em>5/6</em></span>
-          <span class="float-row"><i></i><b></b><em>5/6</em></span>
-        </div>
         <div class="float-pill">
           <span class="float-check"></span>
           <span><strong>Milestone approved</strong><small>Payment released · receipt sent</small></span>
