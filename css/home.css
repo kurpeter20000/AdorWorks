@@ -402,3 +402,25 @@
   .home-cta { padding-block: 3rem; }
   .home-cta .lede { margin-bottom: 1.25rem; }
 }
+
+/* ---------- Simple hero (owner, Nov 2026) ----------
+   Headline, one sentence, two clear choices (hire / find work), a quiet
+   log-in line and three short trust points. Nothing else competes. */
+.home-hero-copy { gap: 1.5rem; }
+.home-hero-ctas { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem; }
+.home-hero-ctas .btn { min-height: 56px; padding: 0 2rem; font-size: 1.08rem; font-weight: 800; justify-content: center; }
+.home-hero-ctas .btn-ghost { background: #fff; }
+.home-hero-login { margin: -0.5rem 0 0; font-size: 0.95rem; color: var(--site-muted); }
+.home-hero-login a { font-weight: 800; text-decoration: none; }
+.home-hero-login a:hover { text-decoration: underline; }
+.home-hero-points { list-style: none; margin: 0.5rem 0 0; padding: 1.1rem 0 0; border-top: 1px solid var(--site-line); display: flex; flex-wrap: wrap; gap: 0.6rem 1.5rem; }
+.home-hero-points li { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.93rem; font-weight: 700; color: #3c4657; white-space: nowrap; }
+.home-hero-points li::before { content: ""; width: 18px; height: 18px; flex: none; border-radius: 50%; background: var(--site-teal) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center / 12px no-repeat; }
+@media (max-width: 640px) {
+  .home-hero-copy { gap: 1.1rem; }
+  .home-hero-ctas { flex-wrap: nowrap; gap: 0.6rem; margin-top: 0.25rem; }
+  .home-hero-ctas .btn { flex: 1 1 0; min-width: 0; min-height: 52px; padding: 0 1rem; font-size: 1rem; }
+  .home-hero-login { margin-top: -0.25rem; font-size: 0.9rem; }
+  .home-hero-points { flex-direction: column; gap: 0.5rem; padding-top: 0.9rem; }
+  .home-hero-points li { font-size: 0.9rem; }
+}
