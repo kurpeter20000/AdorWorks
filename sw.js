@@ -18,7 +18,7 @@
   visitors' installed copies pick up the update instead of serving stale
   content indefinitely.
 */
-const CACHE_VERSION = "adorworks-v38";
+const CACHE_VERSION = "adorworks-v40";
 const SHELL_CACHE = CACHE_VERSION + "-shell";
 const RUNTIME_CACHE = CACHE_VERSION + "-runtime";
 
@@ -48,7 +48,7 @@ const SHELL_URLS = [
   "/css/themes.css",
   "/css/styles.css?v=26",
   "/css/site.css?v=29",
-  "/css/home.css?v=28",
+  "/css/home.css?v=30",
   "/css/pages.css?v=35",
   "/js/main.js?v=28",
   "/js/home.js?v=24",
